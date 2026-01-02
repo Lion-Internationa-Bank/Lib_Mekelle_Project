@@ -1,6 +1,6 @@
 // components/parcelDetail/LeaseCard.tsx
-import type { ParcelDetail } from "../../services/parcelDetailApi";
-import DocumentList from "./DocumentList";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import DocumentList from "../DocumentList";
 
 interface LeaseCardProps {
   lease: NonNullable<ParcelDetail["lease_agreement"]>;

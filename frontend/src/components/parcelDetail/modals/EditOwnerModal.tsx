@@ -1,0 +1,77 @@
+// src/modals/EditOwnerModal.tsx
+import { useEffect, useState } from "react";
+import { updateOwnerApi } from "../../../services/parcelDetailApi";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
+
+type Owner = ParcelDetail["owners"][number]["owner"];
+
+type Props = {
+  owner: Owner;
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => Promise<void>;
+};
+
+const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
+  const [form, setForm] = useState({
+    full_name: "",
+    national_id: "",
+    phone_number: "",
+    tin_number: "",
+  });
+
+  useEffect(() => {
+    if (open && owner) {
+      setForm({
+        full_name: owner.full_name || "",
+        national_id: owner.national_id || "",
+        phone_number: owner.phone_number || "",
+        tin_number: owner.tin_number || "",
+      });
+    }
+  }, [open, owner]);
+
+  const handleSave = async () => {
+    try {
+      await updateOwnerApi(owner.owner_id, form);
+      await onSuccess();
+      onClose();
+    } catch (err: any) {
+      alert(err.message || "Update failed");
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+        <h2 className="text-xl font-bold mb-6">Edit Owner</h2>
+        <div className="space-y-4">
+          {Object.keys(form).map((key) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700 capitalize mb-1">
+                {key.replace(/_/g, " ")}
+              </label>
+              <input
+                value={form[key as keyof typeof form]}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 flex justify-end gap-4">
+          <button onClick={onClose} className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+            Cancel
+          </button>
+          <button onClick={handleSave} className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditOwnerModal;

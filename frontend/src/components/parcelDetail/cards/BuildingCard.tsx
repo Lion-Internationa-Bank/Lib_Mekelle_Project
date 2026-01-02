@@ -1,5 +1,5 @@
 // components/BuildingCard.tsx
-import type { ParcelDetail } from "../../services/parcelDetailApi";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
 interface BuildingCardProps {
   building: ParcelDetail["buildings"][number];

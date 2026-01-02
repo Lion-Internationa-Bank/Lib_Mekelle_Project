@@ -1,6 +1,6 @@
 // components/parcelDetail/EncumbranceCard.tsx
-import type { ParcelDetail } from "../../services/parcelDetailApi";
-import DocumentList from "./DocumentList";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import DocumentList from "../DocumentList";
 
 interface EncumbranceCardProps {
   encumbrance?: ParcelDetail["encumbrances"][number]; // optional for "add new"

@@ -1,13 +1,11 @@
-// controllers/uploadController.ts
+// src/controllers/uploadController.ts
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
 import fs from 'fs';
 import path from 'path';
-
-// ←←← ADD THESE IMPORTS ←←←
 import {
   sanitizeFolderName,
-  resolveFolderSegments,
+  resolveDocumentConfig,
   UPLOADS_BASE,
 } from '../middlewares/upload.ts';
 
@@ -20,51 +18,71 @@ export const handleUpload = async (req: Request, res: Response) => {
       sub_city,
       owner_id,
       lease_id,
+      history_id,
+      encumbrance_id,
     } = req.body;
 
+    // Validation
     if (!file || !document_type || !upin) {
-      if (file) fs.unlinkSync(file.path); // cleanup temp file
+      if (file) {
+        try { fs.unlinkSync(file.path); } catch {}
+      }
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields',
+        message: 'Missing required fields: file, document_type, or upin',
       });
     }
 
-    const safeUpin = sanitizeFolderName(upin);
-    const safeSubCity = sanitizeFolderName(sub_city || 'unknown');
-    const segments = resolveFolderSegments(document_type);
+    const safeUpin = sanitizeFolderName(upin.trim());
+    const safeSubCity = sanitizeFolderName((sub_city || 'unknown').trim());
 
-    const finalDir = path.join(UPLOADS_BASE, safeSubCity, safeUpin, ...segments);
+    // Get config from middleware (returns plain string for enum)
+    const { folders, prismaEnum: docTypeString } = resolveDocumentConfig(document_type);
+
+    // Build final path
+    const finalDir = path.join(UPLOADS_BASE, safeSubCity, safeUpin, ...folders);
     const finalPath = path.join(finalDir, file.filename);
 
+    // Move file from temp to final location
     fs.mkdirSync(finalDir, { recursive: true });
-    fs.renameSync(file.path, finalPath); // Move from temp to final location
+    fs.renameSync(file.path, finalPath);
 
-    const relativePath = finalPath
-      .replace(UPLOADS_BASE, '')
-      .replace(/\\/g, '/')
-      .replace(/^\/+/, '');
+    const relativeUrl = path.relative(UPLOADS_BASE, finalPath).replace(/\\/g, '/');
 
-    let docTypeEnum: any = 'MAP';
-    if (document_type === 'SITE_MAP') docTypeEnum = 'MAP';
-    if (document_type === 'OWNER_ID_COPY') docTypeEnum = 'ID_COPY';
-    if (document_type === 'LEASE_CONTRACT') docTypeEnum = 'LEASE_CONTRACT';
-
+    // Create document in DB
+    // Type assertion: safe because strings in middleware exactly match Prisma enum values
     const document = await prisma.documents.create({
       data: {
-        upin,
+        upin: safeUpin,
+ 
+        doc_type: docTypeString as any, // ← Safe cast — avoids import
+        file_url: `/uploads/${relativeUrl}`,
+        file_name: file.originalname,
+        is_verified: false,
+        upload_date: new Date(),
+
         owner_id: owner_id || null,
         lease_id: lease_id || null,
-        doc_type: docTypeEnum,
-        file_url: `/uploads/${relativePath}`,
-        file_name: file.originalname,
+        history_id: history_id || null,
+        encumbrance_id: encumbrance_id || null,
       },
     });
 
-    return res.status(201).json({ success: true, data: document });
-  } catch (error) {
+    return res.status(201).json({
+      success: true,
+      data: document,
+    });
+  } catch (error: any) {
     console.error('Upload error:', error);
-    if (req.file) fs.unlinkSync(req.file.path); // cleanup
-    return res.status(500).json({ success: false, message: 'Upload failed' });
+
+    // Cleanup temp file
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to upload document',
+    });
   }
 };

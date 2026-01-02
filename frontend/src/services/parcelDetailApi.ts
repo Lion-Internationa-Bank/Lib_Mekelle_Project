@@ -105,6 +105,18 @@ export interface ParcelDetailResponse {
   data: ParcelDetail;
 }
 
+
+
+export type TransferType = "SALE" | "GIFT" | "HEREDITY" | "CONVERSION";
+
+export interface LiteOwner {
+  owner_id: string;
+  full_name: string;
+  national_id: string;
+  phone_number: string | null;
+  tin_number: string | null;
+}
+
 export const fetchParcelDetail = async (upin: string): Promise<ParcelDetailResponse> => {
   const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`);
   if (!res.ok) throw new Error("Failed to fetch parcel detail");
@@ -206,4 +218,45 @@ export const createEncumbranceApi = async (data: {
     throw new Error(json.message || "Failed to create encumbrance");
   }
   return json;
+};
+
+
+
+
+
+export const searchOwnersLiteApi = async (search: string) => {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const res = await fetch(`${API_BASE}/owners/search-lite?${params.toString()}`);
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to search owners");
+  }
+  return json.data.owners as LiteOwner[];
+};
+
+export const transferOwnershipApi = async (upin: string, body: {
+  from_owner_id: string;
+  to_owner_id: string;
+  to_share_ratio: number;
+  transfer_type: TransferType;
+  transfer_price?: number;
+  reference_no?: string;
+}) => {
+  const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/transfer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to transfer ownership");
+  }
+  return json.data as {
+    history: { history_id: string };
+    newOwnership: any;
+    finalTotalShares: number;
+    transfer_type: string;
+    from_owner_remaining: number;
+  };
 };

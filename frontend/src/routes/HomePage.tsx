@@ -1,6 +1,6 @@
 // HomePage.tsx
 import { useState, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom"; // Added Link
 import { useAuth } from "../auth/AuthContext";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -18,7 +18,7 @@ const HomePage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentFilters, setCurrentFilters] = useState({
     page: 1,
-    limit: 20, // Increased for better UX with compact rows
+    limit: 20,
     search: "",
     sub_city: "",
     ketena: "",
@@ -110,9 +110,9 @@ const HomePage = () => {
         <main className="flex-1 lg:ml-0 pt-4 lg:pt-0 px-6 lg:px-8 pb-12 lg:pb-16 min-h-screen overflow-auto">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Quick Action Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 m-16 ">
-              <a
-                href="/parcels/new"
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 m-16">
+              <Link
+                to="/parcels/new"
                 className="group bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full"
               >
                 <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
@@ -120,10 +120,10 @@ const HomePage = () => {
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Add Land Parcel</h3>
                 <p className="opacity-90 text-sm">Register new parcel</p>
-              </a>
+              </Link>
 
-              <a
-                href="/owners/new"
+              <Link
+                to="/owners/new"
                 className="group bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full"
               >
                 <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
@@ -131,7 +131,7 @@ const HomePage = () => {
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Add Owner</h3>
                 <p className="opacity-90 text-sm">Register new owner</p>
-              </a>
+              </Link>
 
               <div className="md:col-span-2 lg:col-span-1 bg-gradient-to-br from-slate-500 to-slate-600 text-white p-8 rounded-3xl shadow-2xl flex items-center justify-center">
                 <div className="text-center">
@@ -176,7 +176,7 @@ const HomePage = () => {
                 </div>
               )}
 
-              {/* Empty */}
+              {/* Empty State */}
               {!loading && !error && parcels.length === 0 && (
                 <div className="p-16 text-center border-t border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
                   <span className="text-7xl mb-8 block animate-bounce">Empty Mailbox</span>
@@ -193,13 +193,13 @@ const HomePage = () => {
                     >
                       Clear All Filters
                     </button>
-                    <a
-                      href="/parcels/new"
+                    <Link
+                      to="/parcels/new"
                       className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
                     >
                       <span>Add</span>
                       Add First Parcel
-                    </a>
+                    </Link>
                   </div>
                 </div>
               )}

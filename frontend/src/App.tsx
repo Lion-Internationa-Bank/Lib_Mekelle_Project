@@ -4,6 +4,9 @@ import LoginPage from "./routes/LoginPage";
 import HomePage from "./routes/HomePage";
 import ParcelWizard from "./routes/ParcelWizard";
 import ParcelDetailPage from "./routes/ParcelDetailPage";
+import OwnershipPage from "./routes/OwnershipPage";
+
+
 
 // Future pages
 // import ParcelsPage from "./routes/ParcelsPage";
@@ -18,6 +21,7 @@ const App = () => {
       <Route path="/home/*" element={<HomePage />} />
       <Route path="/parcels/new" element={<ParcelWizard />} />
        <Route path="/parcels/:upin" element={<ParcelDetailPage />} /> 
+       <Route path="/ownership" element={<OwnershipPage />} />
       {/* Future routes */}
       {/* <Route path="/parcels" element={<ParcelsPage />} />
       <Route path="/ownership" element={<OwnershipPage />} />

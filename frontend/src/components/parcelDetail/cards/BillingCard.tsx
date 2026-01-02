@@ -1,5 +1,5 @@
 // components/BillingCard.tsx
-import type { ParcelDetail } from "../../services/parcelDetailApi";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
 interface BillingCardProps {
   bill: ParcelDetail["billing_records"][number];

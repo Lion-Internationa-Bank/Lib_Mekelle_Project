@@ -1,4 +1,5 @@
-import { useState } from "react";
+// Sidebar.tsx
+import { Link, useLocation } from "react-router-dom";
 
 type MenuItem = {
   id: string;
@@ -12,7 +13,7 @@ const menuItems: MenuItem[] = [
     id: "parcels",
     label: "Land Parcels",
     icon: "📍",
-    href: "/parcels",
+    href: "/home",
   },
   {
     id: "ownership",
@@ -29,7 +30,9 @@ const menuItems: MenuItem[] = [
 ];
 
 const Sidebar = () => {
-  const [activeMenu, setActiveMenu] = useState("parcels");
+  const location = useLocation();
+  // Derive active menu from current pathname for persistence
+  const activeMenu = menuItems.find((item) => item.href === location.pathname)?.id || "parcels";
 
   return (
     <aside className="w-64 bg-white/90 backdrop-blur-xl shadow-2xl border-r border-gray-200/50 h-screen sticky top-0 z-40 overflow-y-auto">
@@ -49,19 +52,22 @@ const Sidebar = () => {
 
       <nav className="p-4 space-y-2">
         {menuItems.map((item) => (
-          <a
+          <Link
             key={item.id}
-            href={item.href}
+            to={item.href}
             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
               activeMenu === item.id
                 ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             }`}
-            onClick={() => setActiveMenu(item.id)}
           >
             <span className="text-lg">{item.icon}</span>
             <span className="font-medium">{item.label}</span>
-          </a>
+            {/* Optional: subtle indicator for active state */}
+            {activeMenu === item.id && (
+              <span className="ml-auto w-2 h-8 bg-white/30 rounded-full" />
+            )}
+          </Link>
         ))}
       </nav>
     </aside>

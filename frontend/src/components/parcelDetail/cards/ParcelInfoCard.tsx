@@ -1,5 +1,5 @@
 // components/parcelDetail/ParcelInfoCard.tsx
-import type { ParcelDetail } from "../../services/parcelDetailApi";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
 interface ParcelInfoCardProps {
   data: ParcelDetail;
