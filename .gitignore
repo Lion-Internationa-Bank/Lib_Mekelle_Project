@@ -1,0 +1,86 @@
+# Logs and temporary files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+*.local
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Environment variables (never commit secrets!)
+.env
+.env.local
+.env.development
+.env.production
+.env.*
+!.env.example
+
+# Editor/IDE files
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Vite cache (frontend)
+.vite/
+
+# ESLint / Stylelint cache
+.eslintcache
+.stylelintcache
+
+# Test coverage
+coverage/
+*.lcov
+
+# Prisma generated client — ONLY ignore the generated folder
+# Adjust path if your output is different
+backend/src/generated/
+backend/generated/
+backend/prisma/generated/
+backend/prisma/client/
+
+# Local Prisma dev DB (if using SQLite for dev)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Database dumps
+*.sql
+*.dump
+*.bak
+pg_dump_*
+
+# Archives and temp files
+*.tgz
+*.gz
+*.zip
+*.rar
+*.tmp
+*.temp
+
+# OS-specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
