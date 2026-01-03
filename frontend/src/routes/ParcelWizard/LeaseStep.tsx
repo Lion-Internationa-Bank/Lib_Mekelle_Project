@@ -76,17 +76,6 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
       </p>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* UPIN - Auto-filled, read-only */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">UPIN (Auto-filled)</label>
-          <input
-            type="text"
-            value={upin}
-            readOnly
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 font-mono"
-          />
-        </div>
-
         {/* Row 1 */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Price per m² (ETB) *</label>

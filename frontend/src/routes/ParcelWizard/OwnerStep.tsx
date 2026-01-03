@@ -151,16 +151,6 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
           <p className="text-xs text-gray-500 mt-1">e.g. 1.0 = full ownership, 0.5 = 50%</p>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">UPIN (Auto-filled)</label>
-          <input
-            type="text"
-            value={upin}
-            readOnly
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 font-mono"
-          />
-        </div>
-
         {error && (
           <div className="md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
             {error}

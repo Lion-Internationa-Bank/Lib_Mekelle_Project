@@ -86,7 +86,6 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
           onSuccess={onReload}
         />
       )}
-
       {transferFrom && (
         <TransferOwnershipModal
           fromOwner={{
@@ -100,70 +99,73 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
         />
       )}
 
-      {/* === WIZARD STEP 2: Upload Transfer Documents === */}
-      {showUploadStep && latestTransferHistoryId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Transfer Complete ✓
-                  </h2>
-                  <p className="text-gray-600">
-                    Upload supporting documents for parcel{" "}
-                    <span className="font-mono font-bold text-blue-600">{parcel.upin}</span>{" "}
-                    <span className="text-gray-500">({parcel.sub_city})</span>
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="inline-block px-4 py-2 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-full">
-                    Step 2 of 2
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Upload Zone */}
-            <div className="p-8">
-              {/* Reusing GenericDocsUpload but with custom UI */}
-              <GenericDocsUpload
-                title="" // We hide its default title
-                upin={parcel.upin}
-                subCity={parcel.sub_city}
-                historyId={latestTransferHistoryId}
-                allowedDocTypes={[
-                  { value: "TRANSFER_CONTRACT", label: "Transfer Contract / Agreement" },
-                  { value: "ID_COPY", label: "ID Copies (Buyer & Seller)" },
-                  { value: "PAYMENT_PROOF", label: "Payment Receipt" },
-                  { value: "POWER_OF_ATTORNEY", label: "Power of Attorney (if applicable)" },
-                  { value: "OTHER", label: "Other Supporting Document" },
-                ]}
-                onUploaded={handleUploadComplete}
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
-              <button
-                onClick={handleSkipUpload}
-                className="text-sm text-gray-600 hover:text-gray-900 underline transition"
-              >
-                Skip for now
-              </button>
-
-              <button
-                onClick={handleUploadComplete}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-              >
-                Done – Close
-                <span className="text-lg">→</span>
-              </button>
-            </div>
+{showUploadStep && latestTransferHistoryId && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      {/* Header */}
+      <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Transfer Complete ✓
+            </h2>
+            <p className="text-gray-600">
+              Upload supporting documents for parcel{" "}
+              <span className="font-mono font-bold text-blue-600">{parcel.upin}</span>{" "}
+              <span className="text-gray-500">({parcel.sub_city})</span>
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="inline-block px-4 py-2 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-full">
+              Step 2 of 2
+            </span>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Upload Zone */}
+      <div className="p-8">
+        <GenericDocsUpload
+          title="Land transfer supporting docs"
+          upin={parcel.upin}
+          subCity={parcel.sub_city}
+          historyId={latestTransferHistoryId}
+          hideTitle={true} // We'll add this prop below to hide internal title
+          allowedDocTypes={[
+            { value: "TRANSFER_CONTRACT", label: "Transfer Contract / Agreement" },
+            { value: "ID_COPY", label: "ID Copies (Buyer & Seller)" },
+            { value: "PAYMENT_PROOF", label: "Payment Receipt" },
+            { value: "POWER_OF_ATTORNEY", label: "Power of Attorney (if applicable)" },
+            { value: "OTHER", label: "Other Supporting Document" },
+          ]}
+          onUploadSuccess={() => {
+            // Optional: refresh parcel data after each upload
+            // queryClient.invalidateQueries(['parcel', parcel.upin]);
+          }}
+          // Remove onAllUploaded — we control "done" manually
+        />
+      </div>
+
+      {/* Footer */}
+      <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+        <button
+          onClick={handleSkipUpload}
+          className="text-sm text-gray-600 hover:text-gray-900 underline transition"
+        >
+          Skip for now
+        </button>
+
+        <button
+          onClick={handleUploadComplete}
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+        >
+          Done – Close
+          <span className="text-lg">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 };

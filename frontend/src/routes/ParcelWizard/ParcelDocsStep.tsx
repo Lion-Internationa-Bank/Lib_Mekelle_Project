@@ -12,7 +12,7 @@ interface Document {
 
 const documentTypes = [
   { value: "SITE_MAP", label: "Site Map" },
-  { value: "OWNER_ID_COPY", label: "Owner ID Copy" },
+
 ];
 
 const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {

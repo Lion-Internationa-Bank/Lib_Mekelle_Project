@@ -22,7 +22,7 @@ interface OwnerDocItem {
 
 const ownerDocumentTypes = [
   { value: "OWNER_ID_COPY", label: "Owner ID Copy" },
-  { value: "LEASE_CONTRACT", label: "Lease Contract" },
+
 ];
 
 const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {

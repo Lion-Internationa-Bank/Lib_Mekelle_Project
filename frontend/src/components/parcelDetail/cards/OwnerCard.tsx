@@ -1,6 +1,6 @@
 // src/components/parcelDetail/OwnerCard.tsx
 import { useState } from "react";
-import type { ParcelDetail } from "../../services/parcelDetailApi";
+import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 
 interface OwnerCardProps {
@@ -59,7 +59,7 @@ const OwnerCard = ({
           <>
             {/* Backdrop to close menu when clicking outside */}
             <div
-              className="fixed inset-0 z-20"
+              className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden"
               onClick={() => setMenuOpen(false)}
             />
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-30 overflow-hidden">
@@ -140,7 +140,7 @@ const OwnerCard = ({
             <div className="bg-gray-50 rounded-xl p-4 min-h-[120px]">
               <DocumentList
                 documents={owner.documents || []}
-                emptyMessage="No documents uploaded for this owner"
+                // emptyMessage="No documents uploaded for this owner"
               />
             </div>
           </div>

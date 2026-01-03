@@ -16,7 +16,7 @@ interface LeaseDocItem {
 
 const leaseDocumentTypes = [
   { value: "LEASE_CONTRACT", label: "Lease Contract" },
-  { value: "SITE_MAP", label: "Site Map" },
+
 ];
 
 const LeaseDocsStep = ({ prevStep, onFinish }: FinishStepProps) => {
