@@ -10,7 +10,7 @@ type Props = {
   encumbrance?: Encumbrance | null;
   open: boolean;
   onClose: () => void;
-  onSuccess: () => Promise<void>;
+onSuccess: (encumbranceId?: string) => Promise<void>;
 };
 
 const EncumbranceModal = ({ upin, encumbrance, open, onClose, onSuccess }: Props) => {
@@ -38,30 +38,43 @@ const EncumbranceModal = ({ upin, encumbrance, open, onClose, onSuccess }: Props
     }
   }, [open, isEdit, encumbrance]);
 
-  const handleSubmit = async () => {
-    if (!form.type || !form.issuing_entity) {
-      alert("Type and issuing entity are required");
-      return;
+const handleSubmit = async () => {
+  if (!form.type || !form.issuing_entity) {
+    alert("Type and issuing entity are required");
+    return;
+  }
+
+  try {
+    let createdId: string | undefined;
+
+    if (isEdit) {
+      await updateEncumbranceApi(encumbrance!.encumbrance_id, form);
+      // For edit, we don't need to trigger upload flow
+      await onSuccess(); // call with no argument
+    } else {
+      const result = await createEncumbranceApi({
+        upin,
+        type: form.type,
+        issuing_entity: form.issuing_entity,
+        reference_number: form.reference_number || undefined,
+        registration_date: form.registration_date || undefined,
+      });
+      // Adjust based on your actual API response shape
+      createdId = result.data.encumbrance_id || result.id ;
+ console.log("createdID",createdId)
+      if (createdId) {
+        await onSuccess(createdId);
+      } else {
+        console.warn("No encumbrance_id returned from create API");
+        await onSuccess();
+      }
     }
 
-    try {
-      if (isEdit) {
-        await updateEncumbranceApi(encumbrance!.encumbrance_id, form);
-      } else {
-        await createEncumbranceApi({
-          upin,
-          type: form.type,
-          issuing_entity: form.issuing_entity,
-          reference_number: form.reference_number || undefined,
-          registration_date: form.registration_date || undefined,
-        });
-      }
-      await onSuccess();
-      onClose();
-    } catch (err: any) {
-      alert(err.message || "Operation failed");
-    }
-  };
+    onClose();
+  } catch (err: any) {
+    alert(err.message || "Operation failed");
+  }
+}; 
 
   if (!open) return null;
 

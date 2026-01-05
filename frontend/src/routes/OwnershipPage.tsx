@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -11,6 +11,7 @@ import {
   updateOwnerApi,
   deleteOwnerApi,
 } from "../services/ownersApi";
+import GenericDocsUpload from "../components/GenericDocsUpload";
 
 const OwnershipPage = () => {
   const { user } = useAuth();
@@ -25,8 +26,7 @@ const OwnershipPage = () => {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // hover state for detail card
-  const [hoverOwnerId, setHoverOwnerId] = useState<string | null>(null);
+const [expandedOwnerId, setExpandedOwnerId] = useState<string | null>(null);
 
   // modals
   const [showCreate, setShowCreate] = useState(false);
@@ -45,8 +45,14 @@ const OwnershipPage = () => {
     phone_number: "",
   });
 
-  const [deletingOwner, setDeletingOwner] = useState<OwnerWithParcels | null>(null);
+  const [deletingOwner, setDeletingOwner] = useState<OwnerWithParcels | null>(
+    null
+  );
   const [saving, setSaving] = useState(false);
+
+  // owner docs after create
+  const [showOwnerUploadStep, setShowOwnerUploadStep] = useState(false);
+  const [latestOwnerId, setLatestOwnerId] = useState<string | null>(null);
 
   const loadOwners = useCallback(
     async (pageArg: number, searchArg: string) => {
@@ -108,14 +114,26 @@ const OwnershipPage = () => {
     }
     try {
       setSaving(true);
-      await createOwnerOnly({
+      const result = await createOwnerOnly({
         full_name: createForm.full_name,
         national_id: createForm.national_id,
         tin_number: createForm.tin_number || undefined,
         phone_number: createForm.phone_number || undefined,
       });
+
+      const newOwnerId = result.data?.owner_id;
+      if (!newOwnerId) {
+        console.warn("No owner_id returned after creation", result);
+      }
+
+      setLatestOwnerId(newOwnerId || "");
       setShowCreate(false);
       resetCreateForm();
+
+      if (newOwnerId) {
+        setShowOwnerUploadStep(true);
+      }
+
       await loadOwners(page, search);
     } catch (err: any) {
       alert(err.message || "Failed to create owner");
@@ -160,8 +178,9 @@ const OwnershipPage = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    // search state already bound to input
   };
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -226,7 +245,7 @@ const OwnershipPage = () => {
             </form>
 
             {/* Table / list */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-visible">
               {loading && (
                 <div className="p-16 text-center">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-6"></div>
@@ -284,25 +303,29 @@ const OwnershipPage = () => {
 
                   {/* rows */}
                   <div className="divide-y divide-gray-200/70">
-                    {owners.map((owner) => (
-                      <OwnerRow
-                        key={owner.owner_id}
-                        owner={owner}
-                        isHovered={hoverOwnerId === owner.owner_id}
-                        onHover={() => setHoverOwnerId(owner.owner_id)}
-                        onLeave={() => setHoverOwnerId((id) => (id === owner.owner_id ? null : id))}
-                        onEdit={() => setEditingOwner(owner)}
-                        onDelete={() => setDeletingOwner(owner)}
-                      />
-                    ))}
-                  </div>
+  {owners.map((owner) => (
+    <OwnerRow
+      key={owner.owner_id}
+      owner={owner}
+      isExpanded={expandedOwnerId === owner.owner_id}
+      onToggle={() =>
+        setExpandedOwnerId((current) =>
+          current === owner.owner_id ? null : owner.owner_id
+        )
+      }
+      onEdit={() => setEditingOwner(owner)}
+      onDelete={() => setDeletingOwner(owner)}
+    />
+  ))}
+</div>
+
                 </div>
               )}
             </div>
 
             {/* Pagination */}
             {pagination && owners.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm rounded-2xl p-4">
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm rounded-2xl p-4">
                 <div className="text-sm text-gray-600 mb-4 sm:mb-0">
                   Page{" "}
                   <span className="font-semibold text-gray-900">
@@ -340,6 +363,8 @@ const OwnershipPage = () => {
         </main>
       </div>
 
+     
+
       {/* Create owner modal */}
       {showCreate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
@@ -357,7 +382,9 @@ const OwnershipPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-gray-700 mb-1">National ID *</label>
+                <label className="block text-gray-700 mb-1">
+                  National ID *
+                </label>
                 <input
                   className="w-full border rounded-lg px-3 py-2"
                   value={createForm.national_id}
@@ -403,6 +430,76 @@ const OwnershipPage = () => {
                 className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Owner Document Upload Modal After Creation */}
+      {showOwnerUploadStep && latestOwnerId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Owner Created ✓
+                  </h2>
+                  <p className="text-gray-600">
+                    Upload supporting documents for the new owner
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block px-4 py-2 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-full">
+                    Optional Step
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Zone */}
+            <div className="p-8">
+              <GenericDocsUpload
+                title="Owner supporting documents"
+                upin=""
+                subCity=""
+                ownerId={latestOwnerId}
+                hideTitle={true}
+                allowedDocTypes={[
+                  { value: "ID_COPY", label: "National ID Copy" },
+                  { value: "PASSPORT_PHOTO", label: "Passport-size Photo" },
+                  { value: "TIN_CERT", label: "TIN Certificate" },
+                  { value: "POWER_OF_ATTORNEY", label: "Power of Attorney" },
+                  { value: "OTHER", label: "Other Document" },
+                ]}
+                onUploadSuccess={() => loadOwners(page, search)}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+              <button
+                onClick={() => {
+                  setShowOwnerUploadStep(false);
+                  setLatestOwnerId(null);
+                }}
+                className="text-sm text-gray-600 hover:text-gray-900 underline transition"
+              >
+                Skip for now
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowOwnerUploadStep(false);
+                  setLatestOwnerId(null);
+                  loadOwners(page, search);
+                }}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              >
+                Done – Close
+                <span className="text-lg">→</span>
               </button>
             </div>
           </div>
@@ -509,37 +606,105 @@ const OwnershipPage = () => {
   );
 };
 
+
+
 interface OwnerRowProps {
   owner: OwnerWithParcels;
-  isHovered: boolean;
-  onHover: () => void;
-  onLeave: () => void;
+  isExpanded: boolean;
+  onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 const OwnerRow = ({
   owner,
-  isHovered,
-  onHover,
-  onLeave,
+  isExpanded,
+  onToggle,
   onEdit,
   onDelete,
 }: OwnerRowProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuFlipUp, setMenuFlipUp] = useState(false);
+
+  const rowRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
   const parcelCount = owner.parcels.length;
-  const latestParcel = owner.parcels[0];
+
+  // Decide menu placement when opening
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const willOpen = !menuOpen;
+
+    if (willOpen && rowRef.current) {
+      const rect = rowRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 160; // approx menu height
+      setMenuFlipUp(spaceBelow < menuHeight + 16);
+    }
+
+    setMenuOpen(willOpen);
+  };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
 
   return (
-    <div
-      className="relative group"
-      onMouseEnter={onHover}
-      onMouseLeave={() => {
-        onLeave();
-        setMenuOpen(false);
-      }}
-    >
-      <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-4 text-sm hover:bg-gray-50/60 transition-colors">
+    <div className="border-b border-gray-200/70">
+      {/* Main row */}
+      <div
+        ref={rowRef}
+        className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-sm items-center cursor-pointer hover:bg-gray-50/80 transition-colors"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+      >
+        {/* Chevron */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          className="flex items-center justify-center w-6 h-6 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition-transform"
+        >
+          <svg
+            className={`w-3 h-3 transform transition-transform ${
+              isExpanded ? "rotate-90" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+
         <div className="font-semibold text-gray-900 truncate">
           {owner.full_name}
         </div>
@@ -557,13 +722,13 @@ const OwnerRow = ({
             ? "No parcels"
             : `${parcelCount} parcel${parcelCount > 1 ? "s" : ""}`}
         </div>
+
+        {/* Actions */}
         <div className="flex justify-end">
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((v) => !v);
-              }}
+              ref={menuButtonRef}
+              onClick={handleMenuToggle}
               className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <svg
@@ -581,16 +746,29 @@ const OwnerRow = ({
               </svg>
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-20">
+              <div
+                className={`
+                  absolute right-0 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50
+                  ${menuFlipUp ? "bottom-full mb-2" : "top-full mt-2"}
+                `}
+              >
                 <button
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-                  onClick={onEdit}
+                  className="w-full text-left px-5 py-3 text-sm hover:bg-gray-100 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onEdit();
+                  }}
                 >
                   Edit owner
                 </button>
                 <button
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  onClick={onDelete}
+                  className="w-full text-left px-5 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onDelete();
+                  }}
                 >
                   Delete owner
                 </button>
@@ -600,44 +778,220 @@ const OwnerRow = ({
         </div>
       </div>
 
-      {/* Hover detail card */}
-      {isHovered && owner.parcels.length > 0 && latestParcel && (
-        <div className="absolute left-4 right-4 md:left-auto md:right-4 top-full mt-1 z-10">
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-4 text-xs">
-            <div className="flex justify-between items-center mb-2">
-              <div className="font-semibold text-gray-900">
-                Latest Parcel: {latestParcel.parcel.upin}
-              </div>
-              <div className="text-gray-500">
-                {new Date(latestParcel.acquired_at).toLocaleDateString()}
-              </div>
+      {/* Details panel (unchanged) */}
+      {isExpanded && (
+        <div className="px-4 pb-4 bg-gray-50/60">
+          {parcelCount === 0 ? (
+            <div className="border border-dashed border-gray-300 rounded-xl p-4 text-xs text-gray-600 text-center">
+              No parcels registered for this owner.
             </div>
-            <div className="grid grid-cols-2 gap-2 text-gray-700">
-              <div>
-                <div className="font-medium">Sub City</div>
-                <div>{latestParcel.parcel.sub_city}</div>
-              </div>
-              <div>
-                <div className="font-medium">Ketena</div>
-                <div>{latestParcel.parcel.ketena}</div>
-              </div>
-              <div>
-                <div className="font-medium">Area (m²)</div>
-                <div>
-                  {Number(latestParcel.parcel.total_area_m2).toLocaleString()}
-                </div>
-              </div>
-              <div>
-                <div className="font-medium">Land Use</div>
-                <div>{latestParcel.parcel.land_use}</div>
-              </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+              {owner.parcels.map((ownership, index) => {
+                const parcel = ownership.parcel;
+                return (
+                  <div
+                    key={parcel.upin || index}
+                    className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-xs"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="font-semibold text-gray-900">
+                        UPIN: {parcel.upin}
+                      </div>
+                      <div className="text-gray-500">
+                        {new Date(
+                          ownership.acquired_at
+                        ).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-gray-700">
+                      <div>
+                        <div className="font-medium text-gray-600">
+                          Sub City
+                        </div>
+                        <div>{parcel.sub_city || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-600">
+                          Ketena
+                        </div>
+                        <div>{parcel.ketena || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-600">
+                          Area (m²)
+                        </div>
+                        <div>
+                          {Number(
+                            parcel.total_area_m2
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-600">
+                          Land Use
+                        </div>
+                        <div>{parcel.land_use || "-"}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-gray-200">
+                      <span className="font-medium text-gray-700">
+                        Ownership Share:
+                      </span>{" "}
+                      <span className="font-bold text-indigo-600">
+                        {(Number(ownership.share_ratio) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="mt-3 text-gray-600">
-              Share: {Number(latestParcel.share_ratio) * 100}%
-            </div>
-          </div>
+          )}
         </div>
       )}
+    </div>
+  );
+};
+
+
+
+
+interface OwnerHoverCardContainerProps {
+  owner: OwnerWithParcels;
+  onClose: () => void;
+  onEnterCard: () => void;
+  onLeaveCard: () => void;
+}
+
+const OwnerHoverCardContainer = ({
+  owner,
+  onClose,
+  onEnterCard,
+  onLeaveCard,
+}: OwnerHoverCardContainerProps) => {
+  const [cardPos, setCardPos] = useState<{ top: number; left: number } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const el = document.querySelector<HTMLDivElement>(
+      `[data-owner-row="${owner.owner_id}"]`
+    );
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const cardHeight = 420;
+
+    let top = rect.bottom + 8;
+    if (vh - rect.bottom < cardHeight + 16) {
+      top = rect.top - cardHeight - 8;
+    }
+    const left = Math.min(rect.left, window.innerWidth - 360);
+    setCardPos({ top, left });
+  }, [owner.owner_id]);
+
+  useEffect(() => {
+    const handler = () => onClose();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [onClose]);
+
+  if (!cardPos) return null;
+
+  const parcelCount = owner.parcels.length;
+
+  if (parcelCount === 0) {
+    return (
+      <div
+        className="fixed z-[120]"
+        style={{ top: cardPos.top, left: cardPos.left, width: 360 }}
+        onMouseEnter={onEnterCard}
+        onMouseLeave={onLeaveCard}
+      >
+        <div className="bg-white border border-gray-300 rounded-2xl shadow-2xl p-6 text-center text-gray-600 font-medium">
+          No parcels registered for this owner
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed z-[120]"
+      style={{ top: cardPos.top, left: cardPos.left, width: 360 }}
+      onMouseEnter={onEnterCard}
+      onMouseLeave={onLeaveCard}
+    >
+      <div className="bg-white border border-gray-300 rounded-2xl shadow-2xl p-6 text-xs max-h-96 overflow-y-auto">
+        <div className="font-bold text-gray-900 mb-5 text-base">
+          All Parcels ({parcelCount})
+        </div>
+        <div className="flex flex-col gap-4">
+          {owner.parcels.map((ownership, index) => {
+            const parcel = ownership.parcel;
+            return (
+              <div
+                key={parcel.upin || index}
+                className="flex-none w-full bg-gray-50/80 border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="font-bold text-gray-900 text-sm">
+                    UPIN: {parcel.upin}
+                  </div>
+                  <div className="text-gray-500 text-xs">
+                    {new Date(ownership.acquired_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="space-y-3 text-gray-700">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="font-medium text-gray-600">Sub City</div>
+                      <div className="truncate font-medium">
+                        {parcel.sub_city || "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-600">Ketena</div>
+                      <div className="truncate font-medium">
+                        {parcel.ketena || "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-600">Area (m²)</div>
+                      <div className="font-semibold">
+                        {Number(parcel.total_area_m2).toLocaleString()}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-600">Land Use</div>
+                      <div className="truncate font-medium">
+                        {parcel.land_use || "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-300">
+                    <span className="font-medium text-gray-700">
+                      Ownership Share:
+                    </span>{" "}
+                    <span className="font-bold text-indigo-600 text-lg">
+                      {(Number(ownership.share_ratio) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {owner.parcels.length > 6 && (
+          <div className="mt-5 text-center text-xs text-gray-500 italic">
+            Scroll to view all parcels
+          </div>
+        )}
+      </div>
     </div>
   );
 };

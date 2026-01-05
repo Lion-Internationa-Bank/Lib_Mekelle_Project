@@ -3,7 +3,7 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 
 interface EncumbranceCardProps {
-  encumbrance?: ParcelDetail["encumbrances"][number]; // optional for "add new"
+  encumbrance?: ParcelDetail["encumbrances"][number]; 
   onEdit?: () => void;
   onAddNew?: () => void; // new prop for adding
   isNew?: boolean; // flag to indicate this is the "add new" placeholder
