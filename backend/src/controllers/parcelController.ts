@@ -95,17 +95,19 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
     const page = parseInt(req.query.page || '1');
     const limit = parseInt(req.query.limit || '10');
     const skip = (page - 1) * limit;
-    
+
     const { search, sub_city, tenure_type, ketena, land_use } = req.query;
 
     const where: any = {
       is_deleted: false,
-      OR: search ? [
-        { upin: { contains: search, mode: 'insensitive' } },
-        { file_number: { contains: search, mode: 'insensitive' } },
-        { sub_city: { contains: search, mode: 'insensitive' } },
-        { ketena: { contains: search, mode: 'insensitive' } },
-      ] : undefined,
+      OR: search
+        ? [
+            { upin: { contains: search, mode: 'insensitive' } },
+            { file_number: { contains: search, mode: 'insensitive' } },
+            { sub_city: { contains: search, mode: 'insensitive' } },
+            { ketena: { contains: search, mode: 'insensitive' } },
+          ]
+        : undefined,
       ...(sub_city && { sub_city }),
       ...(ketena && { ketena }),
       ...(tenure_type && { tenure_type }),
@@ -118,7 +120,7 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
         skip,
         take: limit,
         include: {
-          // Fetch only active owners
+          // Active owners with names
           owners: {
             where: { is_active: true, is_deleted: false },
             include: {
@@ -127,14 +129,17 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
               },
             },
           },
-          // Efficiently count active encumbrances to determine status
+          // Count only ACTIVE encumbrances
           _count: {
             select: {
               encumbrances: {
-                where: { is_deleted: false } 
-              }
-            }
-          }
+                where: {
+                  is_deleted: false,
+                  status: 'ACTIVE', // ← Only count ACTIVE ones
+                },
+              },
+            },
+          },
         },
         orderBy: { created_at: 'desc' },
       }),
@@ -146,7 +151,7 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
     return res.status(200).json({
       success: true,
       data: {
-        parcels: parcels.map(parcel => ({
+        parcels: parcels.map((parcel) => ({
           upin: parcel.upin,
           file_number: parcel.file_number,
           sub_city: parcel.sub_city,
@@ -154,9 +159,9 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
           total_area_m2: parcel.total_area_m2,
           land_use: parcel.land_use,
           tenure_type: parcel.tenure_type,
-          // Encumbrance Status: "Encumbered" if count > 0, else "Clear"
+          // Correct status: Encumbered only if there's at least one ACTIVE encumbrance
           encumbrance_status: parcel._count.encumbrances > 0 ? 'Encumbered' : 'Clear',
-          owners: parcel.owners.map(po => po.owner.full_name).join(', '),
+          owners: parcel.owners.map((po) => po.owner.full_name).join(', '),
         })),
         pagination: {
           page,

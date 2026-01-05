@@ -111,9 +111,13 @@ const ParcelStep = ({ nextStep, onCreated }: ParcelStepProps) => {
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Select Sub City</option>
-            <option>Adi Haki</option>
-            <option>Kijite Kasaba</option>
-            <option>Lahaya</option>
+            <option>Ayder</option>
+            <option>Hawelti</option>
+            <option>Adi Haqi</option>
+            <option>Hadnet</option>
+             <option>Kedamay Weyane</option>
+              <option>Kwiha</option>
+               <option>Semien Mekelle</option>
           </select>
         </div>
 
@@ -185,18 +189,17 @@ const ParcelStep = ({ nextStep, onCreated }: ParcelStepProps) => {
         {/* Row 5 */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Land Grade *</label>
-          <select
-            required
-            value={formData.land_grade}
-            onChange={(e) => setFormData({ ...formData, land_grade: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Select Grade</option>
-            <option>Grade 1</option>
-            <option>Grade 2</option>
-            <option>Grade 3</option>
-            <option>Grade 4</option>
-          </select>
+          <input
+  required
+  type="number"
+  step="0.01" // Allows up to 2 decimal places
+  min="1.0"     // Prevents negative grades if applicable
+  placeholder="(e.g. 1.0)"
+  value={formData.land_grade}
+  onChange={(e) => setFormData({ ...formData, land_grade: e.target.value })}
+  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+/>
+
         </div>
 
         <div>
@@ -214,7 +217,7 @@ const ParcelStep = ({ nextStep, onCreated }: ParcelStepProps) => {
         </div>
 
         {/* Geometry Data - User Friendly */}
-        <div className="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+        {/* <div className="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-3">
             <label className="text-lg font-semibold text-gray-800">
               Parcel Boundary (Optional)
@@ -269,7 +272,7 @@ const ParcelStep = ({ nextStep, onCreated }: ParcelStepProps) => {
               {" → draw your parcel → copy the GeoJSON → paste above."}
             </span>
           </div>
-        </div>
+        </div> */}
 
         {/* Error */}
         {error && (

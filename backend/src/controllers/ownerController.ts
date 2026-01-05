@@ -210,6 +210,7 @@ export const deleteOwner = async (req: Request<{ owner_id: string }>, res: Respo
     const activeOwnership = await prisma.parcel_owners.count({
       where: { owner_id, is_active: true },
     });
+    console.log("activeOwnership",activeOwnership)
 
     if (activeOwnership > 0) {
       return res.status(400).json({
@@ -220,7 +221,9 @@ export const deleteOwner = async (req: Request<{ owner_id: string }>, res: Respo
 
     await prisma.owners.update({
       where: { owner_id },
-      data: { updated_at: new Date() }, // Soft delete
+      data: { deleted_at: new Date(),
+             is_deleted:true,
+       }, // Soft delete
     });
 
     return res.status(200).json({
