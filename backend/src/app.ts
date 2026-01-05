@@ -23,9 +23,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api/v1', routes);
 
-// app.use('/*splat', (req: Request, res: Response) => {
-//   res.status(404).json({ success: false, message: 'Route not found' });
-// });
+app.use('/*splat', (req: Request, res: Response) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
 // app.use('*', (req: Request, res: Response) => {
 //   res.status(404).json({ success: false, message: 'Route not found' });
 // });

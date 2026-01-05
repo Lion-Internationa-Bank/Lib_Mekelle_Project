@@ -11,14 +11,14 @@ datasource db {
 
 model land_parcels {
   upin            String    @id @db.VarChar(50)
-  file_number     String?   @unique @db.VarChar(100)
+  file_number     String   @unique @db.VarChar(100)
   sub_city        String    @db.VarChar(100)
   tabia           String    @db.VarChar(100)
-  ketena          String?   @db.VarChar(50)
-  block           String?   @db.VarChar(50)
+  ketena          String   @db.VarChar(50)
+  block           String  @db.VarChar(50)
   total_area_m2   Decimal   @db.Decimal(12, 2)
   land_use        String
-  land_grade      String?   @db.VarChar(10)
+  land_grade      Decimal  @db.Decimal(10, 2)
   tenure_type     TenureType @default(OLD_POSSESSION)
   geometry_data   Json?
   created_at      DateTime  @default(now())
@@ -44,7 +44,7 @@ model owners {
   full_name    String
   national_id  String    @unique @db.VarChar(50)
   tin_number   String?   @unique @db.VarChar(50)
-  phone_number String?
+  phone_number String
   created_at   DateTime? @default(now())
   updated_at   DateTime? @updatedAt
   deleted_at   DateTime?
@@ -52,6 +52,8 @@ model owners {
 
   documents    documents[]
   parcels      parcel_owners[]
+  transferred_from ownership_history[] @relation("OwnershipHistoryFrom")
+  transferred_to   ownership_history[] @relation("OwnershipHistoryTo")
 }
 
 model parcel_owners {
@@ -79,7 +81,7 @@ model ownership_history {
   event_snapshot  Json
   transfer_type   TransferType
   transfer_date   DateTime  @default(now())
-  created_at      DateTime? @default(now())
+  created_at      DateTime @default(now())
   updated_at      DateTime? @updatedAt
   from_owner_id   String?   @db.Uuid
   reference_no    String?   @unique
@@ -89,7 +91,10 @@ model ownership_history {
   is_deleted      Boolean   @default(false)
 
   documents documents[]
+  from_owner      owners?      @relation("OwnershipHistoryFrom", fields: [from_owner_id], references: [owner_id])
+  to_owner        owners?      @relation("OwnershipHistoryTo", fields: [to_owner_id], references: [owner_id])
   parcel    land_parcels @relation(fields: [upin], references: [upin])
+  @@index([upin])
 }
 
 model lease_agreements {
@@ -101,7 +106,7 @@ model lease_agreements {
   expiry_date          DateTime  @db.Date
   annual_installment   Decimal   @db.Decimal(18, 2)
   contract_date        DateTime  @db.Date
-  created_at           DateTime? @default(now())
+  created_at           DateTime @default(now())
   down_payment_amount  Decimal   @db.Decimal(18, 2)
   lease_period_years   Int
   legal_framework      String
@@ -121,7 +126,7 @@ model building_details {
   usage_type  String
   total_area  Decimal   @db.Decimal(12, 2)
   floor_count Int       @default(0)
-  created_at  DateTime? @default(now())
+  created_at  DateTime @default(now())
   updated_at  DateTime? @updatedAt
   deleted_at  DateTime?
   is_deleted  Boolean   @default(false)
@@ -138,7 +143,7 @@ model billing_records {
   amount_paid     Decimal   @default(0) @db.Decimal(18, 2)
   penalty_amount  Decimal   @default(0) @db.Decimal(18, 2)
   payment_status  PaymentStatus @default(UNPAID)
-  created_at      DateTime? @default(now())
+  created_at      DateTime @default(now())
   updated_at      DateTime? @updatedAt
   deleted_at      DateTime?
   is_deleted      Boolean   @default(false)
@@ -157,7 +162,7 @@ model financial_transactions {
   receipt_serial_no String   @unique
   amount_paid      Decimal   @db.Decimal(18, 2)
   payment_date     DateTime  @default(now())
-  created_at       DateTime? @default(now())
+  created_at       DateTime @default(now())
   updated_at       DateTime? @updatedAt
   deleted_at       DateTime?
   is_deleted       Boolean   @default(false)
@@ -174,7 +179,7 @@ model encumbrances {
   reference_number  String?
   status            EncumbranceStatus @default(ACTIVE)
   registration_date DateTime  @default(now())
-  created_at        DateTime? @default(now())
+  created_at        DateTime @default(now())
   updated_at        DateTime? @updatedAt
   deleted_at        DateTime?
   is_deleted        Boolean   @default(false)
@@ -189,7 +194,7 @@ model tax_valuation_roll {
   taxable_value  Decimal   @db.Decimal(18, 2)
   appraisal_date DateTime  @default(now())
   expiry_date    DateTime
-  created_at     DateTime? @default(now())
+  created_at     DateTime @default(now())
   updated_at     DateTime? @updatedAt
   deleted_at     DateTime?
   is_deleted     Boolean   @default(false)
@@ -199,18 +204,18 @@ model tax_valuation_roll {
 
 model documents {
   doc_id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin             String    @db.VarChar(50)
+  upin             String?    @db.VarChar(50)
   owner_id         String?   @db.Uuid
+  lease_id         String?   @db.Uuid
+  history_id       String?   @db.Uuid
+  encumbrance_id   String?   @db.Uuid
   doc_type         DocType
   file_url         String
   file_name        String
   is_verified      Boolean   @default(false)
   upload_date      DateTime  @default(now())
-  created_at       DateTime? @default(now())
+  created_at       DateTime  @default(now())
   updated_at       DateTime? @updatedAt
-  lease_id         String?   @db.Uuid
-  history_id       String?   @db.Uuid
-  encumbrance_id   String?   @db.Uuid
   deleted_at       DateTime?
   is_deleted       Boolean   @default(false)
 
@@ -218,7 +223,7 @@ model documents {
   history     ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
   lease       lease_agreements?  @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
   owner       owners?            @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
-  parcel      land_parcels       @relation(fields: [upin], references: [upin], onDelete: Cascade)
+  parcel      land_parcels?       @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 
 enum TenureType {

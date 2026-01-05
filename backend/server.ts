@@ -15,7 +15,7 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('PostgreSQL connected successfully');
 
-    server.listen(PORT, () => {
+      server.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
   } catch (err) {

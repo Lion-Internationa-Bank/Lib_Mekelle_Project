@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:5000/api/v1";
+
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export type ParcelDocument = {
   doc_id: string;
@@ -38,6 +39,32 @@ export type LeaseAgreement = {
   legal_framework: string;
   documents: ParcelDocument[];
 };
+
+
+export type OwnershipHistoryEntry = {
+  history_id: string;
+  transfer_type: string; // e.g., "SALE", "GIFT", "HEREDITY"
+  transfer_date: string;
+  transfer_price: string | null; // string in API, can be null
+  reference_no: string | null;
+  from_owner_id: string | null; // can be null for initial allocation
+  
+  to_owner_id: string | null;
+  to_owner_name:string | null;
+  from_owner_name : string | null;
+  event_snapshot: {
+    timestamp: string;
+    final_total: number;
+    owners_before: Array<{
+      id: string;
+      name: string;
+      share: number;
+    }>;
+    previous_total: number;
+  };
+  documents: ParcelDocument[];
+};
+
 
 export type Encumbrance = {
   encumbrance_id: string;
@@ -95,6 +122,7 @@ export interface ParcelDetail {
   lease_agreement: LeaseAgreement | null;
   buildings: Building[];
   encumbrances: Encumbrance[];
+  history: OwnershipHistoryEntry[];
   documents: ParcelDocument[];
   billing_records: BillingRecord[];
   billing_summary: BillingSummary;

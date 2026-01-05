@@ -17,8 +17,10 @@ import BuildingsSection from "../components/parcelDetail/sections/BuildingsSecti
 import DangerZone from "../components/parcelDetail/DangerZone";
 import DocumentList from "../components/parcelDetail/DocumentList";
 import BillingSection from "../components/parcelDetail/sections/BillingSection";
+import TransferHistorySection from "../components/parcelDetail/sections/TransferHistorySection";
 
-type DetailTab = "parcel" | "lease" | "encumbrances" | "buildings" | "billing";
+
+type DetailTab = "parcel" | "lease" | "encumbrances" |"history" | "buildings" | "billing";
 
 const ParcelDetailPage = () => {
   const { user } = useAuth();
@@ -153,6 +155,15 @@ const ParcelDetailPage = () => {
               {tab === "encumbrances" && (
                 <EncumbrancesSection
                   encumbrances={data.encumbrances}
+                  upin={data.upin}
+                  onReload={reload}
+                />
+              )}
+            
+            {/* Transfer History Tab */}
+              {tab === "history" && (
+                <TransferHistorySection
+                  history={data.history}
                   upin={data.upin}
                   onReload={reload}
                 />

@@ -32,7 +32,6 @@ const ParcelTable = ({ parcels }: ParcelTableProps) => {
         <div>Tenure Type</div>
         <div>Status</div>
         <div className="hidden xl:block">Owner(s)</div>
-        <div className="text-right">Actions</div>
       </div>
 
       {/* Table Body */}
@@ -53,18 +52,11 @@ const ParcelTable = ({ parcels }: ParcelTableProps) => {
 
 // Internal ParcelRow component (kept inside the same file)
 const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleRowClick = () => {
     navigate(`/parcels/${encodeURIComponent(parcel.upin)}`);
   }
-
-  const actions = [
-    { label: "Add/Remove Encumbrance", icon: "🔒" },
-    { label: "Transfer Ownership", icon: "🔄" },
-    { label: "Delete Parcel", icon: "🗑️", danger: true },
-  ];
 
   return (
     <div className="group grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-sm hover:bg-gray-50/70 transition-colors cursor-pointer "onClick={handleRowClick}>
@@ -108,53 +100,6 @@ const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
         title={parcel.owners}
       >
         {parcel.owners}
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
-            aria-label="Actions menu"
-          >
-            <svg
-              className="w-4 h-4 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-              />
-            </svg>
-          </button>
-
-          {menuOpen && (
-            <div
-              className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50"
-              onClick={() => setMenuOpen(false)}
-            >
-              {actions.map((action) => (
-                <button
-                  key={action.label}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-gray-100 ${
-                    action.danger ? "text-red-600 hover:bg-red-50" : "text-gray-700"
-                  }`}
-                  onClick={() => {
-                    console.log(`${action.label} for ${parcel.upin}`);
-                  }}
-                >
-                  <span>{action.icon}</span>
-                  <span>{action.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Mobile-only: Extra details */}

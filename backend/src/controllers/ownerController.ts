@@ -236,8 +236,6 @@ export const deleteOwner = async (req: Request<{ owner_id: string }>, res: Respo
   }
 };
 
-
-
 export const getOwnersWithParcels = async (req: Request, res: Response) => {
   try {
     // Pagination
@@ -335,10 +333,6 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-
-
 
 export const searchOwnersLite = async (req: Request, res: Response) => {
   try {
