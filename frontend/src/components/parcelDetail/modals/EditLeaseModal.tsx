@@ -1,6 +1,14 @@
 // src/modals/EditLeaseModal.tsx
 import { useEffect, useState } from "react";
-import  { type ParcelDetail ,updateLeaseApi} from "../../../services/parcelDetailApi";
+import {
+  type ParcelDetail,
+  updateLeaseApi,
+} from "../../../services/parcelDetailApi";
+import {
+  EditLeaseFormSchema,
+  type EditLeaseFormData,
+} from "../../../validation/schemas";
+import { z } from "zod";
 
 type Lease = NonNullable<ParcelDetail["lease_agreement"]>;
 
@@ -13,6 +21,7 @@ type Props = {
 
 const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && lease) {
@@ -24,31 +33,41 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
         price_per_m2: lease.price_per_m2?.toString() || "",
         lease_period_years: lease.lease_period_years?.toString() || "",
         payment_term_years: lease.payment_term_years?.toString() || "",
+        contract_date: lease.contract_date?.slice(0, 10) || "",
         start_date: lease.start_date?.slice(0, 10) || "",
         expiry_date: lease.expiry_date?.slice(0, 10) || "",
         legal_framework: lease.legal_framework || "",
       });
+      setError(null);
     }
   }, [open, lease]);
 
   const handleSave = async () => {
     try {
-      const formatted = {
-        ...form,
-        annual_lease_fee: form.annual_lease_fee ? Number(form.annual_lease_fee) : undefined,
-        total_lease_amount: form.total_lease_amount ? Number(form.total_lease_amount) : undefined,
-        down_payment_amount: form.down_payment_amount ? Number(form.down_payment_amount) : undefined,
-        annual_installment: form.annual_installment ? Number(form.annual_installment) : undefined,
-        price_per_m2: form.price_per_m2 ? Number(form.price_per_m2) : undefined,
-        lease_period_years: form.lease_period_years ? Number(form.lease_period_years) : undefined,
-        payment_term_years: form.payment_term_years ? Number(form.payment_term_years) : undefined,
-      };
+      setError(null);
+      const parsed = EditLeaseFormSchema.parse({
+        annual_lease_fee: form.annual_lease_fee,
+        total_lease_amount: form.total_lease_amount,
+        down_payment_amount: form.down_payment_amount,
+        annual_installment: form.annual_installment,
+        price_per_m2: form.price_per_m2,
+        lease_period_years: form.lease_period_years,
+        payment_term_years: form.payment_term_years,
+        contract_date: form.contract_date,
+        start_date: form.start_date,
+        expiry_date: form.expiry_date,
+        legal_framework: form.legal_framework || undefined,
+      }) as EditLeaseFormData;
 
-      await updateLeaseApi(lease.lease_id, formatted);
+      await updateLeaseApi(lease.lease_id, parsed);
       await onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.message || "Failed to update lease");
+      if (err instanceof z.ZodError) {
+        setError(err.issues[0]?.message || "Validation failed");
+      } else {
+        alert(err.message || "Failed to update lease");
+      }
     }
   };
 
@@ -57,7 +76,13 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full my-8">
-        <h2 className="text-2xl font-bold mb-6">Edit Lease Agreement</h2>
+        <h2 className="text-2xl font-bold mb-4">Edit Lease Agreement</h2>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.keys(form).map((key) => (
@@ -78,9 +103,13 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                     ? "number"
                     : "text"
                 }
-                step={key.includes("price") || key.includes("fee") ? "0.01" : undefined}
+                step={
+                  key.includes("price") || key.includes("fee") ? "0.01" : undefined
+                }
                 value={form[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, [key]: e.target.value }))
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>

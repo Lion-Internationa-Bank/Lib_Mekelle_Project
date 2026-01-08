@@ -2,14 +2,12 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-
 import ParcelStep from "./ParcelWizard/ParcelStep";
 import ParcelDocsStep from "./ParcelWizard/ParcelDocsStep";
 import OwnerStep from "./ParcelWizard/OwnerStep";
 import OwnerDocsStep from "./ParcelWizard/OwnerDocsStep";
 import LeaseStep from "./ParcelWizard/LeaseStep";
 import LeaseDocsStep from "./ParcelWizard/LeaseDocsStep";
-
 
 const STEPS = [
   "parcel",
@@ -27,9 +25,10 @@ const ParcelWizard = () => {
   const navigate = useNavigate();
 
   const currentStepParam = searchParams.get("step");
-  const validStep = currentStepParam && STEPS.includes(currentStepParam as Step)
-    ? (currentStepParam as Step)
-    : "parcel";
+  const validStep =
+    currentStepParam && STEPS.includes(currentStepParam as Step)
+      ? (currentStepParam as Step)
+      : "parcel";
 
   const [currentStep, setCurrentStep] = useState<Step>(validStep);
 
@@ -93,14 +92,25 @@ const ParcelWizard = () => {
 
   const stepLabel = (s: Step) => {
     switch (s) {
-      case "parcel": return "Parcel Info";
-      case "parcel-docs": return "Parcel Docs";
-      case "owner": return "Owner Info";
-      case "owner-docs": return "Owner Docs";
-      case "lease": return "Lease Info";
-      case "lease-docs": return "Lease Docs";
-      default: return s;
+      case "parcel":
+        return "Parcel Info";
+      case "parcel-docs":
+        return "Parcel Docs";
+      case "owner":
+        return "Owner Info";
+      case "owner-docs":
+        return "Owner Docs";
+      case "lease":
+        return "Lease Info";
+      case "lease-docs":
+        return "Lease Docs";
+      default:
+        return s;
     }
+  };
+
+  const goBackToDashboard = () => {
+    navigate("/home");
   };
 
   return (
@@ -109,7 +119,9 @@ const ParcelWizard = () => {
         {/* Progress */}
         <div className="mb-10">
           <div className="flex justify-between text-sm font-medium text-gray-500 mb-3">
-            <span>Step {stepIndex + 1} of {STEPS.length}</span>
+            <span>
+              Step {stepIndex + 1} of {STEPS.length}
+            </span>
             <span>{stepLabel(currentStep)}</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
@@ -126,7 +138,7 @@ const ParcelWizard = () => {
             const label = stepLabel(s);
             const isActive = currentStep === s;
             const isDone = stepIndex > i;
-            const hasRequiredData = 
+            const hasRequiredData =
               i <= 1 || // parcel & parcel-docs always accessible
               (i >= 2 && searchParams.has("upin")) || // owner+ needs upin
               false;
@@ -154,38 +166,49 @@ const ParcelWizard = () => {
 
         {/* Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 lg:p-10">
-  {currentStep === "parcel" && (
-    <ParcelStep nextStep={nextStep} onCreated={handleParcelCreated} />
-  )}
+          {currentStep === "parcel" && (
+            <ParcelStep nextStep={nextStep} onCreated={handleParcelCreated} />
+          )}
 
-  {currentStep === "parcel-docs" && (
-    <ParcelDocsStep nextStep={nextStep} prevStep={prevStep} />
-  )}
+          {currentStep === "parcel-docs" && (
+            <ParcelDocsStep nextStep={nextStep} prevStep={prevStep} />
+          )}
 
-  {currentStep === "owner" && (
-    <OwnerStep
-      nextStep={nextStep}
-      prevStep={prevStep}
-      onCreated={handleOwnerCreated}
-    />
-  )}
+          {currentStep === "owner" && (
+            <OwnerStep
+              nextStep={nextStep}
+              prevStep={prevStep}
+              onCreated={handleOwnerCreated}
+            />
+          )}
 
-  {currentStep === "owner-docs" && (
-    <OwnerDocsStep nextStep={nextStep} prevStep={prevStep} />
-  )}
+          {currentStep === "owner-docs" && (
+            <OwnerDocsStep nextStep={nextStep} prevStep={prevStep} />
+          )}
 
-  {currentStep === "lease" && (
-    <LeaseStep
-      nextStep={nextStep}
-      prevStep={prevStep}
-      onCreated={handleLeaseCreated}
-    />
-  )}
+          {currentStep === "lease" && (
+            <LeaseStep
+              nextStep={nextStep}
+              prevStep={prevStep}
+              onCreated={handleLeaseCreated}
+            />
+          )}
 
-  {currentStep === "lease-docs" && (
-    <LeaseDocsStep prevStep={prevStep} onFinish={finishWizard} />
-  )}
-</div>
+          {currentStep === "lease-docs" && (
+            <LeaseDocsStep prevStep={prevStep} onFinish={finishWizard} />
+          )}
+
+          {/* Back to Dashboard button */}
+          <div className="mt-8 flex justify-end">
+            <button
+              type="button"
+              onClick={goBackToDashboard}
+              className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

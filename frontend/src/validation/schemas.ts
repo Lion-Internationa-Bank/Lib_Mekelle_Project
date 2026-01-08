@@ -1,0 +1,601 @@
+// src/validation/schemas.ts
+import { z } from "zod";
+
+const UPIN_REGEX = /^[A-Za-z0-9\-_]+$/;
+
+export const ParcelFormSchema = z.object({
+  upin: z
+    .string()
+    .min(1, { message: "UPIN is required" })
+    .regex(UPIN_REGEX, {
+      message:
+        "UPIN can only contain letters, numbers, hyphens, and underscores",
+    })
+    .transform((val) => val.toUpperCase()),
+
+  file_number: z.string().min(1, { message: "File number is required" }),
+  sub_city: z.string().min(1, { message: "Please select a sub-city" }),
+  tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
+  ketena: z.string().min(1, { message: "Ketena is required" }),
+  block: z.string().min(1, { message: "Block is required" }),
+
+  total_area_m2: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return NaN;
+      const num = Number(val);
+      return isNaN(num) ? val : num;
+    },
+    z
+      .number()
+      .positive({ message: "Total area must be greater than 0" })
+  ),
+
+  land_use: z.string().min(1, { message: "Please select a land use type" }),
+
+  land_grade: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return NaN;
+      const num = Number(val);
+      return isNaN(num) ? val : num;
+    },
+    z
+      .number()
+      .positive({ message: "Land grade must be greater than 0" })
+      .refine((val) => isFinite(val), {
+        message: "Land grade must be a finite number",
+      })
+  ),
+
+  tenure_type: z.string().min(1, { message: "Please select a tenure type" }),
+
+  geometry_data: z
+    .string()
+    .optional()
+    .superRefine((val, ctx) => {
+      if (!val) return;
+      try {
+        JSON.parse(val);
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid GeoJSON format – must be valid JSON",
+        });
+      }
+    }),
+});
+
+export type ParcelFormData = z.infer<typeof ParcelFormSchema>;
+
+
+// ========================
+// OWNER FORM VALIDATION
+// ========================
+export const OwnerFormSchema = z.object({
+  full_name: z
+    .string()
+    .min(1, { message: "Full name is required" })
+    .regex(/^[a-zA-Z\s]+$/, { message: "Name should only contain letters and spaces" }),
+
+  national_id: z
+    .string()
+    .min(1, { message: "National ID is required" })
+    .regex(/^\d+$/, { message: "National ID must contain only digits" }),
+
+  phone_number: z
+    .string()
+    .min(1, { message: "Phone number is required" })
+    .regex(/^\+251\d{9}$|^09\d{8}$/, {
+      message: "Invalid Ethiopian phone format. Use +251911223344 or 0911223344",
+    }),
+
+  tin_number: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^\d+$/.test(val), {
+      message: "TIN must contain only digits",
+    }),
+
+  share_ratio: z.coerce
+    .number()
+    .min(0.01, { message: "Share ratio must be at least 0.01" })
+    .max(1, { message: "Share ratio cannot exceed 1.0" }),
+
+  acquired_at: z
+    .string()
+    .min(1, { message: "Acquisition date is required" })
+    .refine((date) => new Date(date) <= new Date(), {
+      message: "Acquisition date cannot be in the future",
+    }),
+});
+
+export type OwnerFormData = z.infer<typeof OwnerFormSchema>;
+
+// ========================
+// LEASE FORM VALIDATION
+// ========================
+export const LeaseFormSchema = z.object({
+  price_per_m2: z.coerce
+    .number()
+    .positive({ message: "Price per m² must be greater than 0" }),
+
+  total_lease_amount: z.coerce
+    .number()
+    .positive({ message: "Total lease amount must be greater than 0" }),
+
+  down_payment_amount: z.coerce
+    .number()
+    .min(0, { message: "Down payment cannot be negative" }),
+
+  annual_installment: z.coerce
+    .number()
+    .min(0, { message: "Annual installment cannot be negative" }),
+
+  annual_lease_fee: z.coerce
+    .number()
+    .min(0, { message: "Annual lease fee cannot be negative" }),
+
+  lease_period_years: z.coerce
+    .number()
+    .int()
+    .min(1, { message: "Lease period must be at least 1 year" }),
+
+  payment_term_years: z.coerce
+    .number()
+    .int()
+    .min(1, { message: "Payment term must be at least 1 year" }),
+
+  contract_date: z
+    .string()
+    .min(1, { message: "Contract date is required" })
+    .refine((date) => new Date(date) <= new Date(), {
+      message: "Contract date cannot be in the future",
+    }),
+
+  start_date: z
+    .string()
+    .optional()
+    .refine(
+      (val, ctx) => {
+        if (!val) return true;
+        const contractDate = ctx.parent.contract_date;
+        return new Date(val) >= new Date(contractDate);
+      },
+      { message: "Start date must be on or after contract date" }
+    ),
+
+  expiry_date: z.string().optional(),
+
+  legal_framework: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.length <= 500, {
+      message: "Legal framework text is too long (max 500 characters)",
+    }),
+});
+
+export type LeaseFormData = z.infer<typeof LeaseFormSchema>;
+
+
+export const OwnerStepFormSchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Full name is required and cannot be empty" }),
+
+  national_id: z
+    .string()
+    .trim()
+    .min(1, { message: "National ID is required and cannot be empty" }),
+
+  tin_number: z.string().trim().optional(),
+
+phone_number: z
+  .string()
+  .trim()
+  .min(1, { message: "Phone number is required" })
+  .regex(
+    /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
+    {
+      message:
+        "Invalid phone number. Use +251911223344 or 0911223344 format",
+    }
+  )
+  .transform((val) => {
+    // Normalize to international format: always return +251...
+    if (val.startsWith("0")) {
+      return "+251" + val.slice(1);
+    }
+    if (val.startsWith("+251")) {
+      return val;
+    }
+    // Fallback (should not happen due to regex)
+    return val;
+  }),
+
+  // sent separately in payload, taken from URL
+  share_ratio: z.coerce
+    .number()
+    .gt(0, { message: "Share ratio must be greater than 0" })
+    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
+
+  // keep as string for date input, but validate similar to backend
+  acquired_at: z
+    .string()
+    .min(1, { message: "Acquisition date is required" })
+    .refine((val) => !Number.isNaN(Date.parse(val)), {
+      message: "Invalid acquisition date format",
+    }),
+});
+
+export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
+
+/**
+ * Wizard LeaseStep form schema (frontend)
+ * Mirrors CreateLeaseSchema.body but keeps date fields as strings.
+ */
+export const LeaseStepFormSchema = z.object({
+  price_per_m2: z.coerce
+    .number()
+    .positive({ message: "Price per m² must be greater than 0" }),
+
+  total_lease_amount: z.coerce
+    .number()
+    .positive({ message: "Total lease amount must be greater than 0" }),
+
+  annual_installment: z.coerce
+    .number()
+    .positive({ message: "Annual installment must be greater than 0" }),
+
+  down_payment_amount: z.coerce
+    .number()
+    .min(0, { message: "Down payment cannot be negative" }),
+
+  annual_lease_fee: z.coerce
+    .number()
+    .positive({ message: "Annual lease fee must be greater than 0" }),
+
+  lease_period_years: z.coerce
+    .number()
+    .int()
+    .positive({
+      message: "Lease period (years) must be a positive integer",
+    }),
+
+  payment_term_years: z.coerce
+    .number()
+    .int()
+    .positive({
+      message: "Payment term (years) must be a positive integer",
+    }),
+
+  legal_framework: z
+    .string()
+    .trim()
+    .min(1, { message: "Legal framework is required and cannot be empty" }),
+
+  contract_date: z
+    .string()
+    .min(1, { message: "Contract date is required" })
+    .refine((val) => !Number.isNaN(Date.parse(val)), {
+      message: "Invalid contract date format",
+    }),
+
+  start_date: z
+    .string()
+    .min(1, { message: "Start date is required" })
+    .refine((val) => !Number.isNaN(Date.parse(val)), {
+      message: "Invalid start date format",
+    }),
+
+  expiry_date: z
+    .string()
+    .min(1, { message: "Expiry date is required" })
+    .refine((val) => !Number.isNaN(Date.parse(val)), {
+      message: "Invalid expiry date format",
+    }),
+});
+
+export type LeaseStepFormData = z.infer<typeof LeaseStepFormSchema>;
+
+
+
+
+
+
+
+
+// 1) Edit parcel (UpdateParcelSchema.body)
+export const EditParcelFormSchema = z
+  .object({
+    file_number: z.string().trim().min(1).optional(),
+    sub_city: z.string().trim().min(1).optional(),
+    tabia: z.string().trim().min(1).optional(),
+    ketena: z.string().trim().optional(),
+    block: z.string().trim().optional(),
+    total_area_m2: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
+        message: "Total area must be greater than 0",
+      }),
+    land_use: z.string().trim().min(1).optional(),
+    land_grade: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v >= 0), {
+        message: "Land grade must be at least 0",
+      }),
+    tenure_type: z.enum(["OLD_POSSESSION", "LEASE"]).optional(),
+    geometry_data: z.any().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update the parcel",
+  });
+
+export type EditParcelFormData = z.infer<typeof EditParcelFormSchema>;
+
+// 2) Edit owner (UpdateOwnerSchema.body)
+export const EditOwnerFormSchema = z
+  .object({
+    full_name: z.string().trim().min(1).optional(),
+    national_id: z.string().trim().min(1).optional(),
+    tin_number: z.string().trim().nullable().optional(),
+    phone_number: z.string().trim().min(1).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update",
+  });
+
+export type EditOwnerFormData = z.infer<typeof EditOwnerFormSchema>;
+
+// 3) Update owner share ratio (UpdateParcelOwnerShareSchema.body)
+export const EditShareFormSchema = z.object({
+  share_ratio: z.coerce
+    .number()
+    .gt(0, { message: "Share ratio must be greater than 0" })
+    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
+});
+
+export type EditShareFormData = z.infer<typeof EditShareFormSchema>;
+
+// 4) Transfer ownership (TransferOwnershipSchema.body)
+export const TransferOwnershipFormSchema = z.object({
+  from_owner_id: z.string().uuid().optional(),
+  to_owner_id: z
+    .string()
+    .uuid({ message: "Invalid to_owner_id – must be a valid UUID" })
+    .min(1, { message: "New owner (to_owner_id) is required" }),
+  to_share_ratio: z.coerce
+    .number()
+    .gt(0, { message: "Share ratio must be greater than 0" })
+    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
+  transfer_type: z.enum(["SALE", "GIFT", "HEREDITY", "CONVERSION"], {
+    message: "Transfer type must be one of: SALE, GIFT, HEREDITY, or CONVERSION",
+  }),
+  transfer_price: z
+    .string()
+    .optional()
+    .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+    .refine((v) => v === undefined || (typeof v === "number" && v >= 0), {
+      message: "Transfer price cannot be negative",
+    }),
+  reference_no: z.string().trim().optional(),
+});
+
+export type TransferOwnershipFormData = z.infer<
+  typeof TransferOwnershipFormSchema
+>;
+
+// 5) Edit lease (UpdateLeaseSchema.body) – dates kept as strings for inputs
+export const EditLeaseFormSchema = z
+  .object({
+    annual_lease_fee: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
+        message: "Annual lease fee must be greater than 0",
+      }),
+    total_lease_amount: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
+        message: "Total lease amount must be greater than 0",
+      }),
+    annual_installment: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
+        message: "Annual installment must be greater than 0",
+      }),
+    down_payment_amount: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v >= 0), {
+        message: "Down payment cannot be negative",
+      }),
+    price_per_m2: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
+        message: "Price per m² must be greater than 0",
+      }),
+    lease_period_years: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine(
+        (v) => v === undefined || (Number.isInteger(v) && v > 0),
+        { message: "Lease period (years) must be a positive integer" }
+      ),
+    payment_term_years: z
+      .string()
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine(
+        (v) => v === undefined || (Number.isInteger(v) && v > 0),
+        { message: "Payment term (years) must be a positive integer" }
+      ),
+    legal_framework: z.string().trim().min(1).optional(),
+    contract_date: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        { message: "Invalid contract date format" }
+      ),
+    start_date: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        { message: "Invalid start date format" }
+      ),
+    expiry_date: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        { message: "Invalid expiry date format" }
+      ),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update the lease agreement",
+  });
+
+export type EditLeaseFormData = z.infer<typeof EditLeaseFormSchema>;
+
+// 6) Encumbrance create/update
+export const EncumbranceFormSchema = z.object({
+  type: z.enum(["MORTGAGE", "COURT_FREEZE", "GOVT_RESERVATION"], {
+    message:
+      "Encumbrance type must be MORTGAGE, COURT_FREEZE, or GOVT_RESERVATION",
+  }),
+  issuing_entity: z
+    .string()
+    .trim()
+    .min(1, { message: "Issuing entity is required and cannot be empty" }),
+  reference_number: z.string().trim().optional(),
+  status: z.enum(["ACTIVE", "RELEASED"]).default("ACTIVE"),
+  registration_date: z
+    .string()
+    .optional()
+    .refine(
+      (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+      { message: "Invalid registration date format" }
+    ),
+});
+
+export type EncumbranceFormData = z.infer<typeof EncumbranceFormSchema>;
+
+
+
+// Base owner schema (you may already have something similar)
+export const BaseOwnerSchema = z.object({
+  full_name: z.string().trim().min(1, { message: "Full name is required" }),
+  national_id: z
+    .string()
+    .trim()
+    .min(1, { message: "National ID is required" }),
+  tin_number: z.string().trim().optional(),
+  phone_number: z
+  .string()
+  .trim()
+  .min(1, { message: "Phone number is required" })
+  .regex(
+    /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
+    {
+      message:
+        "Invalid phone number. Use +251911223344 or 0911223344 format",
+    }
+  )
+  .transform((val) => {
+    // Normalize to international format: always return +251...
+    if (val.startsWith("0")) {
+      return "+251" + val.slice(1);
+    }
+    if (val.startsWith("+251")) {
+      return val;
+    }
+    // Fallback (should not happen due to regex)
+    return val;
+  }).optional(),
+});
+
+// CREATE owner (createOwnerOnly) – all required like backend CreateOwnerSchema.body
+export const CreateOwnerOnlySchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Full name is required and cannot be empty" }),
+  national_id: z
+    .string()
+    .trim()
+    .min(1, { message: "National ID is required and cannot be empty" }),
+  tin_number: z.string().trim().optional(),
+  phone_number: z
+  .string()
+  .trim()
+  .min(1, { message: "Phone number is required" })
+  .regex(
+    /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
+    {
+      message:
+        "Invalid phone number. Use +251911223344 or 0911223344 format",
+    }
+  )
+  .transform((val) => {
+    // Normalize to international format: always return +251...
+    if (val.startsWith("0")) {
+      return "+251" + val.slice(1);
+    }
+    if (val.startsWith("+251")) {
+      return val;
+    }
+    // Fallback (should not happen due to regex)
+    return val;
+  }).optional(),
+});
+
+export type CreateOwnerOnlyData = z.infer<typeof CreateOwnerOnlySchema>;
+
+// UPDATE owner (edit on Ownership page) – mirrors UpdateOwnerSchema.body
+export const UpdateOwnerFormSchema = z
+  .object({
+    full_name: z.string().trim().min(1).optional(),
+    national_id: z.string().trim().min(1).optional(),
+    tin_number: z.string().trim().nullable().optional(),
+    phone_number: z
+  .string()
+  .trim()
+  .min(1, { message: "Phone number is required" })
+  .regex(
+    /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
+    {
+      message:
+        "Invalid phone number. Use +251911223344 or 0911223344 format",
+    }
+  )
+  .transform((val) => {
+    // Normalize to international format: always return +251...
+    if (val.startsWith("0")) {
+      return "+251" + val.slice(1);
+    }
+    if (val.startsWith("+251")) {
+      return val;
+    }
+    // Fallback (should not happen due to regex)
+    return val;
+  }).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update",
+  });
+
+export type UpdateOwnerFormData = z.infer<typeof UpdateOwnerFormSchema>;

@@ -8,7 +8,7 @@ interface DocumentListProps {
 
 const DocumentList = ({ documents, title = "Documents" }: DocumentListProps) => {
   const openDocument = (doc: ParcelDocument) => {
-    const url = `http://localhost:5000${doc.file_url}`;
+    const url = `http://10.1.22.25:5173${doc.file_url}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 

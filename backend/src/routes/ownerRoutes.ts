@@ -1,14 +1,54 @@
+// src/routes/ownerRoutes.ts
+
 import { Router } from 'express';
-import { createOwner,onlyCreateOwner ,updateOwner, deleteOwner,getOwnersWithParcels , searchOwnersLite} from '../controllers/ownerController.ts';
+import { z } from 'zod';
+
+import {
+  createOwner,
+  onlyCreateOwner,
+  updateOwner,
+  deleteOwner,
+  getOwnersWithParcels,
+  searchOwnersLite,
+} from '../controllers/ownerController.ts';
+
+import {
+  CreateOwnerSchema,
+  OnlyCreateOwnerSchema,
+  UpdateOwnerSchema,
+  DeleteOwnerSchema,
+  GetOwnersWithParcelsQuerySchema,
+  SearchOwnersLiteQuerySchema,
+} from '../validation/ownerSchemas.ts';
+
+import { validateRequest } from '../middlewares/validateRequest.ts';
 
 const router = Router({ mergeParams: true });
 
-router.post('/', createOwner);
+// Create owner + link to parcel
+router.post('/', validateRequest(CreateOwnerSchema), createOwner);
 
-router.post('/only', onlyCreateOwner);
-router.put('/:owner_id', updateOwner);
-router.delete('/:owner_id', deleteOwner);
-router.get('/with-parcels', getOwnersWithParcels);
-router.get('/search-lite', searchOwnersLite)
+// Create owner only (no parcel)
+router.post('/only', validateRequest(OnlyCreateOwnerSchema), onlyCreateOwner);
+
+// Update owner
+router.put('/:owner_id', validateRequest(UpdateOwnerSchema), updateOwner);
+
+// Soft delete owner
+router.delete('/:owner_id', validateRequest(DeleteOwnerSchema), deleteOwner);
+
+// List owners with their parcels (paginated + search)
+router.get(
+  '/with-parcels',
+  validateRequest(z.object({ query: GetOwnersWithParcelsQuerySchema })),
+  getOwnersWithParcels
+);
+
+// Lightweight search for owner autocomplete/dropdowns
+router.get(
+  '/search-lite',
+  validateRequest(z.object({ query: SearchOwnersLiteQuerySchema })),
+  searchOwnersLite
+);
 
 export default router;

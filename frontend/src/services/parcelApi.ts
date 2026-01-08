@@ -1,19 +1,8 @@
+import type { ParcelFormData } from "../validation/schemas";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export interface CreateParcelData {
-  upin: string;
-  file_number: string;
-  sub_city: string;
-  tabia: string;
-  ketena: string;
-  block: string;
-  total_area_m2: number;
-  land_use: string;
-  land_grade: string;
-  tenure_type: string;
-  geometry_data?: string;
-}
+export type CreateParcelData = ParcelFormData;
 
 export const createParcel = async (data: CreateParcelData) => {
   const response = await fetch(`${API_BASE}/parcels`, {

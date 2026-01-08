@@ -1,5 +1,16 @@
+// src/services/parcelDetailApi.ts
+import type {
+  EditParcelFormData,
+  EditOwnerFormData,
+  EditShareFormData,
+  TransferOwnershipFormData,
+  EditLeaseFormData,
+  EncumbranceFormData,
+} from "../validation/schemas";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+
+// ------------ Shared DTOs from backend ------------
 
 export type ParcelDocument = {
   doc_id: string;
@@ -40,18 +51,16 @@ export type LeaseAgreement = {
   documents: ParcelDocument[];
 };
 
-
 export type OwnershipHistoryEntry = {
   history_id: string;
-  transfer_type: string; // e.g., "SALE", "GIFT", "HEREDITY"
+  transfer_type: string;
   transfer_date: string;
-  transfer_price: string | null; // string in API, can be null
+  transfer_price: string | null;
   reference_no: string | null;
-  from_owner_id: string | null; // can be null for initial allocation
-  
+  from_owner_id: string | null;
   to_owner_id: string | null;
-  to_owner_name:string | null;
-  from_owner_name : string | null;
+  to_owner_name: string | null;
+  from_owner_name: string | null;
   event_snapshot: {
     timestamp: string;
     final_total: number;
@@ -64,7 +73,6 @@ export type OwnershipHistoryEntry = {
   };
   documents: ParcelDocument[];
 };
-
 
 export type Encumbrance = {
   encumbrance_id: string;
@@ -133,7 +141,7 @@ export interface ParcelDetailResponse {
   data: ParcelDetail;
 }
 
-
+// ------------ Lite owner + enums ------------
 
 export type TransferType = "SALE" | "GIFT" | "HEREDITY" | "CONVERSION";
 
@@ -145,37 +153,52 @@ export interface LiteOwner {
   tin_number: string | null;
 }
 
-export const fetchParcelDetail = async (upin: string): Promise<ParcelDetailResponse> => {
+// ------------ Fetch parcel detail ------------
+
+export const fetchParcelDetail = async (
+  upin: string
+): Promise<ParcelDetailResponse> => {
   const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`);
   if (!res.ok) throw new Error("Failed to fetch parcel detail");
   return res.json();
 };
 
+// ------------ Update parcel (uses EditParcelFormData) ------------
 
-
-export const updateParcelApi = async (upin: string, data: any) => {
+export const updateParcelApi = async (
+  upin: string,
+  data: EditParcelFormData
+) => {
   const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to update parcel");
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to update parcel");
+  }
   return json;
 };
+
+// ------------ Delete parcel ------------
 
 export const deleteParcelApi = async (upin: string) => {
   const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`, {
     method: "DELETE",
   });
   const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to delete parcel");
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to delete parcel");
+  }
   return json;
 };
 
+// ------------ Update owner (uses EditOwnerFormData) ------------
+
 export const updateOwnerApi = async (
   owner_id: string,
-  data: { full_name?: string; phone_number?: string; tin_number?: string; national_id?: string }
+  data: EditOwnerFormData
 ) => {
   const res = await fetch(`${API_BASE}/owners/${owner_id}`, {
     method: "PUT",
@@ -183,61 +206,69 @@ export const updateOwnerApi = async (
     body: JSON.stringify(data),
   });
   const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to update owner");
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to update owner");
+  }
   return json;
 };
 
-export const updateLeaseApi = async (lease_id: string, data: any) => {
+// ------------ Update parcel owner share (uses EditShareFormData) ------------
+
+export const updateOwnerShareApi = async (
+  parcel_owner_id: string,
+  share_ratio: EditShareFormData["share_ratio"]
+) => {
+  const res = await fetch(
+    `${API_BASE}/parcels/owners/${parcel_owner_id}/share`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ share_ratio }),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to update share");
+  }
+  return json;
+};
+
+// ------------ Update lease (uses EditLeaseFormData) ------------
+
+export const updateLeaseApi = async (
+  lease_id: string,
+  data: EditLeaseFormData
+) => {
   const res = await fetch(`${API_BASE}/leases/${lease_id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to update lease");
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to update lease");
+  }
   return json;
 };
 
-export const updateEncumbranceApi = async (encumbrance_id: string, data: any) => {
-  const res = await fetch(`${API_BASE}/parcels/encumbrances/${encumbrance_id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to update encumbrance");
-  return json;
-};
+// ------------ Encumbrance create/update (uses EncumbranceFormData) ------------
 
-// Adjust path to match your actual route for share update
-export const updateOwnerShareApi = async (parcel_owner_id: string, share_ratio: number) => {
-  const res = await fetch(`${API_BASE}/parcels/owners/${parcel_owner_id}/share`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ share_ratio }),
-  });
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || "Failed to update share");
-  return json;
-};
-
-
-
-// services/parcelDetailApi.ts (add this function)
-
-export const createEncumbranceApi = async (data: {
-  upin: string;
-  type: string;
-  issuing_entity: string;
-  reference_number?: string;
-  registration_date?: string;
-}) => {
+export const createEncumbranceApi = async (
+  data: EncumbranceFormData & { upin: string }
+) => {
   const res = await fetch(`${API_BASE}/parcels/encumbrances`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      ...data,
-      status: "ACTIVE", // Always create as ACTIVE
+      upin: data.upin,
+      type: data.type,
+      issuing_entity: data.issuing_entity,
+      reference_number: data.reference_number || undefined,
+      registration_date:
+        data.registration_date && data.registration_date !== ""
+          ? data.registration_date
+          : undefined,
+      status: "ACTIVE",
     }),
   });
 
@@ -248,14 +279,42 @@ export const createEncumbranceApi = async (data: {
   return json;
 };
 
+export const updateEncumbranceApi = async (
+  encumbrance_id: string,
+  data: EncumbranceFormData
+) => {
+  const res = await fetch(
+    `${API_BASE}/parcels/encumbrances/${encumbrance_id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: data.type,
+        issuing_entity: data.issuing_entity,
+        reference_number: data.reference_number ?? undefined,
+        status: data.status,
+        registration_date:
+          data.registration_date && data.registration_date !== ""
+            ? data.registration_date
+            : undefined,
+      }),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || "Failed to update encumbrance");
+  }
+  return json;
+};
 
-
-
+// ------------ Owners search (lite) ------------
 
 export const searchOwnersLiteApi = async (search: string) => {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
-  const res = await fetch(`${API_BASE}/owners/search-lite?${params.toString()}`);
+  const res = await fetch(
+    `${API_BASE}/owners/search-lite?${params.toString()}`
+  );
   const json = await res.json();
   if (!res.ok || !json.success) {
     throw new Error(json.message || "Failed to search owners");
@@ -263,19 +322,20 @@ export const searchOwnersLiteApi = async (search: string) => {
   return json.data.owners as LiteOwner[];
 };
 
-export const transferOwnershipApi = async (upin: string, body: {
-  from_owner_id: string;
-  to_owner_id: string;
-  to_share_ratio: number;
-  transfer_type: TransferType;
-  transfer_price?: number;
-  reference_no?: string;
-}) => {
-  const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/transfer`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+// ------------ Ownership transfer (uses TransferOwnershipFormData) ------------
+
+export const transferOwnershipApi = async (
+  upin: string,
+  body: TransferOwnershipFormData
+) => {
+  const res = await fetch(
+    `${API_BASE}/parcels/${encodeURIComponent(upin)}/transfer`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
   const json = await res.json();
   if (!res.ok || !json.success) {
     throw new Error(json.message || "Failed to transfer ownership");

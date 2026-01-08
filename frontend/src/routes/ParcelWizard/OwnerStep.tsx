@@ -1,8 +1,13 @@
-// OwnerStep.tsx
-import { useState } from "react";
+// src/components/wizard/OwnerStep.tsx
 import { useSearchParams } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { createOwner } from "../../services/parcelApi";
 import type { OwnerStepProps } from "../../types/wizard";
+import {
+  OwnerStepFormSchema,
+  type OwnerStepFormData,
+} from "../../validation/schemas";
 
 const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
   const [searchParams] = useSearchParams();
@@ -10,55 +15,56 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
   const upin = searchParams.get("upin") || "";
   const subCity = searchParams.get("sub_city") || "";
 
-  // Default to today in YYYY-MM-DD format
   const today = new Date().toISOString().split("T")[0];
 
-  const [formData, setFormData] = useState({
-    full_name: "",
-    national_id: "",
-    tin_number: "",
-    phone_number: "",
-    share_ratio: 1.0,
-    acquired_at: today, // default to today
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+  } = useForm<OwnerStepFormData>({
+    resolver: zodResolver(OwnerStepFormSchema),
+    defaultValues: {
+      full_name: "",
+      national_id: "",
+      tin_number: "",
+      phone_number: "",
+      share_ratio: 1.0,
+      acquired_at: today,
+    },
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
+  const onSubmit = async (data: OwnerStepFormData) => {
     try {
-      // Include upin from URL params in the request
       const payload = {
-        ...formData,
-        upin, // ← Critical: send upin to backend
+        ...data,
+        upin, // from URL
       };
 
       const res = await createOwner(payload);
-
       if (res.success) {
         const { owner_id } = res.data;
         onCreated({ owner_id });
-        // Navigation to next step is handled in ParcelWizard via goToStep()
       } else {
-        setError(res.message || "Failed to create owner");
+        // backend Zod error message from API if provided
+        // eslint-disable-next-line no-console
+        console.error(res.message || "Failed to create owner");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to create owner");
-    } finally {
-      setLoading(false);
+      // eslint-disable-next-line no-console
+      console.error(err.message || "Failed to create owner");
     }
   };
 
-  // Safety check — though should never happen due to wizard flow
   if (!upin) {
     return (
       <div className="text-center py-12">
-        <p className="text-2xl font-bold text-red-600 mb-4">Missing Parcel Information</p>
-        <p className="text-gray-600 mb-6">Please complete the Parcel step first.</p>
+        <p className="text-2xl font-bold text-red-600 mb-4">
+          Missing Parcel Information
+        </p>
+        <p className="text-gray-600 mb-6">
+          Please complete the Parcel step first.
+        </p>
         <button
           onClick={prevStep}
           className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-medium"
@@ -73,89 +79,117 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
     <>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Register Owner</h2>
       <p className="text-gray-600 mb-8">
-        Owner for <span className="font-semibold text-blue-600">{upin}</span> ({subCity})
+        Owner for{" "}
+        <span className="font-semibold text-blue-600">{upin}</span> (
+        {subCity})
       </p>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name *</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Full Name *
+          </label>
           <input
-            required
-            type="text"
-            value={formData.full_name}
-            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            {...register("full_name")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             placeholder="e.g. John Doe"
           />
+          {errors.full_name && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.full_name.message}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">National ID *</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            National ID *
+          </label>
           <input
-            required
-            type="text"
-            value={formData.national_id}
-            onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
+            {...register("national_id")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             placeholder="1234567890"
           />
+          {errors.national_id && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.national_id.message}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Phone Number *
+          </label>
           <input
-            required
-            type="tel"
-            value={formData.phone_number}
-            onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+            {...register("phone_number")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             placeholder="+251911223344"
           />
+          {errors.phone_number && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.phone_number.message}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">TIN Number</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            TIN Number
+          </label>
           <input
-            type="text"
-            value={formData.tin_number}
-            onChange={(e) => setFormData({ ...formData, tin_number: e.target.value })}
+            {...register("tin_number")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             placeholder="Optional"
           />
+          {errors.tin_number && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.tin_number.message}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Acquired At *</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Acquired At *
+          </label>
           <input
-            required
             type="date"
-            value={formData.acquired_at}
-            max={today} // Prevent future dates
-            onChange={(e) => setFormData({ ...formData, acquired_at: e.target.value })}
+            max={today}
+            {...register("acquired_at")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
+          {errors.acquired_at && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.acquired_at.message}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Share Ratio *</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Share Ratio *
+          </label>
           <input
-            required
             type="number"
             min="0.01"
             max="1"
             step="0.01"
-            value={formData.share_ratio}
-            onChange={(e) => setFormData({ ...formData, share_ratio: parseFloat(e.target.value) || 1.0 })}
+            {...register("share_ratio")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
-          <p className="text-xs text-gray-500 mt-1">e.g. 1.0 = full ownership, 0.5 = 50%</p>
+          {errors.share_ratio && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.share_ratio.message}
+            </p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            e.g. 1.0 = full ownership, 0.5 = 50%
+          </p>
         </div>
-
-        {error && (
-          <div className="md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
-            {error}
-          </div>
-        )}
 
         <div className="md:col-span-2 flex justify-between gap-4 pt-6">
           <button
@@ -168,10 +202,10 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
-            {loading ? "Creating Owner..." : "Create Owner & Next"}
+            {isSubmitting ? "Creating Owner..." : "Create Owner & Next"}
           </button>
         </div>
       </form>

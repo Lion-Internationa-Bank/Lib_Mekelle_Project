@@ -1,11 +1,16 @@
 // src/modals/TransferOwnershipModal.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   searchOwnersLiteApi,
   transferOwnershipApi,
   type TransferType,
   type LiteOwner,
 } from "../../../services/parcelDetailApi";
+import {
+  TransferOwnershipFormSchema,
+  type TransferOwnershipFormData,
+} from "../../../validation/schemas";
+import { z } from "zod";
 
 type OwnerRelation = {
   owner: { owner_id: string; full_name: string };
@@ -20,11 +25,18 @@ type Props = {
   onSuccess: (historyId: string) => Promise<void>;
 };
 
-const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: Props) => {
+const TransferOwnershipModal = ({
+  fromOwner,
+  upin,
+  open,
+  onClose,
+  onSuccess,
+}: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<LiteOwner[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     to_owner_id: "",
@@ -35,38 +47,60 @@ const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: P
     reference_no: "",
   });
 
+  // Reset when opened/closed
+  useEffect(() => {
+    if (open) {
+      setError(null);
+      setResults([]);
+      setSearchTerm("");
+      setForm({
+        to_owner_id: "",
+        to_owner_name: "",
+        to_share_ratio: "",
+        transfer_type: "SALE",
+        transfer_price: "",
+        reference_no: "",
+      });
+    }
+  }, [open]);
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
-    setLoading(true);
+    setLoadingSearch(true);
+    setError(null);
     try {
       const owners = await searchOwnersLiteApi(searchTerm.trim());
       setResults(owners);
     } catch (err: any) {
-      alert(err.message || "Search failed");
+      setError(err.message || "Failed to search owners");
     } finally {
-      setLoading(false);
+      setLoadingSearch(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!form.to_owner_id) return alert("Select a target owner");
-    const ratio = parseFloat(form.to_share_ratio);
-    if (isNaN(ratio) || ratio <= 0 || ratio > 1) return alert("Invalid share ratio");
-
-    setSaving(true);
     try {
-      const result = await transferOwnershipApi(upin, {
+      setError(null);
+
+      const parsed = TransferOwnershipFormSchema.parse({
         from_owner_id: fromOwner.owner.owner_id,
         to_owner_id: form.to_owner_id,
-        to_share_ratio: ratio,
+        to_share_ratio: form.to_share_ratio,
         transfer_type: form.transfer_type,
-        transfer_price: form.transfer_price ? Number(form.transfer_price) : undefined,
-        reference_no: form.reference_no || undefined,
-      });
+        transfer_price: form.transfer_price,
+        reference_no: form.reference_no,
+      }) as TransferOwnershipFormData;
+
+      setSaving(true);
+      const result = await transferOwnershipApi(upin, parsed);
       await onSuccess(result.history.history_id);
       onClose();
     } catch (err: any) {
-      alert(err.message || "Transfer failed");
+      if (err instanceof z.ZodError) {
+        setError(err.issues[0]?.message || "Validation failed");
+      } else {
+        setError(err.message || "Transfer failed");
+      }
     } finally {
       setSaving(false);
     }
@@ -78,13 +112,22 @@ const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: P
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6">
         <h2 className="text-lg font-semibold mb-2">Transfer Ownership</h2>
-        <p className="text-sm text-gray-600 mb-6">
-          From: <strong>{fromOwner.owner.full_name}</strong> ({(fromOwner.share_ratio * 100).toFixed(1)}%)
+        <p className="text-sm text-gray-600 mb-4">
+          From: <strong>{fromOwner.owner.full_name}</strong>{" "}
+          ({(fromOwner.share_ratio * 100).toFixed(1)}%)
         </p>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+            {error}
+          </div>
+        )}
 
         {/* Search target owner */}
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">Search target owner</label>
+          <label className="block text-sm font-medium mb-2">
+            Search target owner
+          </label>
           <div className="flex gap-2">
             <input
               value={searchTerm}
@@ -94,10 +137,10 @@ const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: P
             />
             <button
               onClick={handleSearch}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={loadingSearch}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
             >
-              {loading ? "Searching..." : "Search"}
+              {loadingSearch ? "Searching..." : "Search"}
             </button>
           </div>
 
@@ -118,35 +161,51 @@ const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: P
                   }`}
                 >
                   <div className="font-medium">{o.full_name}</div>
-                  <div className="text-xs text-gray-600">{o.national_id} • {o.phone_number}</div>
+                  <div className="text-xs text-gray-600">
+                    {o.national_id} • {o.phone_number}
+                  </div>
                 </button>
               ))}
             </div>
           )}
 
           {form.to_owner_name && (
-            <p className="mt-2 text-sm text-green-700">Selected: {form.to_owner_name}</p>
+            <p className="mt-2 text-sm text-green-700">
+              Selected: {form.to_owner_name}
+            </p>
           )}
         </div>
 
+        {/* Transfer details */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium mb-1">Share to transfer (0–1)</label>
+            <label className="block text-sm font-medium mb-1">
+              Share to transfer (0–1)
+            </label>
             <input
               type="number"
               step="0.01"
               min="0"
               max="1"
               value={form.to_share_ratio}
-              onChange={(e) => setForm({ ...form, to_share_ratio: e.target.value })}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, to_share_ratio: e.target.value }))
+              }
               className="w-full px-4 py-2 border rounded-lg"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Transfer type</label>
+            <label className="block text-sm font-medium mb-1">
+              Transfer type
+            </label>
             <select
               value={form.transfer_type}
-              onChange={(e) => setForm({ ...form, transfer_type: e.target.value as TransferType })}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  transfer_type: e.target.value as TransferType,
+                }))
+              }
               className="w-full px-4 py-2 border rounded-lg"
             >
               <option value="SALE">Sale</option>
@@ -156,19 +215,27 @@ const TransferOwnershipModal = ({ fromOwner, upin, open, onClose, onSuccess }: P
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Price (optional)</label>
+            <label className="block text-sm font-medium mb-1">
+              Price (optional)
+            </label>
             <input
               type="number"
               value={form.transfer_price}
-              onChange={(e) => setForm({ ...form, transfer_price: e.target.value })}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, transfer_price: e.target.value }))
+              }
               className="w-full px-4 py-2 border rounded-lg"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Reference (optional)</label>
+            <label className="block text-sm font-medium mb-1">
+              Reference (optional)
+            </label>
             <input
               value={form.reference_no}
-              onChange={(e) => setForm({ ...form, reference_no: e.target.value })}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, reference_no: e.target.value }))
+              }
               className="w-full px-4 py-2 border rounded-lg"
             />
           </div>

@@ -1,5 +1,9 @@
 
 const API_BASE = import.meta.env.VITE_API_URL;
+import type {
+  CreateOwnerOnlyData,
+  UpdateOwnerFormData,
+} from "../validation/schemas";
 
 export interface OwnedParcel {
   share_ratio: string;
@@ -58,12 +62,7 @@ export const fetchOwnersWithParcels = async (params: {
   return res.json();
 };
 
-export interface CreateOwnerBody {
-  full_name: string;
-  national_id: string;
-  tin_number?: string;
-  phone_number?: string;
-}
+
 
 export interface CreateOwnerResponse {
   success: boolean;
@@ -79,7 +78,7 @@ export interface CreateOwnerResponse {
   };
 }
 
-export const createOwnerOnly = async (data: CreateOwnerBody): Promise<CreateOwnerResponse> => {
+export const createOwnerOnly = async (data: CreateOwnerOnlyData): Promise<CreateOwnerResponse> => {
   const res = await fetch(`${API_BASE}/owners/only`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -94,7 +93,7 @@ export const createOwnerOnly = async (data: CreateOwnerBody): Promise<CreateOwne
 
 export const updateOwnerApi = async (
   owner_id: string,
-  data: { full_name?: string; national_id?: string; tin_number?: string; phone_number?: string }
+  data: UpdateOwnerFormData
 ) => {
   const res = await fetch(`${API_BASE}/owners/${owner_id}`, {
     method: "PUT",
