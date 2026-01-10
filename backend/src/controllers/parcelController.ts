@@ -2,50 +2,89 @@
 
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
+import { 
+  UserRole, 
+  AuditAction, 
+  ConfigCategory, 
+  PaymentStatus, 
+  EncumbranceStatus 
+} from '../generated/prisma/enums.ts';
 
+// Define interfaces for request bodies and queries
 interface GetParcelsQuery {
   page?: string;
   limit?: string;
   search?: string;
-  sub_city?: string;
+  sub_city_id?: string;
   ketena?: string;
- land_use?: string;
+  land_use?: string;
   tenure_type?: string;
 }
 
+interface CreateParcelBody {
+  upin: string;           
+  file_number: string;
+  sub_city_id: string;
+  tabia: string;
+  ketena: string;
+  block: string;
+  total_area_m2: number;
+  land_use?: string;
+  land_grade: number;
+  tenure_type?: string;      
+  geometry_data?: any;
+}
+
 interface TransferOwnershipBody {
-  from_owner_id?: string;      // optional: retiring existing owner
-  to_owner_id: string;         // new/existing owner UUID
-  to_share_ratio: number;      // e.g. 1.0 for full, 0.5 for half
-  transfer_type: 'SALE' | 'GIFT' | 'HEREDITY' | 'CONVERSION';
-  transfer_price?: number;     // optional for sale
-  reference_no?: string;       // contract/doc number
-  document_id?: string;        // optional linked document
+  from_owner_id?: string;
+  to_owner_id: string;
+  to_share_ratio: number;
+  transfer_type: string;  // From ConfigCategory.TRANSFER_TYPE
+  transfer_price?: number;
+  reference_no?: string;
+  document_id?: string;
 }
 
 interface CreateEncumbranceBody {
   upin: string;
-  type: 'MORTGAGE' | 'COURT_FREEZE' | 'GOVT_RESERVATION';
+  type: string;  // From ConfigCategory.ENCUMBRANCE_TYPE
   issuing_entity: string;
   reference_number?: string;
-  status?: 'ACTIVE' | 'RELEASED';
+  status?: EncumbranceStatus;
   registration_date?: string;
 }
 
 interface UpdateEncumbranceBody {
-  type?: 'MORTGAGE' | 'COURT_FREEZE' | 'GOVT_RESERVATION';
+  type?: string;  // From ConfigCategory.ENCUMBRANCE_TYPE
   issuing_entity?: string;
   reference_number?: string;
-  status?: 'ACTIVE' | 'RELEASED';
+  status?: EncumbranceStatus;
   registration_date?: string;
 }
 
-export const createParcel = async (req: Request, res: Response) => {
+// Helper function to validate config values
+const validateConfigValue = async (category: ConfigCategory, value: string): Promise<boolean> => {
+  try {
+    const config = await prisma.configurations.findFirst({
+      where: {
+        category,
+        is_active: true,
+        is_deleted: false,
+        key: value,
+      },
+    });
+    return !!config;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: Response) => {
   try {
     const {
       upin,           
       file_number,
-      sub_city,
+      sub_city_id,
       tabia,
       ketena,
       block,
@@ -56,20 +95,83 @@ export const createParcel = async (req: Request, res: Response) => {
       geometry_data,
     } = req.body;
 
+    // Validate required fields
+    if (!upin || !file_number || !sub_city_id || !tabia || !ketena || !block || !total_area_m2 || land_grade === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields',
+      });
+    }
+
+    // Validate tenure_type if provided
+    if (tenure_type) {
+      const isValidTenure = await validateConfigValue(ConfigCategory.LAND_TENURE, tenure_type);
+      if (!isValidTenure) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid tenure_type',
+        });
+      }
+    }
+
+    // Validate land_use if provided
+    if (land_use) {
+      const isValidLandUse = await validateConfigValue(ConfigCategory.LAND_USE, land_use);
+      if (!isValidLandUse) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid land_use',
+        });
+      }
+    }
+
+    // Check if sub_city exists
+    const subCity = await prisma.sub_cities.findFirst({
+      where: {
+        sub_city_id,
+        is_deleted: false,
+      },
+    });
+
+    if (!subCity) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid sub_city_id',
+      });
+    }
+
+    // Check for duplicate UPIN or file_number
+    const existingParcel = await prisma.land_parcels.findFirst({
+      where: {
+        OR: [
+          { upin },
+          { file_number },
+        ],
+        is_deleted: false,
+      },
+    });
+
+    if (existingParcel) {
+      const conflictField = existingParcel.upin === upin ? 'UPIN' : 'file_number';
+      return res.status(409).json({
+        success: false,
+        message: `${conflictField} already exists`,
+      });
+    }
+
     const parcel = await prisma.land_parcels.create({
       data: {
-        upin, // or generate UPIN here
-       file_number,
-        sub_city,
+        upin,
+        file_number,
+        sub_city_id,
         tabia,
         ketena,
         block,
         total_area_m2,
         land_use,
         land_grade,
-        tenure_type,
+        tenure_type: tenure_type || 'OLD_POSSESSION',
         geometry_data,
-       
       },
     });
 
@@ -77,12 +179,20 @@ export const createParcel = async (req: Request, res: Response) => {
       success: true,
       data: {
         upin: parcel.upin,
-        sub_city: parcel.sub_city,
-       
+        sub_city_id: parcel.sub_city_id,
+        file_number: parcel.file_number,
       },
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error('Create parcel error:', error);
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'UPIN or file_number already exists',
+      });
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Failed to create parcel',
@@ -96,19 +206,20 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
     const limit = parseInt(req.query.limit || '10');
     const skip = (page - 1) * limit;
 
-    const { search, sub_city, tenure_type, ketena, land_use } = req.query;
+    const { search, sub_city_id, tenure_type, ketena, land_use } = req.query;
 
     const where: any = {
       is_deleted: false,
-      OR: search
-        ? [
-            { upin: { contains: search, mode: 'insensitive' } },
-            { file_number: { contains: search, mode: 'insensitive' } },
-            { sub_city: { contains: search, mode: 'insensitive' } },
-            { ketena: { contains: search, mode: 'insensitive' } },
-          ]
-        : undefined,
-      ...(sub_city && { sub_city }),
+      ...(search && {
+        OR: [
+          { upin: { contains: search, mode: 'insensitive' } },
+          { file_number: { contains: search, mode: 'insensitive' } },
+          { tabia: { contains: search, mode: 'insensitive' } },
+          { ketena: { contains: search, mode: 'insensitive' } },
+          { block: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+      ...(sub_city_id && { sub_city_id }),
       ...(ketena && { ketena }),
       ...(tenure_type && { tenure_type }),
       ...(land_use && { land_use }),
@@ -120,7 +231,11 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
         skip,
         take: limit,
         include: {
-          // Active owners with names
+          sub_city: {
+            select: {
+              name: true,
+            },
+          },
           owners: {
             where: { is_active: true, is_deleted: false },
             include: {
@@ -129,13 +244,12 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
               },
             },
           },
-          // Count only ACTIVE encumbrances
           _count: {
             select: {
               encumbrances: {
                 where: {
                   is_deleted: false,
-                  status: 'ACTIVE', // ← Only count ACTIVE ones
+                  status: EncumbranceStatus.ACTIVE,
                 },
               },
             },
@@ -154,12 +268,14 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
         parcels: parcels.map((parcel) => ({
           upin: parcel.upin,
           file_number: parcel.file_number,
-          sub_city: parcel.sub_city,
+          sub_city: parcel.sub_city?.name || parcel.sub_city_id,
+          tabia: parcel.tabia,
           ketena: parcel.ketena,
+          block: parcel.block,
           total_area_m2: parcel.total_area_m2,
           land_use: parcel.land_use,
           tenure_type: parcel.tenure_type,
-          // Correct status: Encumbered only if there's at least one ACTIVE encumbrance
+          land_grade: parcel.land_grade,
           encumbrance_status: parcel._count.encumbrances > 0 ? 'Encumbered' : 'Clear',
           owners: parcel.owners.map((po) => po.owner.full_name).join(', '),
         })),
@@ -192,10 +308,15 @@ export const getParcelByUpin = async (
     const parcel = await prisma.land_parcels.findUnique({
       where: { upin, is_deleted: false },
       select: {
-        // Core info
         upin: true,
         file_number: true,
-        sub_city: true,
+        sub_city_id: true,
+        sub_city: {
+          select: {
+            name: true,
+            description: true,
+          },
+        },
         tabia: true,
         ketena: true,
         block: true,
@@ -207,7 +328,6 @@ export const getParcelByUpin = async (
         created_at: true,
         updated_at: true,
 
-        // Active owners + their documents
         owners: {
           where: { is_active: true, is_deleted: false },
           select: {
@@ -222,6 +342,7 @@ export const getParcelByUpin = async (
                 tin_number: true,
                 phone_number: true,
                 documents: {
+                  where: { is_deleted: false },
                   select: {
                     doc_id: true,
                     doc_type: true,
@@ -238,8 +359,8 @@ export const getParcelByUpin = async (
           orderBy: { share_ratio: "desc" },
         },
 
-        // Lease
         lease_agreement: {
+          where: { is_deleted: false },
           select: {
             lease_id: true,
             annual_lease_fee: true,
@@ -254,20 +375,31 @@ export const getParcelByUpin = async (
             contract_date: true,
             legal_framework: true,
             documents: {
-              select: { doc_id: true, doc_type: true, file_url: true, file_name: true, upload_date: true, is_verified: true },
+              where: { is_deleted: false },
+              select: { 
+                doc_id: true, 
+                doc_type: true, 
+                file_url: true, 
+                file_name: true, 
+                upload_date: true, 
+                is_verified: true 
+              },
               orderBy: { upload_date: "desc" },
             },
           },
         },
 
-        // Buildings
         buildings: {
           where: { is_deleted: false },
-          select: { building_id: true, usage_type: true, total_area: true, floor_count: true },
+          select: { 
+            building_id: true, 
+            usage_type: true, 
+            total_area: true, 
+            floor_count: true 
+          },
           orderBy: { created_at: "desc" },
         },
 
-        // Encumbrances
         encumbrances: {
           where: { is_deleted: false },
           select: {
@@ -278,14 +410,21 @@ export const getParcelByUpin = async (
             status: true,
             registration_date: true,
             documents: {
-              select: { doc_id: true, doc_type: true, file_url: true, file_name: true, upload_date: true, is_verified: true },
+              where: { is_deleted: false },
+              select: { 
+                doc_id: true, 
+                doc_type: true, 
+                file_url: true, 
+                file_name: true, 
+                upload_date: true, 
+                is_verified: true 
+              },
               orderBy: { upload_date: "desc" },
             },
           },
           orderBy: { registration_date: "desc" },
         },
 
-        // Transfer History — now with owner names via relations!
         history: {
           where: { is_deleted: false },
           select: {
@@ -296,7 +435,15 @@ export const getParcelByUpin = async (
             reference_no: true,
             event_snapshot: true,
             documents: {
-              select: { doc_id: true, doc_type: true, file_url: true, file_name: true, upload_date: true, is_verified: true },
+              where: { is_deleted: false },
+              select: { 
+                doc_id: true, 
+                doc_type: true, 
+                file_url: true, 
+                file_name: true, 
+                upload_date: true, 
+                is_verified: true 
+              },
               orderBy: { upload_date: "desc" },
             },
             from_owner: { select: { full_name: true } },
@@ -305,14 +452,25 @@ export const getParcelByUpin = async (
           orderBy: { transfer_date: "desc" },
         },
 
-        // Parcel-level documents
         documents: {
-          where: { owner_id: null, lease_id: null, encumbrance_id: null, history_id: null },
-          select: { doc_id: true, doc_type: true, file_url: true, file_name: true, upload_date: true, is_verified: true },
+          where: { 
+            is_deleted: false,
+            owner_id: null, 
+            lease_id: null, 
+            encumbrance_id: null, 
+            history_id: null 
+          },
+          select: { 
+            doc_id: true, 
+            doc_type: true, 
+            file_url: true, 
+            file_name: true, 
+            upload_date: true, 
+            is_verified: true 
+          },
           orderBy: { upload_date: "desc" },
         },
 
-        // Billing
         billing_records: {
           where: { is_deleted: false },
           select: {
@@ -323,9 +481,16 @@ export const getParcelByUpin = async (
             amount_paid: true,
             penalty_amount: true,
             payment_status: true,
+            due_date: true,
             transactions: {
               where: { is_deleted: false },
-              select: { transaction_id: true, revenue_type: true, receipt_serial_no: true, amount_paid: true, payment_date: true },
+              select: { 
+                transaction_id: true, 
+                revenue_type: true, 
+                receipt_serial_no: true, 
+                amount_paid: true, 
+                payment_date: true 
+              },
               orderBy: { payment_date: "desc" },
             },
           },
@@ -341,12 +506,11 @@ export const getParcelByUpin = async (
       });
     }
 
-    // Transform history to add clean name fields
+    // Transform history
     const enrichedHistory = parcel.history.map((entry) => ({
       ...entry,
       from_owner_name: entry.from_owner?.full_name ?? "Original/Old Possession",
       to_owner_name: entry.to_owner?.full_name ?? "Unknown",
-      // Optional: remove nested objects if you don't want them in frontend
       from_owner: undefined,
       to_owner: undefined,
     }));
@@ -375,16 +539,16 @@ export const getParcelByUpin = async (
     });
   }
 };
-// UPDATE LAND PARCEL
+
 export const updateParcel = async (req: Request<{ upin: string }>, res: Response) => {
   try {
     const { upin } = req.params;
     const data = req.body;
 
-    // Validate required fields
+    // Validate allowed updates
     const allowedUpdates = {
       file_number: true,
-      sub_city: true,
+      sub_city_id: true,
       tabia: true,
       ketena: true,
       block: true,
@@ -396,11 +560,33 @@ export const updateParcel = async (req: Request<{ upin: string }>, res: Response
     };
 
     const updates: any = {};
-    Object.keys(data).forEach(key => {
+    for (const key in data) {
       if (allowedUpdates[key as keyof typeof allowedUpdates]) {
+        // Validate tenure_type
+        if (key === 'tenure_type' && data[key]) {
+          const isValid = await validateConfigValue(ConfigCategory.LAND_TENURE, data[key]);
+          if (!isValid) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid tenure_type',
+            });
+          }
+        }
+        
+        // Validate land_use
+        if (key === 'land_use' && data[key]) {
+          const isValid = await validateConfigValue(ConfigCategory.LAND_USE, data[key]);
+          if (!isValid) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid land_use',
+            });
+          }
+        }
+        
         updates[key] = data[key];
       }
-    });
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
@@ -421,20 +607,36 @@ export const updateParcel = async (req: Request<{ upin: string }>, res: Response
     });
   } catch (error: any) {
     if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'Parcel not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
     }
-    return res.status(500).json({ success: false, message: 'Failed to update parcel' });
+    if (error.code === 'P2002') {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'File number already exists' 
+      });
+    }
+    console.error('Update parcel error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update parcel' 
+    });
   }
 };
 
-// SOFT DELETE LAND PARCEL (set flag or mark inactive)
 export const deleteParcel = async (req: Request<{ upin: string }>, res: Response) => {
   try {
     const { upin } = req.params;
 
     // Check if parcel has active owners
     const activeOwners = await prisma.parcel_owners.count({
-      where: { upin, is_active: true },
+      where: { 
+        upin, 
+        is_active: true,
+        is_deleted: false,
+      },
     });
 
     if (activeOwners > 0) {
@@ -444,22 +646,49 @@ export const deleteParcel = async (req: Request<{ upin: string }>, res: Response
       });
     }
 
-    // Soft delete - update timestamp or add deleted_at field
+    // Check if parcel has active billing records
+    const activeBilling = await prisma.billing_records.count({
+      where: { 
+        upin, 
+        is_deleted: false,
+        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.PARTIAL, PaymentStatus.OVERDUE] }
+      },
+    });
+
+    if (activeBilling > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete parcel with unpaid bills',
+      });
+    }
+
+    // Soft delete
     await prisma.land_parcels.update({
       where: { upin },
-      data: { updated_at: new Date() }, // Or add deleted_at field
+      data: { 
+        is_deleted: true,
+        deleted_at: new Date(),
+        updated_at: new Date(),
+      },
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Parcel marked as deleted',
+      message: 'Parcel deleted successfully',
       data: { upin },
     });
   } catch (error: any) {
     if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'Parcel not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
     }
-    return res.status(500).json({ success: false, message: 'Failed to delete parcel' });
+    console.error('Delete parcel error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete parcel' 
+    });
   }
 };
 
@@ -479,22 +708,31 @@ export const transferOwnership = async (
     } = req.body;
 
     // === Basic validations ===
-    if (!to_owner_id || !to_share_ratio || !transfer_type) {
+    if (!to_owner_id || to_share_ratio === undefined || !transfer_type) {
       return res.status(400).json({
         success: false,
         message: "to_owner_id, to_share_ratio, and transfer_type are required.",
       });
     }
 
+    // Validate transfer_type
+    const isValidTransferType = await validateConfigValue(ConfigCategory.TRANSFER_TYPE, transfer_type);
+    if (!isValidTransferType) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid transfer_type",
+      });
+    }
+
     if (from_owner_id && from_owner_id === to_owner_id) {
       return res.status(400).json({
         success: false,
-        message: "Self-transfer is not allowed. From and To owner cannot be the same person.",
+        message: "Self-transfer is not allowed.",
       });
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Get current active owners with relations
+      // 1. Get current active owners
       const activeOwners = await tx.parcel_owners.findMany({
         where: {
           upin,
@@ -528,7 +766,7 @@ export const transferOwnership = async (
         }
       }
 
-      // 3. Check if TO owner already exists
+      // 3. Check if TO owner exists
       const existingToOwnerRecord = activeOwners.find((po) => po.owner_id === to_owner_id);
 
       // 4. Calculate new total shares
@@ -536,7 +774,7 @@ export const transferOwnership = async (
       let newTotal = currentTotal;
 
       if (from_owner_id && fromOwnerRecord) {
-        newTotal -= fromOwnerShare; // deduct transferred amount
+        newTotal -= fromOwnerShare;
       }
       newTotal += Number(to_share_ratio);
 
@@ -561,12 +799,23 @@ export const transferOwnership = async (
 
       // Update tenure to LEASE unless it's heredity
       if (transfer_type !== "HEREDITY") {
-        updates.push(
-          tx.land_parcels.update({
-            where: { upin },
-            data: { tenure_type: "LEASE" },
-          })
-        );
+        const leaseTenure = await tx.configurations.findFirst({
+          where: {
+            category: ConfigCategory.LAND_TENURE,
+            key: "LEASE",
+            is_active: true,
+            is_deleted: false,
+          },
+        });
+
+        if (leaseTenure) {
+          updates.push(
+            tx.land_parcels.update({
+              where: { upin },
+              data: { tenure_type: "LEASE" },
+            })
+          );
+        }
       }
 
       // Handle FROM owner
@@ -607,11 +856,20 @@ export const transferOwnership = async (
             where: { parcel_owner_id: existingToOwnerRecord.parcel_owner_id },
             data: {
               share_ratio: newShare,
-              acquired_at: new Date(), // update acquisition on increase
+              acquired_at: new Date(),
             },
           })
         );
       } else {
+        // Verify to_owner exists
+        const toOwner = await tx.owners.findUnique({
+          where: { owner_id: to_owner_id, is_deleted: false },
+        });
+
+        if (!toOwner) {
+          throw new Error("TO_OWNER_NOT_FOUND");
+        }
+
         // Create new ownership record
         updates.push(
           tx.parcel_owners.create({
@@ -628,7 +886,7 @@ export const transferOwnership = async (
 
       await Promise.all(updates);
 
-      // 7. Record transfer in history (with proper relations)
+      // 7. Record transfer in history
       const historyEntry = await tx.ownership_history.create({
         data: {
           upin,
@@ -638,7 +896,7 @@ export const transferOwnership = async (
           reference_no: reference_no || null,
           from_owner_id: from_owner_id || null,
           to_owner_id: to_owner_id,
-          event_snapshot: snapshot as any, // Prisma accepts Json
+          event_snapshot: snapshot as any,
         },
         include: {
           from_owner: { select: { full_name: true } },
@@ -667,6 +925,7 @@ export const transferOwnership = async (
       TO_SHARE_EXCEEDS_FROM_OWNER: "Cannot transfer more than the seller's current share.",
       SHARE_RATIO_EXCEEDED: "Total shares would exceed 100%.",
       NO_ACTIVE_OWNERS: "This parcel has no active owners.",
+      TO_OWNER_NOT_FOUND: "The specified buyer does not exist.",
     };
 
     const message = errorMessages[error.message] || "Transfer failed due to an unexpected error.";
@@ -677,19 +936,18 @@ export const transferOwnership = async (
     });
   }
 };
+
 export const updateParcelOwnerShare = async (
   req: Request<{ parcel_owner_id: string }>, 
   res: Response
 ) => {
-  // Declare in outer scope so it's accessible to the catch block
   let calculatedNewTotal: number | undefined;
 
   try {
-    console.log("from update parcel owner share ")
     const { parcel_owner_id } = req.params;
     const { share_ratio } = req.body;
-   console.log("from update parcel owner share ",share_ratio)
-    // 1. VALIDATE INPUT
+
+    // Validate input
     if (share_ratio === undefined || share_ratio <= 0 || share_ratio > 1) {
       return res.status(400).json({
         success: false,
@@ -697,9 +955,7 @@ export const updateParcelOwnerShare = async (
       });
     }
 
-    // 2. ATOMIC TRANSACTION
     const result = await prisma.$transaction(async (tx) => {
-      // A. Find current record
       const currentRecord = await tx.parcel_owners.findUnique({
         where: { parcel_owner_id },
         select: {
@@ -724,7 +980,7 @@ export const updateParcelOwnerShare = async (
         throw new Error('PARCEL_OWNER_INACTIVE');
       }
 
-      // B. Calculate current total shares for this UPIN
+      // Calculate current total shares
       const activeOwners = await tx.parcel_owners.findMany({
         where: { 
           upin: currentRecord.upin, 
@@ -736,15 +992,12 @@ export const updateParcelOwnerShare = async (
       const currentTotal = activeOwners.reduce((sum, po) => sum + Number(po.share_ratio), 0);
       const oldShare = Number(currentRecord.share_ratio);
       
-      // Update the outer variable for error reporting
       calculatedNewTotal = currentTotal - oldShare + Number(share_ratio);
 
-      // C. VALIDATE total shares ≤ 1.0 (with small epsilon for floating point math)
       if (calculatedNewTotal > 1.000001) {
         throw new Error('SHARE_RATIO_EXCEEDED');
       }
 
-      // D. Update share ratio
       const updatedRecord = await tx.parcel_owners.update({
         where: { parcel_owner_id },
         data: {
@@ -793,7 +1046,6 @@ export const updateParcelOwnerShare = async (
   }
 };
 
-// CREATE EN CUMBRANCE
 export const createEncumbrance = async (
   req: Request<{}, {}, CreateEncumbranceBody>,
   res: Response
@@ -809,7 +1061,16 @@ export const createEncumbrance = async (
       });
     }
 
-    // Verify parcel exists and is not deleted
+    // Validate encumbrance type
+    const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
+    if (!isValidType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid encumbrance type',
+      });
+    }
+
+    // Verify parcel exists
     const parcel = await prisma.land_parcels.findFirst({
       where: { upin, is_deleted: false },
     });
@@ -817,11 +1078,11 @@ export const createEncumbrance = async (
     if (!parcel) {
       return res.status(404).json({
         success: false,
-        message: 'Parcel not found or deleted',
+        message: 'Parcel not found',
       });
     }
 
-    // Check reference number uniqueness (if provided)
+    // Check reference number uniqueness
     if (reference_number) {
       const existingRef = await prisma.encumbrances.findFirst({
         where: { reference_number, is_deleted: false },
@@ -840,7 +1101,7 @@ export const createEncumbrance = async (
         type,
         issuing_entity,
         reference_number,
-        status: status || 'ACTIVE',
+        status: status || EncumbranceStatus.ACTIVE,
         registration_date: registration_date ? new Date(registration_date) : new Date(),
       },
     });
@@ -865,7 +1126,6 @@ export const createEncumbrance = async (
   }
 };
 
-// UPDATE EN CUMBRANCE
 export const updateEncumbrance = async (
   req: Request<{ encumbrance_id: string }, {}, UpdateEncumbranceBody>,
   res: Response
@@ -874,7 +1134,7 @@ export const updateEncumbrance = async (
     const { encumbrance_id } = req.params;
     const { type, issuing_entity, reference_number, status, registration_date } = req.body;
 
-    // Validate at least one field to update
+    // Validate at least one field
     if (!type && !issuing_entity && !reference_number && !status && !registration_date) {
       return res.status(400).json({
         success: false,
@@ -882,7 +1142,18 @@ export const updateEncumbrance = async (
       });
     }
 
-    // Check reference number uniqueness (if changing)
+    // Validate type if provided
+    if (type) {
+      const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
+      if (!isValidType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid encumbrance type',
+        });
+      }
+    }
+
+    // Check reference number uniqueness
     if (reference_number) {
       const existingEncumbrance = await prisma.encumbrances.findFirst({
         where: { 
@@ -940,12 +1211,10 @@ export const updateEncumbrance = async (
   }
 };
 
-// SOFT DELETE EN CUMBRANCE
 export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>, res: Response) => {
   try {
     const { encumbrance_id } = req.params;
 
-    // Check if already deleted
     const existing = await prisma.encumbrances.findUnique({
       where: { encumbrance_id },
       select: { is_deleted: true },
@@ -969,7 +1238,7 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
 
     return res.status(200).json({
       success: true,
-      message: 'Encumbrance soft deleted successfully',
+      message: 'Encumbrance deleted successfully',
       data: { encumbrance_id },
     });
   } catch (error: any) {
@@ -979,6 +1248,7 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
         message: 'Encumbrance not found',
       });
     }
+    console.error('Delete encumbrance error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to delete encumbrance',
@@ -986,7 +1256,6 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
   }
 };
 
-// GET EN CUMBRANCES BY PARCEL (Bonus utility)
 export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, res: Response) => {
   try {
     const { upin } = req.params;
@@ -997,6 +1266,19 @@ export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, re
         is_deleted: false,
       },
       orderBy: { registration_date: 'desc' },
+      include: {
+        documents: {
+          where: { is_deleted: false },
+          select: {
+            doc_id: true,
+            doc_type: true,
+            file_url: true,
+            file_name: true,
+            upload_date: true,
+            is_verified: true,
+          },
+        },
+      },
     });
 
     return res.status(200).json({
@@ -1004,12 +1286,10 @@ export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, re
       data: encumbrances,
     });
   } catch (error: any) {
+    console.error('Get encumbrances error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch encumbrances',
     });
   }
 };
-
-
-

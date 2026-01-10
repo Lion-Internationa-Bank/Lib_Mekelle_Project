@@ -4,7 +4,7 @@ import http from 'http';
 import app from './src/app.ts';
 // import app from './src/app.ts';
 import prisma from "./src/config/prisma.ts";
-
+import { seedInitialAdmins } from './src/seed/initialAdmins.ts';
 const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
@@ -14,8 +14,9 @@ const startServer = async () => {
     // Test DB connection
     await prisma.$connect();
     console.log('PostgreSQL connected successfully');
-
-      server.listen(Number(PORT), '0.0.0.0', () => {
+    await seedInitialAdmins();
+// '0.0.0.0',
+      server.listen(Number(PORT),  () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
   } catch (err) {

@@ -1,243 +1,333 @@
 generator client {
-  provider              = "prisma-client"
-  output                = "../src/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
   generatedFileExtension = "ts"
-  importFileExtension   = "ts"
+  importFileExtension = "ts"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  CITY_ADMIN 
+  SUBCITY_ADMIN      
+  SUBCITY_NORMAL   
+  SUBCITY_AUDITOR  
+  REVENUE_ADMIN    
+  REVENUE_USER     
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  CONFIG_CHANGE
+}
+
+// UPDATED ENUM: Added ENCUMBRANCE_TYPE category
+enum ConfigCategory {
+  LAND_TENURE         // tenure_type
+  REVENUE_TYPE        // bill_type, revenue_type
+  DOCUMENT_TYPE       // doc_type
+  TRANSFER_TYPE       // transfer_type
+  LAND_USE            // land_use, usage_type
+  PAYMENT_METHOD      // payment_method
+  ENCUMBRANCE_TYPE    // NEW: For encumbrances.type
+  GENERAL             
+  REVENUE_RATES       
+}
+
+model sub_cities {       
+  sub_city_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String         @unique @db.VarChar(100)
+  description   String?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  deleted_at    DateTime?
+  is_deleted    Boolean        @default(false)
+
+  land_parcels  land_parcels[]
+  users         users[]
+}
+
+model users {
+  user_id       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String         @unique @db.VarChar(100)
+  email         String?        @unique @db.VarChar(255)
+  password_hash String         
+  full_name     String
+  role          UserRole
+  sub_city_id   String?        @db.Uuid  
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  last_login    DateTime?
+  is_active     Boolean        @default(true)
+  deleted_at    DateTime?
+  is_deleted    Boolean        @default(false)
+
+  sub_city      sub_cities?    @relation(fields: [sub_city_id], references: [sub_city_id])
+  audit_logs    audit_logs[]
+}
+
+model configurations {
+  config_id     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key           String         @unique @db.VarChar(100)  
+  value         Json           
+  category      ConfigCategory?
+  description   String?
+  is_active     Boolean        @default(true)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  deleted_at    DateTime?
+  is_deleted    Boolean        @default(false)
+}
+
+model audit_logs {
+  log_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String         @db.Uuid
+  action_type   AuditAction
+  entity_type   String         
+  entity_id     String
+  changes       Json?          
+  timestamp     DateTime       @default(now())
+  ip_address    String?
+
+  user          users          @relation(fields: [user_id], references: [user_id])
+}
+
 model land_parcels {
-  upin            String    @id @db.VarChar(50)
-  file_number     String   @unique @db.VarChar(100)
-  sub_city        String    @db.VarChar(100)
-  tabia           String    @db.VarChar(100)
-  ketena          String   @db.VarChar(50)
-  block           String  @db.VarChar(50)
-  total_area_m2   Decimal   @db.Decimal(12, 2)
-  land_use        String
-  land_grade      Decimal  @db.Decimal(10, 2)
-  tenure_type     TenureType @default(OLD_POSSESSION)
-  geometry_data   Json?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  deleted_at      DateTime?
-  is_deleted      Boolean   @default(false)
+  upin              String         @id @db.VarChar(50)
+  file_number       String         @unique @db.VarChar(100)
+  sub_city_id       String         @db.Uuid       
+  tabia             String         @db.VarChar(100)
+  ketena            String         @db.VarChar(50)
+  block             String         @db.VarChar(50)
+  total_area_m2     Decimal        @db.Decimal(12, 2)
+  land_use          String?                       // Validate against ConfigCategory.LAND_USE
+  land_grade        Decimal        @db.Decimal(10, 2)
+  tenure_type       String         @default("OLD_POSSESSION")  // Validate against ConfigCategory.LAND_TENURE
+  geometry_data     Json?
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  billing_records billing_records[]
-  buildings       building_details[]
-  documents       documents[]
-  encumbrances    encumbrances[]
-  transactions    financial_transactions[]
-  lease_agreement lease_agreements?
-  history         ownership_history[]
-  owners          parcel_owners[]
-  valuations      tax_valuation_roll[]
+  billing_records   billing_records[]
+  buildings         building_details[]
+  documents         documents[]
+  encumbrances      encumbrances[]
+  transactions      financial_transactions[]
+  lease_agreement   lease_agreements?
+  history           ownership_history[]
+  owners            parcel_owners[]
+  valuations        tax_valuation_roll[]
+  sub_city          sub_cities     @relation(fields: [sub_city_id], references: [sub_city_id])
 
-  @@index([sub_city, tabia])
+  @@index([sub_city_id, tabia])
 }
 
 model owners {
-  owner_id     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  full_name    String
-  national_id  String    @unique @db.VarChar(50)
-  tin_number   String?   @unique @db.VarChar(50)
-  phone_number String
-  created_at   DateTime? @default(now())
-  updated_at   DateTime? @updatedAt
-  deleted_at   DateTime?
-  is_deleted   Boolean   @default(false)
+  owner_id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  full_name         String
+  national_id       String         @unique @db.VarChar(50)
+  tin_number        String?        @unique @db.VarChar(50)
+  phone_number      String
+  created_at        DateTime?      @default(now())
+  updated_at        DateTime?      @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  documents    documents[]
-  parcels      parcel_owners[]
-  transferred_from ownership_history[] @relation("OwnershipHistoryFrom")
-  transferred_to   ownership_history[] @relation("OwnershipHistoryTo")
+  documents         documents[]
+  parcels           parcel_owners[]
+  transferred_from  ownership_history[] @relation("OwnershipHistoryFrom")
+  transferred_to    ownership_history[] @relation("OwnershipHistoryTo")
 }
 
 model parcel_owners {
-  upin             String    @db.VarChar(50)
-  owner_id         String    @db.Uuid
-  share_ratio      Decimal   @default(1.0) @db.Decimal(10, 6)
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-  acquired_at      DateTime  @default(now())
-  is_active        Boolean   @default(true)
-  retired_at       DateTime?
-  parcel_owner_id  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deleted_at       DateTime?
-  is_deleted       Boolean   @default(false)
+  upin              String         @db.VarChar(50)
+  owner_id          String         @db.Uuid
+  share_ratio       Decimal        @default(1.0) @db.Decimal(10, 6)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  acquired_at       DateTime       @default(now())
+  is_active         Boolean        @default(true)
+  retired_at        DateTime?
+  parcel_owner_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  owner  owners        @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
-  parcel land_parcels @relation(fields: [upin], references: [upin], onDelete: Cascade)
+  owner             owners         @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
+  parcel            land_parcels   @relation(fields: [upin], references: [upin], onDelete: Cascade)
 
   @@unique([upin, owner_id, acquired_at])
 }
 
 model ownership_history {
-  history_id      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin            String
-  event_snapshot  Json
-  transfer_type   TransferType
-  transfer_date   DateTime  @default(now())
-  created_at      DateTime @default(now())
-  updated_at      DateTime? @updatedAt
-  from_owner_id   String?   @db.Uuid
-  reference_no    String?   @unique
-  to_owner_id     String?   @db.Uuid
-  transfer_price  Decimal?  @db.Decimal(18, 2)
-  deleted_at      DateTime?
-  is_deleted      Boolean   @default(false)
+  history_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin              String
+  event_snapshot    Json
+  transfer_type     String                                      // Validate against ConfigCategory.TRANSFER_TYPE
+  transfer_date     DateTime       @default(now())
+  created_at        DateTime       @default(now())
+  updated_at        DateTime?      @updatedAt
+  from_owner_id     String?        @db.Uuid
+  reference_no      String?        @unique
+  to_owner_id       String?        @db.Uuid
+  transfer_price    Decimal?       @db.Decimal(18, 2)
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  documents documents[]
-  from_owner      owners?      @relation("OwnershipHistoryFrom", fields: [from_owner_id], references: [owner_id])
-  to_owner        owners?      @relation("OwnershipHistoryTo", fields: [to_owner_id], references: [owner_id])
-  parcel    land_parcels @relation(fields: [upin], references: [upin])
+  documents         documents[]
+  from_owner        owners?        @relation("OwnershipHistoryFrom", fields: [from_owner_id], references: [owner_id])
+  to_owner          owners?        @relation("OwnershipHistoryTo", fields: [to_owner_id], references: [owner_id])
+  parcel            land_parcels   @relation(fields: [upin], references: [upin])
+
   @@index([upin])
 }
 
 model lease_agreements {
-  lease_id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin                 String    @unique @db.VarChar(50)
-  annual_lease_fee     Decimal   @db.Decimal(18, 2)
-  total_lease_amount   Decimal   @db.Decimal(18, 2)
-  start_date           DateTime  @db.Date
-  expiry_date          DateTime  @db.Date
-  annual_installment   Decimal   @db.Decimal(18, 2)
-  contract_date        DateTime  @db.Date
-  created_at           DateTime @default(now())
-  down_payment_amount  Decimal   @db.Decimal(18, 2)
+  lease_id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin                 String         @unique @db.VarChar(50)
+  annual_lease_fee     Decimal        @db.Decimal(18, 2)
+  total_lease_amount   Decimal        @db.Decimal(18, 2)
+  start_date           DateTime       @db.Date
+  expiry_date          DateTime       @db.Date
+  annual_installment   Decimal        @db.Decimal(18, 2)
+  contract_date        DateTime       @db.Date
+  created_at           DateTime       @default(now())
+  down_payment_amount  Decimal        @db.Decimal(18, 2)
   lease_period_years   Int
   legal_framework      String
   payment_term_years   Int
-  price_per_m2         Decimal   @db.Decimal(18, 2)
-  updated_at           DateTime? @updatedAt
+  price_per_m2         Decimal        @db.Decimal(18, 2)
+  interest_rate        Decimal?       @db.Decimal(5, 4)  
+  updated_at           DateTime?      @updatedAt
   deleted_at           DateTime?
-  is_deleted           Boolean   @default(false)
+  is_deleted           Boolean        @default(false)
 
-  documents documents[]
-  land_parcel land_parcels @relation(fields: [upin], references: [upin])
+  documents            documents[]
+  land_parcel          land_parcels   @relation(fields: [upin], references: [upin])
 }
 
 model building_details {
-  building_id String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin        String    @db.VarChar(50)
-  usage_type  String
-  total_area  Decimal   @db.Decimal(12, 2)
-  floor_count Int       @default(0)
-  created_at  DateTime @default(now())
-  updated_at  DateTime? @updatedAt
-  deleted_at  DateTime?
-  is_deleted  Boolean   @default(false)
+  building_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin          String         @db.VarChar(50)
+  usage_type    String?                       // Can validate against LAND_USE config if needed
+  total_area    Decimal        @db.Decimal(12, 2)
+  floor_count   Int            @default(0)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime?      @updatedAt
+  deleted_at    DateTime?
+  is_deleted    Boolean        @default(false)
 
-  parcel land_parcels @relation(fields: [upin], references: [upin])
+  parcel        land_parcels   @relation(fields: [upin], references: [upin])
 }
 
 model billing_records {
-  bill_id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin            String    @db.VarChar(50)
-  fiscal_year     Int
-  bill_type       RevenueType
-  amount_due      Decimal   @db.Decimal(18, 2)
-  amount_paid     Decimal   @default(0) @db.Decimal(18, 2)
-  penalty_amount  Decimal   @default(0) @db.Decimal(18, 2)
-  payment_status  PaymentStatus @default(UNPAID)
-  created_at      DateTime @default(now())
-  updated_at      DateTime? @updatedAt
-  deleted_at      DateTime?
-  is_deleted      Boolean   @default(false)
+  bill_id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin              String         @db.VarChar(50)
+  fiscal_year       Int
+  bill_type         String                                      // Validate against ConfigCategory.REVENUE_TYPE
+  amount_due        Decimal        @db.Decimal(18, 2)
+  amount_paid       Decimal        @default(0) @db.Decimal(18, 2)
+  penalty_amount    Decimal        @default(0) @db.Decimal(18, 2)
+  interest_amount   Decimal        @default(0) @db.Decimal(18, 2)   
+  payment_status    PaymentStatus  @default(UNPAID)             // Native enum
+  due_date          DateTime?                              
+  bank_reference    String?                                
+  last_synced_at    DateTime?                              
+  created_at        DateTime       @default(now())
+  updated_at        DateTime?      @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  parcel       land_parcels @relation(fields: [upin], references: [upin])
-  transactions financial_transactions[]
+  parcel            land_parcels   @relation(fields: [upin], references: [upin])
+  transactions      financial_transactions[]
 
   @@unique([upin, fiscal_year, bill_type])
+  @@index([fiscal_year])
+  @@index([payment_status])
 }
 
 model financial_transactions {
-  transaction_id   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bill_id          String?   @db.Uuid
-  upin             String    @db.VarChar(50)
-  revenue_type     RevenueType
-  receipt_serial_no String   @unique
-  amount_paid      Decimal   @db.Decimal(18, 2)
-  payment_date     DateTime  @default(now())
-  created_at       DateTime @default(now())
-  updated_at       DateTime? @updatedAt
-  deleted_at       DateTime?
-  is_deleted       Boolean   @default(false)
+  transaction_id     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bill_id            String?        @db.Uuid
+  upin               String         @db.VarChar(50)
+  revenue_type       String                                      // Validate against ConfigCategory.REVENUE_TYPE
+  receipt_serial_no  String         @unique
+  amount_paid        Decimal        @db.Decimal(18, 2)
+  payment_method     String?                                     // Validate against ConfigCategory.PAYMENT_METHOD
+  bank_transaction_id String?                               
+  payment_date       DateTime       @default(now())
+  created_at         DateTime       @default(now())
+  updated_at         DateTime?      @updatedAt
+  deleted_at         DateTime?
+  is_deleted         Boolean        @default(false)
 
-  billing_record billing_records? @relation(fields: [bill_id], references: [bill_id])
-  parcel         land_parcels     @relation(fields: [upin], references: [upin])
+  billing_record     billing_records? @relation(fields: [bill_id], references: [bill_id])
+  parcel             land_parcels     @relation(fields: [upin], references: [upin])
 }
 
+// UPDATED: encumbrances.type remains String, now validated against new ENCUMBRANCE_TYPE category
 model encumbrances {
-  encumbrance_id    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin              String    @db.VarChar(50)
-  type              EncumbranceType
+  encumbrance_id    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin              String         @db.VarChar(50)
+  type              String                                      // Validate against ConfigCategory.ENCUMBRANCE_TYPE
   issuing_entity    String
   reference_number  String?
-  status            EncumbranceStatus @default(ACTIVE)
-  registration_date DateTime  @default(now())
-  created_at        DateTime @default(now())
-  updated_at        DateTime? @updatedAt
+  status            EncumbranceStatus @default(ACTIVE)          // Native enum
+  registration_date DateTime       @default(now())
+  created_at        DateTime       @default(now())
+  updated_at        DateTime?      @updatedAt
   deleted_at        DateTime?
-  is_deleted        Boolean   @default(false)
+  is_deleted        Boolean        @default(false)
 
-  documents documents[]
-  land_parcel land_parcels @relation(fields: [upin], references: [upin], onDelete: Cascade)
+  documents         documents[]
+  land_parcel       land_parcels   @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 
 model tax_valuation_roll {
-  valuation_id   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin           String    @db.VarChar(50)
-  taxable_value  Decimal   @db.Decimal(18, 2)
-  appraisal_date DateTime  @default(now())
+  valuation_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin           String         @db.VarChar(50)
+  taxable_value  Decimal        @db.Decimal(18, 2)
+  appraisal_date DateTime       @default(now())
   expiry_date    DateTime
-  created_at     DateTime @default(now())
-  updated_at     DateTime? @updatedAt
+  created_at     DateTime       @default(now())
+  updated_at     DateTime?      @updatedAt
   deleted_at     DateTime?
-  is_deleted     Boolean   @default(false)
+  is_deleted     Boolean        @default(false)
 
-  parcel land_parcels @relation(fields: [upin], references: [upin])
+  parcel         land_parcels   @relation(fields: [upin], references: [upin])
 }
 
 model documents {
-  doc_id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin             String?    @db.VarChar(50)
-  owner_id         String?   @db.Uuid
-  lease_id         String?   @db.Uuid
-  history_id       String?   @db.Uuid
-  encumbrance_id   String?   @db.Uuid
-  doc_type         DocType
-  file_url         String
-  file_name        String
-  is_verified      Boolean   @default(false)
-  upload_date      DateTime  @default(now())
-  created_at       DateTime  @default(now())
-  updated_at       DateTime? @updatedAt
-  deleted_at       DateTime?
-  is_deleted       Boolean   @default(false)
+  doc_id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin              String?        @db.VarChar(50)
+  owner_id          String?        @db.Uuid
+  lease_id          String?        @db.Uuid
+  history_id        String?        @db.Uuid
+  encumbrance_id    String?        @db.Uuid
+  doc_type          String                                      // Validate against ConfigCategory.DOCUMENT_TYPE
+  file_url          String
+  file_name         String
+  is_verified       Boolean        @default(false)
+  upload_date       DateTime       @default(now())
+  created_at        DateTime       @default(now())
+  updated_at        DateTime?      @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
 
-  encumbrance encumbrances?      @relation(fields: [encumbrance_id], references: [encumbrance_id], onDelete: Cascade)
-  history     ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
-  lease       lease_agreements?  @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
-  owner       owners?            @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
-  parcel      land_parcels?       @relation(fields: [upin], references: [upin], onDelete: Cascade)
+  encumbrance       encumbrances?    @relation(fields: [encumbrance_id], references: [encumbrance_id], onDelete: Cascade)
+  history           ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
+  lease             lease_agreements? @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
+  owner             owners?          @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
+  parcel            land_parcels?    @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 
-enum TenureType {
-  OLD_POSSESSION
-  LEASE
-}
-
-enum RevenueType {
-  LEASE_ANNUAL
-  PROPERTY_TAX
-  SERVICE_FEE
-  STAMP_DUTY
-}
-
+// REMAINING NATIVE ENUMS (stable and well-known)
 enum PaymentStatus {
   UNPAID
   PARTIAL
@@ -245,55 +335,16 @@ enum PaymentStatus {
   OVERDUE
 }
 
-enum DocType {
-  // Core Parcel
-  TITLE_DEED
-  SITE_MAP
-  SURVEY_PLAN
-  // Owner
-  ID_COPY
-  POWER_OF_ATTORNEY
-  // Lease
-  LEASE_CONTRACT
-  LEASE_PAYMENT_RECEIPT
-  // Ownership Transfer
-  TRANSFER_CONTRACT
-  TRANSFER_PAYMENT_PROOF
-  TRANSFER_TAX_RECEIPT
-  // Financial
-  ANNUAL_LEASE_RECEIPT
-  PROPERTY_TAX_RECEIPT
-  SERVICE_FEE_RECEIPT
-  // Encumbrances
-  MORTGAGE_AGREEMENT
-  COURT_FREEZE_ORDER
-  GOVT_RESERVATION_NOTICE
-  // Valuation & Tax
-  VALUATION_REPORT
-  VALUATION_APPEAL
-  // Building
-  BUILDING_PERMIT
-  COMPLETION_CERTIFICATE
-  // General
-  CORRESPONDENCE
-  PHOTO
-  OTHER
-}
-
-enum EncumbranceType {
-  MORTGAGE
-  COURT_FREEZE
-  GOVT_RESERVATION
-}
-
 enum EncumbranceStatus {
   ACTIVE
   RELEASED
 }
 
-enum TransferType {
-  SALE
-  GIFT
-  HEREDITY
-  CONVERSION
-}
+// DYNAMIC via configurations
+// - tenure_type → LAND_TENURE
+// - bill_type / revenue_type → REVENUE_TYPE
+// - doc_type → DOCUMENT_TYPE
+// - transfer_type → TRANSFER_TYPE
+// - payment_method → PAYMENT_METHOD
+// - encumbrances.type → ENCUMBRANCE_TYPE (NEW)
+// - land_use / usage_type → LAND_USE

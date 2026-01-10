@@ -1,30 +1,35 @@
-import  {  useState } from "react";
-import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
+// src/routes/LoginPage.tsx
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("mekele_admin");
-  const [password, setPassword] = useState("123456");
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const auth = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    
-    const ok = auth.login(username, password);
-    setTimeout(() => { // Simulate network
-      setLoading(false);
-      if (!ok) {
-        setError("Invalid credentials");
-        return;
-      }
-      navigate("/home");
-    }, 800);
+    setError('');
+
+    const success = await login(username, password);
+
+    setLoading(false);
+    if (success) {
+      navigate('/home');
+    } else {
+      setError('Invalid username or password');
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -40,9 +45,7 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Username
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
             <input
               type="text"
               value={username}
@@ -53,18 +56,31 @@ const LoginPage = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
-              disabled={loading}
-              required
-            />
+          <div className="relative">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 pr-12"
+                disabled={loading}
+                required
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg p-1"
+                disabled={loading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -78,13 +94,13 @@ const LoginPage = () => {
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
           <p className="text-sm text-blue-800 font-medium">
-            Demo: <span className="font-bold">mekele_admin</span> / <span className="font-bold">123456</span>
+            Demo: Try <span className="font-bold">cityadmin</span> / your password
           </p>
         </div>
       </div>

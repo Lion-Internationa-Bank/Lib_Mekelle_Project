@@ -1,53 +1,49 @@
+// src/services/api.ts
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-const API_BASE = import.meta.env.VITE_API_URL;
-
-
-export interface Parcel {
-  upin: string;
-  file_number: string;
-  sub_city: string;
-  ketena: string;
-  total_area_m2: number;
-  land_use: string;
-  tenure_type: string;
-  encumbrance_status: "Encumbered" | "Clear";
-  owners: string;
-}
-
-export interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-export interface ParcelsResponse {
+export interface ApiResponse<T> {
   success: boolean;
-  data: {
-    parcels: Parcel[];
-    pagination: Pagination;
-  };
+  data?: T;
+  message?: string;
+  error?: string;
 }
 
-export const fetchParcels = async (params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sub_city?: string;
-  ketena?: string;
-  tenure_type?: string;
-  land_use?: string;
-}): Promise<ParcelsResponse> => {
-  const url = new URL(`${API_BASE}/parcels`);
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") {
-      url.searchParams.append(key, String(value));
-    }
-  });
+const getAuthToken = () => localStorage.getItem('authToken') || '';
 
-  const response = await fetch(url.toString());
-  if (!response.ok) throw new Error("Failed to fetch parcels");
-  return response.json();
+const apiFetch = async <T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> => {
+  const token = getAuthToken();
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.message || `Request failed with status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Network error',
+    };
+  }
 };
+
+export default apiFetch;
