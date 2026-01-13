@@ -14,7 +14,7 @@ export const ParcelFormSchema = z.object({
     .transform((val) => val.toUpperCase()),
 
   file_number: z.string().min(1, { message: "File number is required" }),
-  sub_city: z.string().min(1, { message: "Please select a sub-city" }),
+  sub_city_id: z.string().min(1, { message: "Please select a sub-city" }),
   tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
   ketena: z.string().min(1, { message: "Ketena is required" }),
   block: z.string().min(1, { message: "Block is required" }),
@@ -48,7 +48,7 @@ export const ParcelFormSchema = z.object({
 
   tenure_type: z.string().min(1, { message: "Please select a tenure type" }),
 
-  geometry_data: z
+  boundary_coords: z
     .string()
     .optional()
     .superRefine((val, ctx) => {
@@ -62,6 +62,10 @@ export const ParcelFormSchema = z.object({
         });
       }
     }),
+    boundary_north: z.string().optional(),
+    boundary_east: z.string().optional(),
+    boundary_south: z.string().optional(),
+    boundary_west: z.string().optional(),
 });
 
 export type ParcelFormData = z.infer<typeof ParcelFormSchema>;
@@ -305,35 +309,37 @@ export type LeaseStepFormData = z.infer<typeof LeaseStepFormSchema>;
 
 
 // 1) Edit parcel (UpdateParcelSchema.body)
-export const EditParcelFormSchema = z
-  .object({
-    file_number: z.string().trim().min(1).optional(),
-    sub_city: z.string().trim().min(1).optional(),
-    tabia: z.string().trim().min(1).optional(),
-    ketena: z.string().trim().optional(),
-    block: z.string().trim().optional(),
-    total_area_m2: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
-        message: "Total area must be greater than 0",
-      }),
-    land_use: z.string().trim().min(1).optional(),
-    land_grade: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v >= 0), {
-        message: "Land grade must be at least 0",
-      }),
-    tenure_type: z.enum(["OLD_POSSESSION", "LEASE"]).optional(),
-    geometry_data: z.any().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided to update the parcel",
-  });
 
+// Example snippet for your schema
+export const EditParcelFormSchema = z.object({
+  file_number: z.string().optional(),
+  sub_city_id: z.string().optional(),
+  tabia: z.string().optional(),
+  ketena: z.string().optional(),
+  block: z.string().optional(),
+  total_area_m2: z.number().positive().optional(),
+  land_use: z.string().optional(),
+  land_grade: z.number().int().positive().optional(),
+  tenure_type: z.string().optional(),
+  boundary_north: z.string().optional(),
+  boundary_east: z.string().optional(),
+  boundary_south: z.string().optional(),
+  boundary_west: z.string().optional(),
+   boundary_coords: z
+    .string()
+    .optional()
+    .superRefine((val, ctx) => {
+      if (!val) return;
+      try {
+        JSON.parse(val);
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid GeoJSON format – must be valid JSON",
+        });
+      }
+    }),
+});
 export type EditParcelFormData = z.infer<typeof EditParcelFormSchema>;
 
 // 2) Edit owner (UpdateOwnerSchema.body)
@@ -367,10 +373,6 @@ export const TransferOwnershipFormSchema = z.object({
     .string()
     .uuid({ message: "Invalid to_owner_id – must be a valid UUID" })
     .min(1, { message: "New owner (to_owner_id) is required" }),
-  to_share_ratio: z.coerce
-    .number()
-    .gt(0, { message: "Share ratio must be greater than 0" })
-    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
   transfer_type: z.enum(["SALE", "GIFT", "HEREDITY", "CONVERSION"], {
     message: "Transfer type must be one of: SALE, GIFT, HEREDITY, or CONVERSION",
   }),
@@ -392,91 +394,89 @@ export type TransferOwnershipFormData = z.infer<
 export const EditLeaseFormSchema = z
   .object({
     annual_lease_fee: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
-        message: "Annual lease fee must be greater than 0",
-      }),
+      .number()
+      .positive({ message: "Annual lease fee must be greater than 0" })
+      .optional(),
+
     total_lease_amount: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
-        message: "Total lease amount must be greater than 0",
-      }),
-    annual_installment: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
-        message: "Annual installment must be greater than 0",
-      }),
+      .number()
+      .positive({ message: "Total lease amount must be greater than 0" })
+      .optional(),
+
     down_payment_amount: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v >= 0), {
-        message: "Down payment cannot be negative",
-      }),
+      .number()
+      .nonnegative({ message: "Down payment cannot be negative" })
+      .optional(),
+
+    annual_installment: z
+      .number()
+      .positive({ message: "Annual installment must be greater than 0" })
+      .optional(),
+
     price_per_m2: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine((v) => v === undefined || (typeof v === "number" && v > 0), {
-        message: "Price per m² must be greater than 0",
-      }),
+      .number()
+      .positive({ message: "Price per m² must be greater than 0" })
+      .optional(),
+
     lease_period_years: z
-      .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine(
-        (v) => v === undefined || (Number.isInteger(v) && v > 0),
-        { message: "Lease period (years) must be a positive integer" }
-      ),
+      .number()
+      .int({ message: "Lease period (years) must be an integer" })
+      .positive({ message: "Lease period (years) must be greater than 0" })
+      .optional(),
+
     payment_term_years: z
+      .number()
+      .int({ message: "Payment term (years) must be an integer" })
+      .positive({ message: "Payment term (years) must be greater than 0" })
+      .optional(),
+
+    legal_framework: z
       .string()
-      .optional()
-      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
-      .refine(
-        (v) => v === undefined || (Number.isInteger(v) && v > 0),
-        { message: "Payment term (years) must be a positive integer" }
-      ),
-    legal_framework: z.string().trim().min(1).optional(),
+      .trim()
+      .min(1, { message: "Legal framework cannot be empty if provided" })
+      .optional(),
+
     contract_date: z
       .string()
       .optional()
       .refine(
-        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        (val) => !val || !Number.isNaN(Date.parse(val)),
         { message: "Invalid contract date format" }
       ),
+
     start_date: z
       .string()
       .optional()
       .refine(
-        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        (val) => !val || !Number.isNaN(Date.parse(val)),
         { message: "Invalid start date format" }
       ),
+
     expiry_date: z
       .string()
       .optional()
       .refine(
-        (v) => v == null || v === "" || !Number.isNaN(Date.parse(v)),
+        (val) => !val || !Number.isNaN(Date.parse(val)),
         { message: "Invalid expiry date format" }
       ),
   })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided to update the lease agreement",
-  });
+  .refine(
+    (data) => {
+      // Require at least one field for update
+      return Object.values(data).some((val) => val !== undefined);
+    },
+    {
+      message: "At least one field must be provided to update the lease agreement",
+    }
+  );
 
 export type EditLeaseFormData = z.infer<typeof EditLeaseFormSchema>;
 
+
+
 // 6) Encumbrance create/update
 export const EncumbranceFormSchema = z.object({
-  type: z.enum(["MORTGAGE", "COURT_FREEZE", "GOVT_RESERVATION"], {
-    message:
-      "Encumbrance type must be MORTGAGE, COURT_FREEZE, or GOVT_RESERVATION",
-  }),
+  type: z.string().trim().min(1, { message: "IEncumbrance type is required and cannot be empty" }),
   issuing_entity: z
     .string()
     .trim()

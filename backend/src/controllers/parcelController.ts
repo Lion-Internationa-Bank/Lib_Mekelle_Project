@@ -31,8 +31,12 @@ interface CreateParcelBody {
   total_area_m2: number;
   land_use?: string;
   land_grade: number;
-  tenure_type?: string;      
-  geometry_data?: any;
+  tenure_type?: string;  
+  boundary_coords?: any;
+  boundary_north?: any;
+  boundary_south?: any;
+  boundary_west?: any;
+  boundary_east?:any;
 }
 
 interface TransferOwnershipBody {
@@ -92,7 +96,11 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
       land_use,
       land_grade,
       tenure_type,      
-      geometry_data,
+      boundary_coords,
+      boundary_north,
+      boundary_south,
+      boundary_west,
+      boundary_east,
     } = req.body;
 
     // Validate required fields
@@ -104,26 +112,28 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
     }
 
     // Validate tenure_type if provided
-    if (tenure_type) {
-      const isValidTenure = await validateConfigValue(ConfigCategory.LAND_TENURE, tenure_type);
-      if (!isValidTenure) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid tenure_type',
-        });
-      }
-    }
+    // if (tenure_type) {
+    //   console.log("provided tenure type",tenure_type)
+    //   const isValidTenure = await validateConfigValue(ConfigCategory.LAND_TENURE, tenure_type);
+    //   console.log(isValidTenure)
+    //   if (!isValidTenure) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: 'Invalid tenure_type',
+    //     });
+    //   }
+    // }
 
     // Validate land_use if provided
-    if (land_use) {
-      const isValidLandUse = await validateConfigValue(ConfigCategory.LAND_USE, land_use);
-      if (!isValidLandUse) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid land_use',
-        });
-      }
-    }
+    // if (land_use) {
+    //   const isValidLandUse = await validateConfigValue(ConfigCategory.LAND_USE, land_use);
+    //   if (!isValidLandUse) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: 'Invalid land_use',
+    //     });
+    //   }
+    // }
 
     // Check if sub_city exists
     const subCity = await prisma.sub_cities.findFirst({
@@ -171,7 +181,11 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
         land_use,
         land_grade,
         tenure_type: tenure_type || 'OLD_POSSESSION',
-        geometry_data,
+        boundary_coords,
+        boundary_north,
+        boundary_south,
+        boundary_west,
+        boundary_east,
       },
     });
 
@@ -243,6 +257,7 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
                 select: { owner_id: true, full_name: true },
               },
             },
+            orderBy: { acquired_at: 'asc' }, // optional: show oldest owners first
           },
           _count: {
             select: {
@@ -277,7 +292,15 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
           tenure_type: parcel.tenure_type,
           land_grade: parcel.land_grade,
           encumbrance_status: parcel._count.encumbrances > 0 ? 'Encumbered' : 'Clear',
-          owners: parcel.owners.map((po) => po.owner.full_name).join(', '),
+
+          // Updated: just list of active owner names (no share ratio)
+          owners: parcel.owners
+            .map((po) => po.owner.full_name)
+            .filter(Boolean)
+            .join(', ') || 'No active owners',
+
+          // Optional: also return count or owner IDs if frontend needs them
+          owner_count: parcel.owners.length,
         })),
         pagination: {
           page,
@@ -297,6 +320,7 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
     });
   }
 };
+
 
 export const getParcelByUpin = async (
   req: Request<{ upin: string }>,
@@ -324,7 +348,11 @@ export const getParcelByUpin = async (
         land_use: true,
         land_grade: true,
         tenure_type: true,
-        geometry_data: true,
+        boundary_coords: true,
+        boundary_east:true,
+        boundary_north:true,
+        boundary_south:true,
+        boundary_west:true,
         created_at: true,
         updated_at: true,
 
@@ -332,8 +360,8 @@ export const getParcelByUpin = async (
           where: { is_active: true, is_deleted: false },
           select: {
             parcel_owner_id: true,
-            share_ratio: true,
-            acquired_at: true,
+            acquired_at: true,           // ← kept (useful info)
+            // share_ratio: true,        ← REMOVED
             owner: {
               select: {
                 owner_id: true,
@@ -356,7 +384,8 @@ export const getParcelByUpin = async (
               },
             },
           },
-          orderBy: { share_ratio: "desc" },
+          // orderBy: { share_ratio: "desc" },  ← REMOVED
+          orderBy: { acquired_at: "asc" },     // ← reasonable alternative
         },
 
         lease_agreement: {
@@ -529,6 +558,9 @@ export const getParcelByUpin = async (
         ...parcel,
         history: enrichedHistory,
         billing_summary,
+        // Optional: add simple owner summary if frontend needs it
+        active_owners_count: parcel.owners.length,
+        // active_owners_summary: parcel.owners.map(o => o.owner.full_name).join(", ") || null,
       },
     });
   } catch (error) {
@@ -563,26 +595,26 @@ export const updateParcel = async (req: Request<{ upin: string }>, res: Response
     for (const key in data) {
       if (allowedUpdates[key as keyof typeof allowedUpdates]) {
         // Validate tenure_type
-        if (key === 'tenure_type' && data[key]) {
-          const isValid = await validateConfigValue(ConfigCategory.LAND_TENURE, data[key]);
-          if (!isValid) {
-            return res.status(400).json({
-              success: false,
-              message: 'Invalid tenure_type',
-            });
-          }
-        }
+        // if (key === 'tenure_type' && data[key]) {
+        //   const isValid = await validateConfigValue(ConfigCategory.LAND_TENURE, data[key]);
+        //   if (!isValid) {
+        //     return res.status(400).json({
+        //       success: false,
+        //       message: 'Invalid tenure_type',
+        //     });
+        //   }
+        // }
         
         // Validate land_use
-        if (key === 'land_use' && data[key]) {
-          const isValid = await validateConfigValue(ConfigCategory.LAND_USE, data[key]);
-          if (!isValid) {
-            return res.status(400).json({
-              success: false,
-              message: 'Invalid land_use',
-            });
-          }
-        }
+        // if (key === 'land_use' && data[key]) {
+        //   const isValid = await validateConfigValue(ConfigCategory.LAND_USE, data[key]);
+        //   if (!isValid) {
+        //     return res.status(400).json({
+        //       success: false,
+        //       message: 'Invalid land_use',
+        //     });
+        //   }
+        // }
         
         updates[key] = data[key];
       }
@@ -701,28 +733,27 @@ export const transferOwnership = async (
     const {
       from_owner_id,
       to_owner_id,
-      to_share_ratio,
       transfer_type,
       transfer_price,
       reference_no,
     } = req.body;
 
     // === Basic validations ===
-    if (!to_owner_id || to_share_ratio === undefined || !transfer_type) {
+    if (!to_owner_id || !transfer_type) {
       return res.status(400).json({
         success: false,
-        message: "to_owner_id, to_share_ratio, and transfer_type are required.",
+        message: "to_owner_id and transfer_type are required.",
       });
     }
 
     // Validate transfer_type
-    const isValidTransferType = await validateConfigValue(ConfigCategory.TRANSFER_TYPE, transfer_type);
-    if (!isValidTransferType) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid transfer_type",
-      });
-    }
+    // const isValidTransferType = await validateConfigValue(ConfigCategory.TRANSFER_TYPE, transfer_type);
+    // if (!isValidTransferType) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid transfer_type",
+    //   });
+    // }
 
     if (from_owner_id && from_owner_id === to_owner_id) {
       return res.status(400).json({
@@ -752,49 +783,28 @@ export const transferOwnership = async (
 
       // 2. Validate FROM owner (if specified)
       let fromOwnerRecord = null;
-      let fromOwnerShare = 0;
 
       if (from_owner_id) {
         fromOwnerRecord = activeOwners.find((po) => po.owner_id === from_owner_id);
         if (!fromOwnerRecord) {
           throw new Error("FROM_OWNER_NOT_ACTIVE");
         }
-        fromOwnerShare = Number(fromOwnerRecord.share_ratio);
-
-        if (Number(to_share_ratio) > fromOwnerShare) {
-          throw new Error("TO_SHARE_EXCEEDS_FROM_OWNER");
-        }
       }
 
       // 3. Check if TO owner exists
       const existingToOwnerRecord = activeOwners.find((po) => po.owner_id === to_owner_id);
 
-      // 4. Calculate new total shares
-      const currentTotal = activeOwners.reduce((sum, po) => sum + Number(po.share_ratio), 0);
-      let newTotal = currentTotal;
-
-      if (from_owner_id && fromOwnerRecord) {
-        newTotal -= fromOwnerShare;
-      }
-      newTotal += Number(to_share_ratio);
-
-      if (newTotal > 1.000001) {
-        throw new Error("SHARE_RATIO_EXCEEDED");
-      }
-
-      // 5. Create event snapshot
+      // 4. Create event snapshot (no share calculations)
+   
       const snapshot = {
         timestamp: new Date().toISOString(),
-        previous_total: currentTotal,
-        final_total: newTotal,
         owners_before: activeOwners.map((po) => ({
           id: po.owner_id,
           name: po.owner.full_name,
-          share: Number(po.share_ratio),
         })),
       };
 
-      // 6. Perform updates
+      // 5. Perform updates
       const updates: Promise<any>[] = [];
 
       // Update tenure to LEASE unless it's heredity
@@ -820,42 +830,25 @@ export const transferOwnership = async (
 
       // Handle FROM owner
       if (from_owner_id && fromOwnerRecord) {
-        const remainingShare = fromOwnerShare - Number(to_share_ratio);
-
-        if (remainingShare <= 0.000001) {
-          // Full transfer → retire the owner
-          updates.push(
-            tx.parcel_owners.update({
-              where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
-              data: {
-                is_active: false,
-                retired_at: new Date(),
-              },
-            })
-          );
-        } else {
-          // Partial transfer → reduce share
-          updates.push(
-            tx.parcel_owners.update({
-              where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
-              data: {
-                share_ratio: remainingShare,
-              },
-            })
-          );
-        }
+        // Full transfer → retire the owner (assuming full ownership transfer when no share ratio)
+        updates.push(
+          tx.parcel_owners.update({
+            where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
+            data: {
+              is_active: false,
+              retired_at: new Date(),
+            },
+          })
+        );
       }
 
       // Handle TO owner
       if (existingToOwnerRecord) {
-        // Add to existing share
-        const newShare = Number(existingToOwnerRecord.share_ratio) + Number(to_share_ratio);
-
+        // For existing owner, we could merge or update metadata, but since no share, just update acquired_at
         updates.push(
           tx.parcel_owners.update({
             where: { parcel_owner_id: existingToOwnerRecord.parcel_owner_id },
             data: {
-              share_ratio: newShare,
               acquired_at: new Date(),
             },
           })
@@ -870,13 +863,12 @@ export const transferOwnership = async (
           throw new Error("TO_OWNER_NOT_FOUND");
         }
 
-        // Create new ownership record
+        // Create new ownership record (share_ratio removed from schema, so omit it)
         updates.push(
           tx.parcel_owners.create({
             data: {
               upin,
               owner_id: to_owner_id,
-              share_ratio: to_share_ratio,
               acquired_at: new Date(),
               is_active: true,
             },
@@ -886,7 +878,7 @@ export const transferOwnership = async (
 
       await Promise.all(updates);
 
-      // 7. Record transfer in history
+      // 6. Record transfer in history (omit share-related fields if any)
       const historyEntry = await tx.ownership_history.create({
         data: {
           upin,
@@ -904,11 +896,16 @@ export const transferOwnership = async (
         },
       });
 
+      // Determine action (adjusted for no shares)
+      const finalOwners = await tx.parcel_owners.findMany({
+        where: { upin, is_active: true, is_deleted: false },
+      });
+
+
       return {
         history: historyEntry,
-        action: existingToOwnerRecord ? "ADDED_TO_EXISTING_OWNER" : "NEW_OWNER_CREATED",
-        transfer_kind: fromOwnerShare <= Number(to_share_ratio) + 0.000001 ? "FULL" : "PARTIAL",
-        final_total_shares: newTotal,
+        action: existingToOwnerRecord ? "UPDATED_EXISTING_OWNER" : "NEW_OWNER_CREATED",
+        transfer_kind: fromOwnerRecord ? "FULL" : "UNKNOWN", // Adjusted since no partial without shares
       };
     });
 
@@ -922,10 +919,8 @@ export const transferOwnership = async (
 
     const errorMessages: Record<string, string> = {
       FROM_OWNER_NOT_ACTIVE: "The specified seller is not currently an active owner.",
-      TO_SHARE_EXCEEDS_FROM_OWNER: "Cannot transfer more than the seller's current share.",
-      SHARE_RATIO_EXCEEDED: "Total shares would exceed 100%.",
-      NO_ACTIVE_OWNERS: "This parcel has no active owners.",
       TO_OWNER_NOT_FOUND: "The specified buyer does not exist.",
+      NO_ACTIVE_OWNERS: "This parcel has no active owners.",
     };
 
     const message = errorMessages[error.message] || "Transfer failed due to an unexpected error.";
@@ -937,111 +932,219 @@ export const transferOwnership = async (
   }
 };
 
-export const updateParcelOwnerShare = async (
-  req: Request<{ parcel_owner_id: string }>, 
-  res: Response
-) => {
-  let calculatedNewTotal: number | undefined;
+
+
+
+
+export const addCoOwner = async (req: Request, res: Response) => {
+  const { upin } = req.params;
+  const { owner_id, acquired_at } = req.body;
 
   try {
-    const { parcel_owner_id } = req.params;
-    const { share_ratio } = req.body;
-
-    // Validate input
-    if (share_ratio === undefined || share_ratio <= 0 || share_ratio > 1) {
+    // 1. Required field validation
+    if (!upin) {
       return res.status(400).json({
         success: false,
-        message: 'Valid share_ratio (0.0-1.0) required',
+        message: "UPIN is required",
+      });
+    }
+
+    if (!owner_id) {
+      return res.status(400).json({
+        success: false,
+        message: "owner_id is required",
+      });
+    }
+
+    // 2. Check if owner exists
+    const existingOwner = await prisma.owners.findUnique({
+      where: { owner_id },
+    });
+
+    if (!existingOwner) {
+      return res.status(404).json({
+        success: false,
+        message: "Owner not found",
+      });
+    }
+
+    // 3. Check if already linked (active)
+    const existingLink = await prisma.parcel_owners.findFirst({
+      where: {
+        upin,
+        owner_id,
+        is_active: true,
+        is_deleted: false,
+      },
+    });
+
+    if (existingLink) {
+      return res.status(409).json({
+        success: false,
+        message: "This owner is already an active co-owner of the parcel",
+      });
+    }
+
+    // 4. Create the link (inside transaction for atomicity)
+    const result = await prisma.$transaction(async (tx) => {
+      const parcelOwner = await tx.parcel_owners.create({
+        data: {
+          upin,               
+          owner_id,        
+          acquired_at: acquired_at ? new Date(acquired_at) : new Date(),
+          is_active: true,
+        },
+      });
+
+      return { parcelOwner };
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Co-owner added successfully",
+      data: {
+        parcel_owner_id: result.parcelOwner.parcel_owner_id,
+      },
+    });
+  } catch (error: any) {
+    console.error("Add co-owner error:", error);
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate link (owner already added to this parcel)",
+      });
+    }
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: "Parcel or owner not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add co-owner",
+    });
+  }
+};
+
+export const subdivideParcel = async (req: Request, res: Response) => {
+  const { upin } = req.params;
+  const { childParcels } = req.body; // array of { upin, file_number, total_area_m2, ... }
+
+  try {
+    console.log("parcels",childParcels)
+    console.log("is'nt array",!Array.isArray(childParcels))
+    console.log("array length",childParcels.length)
+    if (!Array.isArray(childParcels) || childParcels.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least two child parcels are required',
       });
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const currentRecord = await tx.parcel_owners.findUnique({
-        where: { parcel_owner_id },
-        select: {
-          parcel_owner_id: true,
-          upin: true,
-          owner_id: true,
-          share_ratio: true,
-          is_active: true,
-          is_deleted: true,
+      // 1. Get parent
+      const parent = await tx.land_parcels.findUnique({
+        where: { upin },
+        include: {
+          owners: {
+            where: { is_active: true, is_deleted: false },
+            include: { owner: true },
+          },
         },
       });
 
-      if (!currentRecord) {
-        throw new Error('PARCEL_OWNER_NOT_FOUND');
+      if (!parent) throw new Error('PARENT_NOT_FOUND');
+      if (parent.status !== 'ACTIVE') throw new Error('PARENT_NOT_ACTIVE');
+
+      // 2. Area validation (with small tolerance)
+      const totalChildArea = childParcels.reduce((sum: number, c: any) => sum + Number(c.total_area_m2), 0);
+      if (totalChildArea > Number(parent.total_area_m2) + 0.1) {
+        throw new Error('CHILD_AREAS_EXCEED_PARENT');
       }
 
-      if (currentRecord.is_deleted) {
-        throw new Error('PARCEL_OWNER_DELETED');
-      }
-
-      if (!currentRecord.is_active) {
-        throw new Error('PARCEL_OWNER_INACTIVE');
-      }
-
-      // Calculate current total shares
-      const activeOwners = await tx.parcel_owners.findMany({
-        where: { 
-          upin: currentRecord.upin, 
-          is_active: true, 
-          is_deleted: false 
-        },
-      });
-
-      const currentTotal = activeOwners.reduce((sum, po) => sum + Number(po.share_ratio), 0);
-      const oldShare = Number(currentRecord.share_ratio);
-      
-      calculatedNewTotal = currentTotal - oldShare + Number(share_ratio);
-
-      if (calculatedNewTotal > 1.000001) {
-        throw new Error('SHARE_RATIO_EXCEEDED');
-      }
-
-      const updatedRecord = await tx.parcel_owners.update({
-        where: { parcel_owner_id },
-        data: {
-          share_ratio,
+      // 3. Retire parent
+      await tx.land_parcels.update({
+        where: { upin },
+        data: { 
+          status: 'RETIRED',
           updated_at: new Date(),
         },
       });
 
-      return {
-        record: updatedRecord,
-        share_change: {
-          parcel_owner_id,
-          upin: currentRecord.upin,
-          owner_id: currentRecord.owner_id,
-          old_share: oldShare,
-          new_share: Number(share_ratio),
-          old_total: currentTotal,
-          new_total: calculatedNewTotal.toFixed(6),
-        },
-      };
+      const createdChildren = [];
+
+      // 4. Create children + copy active owners
+      for (const childData of childParcels) {
+        const child = await tx.land_parcels.create({
+          data: {
+            upin: childData.upin,
+            file_number: childData.file_number,
+            sub_city_id: parent.sub_city_id,
+            tabia: parent.tabia,
+            ketena: parent.ketena,
+            block: parent.block,
+            total_area_m2: childData.total_area_m2,
+            land_use: parent.land_use,
+            land_grade: parent.land_grade,
+            tenure_type: parent.tenure_type,
+            parent_upin: upin,
+            status: 'ACTIVE',
+            boundary_coords: childData.boundary_coords || parent.boundary_coords,
+            boundary_north: childData.boundary_north || parent.boundary_north,
+            boundary_east: childData.boundary_east || parent.boundary_east,
+            boundary_south: childData.boundary_south || parent.boundary_south,
+            boundary_west: childData.boundary_west || parent.boundary_west,
+          },
+        });
+
+        // Copy all active owners from parent to this child
+        for (const po of parent.owners) {
+          await tx.parcel_owners.create({
+            data: {
+              upin: child.upin,
+              owner_id: po.owner_id,
+              acquired_at: new Date(),
+              is_active: true,
+            },
+          });
+        }
+
+        createdChildren.push(child);
+      }
+
+      return { children: createdChildren };
     });
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: 'Share ratio updated successfully',
-      data: result,
+      message: "Parcel subdivided successfully. Parent retired, children created with copied owners.",
+      data: {
+        parent_upin: upin,
+        child_parcels: result.children.map(c => ({
+          upin: c.upin,
+          file_number: c.file_number,
+          total_area_m2: Number(c.total_area_m2),
+        })),
+      },
     });
-
   } catch (error: any) {
-    console.error('Share update error:', error);
-    
-    const errorMap: Record<string, string> = {
-      'PARCEL_OWNER_NOT_FOUND': 'Parcel owner record not found',
-      'PARCEL_OWNER_DELETED': 'Parcel owner record is deleted',
-      'PARCEL_OWNER_INACTIVE': 'Parcel owner record is inactive',
-      'SHARE_RATIO_EXCEEDED': `New total shares (${calculatedNewTotal?.toFixed(4)}) would exceed 100%`,
+    console.error("Subdivision error:", error);
+
+    const messages: Record<string, string> = {
+      PARENT_NOT_FOUND: "Parent parcel not found",
+      PARENT_NOT_ACTIVE: "Only active parcels can be subdivided",
+      CHILD_AREAS_EXCEED_PARENT: "Total child areas exceed parent area",
     };
 
-    const errorMessage = errorMap[error.message] || 'Failed to update share ratio';
-    const statusCode = errorMap[error.message] ? 400 : 500;
+    const message = messages[error.message] || "Failed to subdivide parcel";
 
-    return res.status(statusCode).json({
+    return res.status(400).json({
       success: false,
-      message: errorMessage,
+      message,
     });
   }
 };
@@ -1062,13 +1165,13 @@ export const createEncumbrance = async (
     }
 
     // Validate encumbrance type
-    const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
-    if (!isValidType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid encumbrance type',
-      });
-    }
+    // const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
+    // if (!isValidType) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Invalid encumbrance type',
+    //   });
+    // }
 
     // Verify parcel exists
     const parcel = await prisma.land_parcels.findFirst({
@@ -1143,15 +1246,15 @@ export const updateEncumbrance = async (
     }
 
     // Validate type if provided
-    if (type) {
-      const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
-      if (!isValidType) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid encumbrance type',
-        });
-      }
-    }
+    // if (type) {
+    //   const isValidType = await validateConfigValue(ConfigCategory.ENCUMBRANCE_TYPE, type);
+    //   if (!isValidType) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: 'Invalid encumbrance type',
+    //     });
+    //   }
+    // }
 
     // Check reference number uniqueness
     if (reference_number) {

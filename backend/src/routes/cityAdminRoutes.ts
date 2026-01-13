@@ -19,6 +19,7 @@ import {
 } from '../validation/configSchema.ts';
 import { validateRequest } from '../middlewares/validateRequest.ts';
 import { UserRole, ConfigCategory } from '../generated/prisma/enums.ts';
+import {roleBasedConfigAccess}  from '../middlewares/roleMiddleware.ts'
 
 const router: Router = express.Router();
 
@@ -32,7 +33,6 @@ router.get('/configs/:category', authenticate,  getConfig);
 router.post(
   '/configs/:category',
   authenticate,
-  cityAdminOnly,
   (req, res, next) => {
     const category = req.params.category as ConfigCategory;
     if (!Object.values(ConfigCategory).includes(category)) {
@@ -40,10 +40,11 @@ router.post(
     }
     next();
   },
+  authorize(['CITY_ADMIN', 'REVENUE_ADMIN']), // Only these two roles allowed
+  roleBasedConfigAccess, // ← NEW middleware for category-role enforcement
   validateRequest(configListSchema),
   createOrUpdateConfig
 );
-
 // Sub-city routes
 // router.get('/sub-cities', authenticate, cityAdminOnly, getSubCities);
 router.get('/sub-cities', authenticate,  getSubCities);

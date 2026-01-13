@@ -13,6 +13,7 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
   const [searchParams] = useSearchParams();
 
   const upin = searchParams.get("upin") || "";
+  
   const subCity = searchParams.get("sub_city") || "";
 
   const today = new Date().toISOString().split("T")[0];
@@ -46,12 +47,9 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
         const { owner_id } = res.data;
         onCreated({ owner_id });
       } else {
-        // backend Zod error message from API if provided
-        // eslint-disable-next-line no-console
         console.error(res.message || "Failed to create owner");
       }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
       console.error(err.message || "Failed to create owner");
     }
   };

@@ -1,8 +1,8 @@
 // src/controllers/configController.ts
 import { type Request, type Response } from 'express';
 import prisma from '../config/prisma.ts';
-import { ConfigCategory } from '../generated/prisma/enums.ts';
-import {type AuthRequest } from '../middlewares/authMiddleware.ts';
+import { ConfigCategory ,AuditAction} from '../generated/prisma/enums.ts';
+import {type AuthRequest  } from '../middlewares/authMiddleware.ts';
 
 const CONFIG_KEYS: Record<ConfigCategory, string> = {
   LAND_TENURE: 'land_tenure_options',
@@ -44,6 +44,7 @@ export const getConfig = async (req: Request<{ category: ConfigCategory }>, res:
 };
 
 // POST /api/v1/city-admin/configs/:category
+
 export const createOrUpdateConfig = async (
   req: AuthRequest & { params: { category: ConfigCategory } },
   res: Response
@@ -51,35 +52,54 @@ export const createOrUpdateConfig = async (
   const { category } = req.params;
   const { options, description } = req.body;
 
-  const key = CONFIG_KEYS[category];
+  const key = CONFIG_KEYS[category]; 
 
-  const updated = await prisma.configurations.upsert({
-    where: { key },
-    update: {
-      value: options,
-      description: description || null,
-      updated_at: new Date(),
-    },
-    create: {
-      key,
-      value: options,
-      category,
-      description: description || null,
-      is_active: true,
-    },
-  });
+  if (!key) {
+    return res.status(400).json({ message: 'Invalid configuration key' });
+  }
 
-  res.status(200).json({
-    message: 'Configuration updated successfully',
-    config: {
-      category,
-      key: updated.key,
-      options: updated.value,
-      description: updated.description,
-    },
-  });
+  try {
+    const updated = await prisma.configurations.upsert({
+      where: { key },
+      update: {
+        value: options,
+        description: description || null,
+        updated_at: new Date(),
+      },
+      create: {
+        key,
+        value: options,
+        category,
+        description: description || null,
+        is_active: true,
+      },
+    });
+
+    // Optional: Log the config change
+    await prisma.audit_logs.create({
+      data: {
+        user_id: req.user!.user_id,
+        action_type: AuditAction.CONFIG_CHANGE,
+        entity_type: 'CONFIGURATION',
+        entity_id: updated.config_id,
+        changes: { category, key, options },
+      },
+    });
+
+    res.status(200).json({
+      message: 'Configuration updated successfully',
+      config: {
+        category,
+        key: updated.key,
+        options: updated.value,
+        description: updated.description,
+      },
+    });
+  } catch (error) {
+    console.error('Config update error:', error);
+    res.status(500).json({ message: 'Failed to update configuration' });
+  }
 };
-
 // Sub-city Controllers
 
 // GET /api/v1/city-admin/sub-cities

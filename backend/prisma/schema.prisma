@@ -40,6 +40,15 @@ enum ConfigCategory {
   REVENUE_RATES       
 }
 
+
+model system_rates {
+  rate_type     String   @id   // "LEASE_INTEREST_RATE" or "PENALTY_RATE"
+  value         Decimal  @db.Decimal(10, 4)
+  description   String?
+  updated_at    DateTime @updatedAt
+  @@index([rate_type])
+}
+
 model sub_cities {       
   sub_city_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String         @unique @db.VarChar(100)
@@ -109,12 +118,20 @@ model land_parcels {
   land_use          String?                       // Validate against ConfigCategory.LAND_USE
   land_grade        Decimal        @db.Decimal(10, 2)
   tenure_type       String         @default("OLD_POSSESSION")  // Validate against ConfigCategory.LAND_TENURE
-  geometry_data     Json?
+   parent_upin       String?        @db.VarChar(50)
+   status            ParcelStatus   @default(ACTIVE)
+  boundary_coords   Json?
+  boundary_north    String?        @db.VarChar(255) 
+  boundary_east     String?        @db.VarChar(255)
+  boundary_south    String?        @db.VarChar(255)
+  boundary_west     String?        @db.VarChar(255)
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
   deleted_at        DateTime?
   is_deleted        Boolean        @default(false)
 
+  parent_parcel     land_parcels?  @relation("ParcelLineage", fields: [parent_upin], references: [upin])
+  child_parcels     land_parcels[] @relation("ParcelLineage")
   billing_records   billing_records[]
   buildings         building_details[]
   documents         documents[]
@@ -127,6 +144,7 @@ model land_parcels {
   sub_city          sub_cities     @relation(fields: [sub_city_id], references: [sub_city_id])
 
   @@index([sub_city_id, tabia])
+  @@index([status])
 }
 
 model owners {
@@ -149,7 +167,6 @@ model owners {
 model parcel_owners {
   upin              String         @db.VarChar(50)
   owner_id          String         @db.Uuid
-  share_ratio       Decimal        @default(1.0) @db.Decimal(10, 6)
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
   acquired_at       DateTime       @default(now())
@@ -338,6 +355,12 @@ enum PaymentStatus {
 enum EncumbranceStatus {
   ACTIVE
   RELEASED
+}
+
+enum ParcelStatus {
+  ACTIVE    
+  RETIRED   
+  PENDING  
 }
 
 // DYNAMIC via configurations

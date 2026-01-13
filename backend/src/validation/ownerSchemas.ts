@@ -62,12 +62,6 @@ export const CreateOwnerSchema = z.object({
       .regex(/^[A-Za-z0-9\-_]+$/, {
         message: 'Invalid UPIN format',
       }),
-
-    share_ratio: z.coerce
-      .number()
-      .gt(0, { message: 'Share ratio must be greater than 0' })
-      .lte(1, { message: 'Share ratio cannot exceed 1.0 (100%)' }),
-
     acquired_at: z.coerce.date().optional(),
   }),
   params: z.object({}),

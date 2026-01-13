@@ -4,6 +4,10 @@ import {
   createEncumbranceApi,
   updateEncumbranceApi,
 } from "../../../services/parcelDetailApi";
+import {
+  getConfig,
+  type ConfigOption,
+} from "../../../services/cityAdminService";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import {
   EncumbranceFormSchema,
@@ -30,37 +34,48 @@ const EncumbranceModal = ({
 }: Props) => {
   const isEdit = !!encumbrance;
 
-  const [form, setForm] = useState({
-    type: "" as EncumbranceFormData["type"] | "",
+  const [form, setForm] = useState<EncumbranceFormData>({
+    type: "",
     issuing_entity: "",
     reference_number: "",
-    status: "ACTIVE" as EncumbranceFormData["status"],
+    status: "ACTIVE",
     registration_date: "",
   });
+
+  const [encumbranceTypes, setEncumbranceTypes] = useState<ConfigOption[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [typesError, setTypesError] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Fetch encumbrance types from backend
   useEffect(() => {
     if (!open) return;
 
-    if (isEdit && encumbrance) {
-      setForm({
-        type: (encumbrance.type as EncumbranceFormData["type"]) || "",
-        issuing_entity: encumbrance.issuing_entity || "",
-        reference_number: encumbrance.reference_number || "",
-        status: (encumbrance.status as EncumbranceFormData["status"]) || "ACTIVE",
-        registration_date: encumbrance.registration_date?.slice(0, 10) || "",
-      });
-    } else {
-      setForm({
-        type: "",
-        issuing_entity: "",
-        reference_number: "",
-        status: "ACTIVE",
-        registration_date: "",
-      });
-    }
-    setError(null);
+    const loadTypes = async () => {
+      setLoadingTypes(true);
+      setTypesError(null);
+      const res = await getConfig("ENCUMBRANCE_TYPE");
+      if (res.success && res.data?.options) {
+        setEncumbranceTypes(res.data.options);
+        // Pre-select type if editing
+        if (isEdit && encumbrance) {
+          setForm({
+            type: encumbrance.type as EncumbranceFormData["type"],
+            issuing_entity: encumbrance.issuing_entity || "",
+            reference_number: encumbrance.reference_number || "",
+            status: encumbrance.status as EncumbranceFormData["status"],
+            registration_date: encumbrance.registration_date?.slice(0, 10) || "",
+          });
+        }
+      } else {
+        setTypesError(res.error || "Failed to load encumbrance types");
+      }
+      setLoadingTypes(false);
+    };
+
+    loadTypes();
   }, [open, isEdit, encumbrance]);
 
   const handleSubmit = async () => {
@@ -68,7 +83,7 @@ const EncumbranceModal = ({
       setError(null);
       setSaving(true);
 
-      const parsed = EncumbranceFormSchema.parse(form) as EncumbranceFormData;
+      const parsed = EncumbranceFormSchema.parse(form);
 
       if (isEdit && encumbrance) {
         await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
@@ -81,11 +96,7 @@ const EncumbranceModal = ({
 
         const createdId =
           result.data?.encumbrance_id || result.data?.id || result.id;
-        if (createdId) {
-          await onSuccess(createdId);
-        } else {
-          await onSuccess();
-        }
+        await onSuccess(createdId);
       }
 
       onClose();
@@ -118,25 +129,37 @@ const EncumbranceModal = ({
         )}
 
         <div className="space-y-4">
+          {/* Type - Dynamic from backend */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Type *
             </label>
-            <select
-              value={form.type}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  type: e.target.value as EncumbranceFormData["type"] | "",
-                }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="">Select type</option>
-              <option value="MORTGAGE">Mortgage</option>
-              <option value="COURT_FREEZE">Court Freeze</option>
-              <option value="GOVT_RESERVATION">Govt Reservation</option>
-            </select>
+            {loadingTypes ? (
+              <div className="text-sm text-gray-500">Loading types...</div>
+            ) : typesError ? (
+              <div className="text-sm text-red-600">{typesError}</div>
+            ) : encumbranceTypes.length === 0 ? (
+              <div className="text-sm text-gray-500">No types available</div>
+            ) : (
+              <select
+                value={form.type}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    type: e.target.value as EncumbranceFormData["type"],
+                  }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select type</option>
+                {encumbranceTypes.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value} {opt.description ? `(${opt.description})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
@@ -148,7 +171,8 @@ const EncumbranceModal = ({
               onChange={(e) =>
                 setForm((f) => ({ ...f, issuing_entity: e.target.value }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
 
@@ -161,7 +185,7 @@ const EncumbranceModal = ({
               onChange={(e) =>
                 setForm((f) => ({ ...f, reference_number: e.target.value }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -177,7 +201,7 @@ const EncumbranceModal = ({
                   status: e.target.value as EncumbranceFormData["status"],
                 }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="ACTIVE">Active</option>
               <option value="RELEASED">Released</option>
@@ -197,7 +221,7 @@ const EncumbranceModal = ({
                   registration_date: e.target.value,
                 }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -206,6 +230,7 @@ const EncumbranceModal = ({
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+            disabled={saving}
           >
             Cancel
           </button>

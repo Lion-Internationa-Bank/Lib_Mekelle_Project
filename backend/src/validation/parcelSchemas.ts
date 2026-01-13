@@ -63,11 +63,11 @@ export const CreateParcelSchema = z.object({
       }),
 
     file_number: z.string().trim().min(1, { message: 'File number cannot be empty' }).optional(),
-
-    sub_city: z
+  sub_city_id: z
       .string()
       .trim()
-      .min(1, { message: 'Sub-city is required and cannot be empty' }),
+      .min(1, { message: 'Sub-city ID is required' })
+      .uuid({ message: 'Sub-city ID must be a valid UUID' }),
 
     tabia: z
       .string()
@@ -79,7 +79,7 @@ export const CreateParcelSchema = z.object({
 
     total_area_m2: z.coerce.number().positive({ message: 'Total area must be greater than 0' }),
 
-    land_use: z
+      land_use: z
       .string()
       .trim()
       .min(1, { message: 'Land use type is required and cannot be empty' }),
@@ -89,7 +89,10 @@ export const CreateParcelSchema = z.object({
       .min(0, { message: 'Land grade cannot be negative' })
       .optional(),
 
-    tenure_type: z.enum(['OLD_POSSESSION', 'LEASE']).default('OLD_POSSESSION'),
+    tenure_type: z
+      .string()
+      .trim()
+      .min(1, { message: 'Tenure type is required and cannot be empty' }),
 
     geometry_data: z.any().optional(),
   }),
@@ -110,7 +113,7 @@ export const UpdateParcelSchema = z.object({
       total_area_m2: z.coerce.number().positive().optional(),
       land_use: z.string().trim().min(1).optional(),
       land_grade: z.coerce.number().min(0).optional(),
-      tenure_type: z.enum(['OLD_POSSESSION', 'LEASE']).optional(),
+      tenure_type: z.string().trim().min(1).optional(),
       geometry_data: z.any().optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
@@ -133,15 +136,8 @@ export const TransferOwnershipSchema = z.object({
       .uuid({ message: 'Invalid to_owner_id – must be a valid UUID' })
       .min(1, { message: 'New owner (to_owner_id) is required' }),
 
-    to_share_ratio: z.coerce
-      .number()
-      .gt(0, { message: 'Share ratio must be greater than 0' })
-      .lte(1, { message: 'Share ratio cannot exceed 1.0 (100%)' }),
-
-    transfer_type: z.enum(['SALE', 'GIFT', 'HEREDITY', 'CONVERSION'], {
-      message: 'Transfer type must be one of: SALE, GIFT, HEREDITY, or CONVERSION',
-    }),
-
+    transfer_type: z.string()
+    .min(1, { message: 'New owner (to_owner_id) is required' }),
     transfer_price: z.coerce
       .number()
       .min(0, { message: 'Transfer price cannot be negative' })
@@ -152,17 +148,7 @@ export const TransferOwnershipSchema = z.object({
   query: z.object({}),
 });
 
-// Update Owner Share
-export const UpdateParcelOwnerShareSchema = z.object({
-  params: ParcelOwnerIdParamSchema,
-  body: z.object({
-    share_ratio: z.coerce
-      .number()
-      .gt(0, { message: 'Share ratio must be greater than 0' })
-      .lte(1, { message: 'Share ratio cannot exceed 1.0 (100%)' }),
-  }),
-  query: z.object({}),
-});
+
 
 // Create Encumbrance
 export const CreateEncumbranceSchema = z.object({
@@ -172,9 +158,9 @@ export const CreateEncumbranceSchema = z.object({
       .trim()
       .min(1, { message: 'UPIN is required and cannot be empty' }),
 
-    type: z.enum(['MORTGAGE', 'COURT_FREEZE', 'GOVT_RESERVATION'], {
-      message: 'Encumbrance type must be MORTGAGE, COURT_FREEZE, or GOVT_RESERVATION',
-    }),
+    type: z.string()
+      .trim()
+      .min(1, { message: 'Encumrance type is required and cannot be empty' }),
 
     issuing_entity: z
       .string()
@@ -196,7 +182,7 @@ export const UpdateEncumbranceSchema = z.object({
   params: EncumbranceIdParamSchema,
   body: z
     .object({
-      type: z.enum(['MORTGAGE', 'COURT_FREEZE', 'GOVT_RESERVATION']).optional(),
+       type: z.string().trim().optional(),
       issuing_entity: z.string().trim().min(1).optional(),
       reference_number: z.string().trim().nullable().optional(),
       status: z.enum(['ACTIVE', 'RELEASED']).optional(),

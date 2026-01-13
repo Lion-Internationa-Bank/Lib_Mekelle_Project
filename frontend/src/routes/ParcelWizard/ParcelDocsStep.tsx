@@ -19,13 +19,14 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   const [searchParams] = useSearchParams();
 
   const upin = searchParams.get("upin") || "";
+  console.log("here is upin",upin)
   const subCity = searchParams.get("sub_city") || "";
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState<any>(null);
 
   // Optional: Show error if missing data
-  if (!upin || !subCity) {
+  if (!upin) {
     return (
       <div className="text-center py-12">
         <p className="text-2xl font-bold text-red-600 mb-4">Missing Parcel Information</p>

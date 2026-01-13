@@ -67,11 +67,9 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
         const { lease_id } = res.data;
         onCreated({ lease_id });
       } else {
-        // eslint-disable-next-line no-console
         console.error(res.message || "Failed to create lease");
       }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
       console.error(err.message || "Failed to create lease");
     }
   };

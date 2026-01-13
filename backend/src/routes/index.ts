@@ -9,6 +9,7 @@ import leaseRouter from './leaseRoutes.ts';
 import uploadRouter from './uploadRoutes.ts';
 import authRoutes from './authRoutes.ts';
 import cityAdminRoutes from './cityAdminRoutes.ts';
+import revenueAdminRoutes from './revenueAdminRoutes.ts'
 
 const router: Router = express.Router();
 
@@ -18,6 +19,7 @@ router.use('/leases', leaseRouter);
 router.use('/upload', uploadRouter);
 router.use('/auth', authRoutes);
 router.use('/city-admin', cityAdminRoutes);
+router.use('/revenue-admin', revenueAdminRoutes);
 router.get('/health', (req: Request, res: Response) => {
   res.json({ message: 'Land Parcel API v1 - Ready!' });
 });

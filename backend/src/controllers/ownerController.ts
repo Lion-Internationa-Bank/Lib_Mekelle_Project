@@ -9,7 +9,6 @@ export const createOwner = async (req: Request, res: Response) => {
     tin_number,
     phone_number,
     upin,           // parcel UPIN to link
-    share_ratio,    // required
     acquired_at,    // optional
   } = req.body;
 
@@ -22,12 +21,6 @@ export const createOwner = async (req: Request, res: Response) => {
       });
     }
 
-    if (!share_ratio || share_ratio <= 0 || share_ratio > 1) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid share_ratio (0.0-1.0) is required',
-      });
-    }
 
     // 2. ALL-OR-NOTHING: Everything inside transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -39,20 +32,7 @@ export const createOwner = async (req: Request, res: Response) => {
         },
       });
 
-      const currentActiveShares = activeOwners.reduce(
-        (sum, po) => sum + Number(po.share_ratio), 
-        0
-      );
 
-      const newTotalShares = currentActiveShares + (share_ratio as number);
-
-      // **VALIDATE inside transaction - ROLLBACK if violation**
-      if (newTotalShares > 1.0) {
-        throw new Error(
-          `Share ratio violation: New total would be ${newTotalShares.toFixed(4)} > 1.0. ` +
-          `Current active: ${currentActiveShares.toFixed(4)}, Adding: ${share_ratio}`
-        );
-      }
 
       // **STEP 2: Create owner**
       const owner = await tx.owners.create({
@@ -69,7 +49,6 @@ export const createOwner = async (req: Request, res: Response) => {
         data: {
           upin,
           owner_id: owner.owner_id,
-          share_ratio: share_ratio as number,
           acquired_at: acquired_at ? new Date(acquired_at) : new Date(),
         },
       });
@@ -77,11 +56,6 @@ export const createOwner = async (req: Request, res: Response) => {
       return { 
         owner, 
         parcelOwner,
-        share_validation: {
-          current_active_shares: currentActiveShares,
-          added_share: share_ratio,
-          new_total_shares: newTotalShares,
-        }
       };
     });
 
@@ -288,7 +262,6 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
               },
             },
             select: {
-              share_ratio: true,
               acquired_at: true,
               parcel: {
                 select: {

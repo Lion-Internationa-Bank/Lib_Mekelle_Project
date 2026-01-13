@@ -7,6 +7,11 @@ import {
   type EditParcelFormData,
 } from "../../../validation/schemas";
 import { z } from "zod";
+import {
+  getConfig,
+  type ConfigOption,
+} from "../../../services/cityAdminService";
+import { useAuth } from "../../../auth/AuthContext";
 
 type Props = {
   parcel: ParcelDetail;
@@ -16,97 +21,347 @@ type Props = {
 };
 
 const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
-  const [form, setForm] = useState<Record<string, string>>({});
+  const { user } = useAuth();
+  const [form, setForm] = useState<Partial<EditParcelFormData>>({});
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Dynamic dropdown data
+  const [landUses, setLandUses] = useState<ConfigOption[]>([]);
+  const [tenureTypes, setTenureTypes] = useState<ConfigOption[]>([]);
+
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open && parcel) {
-      setForm({
-        file_number: parcel.file_number || "",
-        sub_city: parcel.sub_city || "",
-        tabia: parcel.tabia || "",
-        ketena: parcel.ketena || "",
-        block: parcel.block || "",
-        total_area_m2: parcel.total_area_m2?.toString() || "",
-        land_use: parcel.land_use || "",
-        land_grade: parcel.land_grade?.toString() || "",
-        tenure_type: parcel.tenure_type || "",
-      });
-      setError(null);
-    }
-  }, [open, parcel]);
+    if (!open || !parcel) return;
+
+    // Pre-fill form
+    setForm({
+      file_number: parcel.file_number || "",
+      sub_city_id: user?.sub_city_id || undefined,
+      tabia: parcel.tabia || "",
+      ketena: parcel.ketena || "",
+      block: parcel.block || "",
+      total_area_m2: Number(parcel.total_area_m2) ?? undefined,
+      land_use: parcel.land_use || undefined,
+      land_grade: Number(parcel.land_grade) ?? undefined,
+      tenure_type: parcel.tenure_type || undefined,
+      boundary_north: parcel.boundary_north || "",
+      boundary_east: parcel.boundary_east || "",
+      boundary_south: parcel.boundary_south || "",
+      boundary_west: parcel.boundary_west || "",
+      boundary_coords: parcel.boundary_coords
+        ? typeof parcel.boundary_coords === "string"
+          ? parcel.boundary_coords
+          : JSON.stringify(parcel.boundary_coords, null, 2)
+        : "",
+    });
+
+    // Fetch dropdown options
+    const loadOptions = async () => {
+      setLoadingOptions(true);
+      setOptionsError(null);
+
+      try {
+        const landUseRes = await getConfig("LAND_USE");
+        if (landUseRes.success && landUseRes.data?.options) {
+          setLandUses(landUseRes.data.options);
+        }
+
+        const tenureRes = await getConfig("LAND_TENURE");
+        if (tenureRes.success && tenureRes.data?.options) {
+          setTenureTypes(tenureRes.data.options);
+        }
+      } catch (err: any) {
+        setOptionsError("Failed to load options from server");
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    loadOptions();
+    setError(null);
+  }, [open, parcel, user?.sub_city_id]);
 
   const handleSave = async () => {
     try {
       setError(null);
+      setSaving(true);
 
-      const parsed = EditParcelFormSchema.parse({
-        file_number: form.file_number,
-        sub_city: form.sub_city,
-        tabia: form.tabia,
-        ketena: form.ketena,
-        block: form.block,
-        total_area_m2: form.total_area_m2,
-        land_use: form.land_use,
-        land_grade: form.land_grade,
-        tenure_type: form.tenure_type || undefined,
-      }) as EditParcelFormData;
+      const parsed = EditParcelFormSchema.parse(form) as EditParcelFormData;
 
       await updateParcelApi(parcel.upin, parsed);
       await onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        
-        setError(err.issues[0].message || "Validation failed");
+        setError(err.issues[0]?.message || "Validation failed");
+      } else if (err instanceof Error) {
+        setError(err.message || "Failed to update parcel");
       } else {
-        alert(err.message || "Failed to update parcel");
+        setError("An unexpected error occurred");
       }
+    } finally {
+      setSaving(false);
     }
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <h2 className="text-xl font-bold mb-6">Edit Parcel</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full my-8">
+        <h2 className="text-2xl font-bold mb-6">Edit Parcel</h2>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Object.keys(form).map((key) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 capitalize mb-1">
-                {key.replace(/_/g, " ")}
+        {loadingOptions ? (
+          <div className="text-center py-12 text-gray-500">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2" />
+            Loading options...
+          </div>
+        ) : optionsError ? (
+          <div className="text-red-600 text-center py-8">{optionsError}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* File Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                File Number
               </label>
               <input
-                type={key.includes("area") || key.includes("grade") ? "number" : "text"}
-                value={form[key]}
+                type="text"
+                value={form.file_number ?? ""}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, [key]: e.target.value }))
+                  setForm((f) => ({ ...f, file_number: e.target.value || undefined }))
                 }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          ))}
-        </div>
-        <div className="mt-8 flex justify-end gap-4">
+
+            {/* Tabia */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tabia
+              </label>
+              <input
+                type="text"
+                value={form.tabia ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tabia: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Ketena */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ketena
+              </label>
+              <input
+                type="text"
+                value={form.ketena ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, ketena: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Block */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Block
+              </label>
+              <input
+                type="text"
+                value={form.block ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, block: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Total Area m² */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Area (m²)
+              </label>
+              <input
+                type="number"
+                value={form.total_area_m2 ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    total_area_m2: e.target.value ? Number(e.target.value) : undefined,
+                  }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Land Use */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Land Use
+              </label>
+              <select
+                value={form.land_use ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, land_use: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Land Use</option>
+                {landUses.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value} {opt.description ? `(${opt.description})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Land Grade */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Land Grade
+              </label>
+              <input
+                type="number"
+                value={form.land_grade ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    land_grade: e.target.value ? Number(e.target.value) : undefined,
+                  }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Tenure Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tenure Type
+              </label>
+              <select
+                value={form.tenure_type ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tenure_type: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Tenure Type</option>
+                {tenureTypes.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value} {opt.description ? `(${opt.description})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* NEW: Boundary Fields - All Optional */}
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  North Boundary (optional)
+                </label>
+                <input
+                  type="text"
+                  value={form.boundary_north ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, boundary_north: e.target.value || undefined }))
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. North boundary description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  East Boundary (optional)
+                </label>
+                <input
+                  type="text"
+                  value={form.boundary_east ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, boundary_east: e.target.value || undefined }))
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. East boundary description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  South Boundary (optional)
+                </label>
+                <input
+                  type="text"
+                  value={form.boundary_south ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, boundary_south: e.target.value || undefined }))
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. South boundary description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  West Boundary (optional)
+                </label>
+                <input
+                  type="text"
+                  value={form.boundary_west ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, boundary_west: e.target.value || undefined }))
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. West boundary description"
+                />
+              </div>
+
+              {/* Boundary Coordinates (JSON) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Boundary Coordinates (JSON, optional)
+                </label>
+                <textarea
+                  value={form.boundary_coords ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, boundary_coords: e.target.value || undefined }))
+                  }
+                  rows={5}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  placeholder='{"type": "Polygon", "coordinates": [[[lon1, lat1], [lon2, lat2], ...]]}'
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-10 flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+            disabled={saving}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            disabled={saving}
+            className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>

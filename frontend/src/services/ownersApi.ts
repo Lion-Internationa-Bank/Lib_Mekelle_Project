@@ -4,6 +4,7 @@ import type {
   CreateOwnerOnlyData,
   UpdateOwnerFormData,
 } from "../validation/schemas";
+import type { SubCity } from "./cityAdminService";
 
 export interface OwnedParcel {
   share_ratio: string;
@@ -11,7 +12,7 @@ export interface OwnedParcel {
   parcel: {
     upin: string;
     file_number: string;
-    sub_city: string;
+    sub_city: SubCity;
     tabia: string;
     ketena: string;
     block: string;

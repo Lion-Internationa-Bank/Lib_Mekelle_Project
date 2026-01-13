@@ -7,10 +7,10 @@ const LandingPage = () => (
         ML
       </div>
       <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
-        Mekele Land Management
+        Mekelle Land Management
       </h1>
       <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-        Digital platform for managing land parcels, ownership, and city administration services.
+        An integrated digital platform for managing Mekelle City land records, property ownership, and land administration services.
       </p>
       <Link
         to="/login"

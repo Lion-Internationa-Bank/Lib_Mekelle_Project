@@ -20,6 +20,10 @@ export type ParcelDocument = {
   upload_date: string;
   is_verified: boolean;
 };
+export type Subcity = {
+  name:string;
+  description:string;
+}
 
 export type ParcelOwner = {
   parcel_owner_id: string;
@@ -37,11 +41,11 @@ export type ParcelOwner = {
 
 export type LeaseAgreement = {
   lease_id: string;
-  annual_lease_fee: string;
-  total_lease_amount: string;
-  down_payment_amount: string;
-  annual_installment: string;
-  price_per_m2: string;
+  annual_lease_fee: number;
+  total_lease_amount: number;
+  down_payment_amount: number;
+  annual_installment: number;
+  price_per_m2: number;
   lease_period_years: number;
   payment_term_years: number;
   start_date: string;
@@ -115,7 +119,7 @@ export type BillingSummary = Record<string, BillingRecord[]>;
 export interface ParcelDetail {
   upin: string;
   file_number: string;
-  sub_city: string;
+  sub_city: Subcity;
   tabia: string;
   ketena: string;
   block: string;
@@ -123,7 +127,11 @@ export interface ParcelDetail {
   land_use: string;
   land_grade: string;
   tenure_type: string;
-  geometry_data: string | null;
+  boundary_coords: string | null;
+  boundary_north:string| null;
+  boundary_south: string | null,
+  boundary_west: string | null,
+  boundary_east: string | null,
   created_at: string;
   updated_at: string;
   owners: ParcelOwner[];
@@ -143,7 +151,7 @@ export interface ParcelDetailResponse {
 
 // ------------ Lite owner + enums ------------
 
-export type TransferType = "SALE" | "GIFT" | "HEREDITY" | "CONVERSION";
+// export type TransferType = "SALE" | "GIFT" | "HEREDITY" | "CONVERSION";
 
 export interface LiteOwner {
   owner_id: string;
@@ -343,8 +351,61 @@ export const transferOwnershipApi = async (
   return json.data as {
     history: { history_id: string };
     newOwnership: any;
-    finalTotalShares: number;
     transfer_type: string;
-    from_owner_remaining: number;
   };
+};
+
+
+
+
+export const addCoOwnerToParcel = async (
+  upin: string,
+  owner_id: string,
+  acquired_at?: string
+) => {
+  const response = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/owners`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      owner_id,
+      acquired_at: acquired_at || undefined,
+    }),
+  });
+
+  const json = await response.json();
+
+  if (!response.ok || !json.success) {
+    throw new Error(json.message || "Failed to add co-owner");
+  }
+
+  return json.data;
+};
+
+
+// src/services/parcelDetailApi.ts
+export const subdivideParcel = async (
+  upin: string,
+  childParcels: Array<{
+    upin: string;
+    file_number: string;
+    total_area_m2: number;
+    boundary_coords?: any;
+    boundary_north?: string;
+    boundary_east?: string;
+    boundary_south?: string;
+    boundary_west?: string;
+  }>
+) => {
+  const response = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/subdivide`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ childParcels}),
+  });
+
+  const json = await response.json();
+  if (!response.ok || !json.success) {
+    throw new Error(json.message || "Failed to subdivide parcel");
+  }
+
+  return json.data;
 };

@@ -36,7 +36,7 @@ const menuItems: MenuItem[] = [
     label: 'Configurations',
     icon: '⚙️',
     href: '/configs',
-    allowedRoles: ['CITY_ADMIN'],
+    allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
   
   },
      {

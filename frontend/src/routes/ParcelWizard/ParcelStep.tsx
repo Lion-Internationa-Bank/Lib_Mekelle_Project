@@ -7,8 +7,18 @@ import {
 } from "../../validation/schemas";
 import type { ParcelStepProps } from "../../types/wizard";
 import { createParcel } from "../../services/parcelApi";
+import { getSubCities, getConfig, type SubCity } from "../../services/cityAdminService";
+import { useEffect, useState } from "react";
 
 const ParcelStep = ({ onCreated }: ParcelStepProps) => {
+  const [subCities, setSubCities] = useState<SubCity[]>([]);
+  const [landUseOptions, setLandUseOptions] = useState<string[]>([]);
+  const [tenureOptions, setTenureOptions] = useState<string[]>([]);
+  const [loading, setLoading] = useState({
+    subCities: false,
+    categories: false,
+  });
+
   const {
     register,
     handleSubmit,
@@ -20,7 +30,7 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
     defaultValues: {
       upin: "",
       file_number: "",
-      sub_city: "",
+      sub_city_id: "",
       tabia: "",
       ketena: "",
       block: "",
@@ -28,11 +38,46 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
       land_use: "",
       land_grade: 1.0,
       tenure_type: "",
-      geometry_data: undefined,
+      boundary_cords: undefined,
+      boundary_north: "",
+      boundary_east: "",
+      boundary_south: "",
+      boundary_west: "",
     },
   });
 
-  // Watch UPIN to auto-uppercase (optional, can be removed if unused)
+  // Load sub-cities and categories on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading((prev) => ({ ...prev, subCities: true }));
+        const subCitiesRes = await getSubCities();
+        if (subCitiesRes.success) {
+          setSubCities(subCitiesRes.data?.sub_cities || []);
+        }
+        setLoading((prev) => ({ ...prev, subCities: false }));
+
+        setLoading((prev) => ({ ...prev, categories: true }));
+        const landUseRes = await getConfig("LAND_USE");
+        if (landUseRes.success && landUseRes.data?.options) {
+          setLandUseOptions(landUseRes.data.options.map((opt: any) => opt.value));
+        }
+
+        const tenureRes = await getConfig("LAND_TENURE");
+        if (tenureRes.success && tenureRes.data?.options) {
+          setTenureOptions(tenureRes.data.options.map((opt: any) => opt.value));
+        }
+        setLoading((prev) => ({ ...prev, categories: false }));
+      } catch (error) {
+        console.error("Error loading data:", error);
+        setLoading({ subCities: false, categories: false });
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Auto-uppercase UPIN
   const upinValue = watch("upin");
 
   const onSubmit = async (data: ParcelFormData) => {
@@ -123,21 +168,24 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
             Sub City *
           </label>
           <select
-            {...register("sub_city")}
+            {...register("sub_city_id")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loading.subCities}
           >
             <option value="">Select Sub City</option>
-            <option>Ayder</option>
-            <option>Hawelti</option>
-            <option>Adi Haqi</option>
-            <option>Hadnet</option>
-            <option>Kedamay Weyane</option>
-            <option>Kwiha</option>
-            <option>Semien Mekelle</option>
+            {loading.subCities ? (
+              <option value="" disabled>Loading sub-cities...</option>
+            ) : (
+              subCities.map((subCity) => (
+                <option key={subCity.sub_city_id} value={subCity.sub_city_id}>
+                  {subCity.name}
+                </option>
+              ))
+            )}
           </select>
-          {errors.sub_city && (
+          {errors.sub_city_id && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.sub_city.message}
+              {errors.sub_city_id.message}
             </p>
           )}
         </div>
@@ -214,13 +262,18 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
           <select
             {...register("land_use")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loading.categories}
           >
             <option value="">Select Land Use</option>
-            <option>Residential</option>
-            <option>Commercial</option>
-            <option>Industrial</option>
-            <option>Agricultural</option>
-            <option>Mixed</option>
+            {loading.categories ? (
+              <option value="" disabled>Loading options...</option>
+            ) : (
+              landUseOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))
+            )}
           </select>
           {errors.land_use && (
             <p className="mt-1 text-sm text-red-600">
@@ -257,10 +310,18 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
           <select
             {...register("tenure_type")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loading.categories}
           >
             <option value="">Select Tenure Type</option>
-            <option>LEASE</option>
-            <option>OLD_POSSESSION</option>
+            {loading.categories ? (
+              <option value="" disabled>Loading options...</option>
+            ) : (
+              tenureOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))
+            )}
           </select>
           {errors.tenure_type && (
             <p className="mt-1 text-sm text-red-600">
@@ -269,14 +330,83 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
           )}
         </div>
 
-        {/* Optional Geometry (kept commented as in your code) */}
-        {/* ... */}
+        {/* Optional Geometry Data */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Geometry Data (Optional)
+          </label>
+          <textarea
+            {...register("boundary_coords")}
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            placeholder='{"type": "Polygon", "coordinates": [...]}'
+          />
+          {errors.boundary_coords && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.boundary_coords.message}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={fillExampleGeometry}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+          >
+            Fill with example geometry
+          </button>
+        </div>
+
+        {/* NEW: Boundary Fields - All Optional */}
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              North Boundary (optional)
+            </label>
+            <input
+              {...register("boundary_north")}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. North boundary description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              East Boundary (optional)
+            </label>
+            <input
+              {...register("boundary_east")}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. East boundary description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              South Boundary (optional)
+            </label>
+            <input
+              {...register("boundary_south")}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. South boundary description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              West Boundary (optional)
+            </label>
+            <input
+              {...register("boundary_west")}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. West boundary description"
+            />
+          </div>
+        </div>
 
         {/* Submit Button */}
-        <div className="md:col-span-2 flex justify-end mt-8">
+        <div className="md:col-span-2 flex justify-end mt-10">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || loading.subCities || loading.categories}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center gap-3"
           >
             {isSubmitting ? (

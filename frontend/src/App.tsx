@@ -1,6 +1,6 @@
 // src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider,useAuth } from './auth/AuthContext';
+import { AuthProvider,useAuth} from './auth/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
 import LoginPage from './routes/LoginPage';
@@ -21,22 +21,18 @@ const App = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* All protected pages use MainLayout */}
+        {/* Protected routes with MainLayout */}
         <Route element={<MainLayout />}>
-          {/* Role-based home pages */}
           <Route path="/home" element={<RoleBasedHome />} />
 
           {/* Common protected routes */}
           <Route path="/parcels/new" element={<ParcelWizard />} />
-          <Route path="/parcels/:upin" element={<ParcelDetailPage />} />
           <Route path="/ownership" element={<OwnershipPage />} />
           <Route path="/users" element={<UserManagementPage />} />
-
-<Route path="/sub-cities" element={<SubCitiesPage />} />
-  <Route path="/configs" element={<ConfigsPage />} />
-
-          {/* Add more role-specific routes here */}
+          <Route path="/sub-cities" element={<SubCitiesPage />} />
+          <Route path="/configs" element={<ConfigsPage />} />
         </Route>
+          <Route path='/parcels/:upin' element={<ParcelDetailPage />}></Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
@@ -44,7 +40,7 @@ const App = () => {
   );
 };
 
-// Dynamically render home page based on role
+// Role-based home page (unchanged)
 const RoleBasedHome = () => {
   const { user } = useAuth();
 

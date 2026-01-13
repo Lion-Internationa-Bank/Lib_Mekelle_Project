@@ -1,26 +1,35 @@
 // src/components/parcelDetail/ParcelDetailHeader.tsx
-import { Link } from "react-router-dom";
-import type { ParcelDetail } from "../../services/parcelDetailApi";
+import { Link } from 'react-router-dom';
+import type { ParcelDetail } from '../../services/parcelDetailApi';
 
-type Props = { data: ParcelDetail };
+interface ParcelDetailHeaderProps {
+  data: ParcelDetail;
+}
 
-const ParcelDetailHeader = ({ data }: Props) => (
-  <div className="mb-8 flex justify-between items-start">
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900">
-        Parcel Detail — <span className="font-mono text-blue-600">{data.upin}</span>
-      </h1>
-      <p className="text-gray-600 mt-1">
-        {data.sub_city} • {data.ketena || "N/A"} • Block {data.block || "N/A"}
-      </p>
+const ParcelDetailHeader = ({ data }: ParcelDetailHeaderProps) => {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        {/* Left: UPIN & File Number */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+            UPIN: {data.upin}
+          </h1>
+          <p className="text-xl text-gray-600">
+            File Number: <span className="font-medium">{data.file_number || '—'}</span>
+          </p>
+        </div>
+
+        {/* Right: Back Button */}
+        <Link
+          to="/home"
+          className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          ← Back to Dashboard
+        </Link>
+      </div>
     </div>
-    <Link
-      to="/home"
-      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 transition"
-    >
-      ← Dashboard
-    </Link>
-  </div>
-);
+  );
+};
 
 export default ParcelDetailHeader;

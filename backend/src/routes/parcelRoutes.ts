@@ -10,11 +10,12 @@ import {
   transferOwnership,
   updateParcel,
   deleteParcel,
-  updateParcelOwnerShare,
   createEncumbrance,
   updateEncumbrance,
   deleteEncumbrance,
   getEncumbrancesByParcel,
+  addCoOwner,
+  subdivideParcel
 } from '../controllers/parcelController.ts';
 
 import {
@@ -22,7 +23,7 @@ import {
   GetParcelsQuerySchema,
   UpdateParcelSchema,
   TransferOwnershipSchema,
-  UpdateParcelOwnerShareSchema,
+
   CreateEncumbranceSchema,
   UpdateEncumbranceSchema,
   DeleteEncumbranceSchema,
@@ -55,11 +56,9 @@ router.delete(
 // === Ownership Routes ===
 router.post('/:upin/transfer', validateRequest(TransferOwnershipSchema), transferOwnership);
 
-router.put(
-  '/owners/:parcel_owner_id/share',
-  validateRequest(UpdateParcelOwnerShareSchema),
-  updateParcelOwnerShare
-);
+router.post('/:upin/owners', addCoOwner);
+
+router.post('/:upin/subdivide',  subdivideParcel); 
 
 // === Encumbrance Routes ===
 router.post('/encumbrances', validateRequest(CreateEncumbranceSchema), createEncumbrance);
