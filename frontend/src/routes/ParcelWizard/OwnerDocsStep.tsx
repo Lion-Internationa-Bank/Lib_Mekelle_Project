@@ -188,14 +188,8 @@ const ownerId = searchParams.get("owner_id") || "";
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between gap-4 pt-4">
-        <button
-          type="button"
-          onClick={prevStep}
-          className="px-8 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors"
-        >
-          ← Previous
-        </button>
+      <div className="flex justify-end  pt-4">
+      
         <button
           type="button"
           disabled={!!uploadingId}

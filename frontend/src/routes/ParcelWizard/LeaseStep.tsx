@@ -30,7 +30,6 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
       lease_period_years: 53,
       payment_term_years: 6,
       start_date: "",
-      expiry_date: "",
       contract_date: today,
       legal_framework: "",
     },
@@ -246,22 +245,6 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Expiry Date *
-          </label>
-          <input
-            type="date"
-            {...register("expiry_date")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.expiry_date && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.expiry_date.message}
-            </p>
-          )}
-        </div>
-
         {/* Row 6 */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -281,14 +264,8 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
         </div>
 
         {/* Navigation */}
-        <div className="md:col-span-2 flex justify-between gap-4 pt-6">
-          <button
-            type="button"
-            onClick={prevStep}
-            className="px-8 py-3 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-          >
-            ← Previous
-          </button>
+        <div className="md:col-span-2 flex justify-end pt-6">
+        
 
           <button
             type="submit"

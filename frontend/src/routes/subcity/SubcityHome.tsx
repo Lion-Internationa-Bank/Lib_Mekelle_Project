@@ -1,7 +1,7 @@
 // src/routes/subcity/SubcityHome.tsx
 import { useState, useEffect, useCallback } from "react";
 import { Navigate ,Link} from "react-router-dom";
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import ParcelSearch from "../../components/ParcelSearch";
 import ParcelTable from "../../components/ParcelTable";
 import { fetchParcels } from "../../services/parcelApi";

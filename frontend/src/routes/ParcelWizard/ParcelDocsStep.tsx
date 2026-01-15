@@ -152,13 +152,8 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between gap-4 pt-12 mt-12 border-t border-gray-200">
-        <button
-          onClick={prevStep}
-          className="px-8 py-3 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200 flex items-center gap-2"
-        >
-          ← Previous Step
-        </button>
+      <div className="flex justify-end
+        pt-12 mt-12 border-t border-gray-200">
         <button
           onClick={nextStep}
           className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"

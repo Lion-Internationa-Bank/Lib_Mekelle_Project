@@ -167,36 +167,8 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Share Ratio *
-          </label>
-          <input
-            type="number"
-            min="0.01"
-            max="1"
-            step="0.01"
-            {...register("share_ratio")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
-          {errors.share_ratio && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.share_ratio.message}
-            </p>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            e.g. 1.0 = full ownership, 0.5 = 50%
-          </p>
-        </div>
-
-        <div className="md:col-span-2 flex justify-between gap-4 pt-6">
-          <button
-            type="button"
-            onClick={prevStep}
-            className="px-8 py-3 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-          >
-            ← Previous
-          </button>
+        <div className="md:col-span-2 flex justify-end  pt-6">
+         
 
           <button
             type="submit"

@@ -167,8 +167,6 @@ export const LeaseFormSchema = z.object({
       { message: "Start date must be on or after contract date" }
     ),
 
-  expiry_date: z.string().optional(),
-
   legal_framework: z
     .string()
     .optional()
@@ -216,12 +214,6 @@ phone_number: z
     return val;
   }),
 
-  // sent separately in payload, taken from URL
-  share_ratio: z.coerce
-    .number()
-    .gt(0, { message: "Share ratio must be greater than 0" })
-    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
-
   // keep as string for date input, but validate similar to backend
   acquired_at: z
     .string()
@@ -237,69 +229,53 @@ export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
  * Wizard LeaseStep form schema (frontend)
  * Mirrors CreateLeaseSchema.body but keeps date fields as strings.
  */
+
+
 export const LeaseStepFormSchema = z.object({
   price_per_m2: z.coerce
     .number()
     .positive({ message: "Price per m² must be greater than 0" }),
-
   total_lease_amount: z.coerce
     .number()
     .positive({ message: "Total lease amount must be greater than 0" }),
-
   annual_installment: z.coerce
     .number()
     .positive({ message: "Annual installment must be greater than 0" }),
-
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
-
   annual_lease_fee: z.coerce
     .number()
     .positive({ message: "Annual lease fee must be greater than 0" }),
-
   lease_period_years: z.coerce
     .number()
     .int()
-    .positive({
-      message: "Lease period (years) must be a positive integer",
-    }),
-
+    .positive({ message: "Lease period (years) must be a positive integer" }),
   payment_term_years: z.coerce
     .number()
     .int()
-    .positive({
-      message: "Payment term (years) must be a positive integer",
-    }),
-
+    .positive({ message: "Payment term (years) must be a positive integer" }),
   legal_framework: z
     .string()
     .trim()
     .min(1, { message: "Legal framework is required and cannot be empty" }),
-
   contract_date: z
     .string()
     .min(1, { message: "Contract date is required" })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid contract date format",
     }),
-
   start_date: z
     .string()
     .min(1, { message: "Start date is required" })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid start date format",
     }),
-
-  expiry_date: z
-    .string()
-    .min(1, { message: "Expiry date is required" })
-    .refine((val) => !Number.isNaN(Date.parse(val)), {
-      message: "Invalid expiry date format",
-    }),
+  // expiry_date removed for create; backend will compute it
 });
 
 export type LeaseStepFormData = z.infer<typeof LeaseStepFormSchema>;
+
 
 
 
@@ -437,33 +413,67 @@ export const EditLeaseFormSchema = z
       .optional(),
 
     contract_date: z
-      .string()
+      .union([
+        z.string()
+          .refine(
+            (val) => !val || !Number.isNaN(Date.parse(val)),
+            { message: "Invalid contract date format" }
+          ),
+        z.date(),
+        z.null(),
+        z.undefined()
+      ])
       .optional()
-      .refine(
-        (val) => !val || !Number.isNaN(Date.parse(val)),
-        { message: "Invalid contract date format" }
-      ),
+      .transform((val) => {
+        // Convert Date to ISO string if it's a Date object
+        if (val instanceof Date) {
+          return val.toISOString().split('T')[0]; // YYYY-MM-DD format
+        }
+        return val;
+      }),
 
     start_date: z
-      .string()
+      .union([
+        z.string()
+          .refine(
+            (val) => !val || !Number.isNaN(Date.parse(val)),
+            { message: "Invalid start date format" }
+          ),
+        z.date(),
+        z.null(),
+        z.undefined()
+      ])
       .optional()
-      .refine(
-        (val) => !val || !Number.isNaN(Date.parse(val)),
-        { message: "Invalid start date format" }
-      ),
+      .transform((val) => {
+        if (val instanceof Date) {
+          return val.toISOString().split('T')[0];
+        }
+        return val;
+      }),
 
     expiry_date: z
-      .string()
+      .union([
+        z.string()
+          .refine(
+            (val) => !val || !Number.isNaN(Date.parse(val)),
+            { message: "Invalid expiry date format" }
+          ),
+        z.date(),
+        z.null(),
+        z.undefined()
+      ])
       .optional()
-      .refine(
-        (val) => !val || !Number.isNaN(Date.parse(val)),
-        { message: "Invalid expiry date format" }
-      ),
+      .transform((val) => {
+        if (val instanceof Date) {
+          return val.toISOString().split('T')[0];
+        }
+        return val;
+      }),
   })
   .refine(
     (data) => {
       // Require at least one field for update
-      return Object.values(data).some((val) => val !== undefined);
+      return Object.values(data).some((val) => val !== undefined && val !== null && val !== '');
     },
     {
       message: "At least one field must be provided to update the lease agreement",
@@ -471,7 +481,6 @@ export const EditLeaseFormSchema = z
   );
 
 export type EditLeaseFormData = z.infer<typeof EditLeaseFormSchema>;
-
 
 
 // 6) Encumbrance create/update

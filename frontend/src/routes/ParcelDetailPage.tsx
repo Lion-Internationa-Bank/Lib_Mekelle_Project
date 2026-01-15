@@ -1,7 +1,7 @@
 // src/routes/ParcelDetailPage.tsx
 import { useEffect, useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 import { fetchParcelDetail, type ParcelDetail } from "../services/parcelDetailApi";
 
@@ -117,15 +117,15 @@ const ParcelDetailPage = () => {
         )}
 
         {/* Lease Tab */}
-        {tab === "lease" && data.lease_agreement && (
-          <LeaseSection lease={data.lease_agreement} onReload={reload} />
-        )}
+       {/* Lease Tab */}
+{tab === "lease" && (
+  <LeaseSection
+    parcel={data}
+    lease={data.lease_agreement}
+    onReload={reload}
+  />
+)}
 
-        {tab === "lease" && !data.lease_agreement && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-500 text-lg">No lease agreement registered for this parcel</p>
-          </div>
-        )}
 
         {/* Encumbrances Tab */}
         {tab === "encumbrances" && (

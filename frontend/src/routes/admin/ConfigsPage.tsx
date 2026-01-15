@@ -1,126 +1,151 @@
 // src/routes/admin/ConfigsPage.tsx
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../auth/AuthContext';
-import { 
-  getConfig, 
-  saveConfig, 
-  type Config, 
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  getConfig,
+  saveConfig,
+  type Config,
   type ConfigOption,
-  type ConfigSaveInput
-} from '../../services/cityAdminService';
+  type ConfigSaveInput,
+} from "../../services/cityAdminService";
 import {
   getCurrentRate,
   updateRate,
-  type RateResponse
-} from '../../services/revenueAdminService';
-import { 
-  Save, 
-  Plus, 
-  Trash2, 
-  Loader2, 
-  AlertCircle, 
+} from "../../services/revenueAdminService";
+import {
+  Save,
+  Plus,
+  Trash2,
+  Loader2,
+  AlertCircle,
   CheckCircle,
   Settings,
-  ChevronRight,
-  Info,
   Shield,
-  Lock,
   Percent,
-  DollarSign,
   CreditCard,
   Tag,
   Grid3x3,
   Type,
   Home,
   AlertTriangle,
-  Calculator
-} from 'lucide-react';
+  Calculator,
+  Info,
+  type LucideIcon,
+} from "lucide-react";
+import UniversalDateInput from "../../components/UniversalDateInput";
 
 // Role-based allowed categories
 const CITY_ADMIN_CATEGORIES = [
-  'LAND_TENURE',
-  'LAND_USE',
-  'ENCUMBRANCE_TYPE',
-  'TRANSFER_TYPE',
+  "LAND_TENURE",
+  "LAND_USE",
+  "ENCUMBRANCE_TYPE",
+  "TRANSFER_TYPE",
 ] as const;
 
 const REVENUE_ADMIN_CATEGORIES = [
-  'LEASE_INTEREST_RATE',
-  'PENALTY_RATE',
-  'PAYMENT_METHOD',
-  'REVENUE_TYPE',
+  "LEASE_INTEREST_RATE",
+  "PENALTY_RATE",
+  "PAYMENT_METHOD",
+  "REVENUE_TYPE",
 ] as const;
 
 // Single-value rate categories (use revenueAdminService)
-const SINGLE_VALUE_CATEGORIES = ['LEASE_INTEREST_RATE', 'PENALTY_RATE'];
+const SINGLE_VALUE_CATEGORIES = [
+  "LEASE_INTEREST_RATE",
+  "PENALTY_RATE",
+] as const;
 
-// Category metadata
-const categoryMeta = {
+type SingleValueCategory = (typeof SINGLE_VALUE_CATEGORIES)[number];
+
+// Category metadata - store icon components separately
+const categoryMeta: Record<
+  string,
+  {
+    label: string;
+    icon: LucideIcon;
+    desc: string;
+    type: "single" | "multiple";
+  }
+> = {
   LAND_TENURE: {
-    label: 'Land Tenure Types',
-    icon: <Home className="w-5 h-5" />,
-    desc: 'Ownership and tenure types (e.g., Freehold, Leasehold)',
-    type: 'multiple' as const,
+    label: "Land Tenure Types",
+    icon: Home,
+    desc: "Ownership and tenure types (e.g., Freehold, Leasehold)",
+    type: "multiple",
   },
   LAND_USE: {
-    label: 'Land Use Categories',
-    icon: <Grid3x3 className="w-5 h-5" />,
-    desc: 'Permitted uses of land (e.g., Residential, Commercial)',
-    type: 'multiple' as const,
+    label: "Land Use Categories",
+    icon: Grid3x3,
+    desc: "Permitted uses of land (e.g., Residential, Commercial)",
+    type: "multiple",
   },
   ENCUMBRANCE_TYPE: {
-    label: 'Encumbrance Types',
-    icon: <Lock className="w-5 h-5" />,
-    desc: 'Types of restrictions/liens (e.g., Mortgage, Court Freeze)',
-    type: 'multiple' as const,
+    label: "Encumbrance Types",
+    icon: CreditCard,
+    desc: "Types of restrictions/liens (e.g., Mortgage, Court Freeze)",
+    type: "multiple",
   },
   TRANSFER_TYPE: {
-    label: 'Transfer Types',
-    icon: <Type className="w-5 h-5" />,
-    desc: 'Methods of property transfer (e.g., Sale, Gift, Inheritance)',
-    type: 'multiple' as const,
+    label: "Transfer Types",
+    icon: Type,
+    desc: "Methods of property transfer (e.g., Sale, Gift, Inheritance)",
+    type: "multiple",
   },
   LEASE_INTEREST_RATE: {
-    label: 'Lease Interest Rate',
-    icon: <Calculator className="w-5 h-5" />,
-    desc: 'Annual interest rate applied to lease agreements (%)',
-    type: 'single' as const,
+    label: "Lease Interest Rate",
+    icon: Calculator,
+    desc: "Annual interest rate applied to lease agreements (%)",
+    type: "single",
   },
   PENALTY_RATE: {
-    label: 'Penalty Rate',
-    icon: <AlertTriangle className="w-5 h-5" />,
-    desc: 'Penalty rate for late payments or violations (%)',
-    type: 'single' as const,
+    label: "Penalty Rate",
+    icon: AlertTriangle,
+    desc: "Penalty rate for late payments or violations (%)",
+    type: "single",
   },
   PAYMENT_METHOD: {
-    label: 'Payment Methods',
-    icon: <CreditCard className="w-5 h-5" />,
-    desc: 'Accepted payment channels (e.g., Bank, Mobile Money)',
-    type: 'multiple' as const,
+    label: "Payment Methods",
+    icon: CreditCard,
+    desc: "Accepted payment channels (e.g., Bank, Mobile Money)",
+    type: "multiple",
   },
   REVENUE_TYPE: {
-    label: 'Revenue Types',
-    icon: <Tag className="w-5 h-5" />,
-    desc: 'Categories of government revenue sources',
-    type: 'multiple' as const,
+    label: "Revenue Types",
+    icon: Tag,
+    desc: "Categories of government revenue sources",
+    type: "multiple",
   },
 } as const;
 
 type AllowedCategory = keyof typeof categoryMeta;
 
-const ConfigsPage = () => {
+const isSingleCategory = (
+  cat: AllowedCategory | null
+): cat is SingleValueCategory => {
+  if (!cat) return false;
+  return SINGLE_VALUE_CATEGORIES.includes(cat as SingleValueCategory);
+};
+
+const ConfigsPage: React.FC = () => {
   const { user } = useAuth();
 
   const [categories, setCategories] = useState<AllowedCategory[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<AllowedCategory | null>(null);
   const [config, setConfig] = useState<Config | null>(null);
   const [options, setOptions] = useState<ConfigOption[]>([]);
-  const [singleRate, setSingleRate] = useState<string>(''); // for rates
-  const [description, setDescription] = useState<string>('');
+  const [singleRate, setSingleRate] = useState<string>("");
+  const [source, setSource] = useState<string>(""); // For rate categories
+  const [description, setDescription] = useState<string>(""); // For config categories only
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [fiscalYear, setFiscalYear] = useState<number>(
+    new Date().getFullYear()
+  );
+  const [effectiveFrom, setEffectiveFrom] = useState<Date | null>(null);
+  const [effectiveUntil, setEffectiveUntil] = useState<Date | null>(null);
 
   // Set allowed categories based on role
   useEffect(() => {
@@ -128,173 +153,214 @@ const ConfigsPage = () => {
 
     let allowed: AllowedCategory[] = [];
 
-    if (user.role === 'CITY_ADMIN') {
-      allowed = [...CITY_ADMIN_CATEGORIES];
-    } else if (user.role === 'REVENUE_ADMIN') {
-      allowed = [...REVENUE_ADMIN_CATEGORIES];
+    if (user.role === "CITY_ADMIN") {
+      allowed = [...CITY_ADMIN_CATEGORIES] as AllowedCategory[];
+    } else if (user.role === "REVENUE_ADMIN") {
+      allowed = [...REVENUE_ADMIN_CATEGORIES] as AllowedCategory[];
     }
 
     setCategories(allowed);
-    
+
     if (allowed.length > 0 && !selectedCategory) {
       setSelectedCategory(allowed[0]);
     }
   }, [user, selectedCategory]);
 
-  // Load config/rate when category changes
+  // Load config/rate when category or fiscalYear changes
   useEffect(() => {
     if (!selectedCategory) return;
 
     const loadData = async () => {
       setLoading(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       try {
-        if (SINGLE_VALUE_CATEGORIES.includes(selectedCategory)) {
-          // Use revenue admin service for rates
-          const res = await getCurrentRate(selectedCategory);
+        if (isSingleCategory(selectedCategory)) {
+          const res = await getCurrentRate(selectedCategory, fiscalYear);
           if (res.success && res.data) {
             setSingleRate(res.data.value.toString());
-            setDescription(res.data.description || '');
-            setConfig(null); // not used for rates
+            setSource(res.data.source || "");
+            
+            // Parse effective dates
+            if (res.data.effective_from) {
+              setEffectiveFrom(new Date(res.data.effective_from));
+            } else {
+              setEffectiveFrom(null);
+            }
+            
+            if (res.data.effective_until) {
+              setEffectiveUntil(new Date(res.data.effective_until));
+            } else {
+              setEffectiveUntil(null);
+            }
+            
+            setConfig(null);
             setOptions([]);
+            setDescription(""); // Clear description for rate categories
           } else {
-            setSingleRate('');
-            setDescription('');
-            setError(res.error || 'Rate not configured yet');
+            setSingleRate("");
+            setSource("");
+            setEffectiveFrom(null);
+            setEffectiveUntil(null);
+            setError(res.error || "Rate not configured yet");
           }
         } else {
-          // Use city admin service for other categories
           const res = await getConfig(selectedCategory);
           if (res.success && res.data) {
             const data = res.data;
             setConfig(data);
-            setOptions(data.options || []);
-            setDescription(data.description || '');
-            setSingleRate('');
+            setOptions(data.options ? [...data.options] : []);
+            setDescription(data.description || "");
+            setSingleRate("");
+            setSource(""); // Clear source for config categories
+            setEffectiveFrom(null);
+            setEffectiveUntil(null);
           } else {
             setConfig({
               category: selectedCategory,
               key: selectedCategory.toLowerCase(),
               options: [],
-              description: '',
-              is_active: true
+              description: "",
+              is_active: true,
             });
             setOptions([]);
-            setDescription('');
+            setDescription("");
+            setEffectiveFrom(null);
+            setEffectiveUntil(null);
           }
         }
-      } catch (err: any) {
-        setError('Failed to load configuration');
+      } catch (err) {
+        console.error("Failed to load configuration:", err);
+        setError("Failed to load configuration");
         setOptions([]);
-        setSingleRate('');
-        setDescription('');
+        setSingleRate("");
+        setSource("");
+        setDescription("");
+        setEffectiveFrom(null);
+        setEffectiveUntil(null);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [selectedCategory]);
+  }, [selectedCategory, fiscalYear]);
 
   const handleSave = async () => {
     if (!selectedCategory) return;
 
     setSaving(true);
-    setError('');
+    setError("");
 
     try {
-      if (SINGLE_VALUE_CATEGORIES.includes(selectedCategory)) {
-        // Single rate mode (Revenue Admin)
+      if (isSingleCategory(selectedCategory)) {
         const rateNum = parseFloat(singleRate);
         if (isNaN(rateNum) || rateNum < 0 || rateNum > 100) {
-          setError('Rate must be a number between 0 and 100');
+          setError("Rate must be a number between 0 and 100");
+          setSaving(false);
           return;
         }
 
-        const res = await updateRate(selectedCategory, rateNum, description.trim() || undefined);
+        // For rate categories, pass source parameter (description is optional)
+        const res = await updateRate(
+          selectedCategory,
+          fiscalYear,
+          rateNum,
+          undefined, // description parameter (not used)
+          source.trim() || undefined, // source parameter
+          effectiveFrom ? effectiveFrom.toISOString().split('T')[0] : undefined, // effective_from
+          effectiveUntil ? effectiveUntil.toISOString().split('T')[0] : undefined // effective_until
+        );
+        
         if (res.success && res.data) {
-          setSuccess('Rate updated successfully!');
-          setTimeout(() => setSuccess(''), 3000);
+          setSuccess("Rate updated successfully!");
+          setTimeout(() => setSuccess(""), 3000);
         } else {
-          setError(res.error || 'Failed to update rate');
+          setError(res.error || "Failed to update rate");
         }
       } else {
-        // Multiple options mode (City Admin)
-        if (options.some(opt => !opt.value.trim())) {
-          setError('All option values are required');
+        if (options.some((opt) => !opt.value.trim())) {
+          setError("All option values are required");
+          setSaving(false);
           return;
         }
-        const values = options.map(opt => opt.value.trim().toLowerCase());
+        const values = options.map((opt) => opt.value.trim().toLowerCase());
         if (new Set(values).size !== values.length) {
-          setError('Option values must be unique');
+          setError("Option values must be unique");
+          setSaving(false);
           return;
         }
 
         const configData: ConfigSaveInput = {
-          options: options.map(opt => ({
+          options: options.map((opt) => ({
             value: opt.value.trim(),
-            description: opt.description?.trim() || ''
+            description: opt.description?.trim() || "",
           })),
-          description: description.trim() || undefined
+          description: description.trim() || undefined,
         };
 
         const res = await saveConfig(selectedCategory, configData);
         if (res.success && res.data) {
-          setSuccess('Configuration saved successfully!');
-          setTimeout(() => setSuccess(''), 3000);
-          // Refresh
+          setSuccess("Configuration saved successfully!");
+          setTimeout(() => setSuccess(""), 3000);
           const refreshed = await getConfig(selectedCategory);
           if (refreshed.success && refreshed.data) {
             setConfig(refreshed.data);
-            setOptions(refreshed.data.options || []);
-            setDescription(refreshed.data.description || '');
+            setOptions(refreshed.data.options ? [...refreshed.data.options] : []);
+            setDescription(refreshed.data.description || "");
           }
         } else {
-          setError(res.error || 'Failed to save configuration');
+          setError(res.error || "Failed to save configuration");
         }
       }
-    } catch (err: any) {
-      setError('Network error while saving');
+    } catch (err) {
+      console.error("Network error while saving:", err);
+      setError("Network error while saving");
     } finally {
       setSaving(false);
     }
   };
 
   const addOption = () => {
-    if (SINGLE_VALUE_CATEGORIES.includes(selectedCategory!)) return;
-    setOptions([...options, { value: '', description: '' }]);
+    if (isSingleCategory(selectedCategory)) return;
+    setOptions([...options, { value: "", description: "" }]);
   };
 
-  const updateOption = (index: number, field: keyof ConfigOption, value: string) => {
-    if (SINGLE_VALUE_CATEGORIES.includes(selectedCategory!)) return;
+  const updateOption = (
+    index: number,
+    field: keyof ConfigOption,
+    value: string
+  ) => {
+    if (isSingleCategory(selectedCategory)) return;
     const newOptions = [...options];
     newOptions[index] = { ...newOptions[index], [field]: value };
     setOptions(newOptions);
   };
 
   const removeOption = (index: number) => {
-    if (SINGLE_VALUE_CATEGORIES.includes(selectedCategory!)) return;
+    if (isSingleCategory(selectedCategory)) return;
     setOptions(options.filter((_, i) => i !== index));
   };
 
-  // Access Denied
-  if (!user || !['CITY_ADMIN', 'REVENUE_ADMIN'].includes(user.role)) {
+  if (!user || !["CITY_ADMIN", "REVENUE_ADMIN"].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Access Denied
+          </h2>
           <p className="text-gray-600 mb-6">
-            Only City Administrators and Revenue Administrators can manage system configurations.
+            Only City Administrators and Revenue Administrators can manage
+            system configurations.
           </p>
         </div>
       </div>
     );
   }
 
-  const isSingleValue = selectedCategory ? SINGLE_VALUE_CATEGORIES.includes(selectedCategory) : false;
+  const isSingleValue = isSingleCategory(selectedCategory);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
@@ -307,20 +373,22 @@ const ConfigsPage = () => {
               System Configurations
             </h1>
             <p className="text-gray-600 mt-1">
-              {user.role === 'CITY_ADMIN' 
-                ? 'Manage land and property-related configuration options' 
-                : 'Manage lease interest, penalty, revenue and payment configuration options'}
+              {user.role === "CITY_ADMIN"
+                ? "Manage land and property-related configuration options"
+                : "Manage lease interest, penalty, revenue and payment configuration options"}
             </p>
           </div>
 
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center gap-2">
-              {user.role === 'CITY_ADMIN' ? (
+              {user.role === "CITY_ADMIN" ? (
                 <Home className="w-5 h-5 text-blue-600" />
               ) : (
                 <Percent className="w-5 h-5 text-green-600" />
               )}
-              <span className="font-medium text-gray-800">{user.role.replace('_', ' ')}</span>
+              <span className="font-medium text-gray-800">
+                {user.role.replace("_", " ")}
+              </span>
             </div>
           </div>
         </div>
@@ -360,29 +428,38 @@ const ConfigsPage = () => {
                     No categories available for your role
                   </p>
                 ) : (
-                  categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 ${
-                        selectedCategory === cat
-                          ? 'bg-blue-50 border-l-4 border-blue-600 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-md ${
-                        selectedCategory === cat ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
-                        {categoryMeta[cat].icon}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{categoryMeta[cat].label}</div>
-                        <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                          {categoryMeta[cat].desc}
+                  categories.map((cat) => {
+                    const IconComponent = categoryMeta[cat]?.icon;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 ${
+                          selectedCategory === cat
+                            ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <div
+                          className={`p-2 rounded-md ${
+                            selectedCategory === cat
+                              ? "bg-blue-100"
+                              : "bg-gray-100"
+                          }`}
+                        >
+                          {IconComponent && <IconComponent className="w-5 h-5" />}
                         </div>
-                      </div>
-                    </button>
-                  ))
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {categoryMeta[cat]?.label}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            {categoryMeta[cat]?.desc}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -396,14 +473,17 @@ const ConfigsPage = () => {
                 <div className="border-b border-gray-200 px-6 py-6 bg-gradient-to-r from-gray-50 to-white">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
-                      {categoryMeta[selectedCategory].icon}
+                      {(() => {
+                        const IconComponent = categoryMeta[selectedCategory]?.icon;
+                        return IconComponent ? <IconComponent className="w-5 h-5" /> : null;
+                      })()}
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">
-                        {categoryMeta[selectedCategory].label}
+                        {categoryMeta[selectedCategory]?.label}
                       </h2>
                       <p className="text-gray-600 mt-1">
-                        {categoryMeta[selectedCategory].desc}
+                        {categoryMeta[selectedCategory]?.desc}
                       </p>
                     </div>
                   </div>
@@ -418,48 +498,126 @@ const ConfigsPage = () => {
                     </div>
                   ) : (
                     <div className="space-y-10">
-                      {/* Description */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
-                          Description (optional)
-                        </label>
-                        <textarea
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Purpose or notes about this configuration..."
-                          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none"
-                        />
-                      </div>
-
                       {/* Rate or Options */}
                       {isSingleValue ? (
-                        <div className="max-w-md space-y-6">
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-900 mb-2">
-                              {selectedCategory === 'LEASE_INTEREST_RATE' 
-                                ? 'Annual Interest Rate (%)' 
-                                : 'Penalty Rate (%)'}
-                            </label>
-                            <div className="relative">
+                        <div className="max-w-2xl space-y-6">
+                          {/* Fiscal year selector */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                Fiscal Year
+                              </label>
                               <input
                                 type="number"
-                                step="0.01"
-                                min="0"
-                                max="100"
-                                value={singleRate}
-                                onChange={(e) => setSingleRate(e.target.value)}
-                                placeholder="e.g. 12.50"
-                                className="w-full p-4 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-lg font-medium"
+                                min="2000"
+                                max="2100"
+                                value={fiscalYear}
+                                onChange={(e) =>
+                                  setFiscalYear(
+                                    Number(e.target.value) ||
+                                      new Date().getFullYear()
+                                  )
+                                }
+                                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                               />
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Rates are stored per fiscal year.
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-500 mt-2">
-                              Enter percentage value (0–100)
+
+                            {/* Rate input */}
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                {selectedCategory === "LEASE_INTEREST_RATE"
+                                  ? "Annual Interest Rate (%)"
+                                  : "Penalty Rate (%)"}
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max="100"
+                                  value={singleRate}
+                                  onChange={(e) => setSingleRate(e.target.value)}
+                                  placeholder="e.g. 12.50"
+                                  className="w-full p-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                />
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                                  %
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Enter percentage value (0–100) for fiscal year {fiscalYear}.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Effective Date Range */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                Effective From
+                              </label>
+                              <UniversalDateInput
+                                value={effectiveFrom}
+                                onChange={setEffectiveFrom}
+                                placeholder="Select start date"
+                                size="sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Date when this rate becomes effective
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                Effective Until
+                              </label>
+                              <UniversalDateInput
+                                value={effectiveUntil}
+                                onChange={setEffectiveUntil}
+                                placeholder="Select end date"
+                                size="sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Date when this rate expires (optional)
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Source for rate */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-900 mb-2">
+                              Source / Reference (optional)
+                            </label>
+                            <textarea
+                              value={source}
+                              onChange={(e) => setSource(e.target.value)}
+                              placeholder="e.g., Council Resolution No. 123, Internal policy..."
+                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Reference or notes about this rate (e.g., resolution number, policy reference)
                             </p>
                           </div>
                         </div>
                       ) : (
                         <>
+                          {/* Description for config categories */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-900 mb-2">
+                              Description (optional)
+                            </label>
+                            <textarea
+                              value={description}
+                              onChange={(e) => setDescription(e.target.value)}
+                              placeholder="Purpose or notes about this configuration..."
+                              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none"
+                            />
+                          </div>
+
+                          {/* Options for config categories */}
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold text-gray-900">
                               Configuration Options
@@ -486,7 +644,7 @@ const ConfigsPage = () => {
                           ) : (
                             <div className="space-y-4">
                               {options.map((opt, index) => (
-                                <div 
+                                <div
                                   key={index}
                                   className="flex items-start gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 hover:border-blue-200 transition-all"
                                 >
@@ -497,13 +655,25 @@ const ConfigsPage = () => {
                                   <div className="flex-1 space-y-3">
                                     <input
                                       value={opt.value}
-                                      onChange={(e) => updateOption(index, 'value', e.target.value)}
+                                      onChange={(e) =>
+                                        updateOption(
+                                          index,
+                                          "value",
+                                          e.target.value
+                                        )
+                                      }
                                       placeholder="Option value (required)"
                                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                     <input
-                                      value={opt.description || ''}
-                                      onChange={(e) => updateOption(index, 'description', e.target.value)}
+                                      value={opt.description || ""}
+                                      onChange={(e) =>
+                                        updateOption(
+                                          index,
+                                          "description",
+                                          e.target.value
+                                        )
+                                      }
                                       placeholder="Description (optional)"
                                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
@@ -528,10 +698,11 @@ const ConfigsPage = () => {
                         <button
                           onClick={handleSave}
                           disabled={
-                            saving || 
-                            loading || 
-                            (isSingleValue && !singleRate.trim()) || 
-                            (!isSingleValue && options.some(opt => !opt.value.trim()))
+                            saving ||
+                            loading ||
+                            (isSingleValue && !singleRate.trim()) ||
+                            (!isSingleValue &&
+                              options.some((opt) => !opt.value.trim()))
                           }
                           className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow hover:shadow-lg flex items-center justify-center gap-2 mx-auto font-medium"
                         >
@@ -548,11 +719,14 @@ const ConfigsPage = () => {
                           )}
                         </button>
 
-                        {/* Validation hint */}
-                        {(isSingleValue && !singleRate.trim()) || (!isSingleValue && options.some(opt => !opt.value.trim())) ? (
+                        {(isSingleValue && !singleRate.trim()) ||
+                        (!isSingleValue &&
+                          options.some((opt) => !opt.value.trim())) ? (
                           <p className="text-sm text-red-500 mt-3 text-center flex items-center justify-center gap-2">
                             <AlertCircle className="w-4 h-4" />
-                            {isSingleValue ? 'Rate value is required' : 'Fill all option values before saving'}
+                            {isSingleValue
+                              ? "Rate value is required"
+                              : "Fill all option values before saving"}
                           </p>
                         ) : null}
                       </div>

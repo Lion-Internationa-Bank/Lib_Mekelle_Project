@@ -1,6 +1,6 @@
 // src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider,useAuth} from './auth/AuthContext';
+import { AuthProvider,useAuth} from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
 import LoginPage from './routes/LoginPage';
@@ -13,11 +13,13 @@ import OwnershipPage from './routes/subcity/OwnershipPage';
 import SubCitiesPage from './routes/admin/SubCitiesPage';
 import ConfigsPage from './routes/admin/ConfigsPage';
 import UserManagementPage from './routes/UserManagementPage';
+import { CalendarProvider } from './contexts/CalendarContext';
 
 const App = () => {
   return (
     <AuthProvider>
-      <Routes>
+      <CalendarProvider>
+        <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
@@ -36,6 +38,7 @@ const App = () => {
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
+      </CalendarProvider>
     </AuthProvider>
   );
 };

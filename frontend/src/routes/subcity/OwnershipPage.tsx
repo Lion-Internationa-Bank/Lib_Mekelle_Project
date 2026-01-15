@@ -1,7 +1,7 @@
 // src/routes/OwnershipPage.tsx
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   fetchOwnersWithParcels,
   type OwnerWithParcels,

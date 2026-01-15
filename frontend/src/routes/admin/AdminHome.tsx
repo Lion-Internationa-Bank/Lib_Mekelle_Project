@@ -1,5 +1,5 @@
 // src/routes/subcity/SubcityHome.tsx
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminHome = () => {
   const { user } = useAuth();

@@ -1,7 +1,7 @@
 // src/routes/LoginPage.tsx
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {

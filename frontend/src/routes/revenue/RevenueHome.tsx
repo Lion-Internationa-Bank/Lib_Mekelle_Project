@@ -1,5 +1,5 @@
 // src/routes/revenue/RevenueHome.tsx
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RevenueHome = () => {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 // src/routes/admin/UserManagementPage.tsx
 import { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   getUsers,
   suspendUser,

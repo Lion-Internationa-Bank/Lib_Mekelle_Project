@@ -11,7 +11,7 @@ import {
   getConfig,
   type ConfigOption,
 } from "../../../services/cityAdminService";
-import { useAuth } from "../../../auth/AuthContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 type Props = {
   parcel: ParcelDetail;

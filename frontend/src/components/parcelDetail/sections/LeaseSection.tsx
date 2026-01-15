@@ -1,29 +1,157 @@
-// src/components/parcelDetail/LeaseSection.tsx
+// src/components/parcelDetail/sections/LeaseSection.tsx
 import { useState } from "react";
 import LeaseCard from "../cards/LeaseCard";
 import EditLeaseModal from "../modals/EditLeaseModal";
+import CreateLeaseModal from "../modals/CreateLeaseModal";
+import GenericDocsUpload from "../../GenericDocsUpload";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
-type Lease = NonNullable<ParcelDetail["lease_agreement"]>;
-
 type Props = {
-  lease: Lease;
+  parcel: ParcelDetail;
+  lease: ParcelDetail["lease_agreement"] | null;
   onReload: () => Promise<void>;
 };
 
-const LeaseSection = ({ lease, onReload }: Props) => {
+const LeaseSection = ({ parcel, lease, onReload }: Props) => {
   const [editing, setEditing] = useState(false);
+
+  const [showCreateLease, setShowCreateLease] = useState(false);
+  const [showLeaseDocsUpload, setShowLeaseDocsUpload] = useState(false);
+  const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
+
+  const handleCreateLeaseClick = () => {
+    setShowCreateLease(true);
+  };
+
+  const handleLeaseCreated = async (leaseId: string) => {
+    setCreatedLeaseId(leaseId);
+    setShowLeaseDocsUpload(true);
+    await onReload();
+  };
+
+  const handleLeaseDocsDone = async () => {
+    setShowLeaseDocsUpload(false);
+    setCreatedLeaseId(null);
+    await onReload();
+  };
 
   return (
     <>
-      <LeaseCard lease={lease} onEdit={() => setEditing(true)} />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Lease Agreement
+          </h2>
+          {lease && (
+            <button
+              onClick={() => setEditing(true)}
+              className="px-5 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm"
+            >
+              Edit Lease
+            </button>
+          )}
+        </div>
 
-      <EditLeaseModal
-        lease={lease}
-        open={editing}
-        onClose={() => setEditing(false)}
-        onSuccess={onReload}
+        {lease ? (
+          <LeaseCard lease={lease} />
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-xl">
+            <p className="text-gray-500 mb-2">
+              No lease agreement recorded for this parcel yet
+            </p>
+            <p className="text-sm text-gray-400 mb-6">
+              Create the lease agreement and then upload the contract and related
+              documents.
+            </p>
+            <button
+              onClick={handleCreateLeaseClick}
+              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 shadow-sm"
+            >
+              + Create Lease Agreement
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Edit existing lease */}
+      {lease && (
+        <EditLeaseModal
+          lease={lease}
+          open={editing}
+          onClose={() => setEditing(false)}
+          onSuccess={onReload}
+        />
+      )}
+
+      {/* Create lease modal */}
+      <CreateLeaseModal
+        parcel={parcel}
+        open={showCreateLease}
+        onClose={() => setShowCreateLease(false)}
+        onCreated={handleLeaseCreated}
       />
+
+      {/* Lease docs upload after creating lease */}
+      {showLeaseDocsUpload && createdLeaseId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
+            <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                    Lease Created ✓
+                  </h2>
+                  <p className="text-gray-600">
+                    Upload supporting documents for{" "}
+                    <span className="font-mono font-bold text-blue-600">
+                      {parcel.upin}
+                    </span>
+                  </p>
+                </div>
+                <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-emerald-100 text-emerald-800 rounded-full whitespace-nowrap">
+                  Step 2 of 2
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <GenericDocsUpload
+                title="Lease agreement documents"
+                upin={parcel.upin}
+                subCity={parcel.sub_city?.name || "—"}
+                leaseId={createdLeaseId}
+                hideTitle={true}
+                allowedDocTypes={[
+                  { value: "LEASE_CONTRACT", label: "Signed Lease Contract" },
+                  { value: "PAYMENT_PROOF", label: "Payment Receipts" },
+                  {
+                    value: "COUNCIL_DECISION",
+                    label: "Council/Board Decision",
+                  },
+                  { value: "OTHER", label: "Other Lease Document" },
+                ]}
+              />
+            </div>
+
+            <div className="p-6 md:p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+              <button
+                onClick={handleLeaseDocsDone}
+                className="text-sm text-gray-600 hover:text-gray-900 underline transition"
+              >
+                Skip for now
+              </button>
+
+              <button
+                onClick={handleLeaseDocsDone}
+                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
+                Done – Close
+                <span className="text-lg">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
