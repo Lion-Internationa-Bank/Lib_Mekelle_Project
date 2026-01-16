@@ -1,5 +1,5 @@
 // src/components/UniversalDateInput.tsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Calendar, ChevronDown, ChevronUp, X, Info } from "lucide-react";
 import { useCalendar } from "../contexts/CalendarContext";
 import Portal from "./Portal";
@@ -52,15 +52,15 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
   size = "md",
 }) => {
   const { calendarType, isEthiopian } = useCalendar();
-  const [internalDate, setInternalDate] = useState<CalendarDate>(getCurrentDate(calendarType));
-  const [inputValue, setInputValue] = useState("");
+
+  const [internalDate, setInternalDate] = useState<CalendarDate>(
+    getCurrentDate(calendarType)
+  );
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"days" | "months" | "years">("days");
-  const [viewYear, setViewYear] = useState<number>(
-    "year" in internalDate ? internalDate.year : new Date().getFullYear()
-  );
+  const [viewYear, setViewYear] = useState<number>(internalDate.year);
   const [viewMonth, setViewMonth] = useState<number>(internalDate.month);
-  const [validationError, setValidationError] = useState<string>("");
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [pickerPosition, setPickerPosition] = useState<{
     top: number;
@@ -85,17 +85,19 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
       : "MM/DD/YYYY (e.g., 09/11/2023)";
   }, [isEthiopian, placeholder]);
 
-  const parseExternalValue = useCallback((val: Date | string | null | undefined) => {
-    if (!val) return null;
-
-    try {
-      const dateObj = typeof val === "string" ? new Date(val) : val;
-      if (isNaN(dateObj.getTime())) return null;
-      return dateObj;
-    } catch {
-      return null;
-    }
-  }, []);
+  const parseExternalValue = useCallback(
+    (val: Date | string | null | undefined): Date | null => {
+      if (!val) return null;
+      try {
+        const dateObj = typeof val === "string" ? new Date(val) : val;
+        if (isNaN(dateObj.getTime())) return null;
+        return dateObj;
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
 
   const toDisplayDate = useCallback(
     (gregDate: Date | null): CalendarDate => {
@@ -142,6 +144,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     }
   }, []);
 
+  // Sync internal date from external value
   useEffect(() => {
     const gregDate = parseExternalValue(value);
     const displayDate = toDisplayDate(gregDate);
@@ -149,16 +152,10 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     setInternalDate(displayDate);
     setViewYear(displayDate.year);
     setViewMonth(displayDate.month);
-
-    if (gregDate) {
-      setInputValue(formatDateUtil(displayDate, calendarType, "short"));
-    } else {
-      setInputValue("");
-    }
-
-    setValidationError("");
+    setValidationError(null);
   }, [value, calendarType, parseExternalValue, toDisplayDate]);
 
+  // Close picker on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -176,6 +173,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Update picker position on resize/scroll
   useEffect(() => {
     if (isPickerOpen) {
       updatePickerPosition();
@@ -183,7 +181,6 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
       const handleResize = () => {
         updatePickerPosition();
       };
-
       const handleScroll = () => {
         updatePickerPosition();
       };
@@ -198,6 +195,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     }
   }, [isPickerOpen, updatePickerPosition]);
 
+  // Focus input when picker opens
   useEffect(() => {
     if (isPickerOpen && inputRef.current) {
       inputRef.current.focus();
@@ -208,23 +206,23 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     if (!allowManualEntry || disabled) return;
 
     const newValue = e.target.value;
-    setInputValue(newValue);
-
+    console.log("newvalue",newValue)
     if (newValue.trim() === "") {
-      setValidationError("");
+      setValidationError(null);
       onChange(null);
       return;
     }
 
     const result = parseDateString(newValue, calendarType);
-
+console.log("result",result)
     if (result.isValid && result.date) {
       setInternalDate(result.date);
       setViewYear(result.date.year);
       setViewMonth(result.date.month);
-      setValidationError("");
+      setValidationError(null);
 
       const gregDate = toGregorian(result.date);
+      console.log("gregdage",gregDate)
       onChange(gregDate);
     } else {
       setValidationError(result.error || "Invalid date format");
@@ -233,8 +231,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
 
   const handleDateSelect = (selectedDate: CalendarDate) => {
     setInternalDate(selectedDate);
-    setInputValue(formatDateUtil(selectedDate, calendarType, "short"));
-    setValidationError("");
+    setValidationError(null);
     setIsPickerOpen(false);
     setViewMode("days");
 
@@ -245,10 +242,8 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
   const isDateDisabled = (testDate: CalendarDate): boolean => {
     try {
       const gregDate = toGregorian(testDate);
-
       if (minDate && gregDate < minDate) return true;
       if (maxDate && gregDate > maxDate) return true;
-
       return false;
     } catch {
       return true;
@@ -259,9 +254,11 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     const days: (CalendarDate | null)[] = [];
     const daysInMonth = getDaysInMonth(viewMonth, viewYear, calendarType);
 
-    const firstDate: CalendarDate = isEthiopian
-      ? { year: viewYear, month: viewMonth, day: 1 }
-      : { year: viewYear, month: viewMonth, day: 1 };
+    const firstDate: CalendarDate = {
+      year: viewYear,
+      month: viewMonth,
+      day: 1,
+    };
 
     const firstGregDate = toGregorian(firstDate);
     const firstDayOfWeek = firstGregDate.getDay(); // 0 = Sunday
@@ -277,9 +274,11 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date: CalendarDate = isEthiopian
-        ? { year: viewYear, month: viewMonth, day }
-        : { year: viewYear, month: viewMonth, day };
+      const date: CalendarDate = {
+        year: viewYear,
+        month: viewMonth,
+        day,
+      };
       days.push(date);
     }
 
@@ -287,9 +286,8 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
   };
 
   const generateMonths = () => {
-    const months = [];
+    const months: { month: number; name: string }[] = [];
     const monthCount = isEthiopian ? 13 : 12;
-
     for (let month = 1; month <= monthCount; month++) {
       months.push({
         month,
@@ -300,7 +298,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
   };
 
   const generateYears = () => {
-    const years = [];
+    const years: number[] = [];
     const startYear = viewYear - 12;
     const endYear = viewYear + 12;
 
@@ -320,18 +318,15 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
   };
 
   const handleClearClick = () => {
-    setInputValue("");
-    setValidationError("");
+    setValidationError(null);
     onChange(null);
     if (inputRef.current) inputRef.current.focus();
   };
 
   const handleTogglePicker = () => {
     if (disabled) return;
-
     const newOpenState = !isPickerOpen;
     setIsPickerOpen(newOpenState);
-
     if (newOpenState) {
       updatePickerPosition();
     } else {
@@ -350,6 +345,18 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
       internalDate.day === today.day
     );
   })();
+
+  // This replaces the missing displayedValue
+  const displayedValue = useMemo(() => {
+    if (!value) return "";
+    console.log("initail datea",value)
+    const greg = parseExternalValue(value);
+    console.log("greg",greg)
+    if (!greg) return "";
+    const displayCal = toDisplayDate(greg);
+    console.log("display cal",displayCal,"calander type",calendarType)
+    return formatDateUtil(displayCal, calendarType, "short");
+  }, [value, calendarType, parseExternalValue, toDisplayDate]);
 
   const getAdjustedPickerStyle = () => {
     if (!pickerPosition) return {};
@@ -399,7 +406,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
           <input
             ref={inputRef}
             type="text"
-            value={inputValue}
+            value={displayedValue}
             onChange={handleInputChange}
             onFocus={() => {
               setIsFocused(true);
@@ -423,7 +430,6 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
                 : "bg-white text-gray-900"
             }`}
             aria-invalid={hasError}
-            aria-describedby={error ? `${label?.replace(/\s+/g, "-")}-error` : undefined}
           />
 
           <Calendar
@@ -433,7 +439,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
           />
 
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1.5">
-            {inputValue && (
+            {displayedValue && (
               <button
                 type="button"
                 onClick={handleClearClick}
@@ -473,10 +479,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
       </div>
 
       {error && (
-        <div
-          id={`${label?.replace(/\s+/g, "-")}-error`}
-          className="mt-1.5 flex items-start gap-1.5"
-        >
+        <div className="mt-1.5 flex items-start gap-1.5">
           <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-red-600">{error}</p>
         </div>
@@ -557,7 +560,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-600 px-2 py-1 bg-gray-100 rounded">
+                  <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
                     {isEthiopian ? "ዓ/ም" : "GC"}
                   </span>
                   <button
@@ -573,7 +576,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
                 <div className="text-gray-600">
                   Selected:{" "}
                   <span className="font-semibold text-gray-900">
-                    {inputValue || "None"}
+                    {displayedValue || "None"}
                   </span>
                 </div>
                 {isTodaySelected && (
@@ -707,7 +710,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
               )}
             </div>
 
-            {/* Picker Footer */}
+            {/* Footer */}
             <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-gray-500">

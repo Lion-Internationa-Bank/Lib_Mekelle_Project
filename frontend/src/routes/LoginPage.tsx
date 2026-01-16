@@ -98,11 +98,7 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-sm text-blue-800 font-medium">
-            Demo: Try <span className="font-bold">cityadmin</span> / your password
-          </p>
-        </div>
+      
       </div>
     </div>
   );

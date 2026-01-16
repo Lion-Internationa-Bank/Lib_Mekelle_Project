@@ -244,38 +244,36 @@ export function validateGregorianDate(date: GregorianDate): DateValidationResult
  * Format date according to calendar type
  */
 export function formatDate(
-  date: CalendarDate | Date,
+  date: Date | string | GregorianDate, // Only Gregorian from backend
   calendarType: CalendarType,
   format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
 ): string {
-  let ethDate: EthiopianDate;
+  // Convert input to Gregorian date object
   let gregDate: GregorianDate;
   
-  // Convert input to both calendar types
   if (date instanceof Date) {
-    ethDate = gregorianToEthiopian(date);
+    // Already Date object
     gregDate = {
       year: date.getFullYear(),
       month: date.getMonth() + 1,
       day: date.getDate()
     };
-  } else if ('month' in date && date.month <= 13) {
-    // This is an Ethiopian date
-    ethDate = date as EthiopianDate;
-    const d = ethiopianToGregorian(ethDate);
+  } else if (typeof date === 'string') {
+    // ISO string from backend
+    const dateObj = new Date(date);
     gregDate = {
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-      day: d.getDate()
+      year: dateObj.getFullYear(),
+      month: dateObj.getMonth() + 1,
+      day: dateObj.getDate()
     };
   } else {
-    // This is a Gregorian date
-    gregDate = date as GregorianDate;
-    const d = new Date(gregDate.year, gregDate.month - 1, gregDate.day);
-    ethDate = gregorianToEthiopian(d);
+    // Already Gregorian date object
+    gregDate = date;
   }
   
   if (calendarType === 'ETHIOPIAN') {
+    // Convert Gregorian to Ethiopian for display
+    const ethDate = gregorianToEthiopian(new Date(gregDate.year, gregDate.month - 1, gregDate.day));
     const monthName = ETHIOPIAN_MONTHS[ethDate.month - 1];
     
     switch (format) {
@@ -291,6 +289,7 @@ export function formatDate(
         return `${ethDate.day}/${ethDate.month}/${ethDate.year}`;
     }
   } else {
+    // Just format the Gregorian date
     const monthName = GREGORIAN_MONTHS[gregDate.month - 1];
     
     switch (format) {

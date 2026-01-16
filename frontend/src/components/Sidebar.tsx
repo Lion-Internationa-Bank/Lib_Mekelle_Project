@@ -11,19 +11,28 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '🏠', href: '/parcels' },
+  // { id: 'dashboard', label: 'Dashboard', icon: '🏠', href: '/parcels' },
   {
     id: 'parcels',
     label: 'Land Parcels',
     icon: '📍',
     href: '/home',
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN'],
   },
   {
     id: 'ownership',
     label: 'Ownership',
     icon: '👥',
     href: '/ownership',
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'],
   },
+       {
+  id: 'users',
+  label: 'User Management',
+  icon: '👤',
+  href: '/users',
+  allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
+},
   {
     id: 'subcities',
     label: 'Sub-cities',
@@ -39,20 +48,14 @@ const menuItems: MenuItem[] = [
     allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
   
   },
-     {
-  id: 'users',
-  label: 'User Management',
-  icon: '👤',
-  href: '/users',
-  allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
-},
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: '📊',
-    href: '/reports',
-    allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'],
-  },
+
+  // {
+  //   id: 'reports',
+  //   label: 'Reports',
+  //   icon: '📊',
+  //   href: '/reports',
+  //   allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'],
+  // },
 ];
 
 const Sidebar = () => {

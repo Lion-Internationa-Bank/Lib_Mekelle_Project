@@ -1,54 +1,44 @@
 import type { ParcelFormData } from "../validation/schemas";
-
-const API_BASE = import.meta.env.VITE_API_URL;
+import apiFetch, { type ApiResponse } from './api'; // Adjust path if needed
 
 export type CreateParcelData = ParcelFormData;
 
+// Assuming backend returns { success: boolean, data: any } for creates
 export const createParcel = async (data: CreateParcelData) => {
-  const response = await fetch(`${API_BASE}/parcels`, {
+  const response: ApiResponse<any> = await apiFetch('/parcels', {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to create parcel");
-  return response.json();
+  if (!response.success) throw new Error(response.error || "Failed to create parcel");
+  return response.data; // returns the backend's full response { success: true, data: ... }
 };
 
 export const createOwner = async (data: any) => {
-  const response = await fetch(`${API_BASE}/owners`, {
+  const response: ApiResponse<any> = await apiFetch('/owners', {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to create owner");
-  return response.json();
+  if (!response.success) throw new Error(response.error || "Failed to create owner");
+  return response.data;
 };
 
 export const createLease = async (data: any) => {
-  const response = await fetch(`${API_BASE}/leases`, {
+  const response: ApiResponse<any> = await apiFetch('/leases', {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to create lease");
-  return response.json();
+  if (!response.success) throw new Error(response.error || "Failed to create lease");
+  return response.data;
 };
-
 
 export const uploadDocument = async (formData: FormData) => {
-  const response = await fetch(`${API_BASE}/upload`, {
+  const response: ApiResponse<any> = await apiFetch('/upload', {
     method: "POST",
-    body: formData, // ✅ FormData - no Content-Type header
+    body: formData,
   });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to upload document");
-  }
-  return response.json();
+  if (!response.success) throw new Error(response.error || "Failed to upload document");
+  return response.data;
 };
-
-
-
 
 export interface Parcel {
   upin: string;
@@ -88,14 +78,15 @@ export const fetchParcels = async (params: {
   tenure_type?: string;
   land_use?: string;
 }): Promise<ParcelsResponse> => {
-  const url = new URL(`${API_BASE}/parcels`);
+  const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== "") {
-      url.searchParams.append(key, String(value));
+      query.append(key, String(value));
     }
   });
 
-  const response = await fetch(url.toString());
-  if (!response.ok) throw new Error("Failed to fetch parcels");
-  return response.json();
+  const endpoint = `/parcels?${query.toString()}`;
+  const response: ApiResponse<ParcelsResponse> = await apiFetch(endpoint);
+  if (!response.success) throw new Error(response.error || "Failed to fetch parcels");
+  return response.data!; // Returns the backend's { success: true, data: { parcels, pagination } }
 };

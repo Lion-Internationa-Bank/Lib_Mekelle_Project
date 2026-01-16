@@ -1,5 +1,5 @@
 // src/services/api.ts
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL ;
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -15,12 +15,33 @@ const apiFetch = async <T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> => {
   const token = getAuthToken();
+  console.log("token", token);
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
+  const headers = new Headers();
+
+  if (token) {
+    headers.append('Authorization', `Bearer ${token}`);
+  }
+
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        headers.append(key, value);
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    } else {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    }
+  }
+
+  if (options.body && !(options.body instanceof FormData)) {
+    headers.append('Content-Type', 'application/json');
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -38,10 +59,10 @@ const apiFetch = async <T>(
 
     const data = await response.json();
     return { success: true, data };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      error: err.message || 'Network error',
+      error: (err as Error).message || 'Network error',
     };
   }
 };

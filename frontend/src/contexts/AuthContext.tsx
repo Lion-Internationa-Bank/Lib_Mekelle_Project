@@ -19,11 +19,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = 'currentUser';
-const TOKEN_STORAGE_KEY = 'authToken';
+export const  USER_STORAGE_KEY = 'currentUser';
+export const TOKEN_STORAGE_KEY = 'authToken';
 
 // Use Vite environment variable for API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL ;
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(null);
@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await res.json();
+      console.log("data token",data.token)
 
       // Store token and user
       localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
