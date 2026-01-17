@@ -3,25 +3,29 @@ import apiFetch from "./api";
 import type { ApiResponse } from "./api";
 
 export type RateResponse = {
+  id: string;
   rate_type: string;
-  fiscal_year: number;
   value: number;
   source?: string | null;
-  effective_from?: string | null;
-  effective_until?: string | null;
-  last_updated?: string;
-  is_active?: boolean;
-};
-
-export type RateHistoryItem = {
-  fiscal_year: number;
-  value: number;
-  source?: string | null;
-  effective_from?: string | null;
+  effective_from: string;
   effective_until?: string | null;
   is_active: boolean;
   created_at: string;
-  updated_at: string | null;
+  updated_at: string;
+  created_by?: string | null;
+};
+
+export type RateHistoryItem = {
+  id: string;
+  rate_type: string;
+  value: number;
+  source?: string | null;
+  effective_from: string;
+  effective_until?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
 };
 
 export type RateHistoryResponse = {
@@ -30,21 +34,17 @@ export type RateHistoryResponse = {
   history: RateHistoryItem[];
 };
 
-// Get current rate for type, optionally by year
+// Current rate (now) for type
 export const getCurrentRate = async (
-  rateType: string,
-  fiscalYear?: number
+  rateType: string
 ): Promise<ApiResponse<RateResponse>> => {
-  const query = fiscalYear ? `?year=${fiscalYear}` : "";
   return apiFetch<RateResponse>(
-    `/revenue-admin/rates/${rateType}/current${query}`,
-    {
-      method: "GET",
-    }
+    `/revenue-admin/rates/${rateType}/current`,
+    { method: "GET" }
   );
 };
 
-// Get rate history for type
+// History for type
 export const getRateHistory = async (
   rateType: string,
   limit?: number
@@ -56,25 +56,47 @@ export const getRateHistory = async (
   );
 };
 
-// Upsert/update rate for given fiscal year
+export const createRate = async (
+  rateType: string,
+  payload: {
+    value: number;
+    source?: string;
+    effective_from: string;          // required
+    effective_until?: string;
+  }
+): Promise<ApiResponse<RateResponse>> => {
+  return apiFetch<RateResponse>(`/revenue-admin/rates/${rateType}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
 export const updateRate = async (
   rateType: string,
-  fiscal_year: number,
-  value: number,
-  description?: string,
-  source?: string,
-  effective_from?: string,
-  effective_until?: string
+  payload: {
+    value: number;
+    source?: string;
+    effective_from: string;          // required
+    effective_until?: string;
+  }
 ): Promise<ApiResponse<RateResponse>> => {
   return apiFetch<RateResponse>(`/revenue-admin/rates/${rateType}`, {
     method: "PUT",
-    body: JSON.stringify({
-      fiscal_year,
-      value,
-      description,
-      source,
-      effective_from,
-      effective_until,
-    }),
+    body: JSON.stringify(payload),
   });
+};
+
+
+// Deactivate specific rate row
+export const deactivateRate = async (
+  rateType: string,
+  payload: { effective_from: string }
+): Promise<ApiResponse<{ message: string }>> => {
+  return apiFetch<{ message: string }>(
+    `/revenue-admin/rates/${rateType}/deactivate`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
+  );
 };

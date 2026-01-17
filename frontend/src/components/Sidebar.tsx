@@ -40,6 +40,14 @@ const menuItems: MenuItem[] = [
     href: '/sub-cities',
     allowedRoles: ['CITY_ADMIN'],
   },
+   {
+    id: 'rateconfigs',
+    label: 'Rate Configs',
+    icon: '💱',
+    href: '/rateConfigs',
+    allowedRoles: [ 'REVENUE_ADMIN'],
+  
+  },
   {
     id: 'configs',
     label: 'Configurations',

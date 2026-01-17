@@ -10,7 +10,7 @@ interface LeaseCardProps {
 
 const LeaseCard = ({ lease }: LeaseCardProps) => {
   const { calendarType, isEthiopian } = useCalendar();
-  console.log(isEthiopian)
+  // console.log('Current calendar type:', calendarType, 'Is Ethiopian:', isEthiopian);
 
   return (
     <div className="bg-white/80 border border-gray-200 rounded-2xl overflow-hidden">
@@ -104,7 +104,8 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                     date={lease.contract_date} 
                     format="medium"
                     className="font-semibold"
-                    showTooltip={true} // Always show tooltip
+                    showTooltip={true}
+                    showCalendarIndicator={true}
                   />
                 </dd>
               </div>
@@ -117,7 +118,8 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                     date={lease.start_date} 
                     format="medium"
                     className="font-semibold"
-                    showTooltip={true} // Always show tooltip
+                    showTooltip={true}
+                    showCalendarIndicator={true}
                   />
                 </dd>
               </div>
@@ -130,7 +132,8 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                     date={lease.expiry_date} 
                     format="medium"
                     className="font-semibold"
-                    showTooltip={true} // Always show tooltip
+                    showTooltip={true}
+                    showCalendarIndicator={true}
                   />
                 </dd>
               </div>

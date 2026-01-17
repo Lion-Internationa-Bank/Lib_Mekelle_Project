@@ -14,8 +14,13 @@ import SubCitiesPage from './routes/admin/SubCitiesPage';
 import ConfigsPage from './routes/admin/ConfigsPage';
 import UserManagementPage from './routes/UserManagementPage';
 import { CalendarProvider } from './contexts/CalendarContext';
+import RateConfigsPage from './routes/admin/RateConfigsPage';
 
 const App = () => {
+   const { isLoading } = useAuth();
+     if (isLoading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
   return (
     <AuthProvider>
       <CalendarProvider>
@@ -33,6 +38,7 @@ const App = () => {
           <Route path="/users" element={<UserManagementPage />} />
           <Route path="/sub-cities" element={<SubCitiesPage />} />
           <Route path="/configs" element={<ConfigsPage />} />
+          <Route path= "/rateConfigs" element={<RateConfigsPage/>} />
         </Route>
           <Route path='/parcels/:upin' element={<ParcelDetailPage />}></Route>
 
@@ -45,7 +51,10 @@ const App = () => {
 
 // Role-based home page (unchanged)
 const RoleBasedHome = () => {
-  const { user } = useAuth();
+  const { user ,isLoading} = useAuth();
+     if (isLoading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
 
   if (!user) return <Navigate to="/login" replace />;
 
