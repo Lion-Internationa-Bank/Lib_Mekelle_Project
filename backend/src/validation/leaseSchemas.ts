@@ -59,7 +59,7 @@ export const CreateLeaseSchema = z.object({
 
     start_date: z.coerce.date({ message: 'Invalid start date format' }),
 
-    expiry_date: z.coerce.date({ message: 'Invalid expiry date format' }),
+  
   }),
   params: z.object({}),
   query: z.object({}),

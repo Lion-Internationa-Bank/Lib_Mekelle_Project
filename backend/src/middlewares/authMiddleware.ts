@@ -10,8 +10,8 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-// ← THIS IS THE FIX: add "export"
-export interface AuthRequest extends Request {
+// ← THIS IS THE FIX: add generics to AuthRequest
+export interface AuthRequest<P = {}, ResBody = any, ReqBody = any, ReqQuery = {}> extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {
     user_id: string;
     role: UserRole;
@@ -25,7 +25,7 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
-
+// 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Access token required' });
   }

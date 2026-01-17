@@ -15,32 +15,57 @@ export const createLease = async (req: Request, res: Response) => {
     payment_term_years,
     price_per_m2,
     start_date,
-    expiry_date,
   } = req.body;
 
+   // 1. Check if land parcel exists
+    const landParcel = await prisma.land_parcels.findUnique({
+      where: { upin },
+    });
+
+    if (!landParcel) {
+      return res.status(404).json({
+        success: false,
+        message: 'Land parcel not found',
+      });
+    }
+
   try {
+    // Calculate expiry date based on start_date + lease_period_years
+    const startDate = new Date(start_date);
+    const expiryDate = new Date(startDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + lease_period_years);
+
+    // 1. Create the lease agreement
     const lease = await prisma.lease_agreements.create({
       data: {
         upin,
         annual_lease_fee,
         annual_installment,
         total_lease_amount,
-        contract_date:new Date(contract_date),
+        contract_date: new Date(contract_date),
         down_payment_amount,
         lease_period_years,
         legal_framework,
         payment_term_years,
         price_per_m2,
-        start_date: new Date(start_date),
-        expiry_date: new Date(expiry_date),
+        start_date: startDate,
+        expiry_date: expiryDate, // Add calculated expiry date
       },
     });
+
+    // 2. Calculate billing schedule
+    const bills = await generateLeaseBills(lease);
 
     return res.status(201).json({
       success: true,
       data: {
         lease_id: lease.lease_id,
-        lease,
+        lease: {
+          ...lease,
+          expiry_date: expiryDate, // Include in response
+        },
+        bills_created: bills.length,
+        bills,
       },
     });
   } catch (error) {
@@ -49,6 +74,130 @@ export const createLease = async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to create lease agreement',
     });
+  }
+};
+
+
+// Helper function to generate lease bills
+const generateLeaseBills = async (lease: any) => {
+  try {
+    // Get the current active lease interest rate
+    const rateConfig = await prisma.rate_configurations.findFirst({
+      where: {
+        rate_type: 'LEASE_INTEREST_RATE',
+        is_active: true,
+        effective_from: { lte: new Date() },
+        OR: [
+          { effective_until: { gte: new Date() } },
+          { effective_until: null }
+        ]
+      },
+      orderBy: { effective_from: 'desc' }
+    });
+
+    if (!rateConfig) {
+      throw new Error('No active lease interest rate configuration found');
+    }
+
+    const interestRate = parseFloat(rateConfig.value.toString());
+    
+    // Convert to numbers safely
+    const downPayment = parseFloat(lease.down_payment_amount.toString());
+    const totalLeaseAmount = parseFloat(lease.total_lease_amount.toString());
+    const paymentTermYears = lease.payment_term_years;
+    
+    console.log('DEBUG - Calculation inputs:', {
+      interestRate,
+      downPayment,
+      totalLeaseAmount,
+      paymentTermYears,
+      remainingAmount: totalLeaseAmount - downPayment
+    });
+    
+    // Calculate remaining amount after down payment
+    let remainingAmount = totalLeaseAmount - downPayment;
+    
+    // Validate calculations
+    if (remainingAmount <= 0) {
+      throw new Error('Down payment must be less than total lease amount');
+    }
+    
+    const annualMainPayment = remainingAmount / paymentTermYears;
+    
+    console.log('DEBUG - Annual payment:', {
+      annualMainPayment,
+      maxAllowed: 999999999999999.99
+    });
+    
+    // Check if annualMainPayment exceeds limit
+    if (annualMainPayment > 999999999999999.99) {
+      throw new Error(`Annual main payment ${annualMainPayment} exceeds database limit of 999,999,999,999,999.99`);
+    }
+    
+    const bills = [];
+    const startDate = new Date(lease.start_date);
+    
+    // Generate bills for each payment term year (starting from start_date + 1 year)
+    for (let year = 1; year <= paymentTermYears; year++) {
+      // Calculate due date (start_date + 1 year, then +1 year for each subsequent bill)
+      const dueDate = new Date(startDate);
+      dueDate.setFullYear(dueDate.getFullYear() + year);
+      
+      // Calculate interest for this year - round to 2 decimal places
+      const interest = parseFloat((remainingAmount * interestRate).toFixed(2));
+      const totalAnnualPayment = parseFloat((annualMainPayment + interest).toFixed(2));
+      
+      console.log(`DEBUG - Year ${year}:`, {
+        remainingAmount,
+        interest,
+        totalAnnualPayment,
+        maxAllowed: 999999999999999.99
+      });
+      
+      // Validate values don't exceed database limits
+      if (totalAnnualPayment > 999999999999999.99) {
+        throw new Error(`Calculated annual payment ${totalAnnualPayment} exceeds database limit of 999,999,999,999,999.99`);
+      }
+      
+      if (interest > 999999999999999.99) {
+        throw new Error(`Calculated interest ${interest} exceeds database limit of 999,999,999,999,999.99`);
+      }
+      
+      // Create bill for this year - use Prisma Decimal type
+      const bill = await prisma.billing_records.create({
+        data: {
+          upin: lease.upin,
+          lease_id: lease.lease_id,
+          fiscal_year: dueDate.getFullYear(),
+          bill_type: 'LEASE',
+          amount_due: totalAnnualPayment,
+          amount_paid: 0,
+          penalty_amount: 0,
+          interest_amount: interest,
+          payment_status: 'UNPAID',
+          due_date: dueDate,
+          interest_rate_used: interestRate,
+          penalty_rate_used: 0,
+          sync_status: 'PENDING',
+          installment_number: year,
+        }
+      });
+      
+      bills.push(bill);
+      
+      // Update remaining amount for next year - round to 2 decimal places
+      remainingAmount = parseFloat((remainingAmount - annualMainPayment).toFixed(2));
+      
+      // Ensure remaining amount doesn't go below 0 due to rounding
+      if (remainingAmount < 0) {
+        remainingAmount = 0;
+      }
+    }
+
+    return bills;
+  } catch (error) {
+    console.error('Error generating lease bills:', error);
+    throw error;
   }
 };
 

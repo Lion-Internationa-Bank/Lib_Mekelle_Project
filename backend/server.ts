@@ -16,7 +16,7 @@ const startServer = async () => {
     console.log('PostgreSQL connected successfully');
     await seedInitialAdmins();
 // '0.0.0.0',
-      server.listen(Number(PORT),  () => {
+      server.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
   } catch (err) {

@@ -19,7 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+const uploadsPath = path.join(process.cwd(), 'uploads');
+console.log('Serving uploads from:', uploadsPath);
+app.use('/uploads', express.static(uploadsPath));
 
 app.use('/api/v1', routes);
 

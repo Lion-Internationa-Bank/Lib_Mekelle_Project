@@ -31,14 +31,17 @@ import {
 } from '../validation/parcelSchemas.ts';
 
 import { validateRequest } from '../middlewares/validateRequest.ts';
+import { authenticate } from '../middlewares/authMiddleware.ts';
+import { authorize } from '../middlewares/roleMiddleware.ts';
 
 const router = Router({ mergeParams: true });
 
 // === Parcel Routes ===
-router.post('/', validateRequest(CreateParcelSchema), createParcel);
+router.post('/', validateRequest(CreateParcelSchema),authenticate, createParcel);
 
-router.get('/', validateRequest(z.object({ query: GetParcelsQuerySchema })), getParcels);
+// router.get('/', validateRequest(z.object({ query: GetParcelsQuerySchema })), authenticate, getParcels);
 
+router.get('/', authenticate, getParcels);
 router.get(
   '/:upin',
   validateRequest(z.object({ params: z.object({ upin: z.string().min(1) }) })),

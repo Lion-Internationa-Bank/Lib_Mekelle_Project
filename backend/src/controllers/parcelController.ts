@@ -9,6 +9,7 @@ import {
   PaymentStatus, 
   EncumbranceStatus 
 } from '../generated/prisma/enums.ts';
+import {type AuthRequest } from '../middlewares/authMiddleware.ts';
 
 // Define interfaces for request bodies and queries
 interface GetParcelsQuery {
@@ -214,13 +215,14 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
   }
 };
 
-export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res: Response) => {
+export const getParcels = async (req: AuthRequest<{}, any, any, GetParcelsQuery>, res: Response) => {
   try {
     const page = parseInt(req.query.page || '1');
     const limit = parseInt(req.query.limit || '10');
     const skip = (page - 1) * limit;
 
     const { search, sub_city_id, tenure_type, ketena, land_use } = req.query;
+    console.log("subcity",req.user)
 
     const where: any = {
       is_deleted: false,
@@ -233,11 +235,18 @@ export const getParcels = async (req: Request<{}, {}, {}, GetParcelsQuery>, res:
           { block: { contains: search, mode: 'insensitive' } },
         ],
       }),
-      ...(sub_city_id && { sub_city_id }),
-      ...(ketena && { ketena }),
       ...(tenure_type && { tenure_type }),
+      ...(ketena && { ketena }),
       ...(land_use && { land_use }),
     };
+
+    // Restrict to user's sub_city_id if present (e.g., for non-admin users)
+    if (req.user?.sub_city_id) {
+      where.sub_city_id = req.user.sub_city_id;
+    } else if (sub_city_id) {
+      // Allow admins (sub_city_id null) to filter by query sub_city_id
+      where.sub_city_id = sub_city_id;
+    }
 
     const [parcels, total] = await Promise.all([
       prisma.land_parcels.findMany({

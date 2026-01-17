@@ -1,19 +1,37 @@
 // src/routes/revenueAdminRoutes.ts
-import express from 'express';
-import { authenticate} from '../middlewares/authMiddleware.ts';
-import { revenueAdminRateAccess , authorize } from '../middlewares/roleMiddleware.ts';
-import { updateRate, getCurrentRate } from '../controllers/rateController.ts';
+import express from "express";
+import { authenticate } from "../middlewares/authMiddleware.ts";
+import {
+  revenueAdminRateAccess,
+  authorize,
+} from "../middlewares/roleMiddleware.ts";
+import {
+  getCurrentRate,
+  getRateHistoryByType,
+  createRate,
+  updateRate,
+  deactivateRate,
+} from "../controllers/rateController.ts";
 
 const router = express.Router();
 
 // All endpoints require authentication + Revenue Admin role
 router.use(authenticate);
-router.use(authorize(['REVENUE_ADMIN']));
+router.use(authorize(["REVENUE_ADMIN"]));
 
-// Get current rate (publicly readable, but only Revenue Admin can update)
-router.get('/rates/:type', getCurrentRate);
+// Get current rate for a type 
+router.get("/rates/:type/current", getCurrentRate);
 
-// Update rate (Revenue Admin only, single value enforced)
-router.post('/rates/:type', revenueAdminRateAccess, updateRate);
+// Get rate history for a type (optionally ?limit=10)
+router.get("/rates/:type/history", getRateHistoryByType);
+
+// Create NEW rate for a type (insert only)
+router.post("/rates/:type", revenueAdminRateAccess, createRate);
+
+// Update existing ACTIVE rate for a type (requires effective_from in body)
+router.put("/rates/:type", revenueAdminRateAccess, updateRate);
+
+// Deactivate a specific rate row for a type (requires effective_from in body)
+router.patch("/rates/:type/deactivate", revenueAdminRateAccess, deactivateRate);
 
 export default router;
