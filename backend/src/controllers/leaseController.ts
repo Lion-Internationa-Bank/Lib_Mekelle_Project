@@ -5,9 +5,7 @@ import prisma from '../config/prisma.ts';
 export const createLease = async (req: Request, res: Response) => {
   const {
     upin,
-    annual_lease_fee,
     total_lease_amount,
-    annual_installment,
     contract_date,
     down_payment_amount,
     lease_period_years,
@@ -171,7 +169,6 @@ const generateLeaseBills = async (lease: any) => {
           fiscal_year: dueDate.getFullYear(),
           bill_type: 'LEASE',
           amount_due: totalAnnualPayment,
-          amount_paid: 0,
           penalty_amount: 0,
           interest_amount: interest,
           payment_status: 'UNPAID',

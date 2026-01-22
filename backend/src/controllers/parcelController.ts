@@ -330,7 +330,6 @@ export const getParcels = async (req: AuthRequest<{}, any, any, GetParcelsQuery>
   }
 };
 
-
 export const getParcelByUpin = async (
   req: Request<{ upin: string }>,
   res: Response
@@ -358,10 +357,10 @@ export const getParcelByUpin = async (
         land_grade: true,
         tenure_type: true,
         boundary_coords: true,
-        boundary_east:true,
-        boundary_north:true,
-        boundary_south:true,
-        boundary_west:true,
+        boundary_east: true,
+        boundary_north: true,
+        boundary_south: true,
+        boundary_west: true,
         created_at: true,
         updated_at: true,
 
@@ -369,8 +368,7 @@ export const getParcelByUpin = async (
           where: { is_active: true, is_deleted: false },
           select: {
             parcel_owner_id: true,
-            acquired_at: true,           // ← kept (useful info)
-            // share_ratio: true,        ← REMOVED
+            acquired_at: true,
             owner: {
               select: {
                 owner_id: true,
@@ -393,8 +391,7 @@ export const getParcelByUpin = async (
               },
             },
           },
-          // orderBy: { share_ratio: "desc" },  ← REMOVED
-          orderBy: { acquired_at: "asc" },     // ← reasonable alternative
+          orderBy: { acquired_at: "asc" },
         },
 
         lease_agreement: {
@@ -516,23 +513,14 @@ export const getParcelByUpin = async (
             fiscal_year: true,
             bill_type: true,
             amount_due: true,
-            amount_paid: true,
             penalty_amount: true,
+            remaining_amount:true,
+            interest_amount: true,
             payment_status: true,
             due_date: true,
-            transactions: {
-              where: { is_deleted: false },
-              select: { 
-                transaction_id: true, 
-                revenue_type: true, 
-                receipt_serial_no: true, 
-                amount_paid: true, 
-                payment_date: true 
-              },
-              orderBy: { payment_date: "desc" },
-            },
+            installment_number:true,
           },
-          orderBy: { fiscal_year: "desc" },
+          // orderBy: { fiscal_year: "desc" },
         },
       },
     });
@@ -567,9 +555,7 @@ export const getParcelByUpin = async (
         ...parcel,
         history: enrichedHistory,
         billing_summary,
-        // Optional: add simple owner summary if frontend needs it
         active_owners_count: parcel.owners.length,
-        // active_owners_summary: parcel.owners.map(o => o.owner.full_name).join(", ") || null,
       },
     });
   } catch (error) {
@@ -692,7 +678,7 @@ export const deleteParcel = async (req: Request<{ upin: string }>, res: Response
       where: { 
         upin, 
         is_deleted: false,
-        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.PARTIAL, PaymentStatus.OVERDUE] }
+        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.OVERDUE] }
       },
     });
 
@@ -946,7 +932,8 @@ export const transferOwnership = async (
 
 
 export const addCoOwner = async (req: Request, res: Response) => {
-  const { upin } = req.params;
+  // Validate and extract upin from params
+  const upin = typeof req.params.upin === 'string' ? req.params.upin : Array.isArray(req.params.upin) ? req.params.upin[0] : undefined;
   const { owner_id, acquired_at } = req.body;
 
   try {
@@ -1040,13 +1027,22 @@ export const addCoOwner = async (req: Request, res: Response) => {
 };
 
 export const subdivideParcel = async (req: Request, res: Response) => {
-  const { upin } = req.params;
+  // Validate and extract upin from params
+  const upin = typeof req.params.upin === 'string' ? req.params.upin : Array.isArray(req.params.upin) ? req.params.upin[0] : undefined;
   const { childParcels } = req.body; // array of { upin, file_number, total_area_m2, ... }
 
   try {
-    console.log("parcels",childParcels)
-    console.log("is'nt array",!Array.isArray(childParcels))
-    console.log("array length",childParcels.length)
+    if (!upin) {
+      return res.status(400).json({
+        success: false,
+        message: "UPIN is required",
+      });
+    }
+
+    console.log("parcels", childParcels);
+    console.log("is'nt array", !Array.isArray(childParcels));
+    console.log("array length", childParcels?.length || 0);
+    
     if (!Array.isArray(childParcels) || childParcels.length < 2) {
       return res.status(400).json({
         success: false,
@@ -1055,11 +1051,11 @@ export const subdivideParcel = async (req: Request, res: Response) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Get parent
+      // 1. Get parent with its active owners
       const parent = await tx.land_parcels.findUnique({
         where: { upin },
         include: {
-          owners: {
+          owners: {  // This is the correct relation name from your schema
             where: { is_active: true, is_deleted: false },
             include: { owner: true },
           },
@@ -1075,7 +1071,22 @@ export const subdivideParcel = async (req: Request, res: Response) => {
         throw new Error('CHILD_AREAS_EXCEED_PARENT');
       }
 
-      // 3. Retire parent
+      // 3. Check if child UPINs already exist
+      const existingChildUpins = childParcels.map((c: any) => c.upin);
+      const existingParcels = await tx.land_parcels.findMany({
+        where: {
+          upin: { in: existingChildUpins },
+          is_deleted: false,
+        },
+        select: { upin: true },
+      });
+
+      if (existingParcels.length > 0) {
+        const existingUpins = existingParcels.map(p => p.upin);
+        throw new Error(`DUPLICATE_UPINS: ${existingUpins.join(', ')} already exist`);
+      }
+
+      // 4. Retire parent
       await tx.land_parcels.update({
         where: { upin },
         data: { 
@@ -1086,7 +1097,7 @@ export const subdivideParcel = async (req: Request, res: Response) => {
 
       const createdChildren = [];
 
-      // 4. Create children + copy active owners
+      // 5. Create children + copy active owners
       for (const childData of childParcels) {
         const child = await tx.land_parcels.create({
           data: {
@@ -1149,7 +1160,12 @@ export const subdivideParcel = async (req: Request, res: Response) => {
       CHILD_AREAS_EXCEED_PARENT: "Total child areas exceed parent area",
     };
 
-    const message = messages[error.message] || "Failed to subdivide parcel";
+    let message = messages[error.message] || "Failed to subdivide parcel";
+    
+    // Handle duplicate UPIN error
+    if (error.message?.startsWith('DUPLICATE_UPINS:')) {
+      message = `Some UPINs already exist: ${error.message.replace('DUPLICATE_UPINS: ', '')}`;
+    }
 
     return res.status(400).json({
       success: false,
@@ -1157,7 +1173,6 @@ export const subdivideParcel = async (req: Request, res: Response) => {
     });
   }
 };
-
 export const createEncumbrance = async (
   req: Request<{}, {}, CreateEncumbranceBody>,
   res: Response

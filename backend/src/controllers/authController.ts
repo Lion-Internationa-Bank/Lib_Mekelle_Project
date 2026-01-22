@@ -224,6 +224,15 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
   const { suspend } = req.body; // true to suspend, false to unsuspend
   const actor = req.user!;
 
+  // Validate ID parameter
+  if (Array.isArray(id)) {
+    return res.status(400).json({ message: 'Invalid user ID format' });
+  }
+  
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
   try {
     const targetUser = await prisma.users.findUnique({ where: { user_id: id } });
     if (!targetUser || targetUser.is_deleted) return res.status(404).json({ message: 'User not found' });
@@ -249,6 +258,15 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const actor = req.user!;
+
+  // Validate ID parameter
+  if (Array.isArray(id)) {
+    return res.status(400).json({ message: 'Invalid user ID format' });
+  }
+  
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
 
   try {
     const targetUser = await prisma.users.findUnique({ where: { user_id: id } });
