@@ -107,10 +107,16 @@ export type BillingRecord = {
   bill_id: string;
   fiscal_year: string;
   bill_type: string;
-  amount_due: string;
-  amount_paid: string;
-  penalty_amount: string;
+  amount_due: Number;
+  amount_paid: Number;
+  penalty_amount: Number;
   payment_status: string;
+  bank_reference:string
+  due_date:string;
+  interest_amount:Number;
+  base_payment:Number;
+  installment_number:Number;
+  remaining_amount:Number;
   transactions: BillingTransaction[];
 };
 

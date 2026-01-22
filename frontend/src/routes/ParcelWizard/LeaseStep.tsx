@@ -22,19 +22,17 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
   } = useForm<LeaseStepFormData>({
     resolver: zodResolver(LeaseStepFormSchema),
     defaultValues: {
-      price_per_m2: 2000,
-      total_lease_amount: 6547896,
+      price_per_m2: 0,
+      total_lease_amount: 0,
       down_payment_amount: 0,
-      annual_installment: 0,
-      annual_lease_fee: 0,
-      lease_period_years: 53,
-      payment_term_years: 6,
-      start_date: "",
+      lease_period_years: 0,
+      payment_term_years: 0,
+      start_date: today,
       contract_date: today,
       legal_framework: "",
     },
   });
-
+console.log("lease step errors", errors);
   if (!upin) {
     return (
       <div className="text-center py-12">
@@ -56,6 +54,7 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
 
   const onSubmit = async (data: LeaseStepFormData) => {
     try {
+      console.log("botton clicked")
       const payload = {
         ...data,
         upin, // from URL
@@ -137,41 +136,6 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
           {errors.down_payment_amount && (
             <p className="mt-1 text-sm text-red-600">
               {errors.down_payment_amount.message}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Annual Installment (ETB)
-          </label>
-          <input
-            type="number"
-            min="0"
-            {...register("annual_installment")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.annual_installment && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.annual_installment.message}
-            </p>
-          )}
-        </div>
-
-        {/* Row 3 */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Annual Lease Fee (ETB)
-          </label>
-          <input
-            type="number"
-            min="0"
-            {...register("annual_lease_fee")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.annual_lease_fee && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.annual_lease_fee.message}
             </p>
           )}
         </div>

@@ -8,6 +8,7 @@ import SubdivideParcelModal from "../modals/SubdivideParcelModal"; // ← Make s
 import { searchOwnersLiteApi, addCoOwnerToParcel } from "../../../services/parcelDetailApi";
 import { createOwner } from "../../../services/parcelApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import { useAuth } from "../../../contexts/AuthContext";
 
 type Props = {
   parcel: ParcelDetail;
@@ -34,7 +35,8 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
     tin_number: "",
     phone_number: "",
   });
-
+ const {user} =useAuth();
+   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   // Debounced search for existing owners
   useEffect(() => {
     if (!showAddCoOwnerSearch) return;
@@ -114,15 +116,19 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
 )}
 
       {/* Edit Parcel Modal */}
-      <EditParcelModal
+       {isSubcityNormal && (
+           <EditParcelModal
         parcel={parcel}
         open={showEditParcel}
         onClose={() => setShowEditParcel(false)}
         onSuccess={onReload}
       />
+       )
+
+       }
 
       {/* Add Co-Owner - Search Existing */}
-      {showAddCoOwnerSearch && (
+      {isSubcityNormal && showAddCoOwnerSearch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -188,7 +194,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       )}
 
       {/* Create New Owner Modal */}
-      {showCreateOwner && (
+      {isSubcityNormal && showCreateOwner && (
         <CreateOwnerModal
           saving={false}
           form={newOwnerForm}
@@ -199,7 +205,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       )}
 
       {/* Document Upload after new owner creation */}
-      {showOwnerDocsUpload && newOwnerId && (
+      {isSubcityNormal && showOwnerDocsUpload && newOwnerId && (
         <OwnerDocsUploadModal
           ownerId={newOwnerId}
           onClose={() => {
@@ -211,7 +217,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       )}
 
       {/* Subdivision Modal */}
-      {showSubdivide && (
+      {isSubcityNormal && showSubdivide && (
         <SubdivideParcelModal
           isOpen={showSubdivide}
           onClose={() => setShowSubdivide(false)}

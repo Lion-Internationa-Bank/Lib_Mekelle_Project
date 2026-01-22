@@ -5,6 +5,7 @@ import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
 import GenericDocsUpload from "../../GenericDocsUpload";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import { useAuth } from "../../../contexts/AuthContext";
 
 type Props = {
   encumbrances: ParcelDetail["encumbrances"];
@@ -15,7 +16,10 @@ type Props = {
 const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
   const [editing, setEditing] = useState<ParcelDetail["encumbrances"][number] | null>(null);
   const [addingNew, setAddingNew] = useState(false);
+  
 
+    const {user} = useAuth();
+    const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   // New state for post-creation upload step
   const [showUploadStep, setShowUploadStep] = useState(false);
   const [latestEncumbranceId, setLatestEncumbranceId] = useState<string | null>(null);
@@ -48,7 +52,7 @@ const handleEncumbranceSuccess = async (newEncumbranceId?: string) => {
   return (
     <>
       <div className="space-y-6">
-        {encumbrances.length === 0 ? (
+        {isSubcityNormal && encumbrances.length === 0 ? (
           <div className="text-center py-8">
             <button
               onClick={() => setAddingNew(true)}
@@ -67,7 +71,7 @@ const handleEncumbranceSuccess = async (newEncumbranceId?: string) => {
           ))
         )}
 
-        {encumbrances.length > 0 && (
+        { isSubcityNormal && encumbrances.length > 0 && (
           <div className="text-center">
             <button
               onClick={() => setAddingNew(true)}
@@ -79,7 +83,8 @@ const handleEncumbranceSuccess = async (newEncumbranceId?: string) => {
         )}
 
         {/* Create/Edit Modal */}
-        <EncumbranceModal
+      {isSubcityNormal && (
+            <EncumbranceModal
           upin={upin}
           encumbrance={editing}
           open={!!editing || addingNew}
@@ -89,10 +94,13 @@ const handleEncumbranceSuccess = async (newEncumbranceId?: string) => {
           }}
           onSuccess={handleEncumbranceSuccess} // ← Now passes encumbrance_id
         />
+      )
+
+      }
       </div>
 
       {/* === Document Upload Modal After Creation === */}
-      {showUploadStep && latestEncumbranceId && (
+      {isSubcityNormal && showUploadStep && latestEncumbranceId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}

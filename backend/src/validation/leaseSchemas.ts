@@ -19,19 +19,9 @@ export const CreateLeaseSchema = z.object({
       .regex(/^[A-Za-z0-9\-_]+$/, {
         message: 'Invalid UPIN format – only letters, numbers, hyphens, and underscores allowed',
       }),
-
-    annual_lease_fee: z.coerce
-      .number()
-      .positive({ message: 'Annual lease fee must be greater than 0' }),
-
     total_lease_amount: z.coerce
       .number()
       .positive({ message: 'Total lease amount must be greater than 0' }),
-
-    annual_installment: z.coerce
-      .number()
-      .positive({ message: 'Annual installment must be greater than 0' }),
-
     down_payment_amount: z.coerce
       .number()
       .min(0, { message: 'Down payment cannot be negative' }),
@@ -70,9 +60,7 @@ export const UpdateLeaseSchema = z.object({
   params: LeaseIdParamSchema,
   body: z
     .object({
-      annual_lease_fee: z.coerce.number().positive().optional(),
       total_lease_amount: z.coerce.number().positive().optional(),
-      annual_installment: z.coerce.number().positive().optional(),
       down_payment_amount: z.coerce.number().min(0).optional(),
       price_per_m2: z.coerce.number().positive().optional(),
       lease_period_years: z.coerce.number().int().positive().optional(),
@@ -80,7 +68,6 @@ export const UpdateLeaseSchema = z.object({
       legal_framework: z.string().trim().min(1).optional(),
       contract_date: z.coerce.date().optional(),
       start_date: z.coerce.date().optional(),
-      expiry_date: z.coerce.date().optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: 'At least one field must be provided to update the lease agreement',

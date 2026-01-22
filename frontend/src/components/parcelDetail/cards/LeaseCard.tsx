@@ -3,6 +3,7 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import DateDisplay from "../../DateDisplay";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface LeaseCardProps {
   lease: NonNullable<ParcelDetail["lease_agreement"]>;
@@ -10,6 +11,8 @@ interface LeaseCardProps {
 
 const LeaseCard = ({ lease }: LeaseCardProps) => {
   const { calendarType, isEthiopian } = useCalendar();
+  const {user} = useAuth();
+  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   // console.log('Current calendar type:', calendarType, 'Is Ethiopian:', isEthiopian);
 
   return (

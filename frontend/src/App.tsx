@@ -64,6 +64,7 @@ const RoleBasedHome = () => {
       return <AdminHome />;
     case 'SUBCITY_NORMAL':
     case 'SUBCITY_AUDITOR':
+      case 'REVENUE_USER':
       return <SubcityHome />;
     case 'REVENUE_ADMIN':
     case 'REVENUE_USER':

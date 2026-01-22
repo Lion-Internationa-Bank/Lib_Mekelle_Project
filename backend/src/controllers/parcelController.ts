@@ -516,23 +516,26 @@ export const getParcelByUpin = async (
             fiscal_year: true,
             bill_type: true,
             amount_due: true,
-            amount_paid: true,
             penalty_amount: true,
             payment_status: true,
             due_date: true,
-            transactions: {
-              where: { is_deleted: false },
-              select: { 
-                transaction_id: true, 
-                revenue_type: true, 
-                receipt_serial_no: true, 
-                amount_paid: true, 
-                payment_date: true 
-              },
-              orderBy: { payment_date: "desc" },
-            },
+            base_payment:true,
+            interest_amount:true,
+            remaining_amount:true,
+            installment_number:true,
+            // transactions: {
+            //   where: { is_deleted: false },
+            //   select: { 
+            //     transaction_id: true, 
+            //     revenue_type: true, 
+            //     receipt_serial_no: true, 
+            //     amount_paid: true, 
+            //     payment_date: true 
+            //   },
+            //   orderBy: { payment_date: "desc" },
+            // },
           },
-          orderBy: { fiscal_year: "desc" },
+          // orderBy: { fiscal_year: "desc" },
         },
       },
     });
@@ -553,23 +556,14 @@ export const getParcelByUpin = async (
       to_owner: undefined,
     }));
 
-    // Group billing by type
-    const billing_summary = parcel.billing_records.reduce((acc, bill) => {
-      const type = bill.bill_type;
-      acc[type] ??= [];
-      acc[type].push(bill);
-      return acc;
-    }, {} as Record<string, typeof parcel.billing_records>);
+  
 
     return res.status(200).json({
       success: true,
       data: {
         ...parcel,
         history: enrichedHistory,
-        billing_summary,
-        // Optional: add simple owner summary if frontend needs it
         active_owners_count: parcel.owners.length,
-        // active_owners_summary: parcel.owners.map(o => o.owner.full_name).join(", ") || null,
       },
     });
   } catch (error) {
@@ -692,7 +686,7 @@ export const deleteParcel = async (req: Request<{ upin: string }>, res: Response
       where: { 
         upin, 
         is_deleted: false,
-        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.PARTIAL, PaymentStatus.OVERDUE] }
+        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.OVERDUE] }
       },
     });
 

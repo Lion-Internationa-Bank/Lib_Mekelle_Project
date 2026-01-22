@@ -10,12 +10,12 @@ datasource db {
 }
 
 enum UserRole {
-  CITY_ADMIN 
-  SUBCITY_ADMIN      
-  SUBCITY_NORMAL   
-  SUBCITY_AUDITOR  
-  REVENUE_ADMIN    
-  REVENUE_USER     
+  CITY_ADMIN
+  SUBCITY_ADMIN
+  SUBCITY_NORMAL
+  SUBCITY_AUDITOR
+  REVENUE_ADMIN
+  REVENUE_USER
 }
 
 enum RateType {
@@ -52,27 +52,62 @@ enum LeaseStatus {
   DEFAULTED
 }
 
-// UPDATED ENUM: Added ENCUMBRANCE_TYPE category
 enum ConfigCategory {
-  LAND_TENURE         // tenure_type
-  REVENUE_TYPE        // bill_type, revenue_type
-  DOCUMENT_TYPE       // doc_type
-  TRANSFER_TYPE       // transfer_type
-  LAND_USE            // land_use, usage_type
-  PAYMENT_METHOD      // payment_method
-  ENCUMBRANCE_TYPE    // NEW: For encumbrances.type
-  GENERAL             
-  REVENUE_RATES       
+  LAND_TENURE
+  REVENUE_TYPE
+  DOCUMENT_TYPE
+  TRANSFER_TYPE
+  LAND_USE
+  PAYMENT_METHOD
+  ENCUMBRANCE_TYPE
+  GENERAL
+  REVENUE_RATES
+  ORDER_NUMBER_FORMAT
 }
 
+enum PaymentStatus {
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+enum OrderStatus {
+  GENERATED
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum OrderGenerationMode {
+  AUTO
+  MANUAL
+  BULK
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  ADJUSTMENT
+}
+
+enum EncumbranceStatus {
+  ACTIVE
+  RELEASED
+}
+
+enum ParcelStatus {
+  ACTIVE
+  RETIRED
+  PENDING
+}
 
 model rate_configurations {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   rate_type       RateType
   value           Decimal   @db.Decimal(12, 6)
   source          String?
-  effective_from  DateTime  @db.Timestamptz // When this rate becomes active
-  effective_until DateTime? @db.Timestamptz // When this rate expires (null = current/indefinite)
+  effective_from  DateTime  @db.Timestamptz
+  effective_until DateTime? @db.Timestamptz
   created_at      DateTime  @default(now()) @db.Timestamptz
   updated_at      DateTime  @updatedAt @db.Timestamptz
   created_by      String?   @db.Uuid
@@ -82,7 +117,8 @@ model rate_configurations {
   @@index([rate_type, effective_from, effective_until])
   @@index([rate_type, is_active])
 }
-model sub_cities {       
+
+model sub_cities {
   sub_city_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String         @unique @db.VarChar(100)
   description   String?
@@ -99,10 +135,10 @@ model users {
   user_id       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username      String         @unique @db.VarChar(100)
   email         String?        @unique @db.VarChar(255)
-  password_hash String         
+  password_hash String
   full_name     String
   role          UserRole
-  sub_city_id   String?        @db.Uuid  
+  sub_city_id   String?        @db.Uuid
   created_at    DateTime       @default(now())
   updated_at    DateTime       @updatedAt
   last_login    DateTime?
@@ -112,12 +148,13 @@ model users {
 
   sub_city      sub_cities?    @relation(fields: [sub_city_id], references: [sub_city_id])
   audit_logs    audit_logs[]
+  //verified_transactions financial_transactions[]
 }
 
 model configurations {
   config_id     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key           String         @unique @db.VarChar(100)  
-  value         Json           
+  key           String         @unique @db.VarChar(100)
+  value         Json
   category      ConfigCategory?
   description   String?
   is_active     Boolean        @default(true)
@@ -131,9 +168,9 @@ model audit_logs {
   log_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id       String         @db.Uuid
   action_type   AuditAction
-  entity_type   String         
+  entity_type   String
   entity_id     String
-  changes       Json?          
+  changes       Json?
   timestamp     DateTime       @default(now())
   ip_address    String?
 
@@ -143,18 +180,18 @@ model audit_logs {
 model land_parcels {
   upin              String         @id @db.VarChar(50)
   file_number       String         @unique @db.VarChar(100)
-  sub_city_id       String         @db.Uuid       
+  sub_city_id       String         @db.Uuid
   tabia             String         @db.VarChar(100)
   ketena            String         @db.VarChar(50)
   block             String         @db.VarChar(50)
   total_area_m2     Decimal        @db.Decimal(12, 2)
-  land_use          String?                       // Validate against ConfigCategory.LAND_USE
+  land_use          String?
   land_grade        Decimal        @db.Decimal(10, 2)
-  tenure_type       String         @default("OLD_POSSESSION")  // Validate against ConfigCategory.LAND_TENURE
-   parent_upin       String?        @db.VarChar(50)
-   status            ParcelStatus   @default(ACTIVE)
+  tenure_type       String         @default("OLD_POSSESSION")
+  parent_upin       String?        @db.VarChar(50)
+  status            ParcelStatus   @default(ACTIVE)
   boundary_coords   Json?
-  boundary_north    String?        @db.VarChar(255) 
+  boundary_north    String?        @db.VarChar(255)
   boundary_east     String?        @db.VarChar(255)
   boundary_south    String?        @db.VarChar(255)
   boundary_west     String?        @db.VarChar(255)
@@ -175,7 +212,7 @@ model land_parcels {
   owners            parcel_owners[]
   valuations        tax_valuation_roll[]
   sub_city          sub_cities     @relation(fields: [sub_city_id], references: [sub_city_id])
-
+  order_bill_items    order_bill_items[] 
   @@index([sub_city_id, tabia])
   @@index([status])
 }
@@ -219,7 +256,7 @@ model ownership_history {
   history_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin              String
   event_snapshot    Json
-  transfer_type     String                                      // Validate against ConfigCategory.TRANSFER_TYPE
+  transfer_type     String
   transfer_date     DateTime       @default(now())
   created_at        DateTime       @default(now())
   updated_at        DateTime?      @updatedAt
@@ -241,10 +278,10 @@ model ownership_history {
 model lease_agreements {
   lease_id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin                 String         @unique @db.VarChar(50)
-  annual_lease_fee     Decimal?        @db.Decimal(18, 2)
+  annual_lease_fee     Decimal?       @db.Decimal(18, 2)
   total_lease_amount   Decimal        @db.Decimal(18, 2)
   start_date           DateTime       @db.Date
-  expiry_date          DateTime?       @db.Date
+  expiry_date          DateTime?      @db.Date
   annual_installment   Decimal        @db.Decimal(18, 2)
   contract_date        DateTime       @db.Date
   created_at           DateTime       @default(now())
@@ -254,20 +291,20 @@ model lease_agreements {
   payment_term_years   Int
   status               LeaseStatus    @default(ACTIVE)
   price_per_m2         Decimal        @db.Decimal(18, 2)
-  interest_rate        Decimal?       @db.Decimal(5, 4)  
+  interest_rate        Decimal?       @db.Decimal(5, 4)
   updated_at           DateTime?      @updatedAt
   deleted_at           DateTime?
   is_deleted           Boolean        @default(false)
 
   documents            documents[]
   land_parcel          land_parcels   @relation(fields: [upin], references: [upin])
-  billing_records billing_records[]
+  billing_records      billing_records[]
 }
 
 model building_details {
   building_id   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin          String         @db.VarChar(50)
-  usage_type    String?                       // Can validate against LAND_USE config if needed
+  usage_type    String?
   total_area    Decimal        @db.Decimal(12, 2)
   floor_count   Int            @default(0)
   created_at    DateTime       @default(now())
@@ -281,67 +318,127 @@ model building_details {
 model billing_records {
   bill_id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin              String         @db.VarChar(50)
-  lease_id           String?       @db.Uuid
+  lease_id          String?        @db.Uuid
   fiscal_year       Int
-  bill_type         String                                      // Validate against ConfigCategory.REVENUE_TYPE
+  bill_type         String
   amount_due        Decimal        @db.Decimal(18, 2)
-  amount_paid       Decimal        @default(0) @db.Decimal(18, 2)
-  penalty_amount    Decimal?        @default(0) @db.Decimal(18, 2)
-  interest_amount   Decimal        @default(0) @db.Decimal(18, 2)   
-  payment_status    PaymentStatus  @default(UNPAID)             // Native enum
+  base_payment      Decimal?       @db.Decimal(18, 2)
+  interest_amount   Decimal        @default(0) @db.Decimal(18, 2)
+  penalty_amount    Decimal?       @default(0) @db.Decimal(18, 2)
+  payment_status    PaymentStatus  @default(UNPAID)
   installment_number Int?
-  due_date          DateTime?                              
-  bank_reference    String?                                
-  last_synced_at    DateTime?  
-  sync_status        SyncStatus?   @default(PENDING)
+  remaining_amount  Decimal?       @default(0) @db.Decimal(18, 2)
+  due_date          DateTime?
+  last_payment_date DateTime?
   interest_rate_used Decimal?      @db.Decimal(5, 4)
-  penalty_rate_used  Decimal?      @db.Decimal(10, 4)                            
+  penalty_rate_used  Decimal?      @db.Decimal(10, 4)
+  sync_status        SyncStatus?   @default(PENDING)
   created_at        DateTime       @default(now())
   updated_at        DateTime?      @updatedAt
   deleted_at        DateTime?
   is_deleted        Boolean        @default(false)
 
   parcel            land_parcels   @relation(fields: [upin], references: [upin])
-  transactions      financial_transactions[]
-  lease_agreement lease_agreements?      @relation(fields: [lease_id], references: [lease_id])
+  lease_agreement   lease_agreements? @relation(fields: [lease_id], references: [lease_id])
+  order_items       order_bill_items[]
 
-
-@@unique([upin, lease_id,fiscal_year, bill_type,installment_number])
-
+  @@unique([upin, lease_id, fiscal_year, bill_type, installment_number])
   @@index([fiscal_year])
   @@index([payment_status])
   @@index([upin, fiscal_year])
+  @@index([due_date])
+}
+
+model payment_orders {
+  order_number      String            @id @db.VarChar(50)
+  total_amount            Decimal           @db.Decimal(18, 2)
+  generated_at      DateTime          @default(now())
+  expires_at        DateTime
+  status            OrderStatus       @default(GENERATED)
+  generation_mode   OrderGenerationMode @default(AUTO)
+  paid_at           DateTime?
+  cancelled_at      DateTime?
+  payment_method    String?
+  final_amount_paid Decimal?          @db.Decimal(18, 2)
+  created_at        DateTime          @default(now())
+  updated_at        DateTime?         @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean           @default(false)
+
+  bill_items        order_bill_items[]        
+  transactions      financial_transactions[]
+
+
+  @@index([status])
+  @@index([generated_at])
+  @@index([expires_at])
+}
+
+model order_bill_items {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number     String         @db.VarChar(50)
+  bill_id          String         @db.Uuid
+  upin             String         @db.VarChar(50)
+  bill_type        String
+  fiscal_year      Int 
+  amount           Decimal        @db.Decimal(18, 2)
+  created_at       DateTime       @default(now())
+  updated_at       DateTime?      @updatedAt
+
+  order            payment_orders @relation(fields: [order_number], references: [order_number], onDelete: Cascade)
+  bill             billing_records @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
+  parcel           land_parcels   @relation(fields: [upin], references: [upin])
+
+  @@unique([order_number, bill_id])
+  @@unique([order_number, upin, bill_type])
+  @@index([order_number])
+  @@index([bill_id])
+  @@index([upin])
+  @@index([bill_type])
+  @@index([fiscal_year])
 }
 
 model financial_transactions {
   transaction_id     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bill_id            String?        @db.Uuid
+  order_number       String?        @db.VarChar(50)
   upin               String         @db.VarChar(50)
-  revenue_type       String                                      // Validate against ConfigCategory.REVENUE_TYPE
   receipt_serial_no  String         @unique
   amount_paid        Decimal        @db.Decimal(18, 2)
-  payment_method     String?                                     // Validate against ConfigCategory.PAYMENT_METHOD
-  bank_transaction_id String?     
-  bank_branch         String?   
-  is_partial          Boolean   @default(false)                       
+  payment_method     String
+  bank_transaction_id String?
+  bank_branch         String?
+  bank_account        String?
   payment_date       DateTime       @default(now())
+  recorded_at        DateTime       @default(now())
+  transaction_type   String         @default("PAYMENT")
+  revenue_type       String
+ // is_verified        Boolean       @default(false)
+  //verified_by        String?       @db.Uuid
+ // verified_at        DateTime?
+  notes              String?
   created_at         DateTime       @default(now())
   updated_at         DateTime?      @updatedAt
   deleted_at         DateTime?
   is_deleted         Boolean        @default(false)
 
-  billing_record     billing_records? @relation(fields: [bill_id], references: [bill_id])
+  payment_order      payment_orders? @relation(fields: [order_number], references: [order_number], onDelete: SetNull)
   parcel             land_parcels     @relation(fields: [upin], references: [upin])
+ // verifier           users?           @relation(fields: [verified_by], references: [user_id])
+
+  @@index([order_number])
+  @@index([payment_date])
+  @@index([receipt_serial_no])
+  @@index([bank_transaction_id])
+  @@index([upin, payment_date])
 }
 
-// UPDATED: encumbrances.type remains String, now validated against new ENCUMBRANCE_TYPE category
 model encumbrances {
   encumbrance_id    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin              String         @db.VarChar(50)
-  type              String                                      // Validate against ConfigCategory.ENCUMBRANCE_TYPE
+  type              String
   issuing_entity    String
   reference_number  String?
-  status            EncumbranceStatus @default(ACTIVE)          // Native enum
+  status            EncumbranceStatus @default(ACTIVE)
   registration_date DateTime       @default(now())
   created_at        DateTime       @default(now())
   updated_at        DateTime?      @updatedAt
@@ -373,7 +470,7 @@ model documents {
   lease_id          String?        @db.Uuid
   history_id        String?        @db.Uuid
   encumbrance_id    String?        @db.Uuid
-  doc_type          String                                      // Validate against ConfigCategory.DOCUMENT_TYPE
+  doc_type          String
   file_url          String
   file_name         String
   is_verified       Boolean        @default(false)
@@ -388,23 +485,4 @@ model documents {
   lease             lease_agreements? @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
   owner             owners?          @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
   parcel            land_parcels?    @relation(fields: [upin], references: [upin], onDelete: Cascade)
-}
-
-// REMAINING NATIVE ENUMS (stable and well-known)
-enum PaymentStatus {
-  UNPAID
-  PARTIAL
-  PAID
-  OVERDUE
-}
-
-enum EncumbranceStatus {
-  ACTIVE
-  RELEASED
-}
-
-enum ParcelStatus {
-  ACTIVE    
-  RETIRED   
-  PENDING  
 }

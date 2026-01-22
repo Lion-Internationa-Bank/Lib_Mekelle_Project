@@ -62,17 +62,11 @@ useEffect(() => {
   console.log("expiry_date parsed:", expiryDate, "isValid:", expiryDate && !isNaN(expiryDate.getTime()));
 
   setForm({
-    annual_lease_fee: lease.annual_lease_fee
-      ? Number(lease.annual_lease_fee)
-      : undefined,
     total_lease_amount: lease.total_lease_amount
       ? Number(lease.total_lease_amount)
       : undefined,
     down_payment_amount: lease.down_payment_amount
       ? Number(lease.down_payment_amount)
-      : undefined,
-    annual_installment: lease.annual_installment
-      ? Number(lease.annual_installment)
       : undefined,
     price_per_m2: lease.price_per_m2
       ? Number(lease.price_per_m2)
@@ -86,14 +80,12 @@ useEffect(() => {
     // assume backend sends ISO YYYY-MM-DD
     contract_date: contractDate,
     start_date: startDate,
-    expiry_date: expiryDate,
     legal_framework: lease.legal_framework || undefined,
   });
   
   console.log("Form set with dates:", {
     contract_date: contractDate,
     start_date: startDate,
-    expiry_date: expiryDate
   });
   
   setError(null);
@@ -121,10 +113,6 @@ useEffect(() => {
         start_date:
           form.start_date instanceof Date
             ? toLocalDateString(form.start_date)
-            : undefined,
-        expiry_date:
-          form.expiry_date instanceof Date
-            ? toLocalDateString(form.expiry_date)
             : undefined,
       };
 
@@ -196,28 +184,6 @@ useEffect(() => {
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Annual Lease Fee */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Lease Fee (ETB)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.annual_lease_fee ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      annual_lease_fee: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
 
               {/* Total Lease Amount */}
               <div>
@@ -265,28 +231,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Annual Installment */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Installment (ETB)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.annual_installment ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      annual_installment: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
 
               {/* Price per m² */}
               <div>
@@ -423,23 +367,6 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Expiry Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expiry Date
-                </label>
-                <UniversalDateInput
-                  value={form.expiry_date ?? null}
-                  onChange={(date) =>
-                    setForm((f) => ({
-                      ...f,
-                      expiry_date: date ?? undefined,
-                    }))
-                  }
-                  placeholder="Select expiry date"
-                  size="sm"
-                />
-              </div>
             </div>
           </div>
 
