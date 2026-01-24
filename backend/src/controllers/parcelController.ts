@@ -940,64 +940,150 @@ export const transferOwnership = async (
 
 
 export const addCoOwner = async (req: Request, res: Response) => {
-  const { upin } = req.params;
-  const { owner_id, acquired_at } = req.body;
+  const { upin } = req.params as { upin: string };
+  const { owner_id, acquired_at } = req.body as { 
+    owner_id: string; 
+    acquired_at?: string;
+    [key: string]: any 
+  };
 
   try {
     // 1. Required field validation
-    if (!upin) {
+    if (!upin?.trim()) {
       return res.status(400).json({
         success: false,
         message: "UPIN is required",
       });
     }
 
-    if (!owner_id) {
+    if (!owner_id?.trim()) {
       return res.status(400).json({
         success: false,
         message: "owner_id is required",
       });
     }
 
-    // 2. Check if owner exists
+    // 2. Check if parcel exists
+    const parcel = await prisma.land_parcels.findUnique({
+      where: { upin },
+    });
+
+    if (!parcel) {
+      return res.status(404).json({
+        success: false,
+        message: "Parcel not found",
+      });
+    }
+
+    // 3. Check if parcel is active
+    if (parcel.status !== 'ACTIVE' || parcel.is_deleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Parcel is not active",
+      });
+    }
+
+    // 4. Check if owner exists
     const existingOwner = await prisma.owners.findUnique({
-      where: { owner_id },
+      where: { 
+        owner_id,
+        is_deleted: false 
+      },
     });
 
     if (!existingOwner) {
       return res.status(404).json({
         success: false,
-        message: "Owner not found",
+        message: "Owner not found or is deleted",
       });
     }
 
-    // 3. Check if already linked (active)
-    const existingLink = await prisma.parcel_owners.findFirst({
+    // 5. Check for existing links with different scenarios
+    const existingLinks = await prisma.parcel_owners.findMany({
       where: {
         upin,
         owner_id,
-        is_active: true,
         is_deleted: false,
+      },
+      orderBy: {
+        acquired_at: 'desc',
       },
     });
 
-    if (existingLink) {
+    // If there's an active link (not retired)
+    const activeLink = existingLinks.find(link => 
+      link.is_active && !link.retired_at
+    );
+
+    if (activeLink) {
       return res.status(409).json({
         success: false,
         message: "This owner is already an active co-owner of the parcel",
+        data: {
+          parcel_owner_id: activeLink.parcel_owner_id,
+          acquired_at: activeLink.acquired_at,
+        }
       });
     }
 
-    // 4. Create the link (inside transaction for atomicity)
+    // If there's a retired link, we might want to reactivate it instead of creating new
+    const retiredLink = existingLinks.find(link => 
+      !link.is_active || link.retired_at
+    );
+
+    // Determine acquired_at date
+    const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
+    
+    // Validate acquired date is not in the future
+    if (acquiredDate > new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Acquisition date cannot be in the future",
+      });
+    }
+
+    // Check if there's already an owner with the same acquisition date
+    const duplicateDateLink = existingLinks.find(link => 
+      link.acquired_at.toISOString() === acquiredDate.toISOString()
+    );
+
+    if (duplicateDateLink) {
+      return res.status(409).json({
+        success: false,
+        message: "Owner already added to this parcel with the same acquisition date",
+      });
+    }
+
+    // 6. Create the link
     const result = await prisma.$transaction(async (tx) => {
+      // If there's a retired link, we could reactivate it instead
+      // For now, we'll create a new record
       const parcelOwner = await tx.parcel_owners.create({
         data: {
-          upin,               
-          owner_id,        
-          acquired_at: acquired_at ? new Date(acquired_at) : new Date(),
+          upin,
+          owner_id,
+          acquired_at: acquiredDate,
           is_active: true,
+          retired_at: null,
         },
       });
+
+      // Optionally: Create ownership history record
+      // await tx.ownership_history.create({
+      //   data: {
+      //     upin,
+      //     to_owner_id: owner_id,
+      //     transfer_type: "CO_OWNER_ADDITION",
+      //     event_snapshot: {
+      //       parcel: parcel.upin,
+      //       owner: existingOwner.full_name,
+      //       owner_id: owner_id,
+      //       acquired_at: acquiredDate,
+      //       added_by: req.user?.userId, // Assuming you have user info
+      //     },
+      //     reference_no: `COOWNER-${Date.now()}`,
+      //   },
+      // });
 
       return { parcelOwner };
     });
@@ -1007,40 +1093,73 @@ export const addCoOwner = async (req: Request, res: Response) => {
       message: "Co-owner added successfully",
       data: {
         parcel_owner_id: result.parcelOwner.parcel_owner_id,
+        upin: result.parcelOwner.upin,
+        owner_id: result.parcelOwner.owner_id,
+        acquired_at: result.parcelOwner.acquired_at,
       },
     });
   } catch (error: any) {
     console.error("Add co-owner error:", error);
 
     if (error.code === 'P2002') {
+      // Handle unique constraint violation (upin + owner_id + acquired_at)
+      const constraint = error.meta?.target;
+      if (constraint?.includes('parcel_owners_upin_owner_id_acquired_at_key')) {
+        return res.status(409).json({
+          success: false,
+          message: "Owner already linked to this parcel with the same acquisition date",
+        });
+      }
       return res.status(409).json({
         success: false,
-        message: "Duplicate link (owner already added to this parcel)",
+        message: "Duplicate entry detected",
+      });
+    }
+
+    if (error.code === 'P2003') {
+      return res.status(404).json({
+        success: false,
+        message: "Foreign key constraint failed - parcel or owner not found",
       });
     }
 
     if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
-        message: "Parcel or owner not found",
+        message: "Related record not found",
       });
     }
 
     return res.status(500).json({
       success: false,
       message: "Failed to add co-owner",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
 
-export const subdivideParcel = async (req: Request, res: Response) => {
-  const { upin } = req.params;
-  const { childParcels } = req.body; // array of { upin, file_number, total_area_m2, ... }
+
+export const subdivideParcel = async (req: AuthRequest, res: Response) => {
+  const { upin } = req.params as { upin: string };
+  
+  interface SubdivisionChild {
+    upin: string;
+    file_number: string;
+    total_area_m2: number;
+    land_use?: string;
+    land_grade?: number;
+    boundary_coords?: any;
+    boundary_north?: string;
+    boundary_south?: string;
+    boundary_west?: string;
+    boundary_east?: string;
+  }
+  
+  const { childParcels } = req.body as { 
+    childParcels: SubdivisionChild[] 
+  };
 
   try {
-    console.log("parcels",childParcels)
-    console.log("is'nt array",!Array.isArray(childParcels))
-    console.log("array length",childParcels.length)
     if (!Array.isArray(childParcels) || childParcels.length < 2) {
       return res.status(400).json({
         success: false,
@@ -1049,13 +1168,18 @@ export const subdivideParcel = async (req: Request, res: Response) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Get parent
+      // 1. Get parent with its active owners (correct relation name)
       const parent = await tx.land_parcels.findUnique({
         where: { upin },
         include: {
-          owners: {
-            where: { is_active: true, is_deleted: false },
-            include: { owner: true },
+          owners: {  // Changed from parcel_owners to owners
+            where: { 
+              is_active: true, 
+              is_deleted: false 
+            },
+            include: { 
+              owner: true 
+            },
           },
         },
       });
@@ -1063,13 +1187,40 @@ export const subdivideParcel = async (req: Request, res: Response) => {
       if (!parent) throw new Error('PARENT_NOT_FOUND');
       if (parent.status !== 'ACTIVE') throw new Error('PARENT_NOT_ACTIVE');
 
-      // 2. Area validation (with small tolerance)
-      const totalChildArea = childParcels.reduce((sum: number, c: any) => sum + Number(c.total_area_m2), 0);
-      if (totalChildArea > Number(parent.total_area_m2) + 0.1) {
-        throw new Error('CHILD_AREAS_EXCEED_PARENT');
+      // 2. Validate child parcels
+      for (const childData of childParcels) {
+        if (!childData.upin?.trim()) {
+          throw new Error('CHILD_UPIN_REQUIRED');
+        }
+        if (!childData.file_number?.trim()) {
+          throw new Error('CHILD_FILE_NUMBER_REQUIRED');
+        }
+        if (!childData.total_area_m2 || Number(childData.total_area_m2) <= 0) {
+          throw new Error('INVALID_CHILD_AREA');
+        }
+        
+        // Check for duplicate UPIN
+        const existingParcel = await tx.land_parcels.findUnique({
+          where: { upin: childData.upin },
+        });
+        
+        if (existingParcel) {
+          throw new Error(`DUPLICATE_UPIN: ${childData.upin}`);
+        }
       }
 
-      // 3. Retire parent
+      // 3. Area validation (with small tolerance)
+      const totalChildArea = childParcels.reduce(
+        (sum: number, c: SubdivisionChild) => sum + Number(c.total_area_m2), 
+        0
+      );
+      const parentArea = Number(parent.total_area_m2);
+      
+      if (Math.abs(totalChildArea - parentArea) > 0.1) {
+        throw new Error('CHILD_AREAS_MUST_MATCH_PARENT');
+      }
+
+      // 4. Retire parent
       await tx.land_parcels.update({
         where: { upin },
         data: { 
@@ -1080,7 +1231,7 @@ export const subdivideParcel = async (req: Request, res: Response) => {
 
       const createdChildren = [];
 
-      // 4. Create children + copy active owners
+      // 5. Create children + copy active owners
       for (const childData of childParcels) {
         const child = await tx.land_parcels.create({
           data: {
@@ -1091,8 +1242,8 @@ export const subdivideParcel = async (req: Request, res: Response) => {
             ketena: parent.ketena,
             block: parent.block,
             total_area_m2: childData.total_area_m2,
-            land_use: parent.land_use,
-            land_grade: parent.land_grade,
+            land_use: childData.land_use || parent.land_use,
+            land_grade: childData.land_grade || parent.land_grade,
             tenure_type: parent.tenure_type,
             parent_upin: upin,
             status: 'ACTIVE',
@@ -1104,12 +1255,12 @@ export const subdivideParcel = async (req: Request, res: Response) => {
           },
         });
 
-        // Copy all active owners from parent to this child
-        for (const po of parent.owners) {
+        // Copy all active owners from parent to this child (now using parent.owners)
+        for (const parcelOwner of parent.owners) {  // Changed from parent.parcel_owners
           await tx.parcel_owners.create({
             data: {
               upin: child.upin,
-              owner_id: po.owner_id,
+              owner_id: parcelOwner.owner_id,
               acquired_at: new Date(),
               is_active: true,
             },
@@ -1118,6 +1269,25 @@ export const subdivideParcel = async (req: Request, res: Response) => {
 
         createdChildren.push(child);
       }
+
+      // 6. Create audit log
+      await tx.audit_logs.create({
+        data: {
+          user_id: req.user?.user_id || 'system',
+          action_type: AuditAction.UPDATE,
+          entity_type: 'land_parcels',
+          entity_id: upin,
+          changes: {
+            action: 'subdivision',
+            parent_upin: upin,
+            child_upins: childParcels.map(c => c.upin),
+            child_areas: childParcels.map(c => c.total_area_m2),
+            timestamp: new Date(),
+          },
+          timestamp: new Date(),
+          ip_address: req.ip,
+        },
+      });
 
       return { children: createdChildren };
     });
@@ -1131,6 +1301,8 @@ export const subdivideParcel = async (req: Request, res: Response) => {
           upin: c.upin,
           file_number: c.file_number,
           total_area_m2: Number(c.total_area_m2),
+          land_use: c.land_use,
+          land_grade: Number(c.land_grade),
         })),
       },
     });
@@ -1140,14 +1312,29 @@ export const subdivideParcel = async (req: Request, res: Response) => {
     const messages: Record<string, string> = {
       PARENT_NOT_FOUND: "Parent parcel not found",
       PARENT_NOT_ACTIVE: "Only active parcels can be subdivided",
-      CHILD_AREAS_EXCEED_PARENT: "Total child areas exceed parent area",
+      CHILD_AREAS_MUST_MATCH_PARENT: "Total child areas must match parent area (within 0.1 m² tolerance)",
+      CHILD_UPIN_REQUIRED: "Child UPIN is required",
+      CHILD_FILE_NUMBER_REQUIRED: "Child file number is required",
+      INVALID_CHILD_AREA: "Child area must be greater than 0",
     };
 
-    const message = messages[error.message] || "Failed to subdivide parcel";
+    let message = messages[error.message] || "Failed to subdivide parcel";
+    
+    // Handle duplicate UPIN error
+    if (error.message?.startsWith('DUPLICATE_UPIN:')) {
+      const duplicateUpin = error.message.split(': ')[1];
+      message = `UPIN already exists: ${duplicateUpin}`;
+    }
+
+    // Handle Prisma errors
+    if (error.code === 'P2002') {
+      message = "Duplicate UPIN or file number detected";
+    }
 
     return res.status(400).json({
       success: false,
       message,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };

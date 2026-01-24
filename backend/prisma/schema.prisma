@@ -326,6 +326,7 @@ model billing_records {
   interest_amount   Decimal        @default(0) @db.Decimal(18, 2)
   penalty_amount    Decimal?       @default(0) @db.Decimal(18, 2)
   payment_status    PaymentStatus  @default(UNPAID)
+  amount_paid       Decimal?       @default(0) @db.Decimal(18, 2)
   installment_number Int?
   remaining_amount  Decimal?       @default(0) @db.Decimal(18, 2)
   due_date          DateTime?

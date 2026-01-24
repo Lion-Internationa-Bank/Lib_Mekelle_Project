@@ -1,7 +1,7 @@
 // src/controllers/leaseController.ts
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
-import type { Prisma } from "@prisma/client";
+
 
 // Use Prisma namespace types
 type PrismaClientType = typeof prisma;

@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken'; 
 import prisma from '../config/prisma.ts';
-import { UserRole } from '../generated/prisma/enums.ts'; 
+import { UserRole,AuditAction } from '../generated/prisma/enums.ts'; 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
 const JWT_EXPIRES_IN =process.env.JWT_EXPIRES_IN  || '7d';
@@ -220,53 +220,186 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 
 // PATCH /auth/users/:id/suspend
 export const suspendUser = async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  const { suspend } = req.body; // true to suspend, false to unsuspend
+  // Type cast the params
+  const { id } = req.params as { id: string };
+  const { suspend } = req.body as { suspend: boolean };
   const actor = req.user!;
 
   try {
-    const targetUser = await prisma.users.findUnique({ where: { user_id: id } });
-    if (!targetUser || targetUser.is_deleted) return res.status(404).json({ message: 'User not found' });
+    const targetUser = await prisma.users.findUnique({ 
+      where: { 
+        user_id: id,
+        is_deleted: false 
+      } 
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
 
     // Authorization check
     if (!canManageUser(actor, targetUser)) {
-      return res.status(403).json({ message: 'Not authorized to manage this user' });
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to manage this user' 
+      });
     }
 
-    await prisma.users.update({
+    // Prevent self-suspension
+    if (targetUser.user_id === actor.user_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot suspend your own account'
+      });
+    }
+
+    const updatedUser = await prisma.users.update({
       where: { user_id: id },
-      data: { is_active: !suspend },
+      data: { 
+        is_active: !suspend,
+        updated_at: new Date()
+      },
     });
 
-    res.json({ message: `User ${suspend ? 'suspended' : 'activated'} successfully` });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    // Create audit log
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'users',
+        entity_id: targetUser.user_id,
+        changes: {
+          action: suspend ? 'suspend_user' : 'activate_user',
+          previous_status: targetUser.is_active,
+          new_status: !suspend,
+          actor: actor.user_id,
+          actor_role: actor.role,
+        },
+        timestamp: new Date(),
+        ip_address: req.ip,
+      },
+    });
+
+    return res.json({ 
+      success: true,
+      message: `User ${suspend ? 'suspended' : 'activated'} successfully`,
+      data: {
+        user_id: updatedUser.user_id,
+        username: updatedUser.username,
+        is_active: updatedUser.is_active,
+      }
+    });
+  } catch (error: any) {
+    console.error('Suspend user error:', error);
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    return res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
 // DELETE /auth/users/:id
 export const deleteUser = async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  // Type cast the params
+  const { id } = req.params as { id: string };
   const actor = req.user!;
 
   try {
-    const targetUser = await prisma.users.findUnique({ where: { user_id: id } });
-    if (!targetUser || targetUser.is_deleted) return res.status(404).json({ message: 'User not found' });
-
-    if (!canManageUser(actor, targetUser)) {
-      return res.status(403).json({ message: 'Not authorized to delete this user' });
+    const targetUser = await prisma.users.findUnique({ 
+      where: { 
+        user_id: id,
+        is_deleted: false 
+      } 
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
     }
 
-    await prisma.users.update({
+    // Authorization check
+    if (!canManageUser(actor, targetUser)) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to delete this user' 
+      });
+    }
+
+    // Prevent self-deletion
+    if (targetUser.user_id === actor.user_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account'
+      });
+    }
+
+    const deletedUser = await prisma.users.update({
       where: { user_id: id },
-      data: { is_deleted: true, deleted_at: new Date() },
+      data: { 
+        is_deleted: true, 
+        deleted_at: new Date(),
+        is_active: false, // Also deactivate when deleting
+        updated_at: new Date()
+      },
     });
 
-    res.json({ message: 'User deleted (soft delete) successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    // Create audit log
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.DELETE,
+        entity_type: 'users',
+        entity_id: targetUser.user_id,
+        changes: {
+          action: 'soft_delete_user',
+          username: targetUser.username,
+          role: targetUser.role,
+          actor: actor.user_id,
+          actor_role: actor.role,
+        },
+        timestamp: new Date(),
+        ip_address: req.ip,
+      },
+    });
+
+    return res.json({ 
+      success: true,
+      message: 'User deleted (soft delete) successfully',
+      data: {
+        user_id: deletedUser.user_id,
+        username: deletedUser.username,
+        deleted_at: deletedUser.deleted_at,
+      }
+    });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    return res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
