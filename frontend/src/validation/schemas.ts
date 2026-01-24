@@ -130,13 +130,6 @@ export const LeaseFormSchema = z.object({
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
 
-  annual_installment: z.coerce
-    .number()
-    .min(0, { message: "Annual installment cannot be negative" }),
-
-  annual_lease_fee: z.coerce
-    .number()
-    .min(0, { message: "Annual lease fee cannot be negative" }),
 
   lease_period_years: z.coerce
     .number()
@@ -238,15 +231,9 @@ export const LeaseStepFormSchema = z.object({
   total_lease_amount: z.coerce
     .number()
     .positive({ message: "Total lease amount must be greater than 0" }),
-  annual_installment: z.coerce
-    .number()
-    .positive({ message: "Annual installment must be greater than 0" }),
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
-  annual_lease_fee: z.coerce
-    .number()
-    .positive({ message: "Annual lease fee must be greater than 0" }),
   lease_period_years: z.coerce
     .number()
     .int()
@@ -369,11 +356,6 @@ export type TransferOwnershipFormData = z.infer<
 // 5) Edit lease (UpdateLeaseSchema.body) – dates kept as strings for inputs
 export const EditLeaseFormSchema = z
   .object({
-    annual_lease_fee: z
-      .number()
-      .positive({ message: "Annual lease fee must be greater than 0" })
-      .optional(),
-
     total_lease_amount: z
       .number()
       .positive({ message: "Total lease amount must be greater than 0" })
@@ -384,10 +366,7 @@ export const EditLeaseFormSchema = z
       .nonnegative({ message: "Down payment cannot be negative" })
       .optional(),
 
-    annual_installment: z
-      .number()
-      .positive({ message: "Annual installment must be greater than 0" })
-      .optional(),
+ 
 
     price_per_m2: z
       .number()
@@ -433,30 +412,12 @@ export const EditLeaseFormSchema = z
       }),
 
     start_date: z
-      .union([
+      .union(
+        [
         z.string()
           .refine(
             (val) => !val || !Number.isNaN(Date.parse(val)),
             { message: "Invalid start date format" }
-          ),
-        z.date(),
-        z.null(),
-        z.undefined()
-      ])
-      .optional()
-      .transform((val) => {
-        if (val instanceof Date) {
-          return val.toISOString().split('T')[0];
-        }
-        return val;
-      }),
-
-    expiry_date: z
-      .union([
-        z.string()
-          .refine(
-            (val) => !val || !Number.isNaN(Date.parse(val)),
-            { message: "Invalid expiry date format" }
           ),
         z.date(),
         z.null(),

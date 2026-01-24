@@ -69,6 +69,7 @@ export const authenticate = async (
       role: user.role,
       sub_city_id: user.sub_city_id,
     };
+    console.log(req.user)
 
     next();
   } catch (error) {

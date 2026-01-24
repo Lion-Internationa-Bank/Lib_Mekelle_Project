@@ -14,10 +14,14 @@ import SubCitiesPage from './routes/admin/SubCitiesPage';
 import ConfigsPage from './routes/admin/ConfigsPage';
 import UserManagementPage from './routes/UserManagementPage';
 import { CalendarProvider } from './contexts/CalendarContext';
+import RateConfigsPage from './routes/admin/RateConfigsPage';
 
 const App = () => {
+   const { isLoading } = useAuth();
+     if (isLoading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
   return (
-    <AuthProvider>
       <CalendarProvider>
         <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -33,19 +37,22 @@ const App = () => {
           <Route path="/users" element={<UserManagementPage />} />
           <Route path="/sub-cities" element={<SubCitiesPage />} />
           <Route path="/configs" element={<ConfigsPage />} />
+          <Route path= "/rateConfigs" element={<RateConfigsPage/>} />
         </Route>
           <Route path='/parcels/:upin' element={<ParcelDetailPage />}></Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       </CalendarProvider>
-    </AuthProvider>
   );
 };
 
 // Role-based home page (unchanged)
 const RoleBasedHome = () => {
-  const { user } = useAuth();
+  const { user ,isLoading} = useAuth();
+     if (isLoading) {
+    return <div>Loading...</div>; 
+  }
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -55,6 +62,7 @@ const RoleBasedHome = () => {
       return <AdminHome />;
     case 'SUBCITY_NORMAL':
     case 'SUBCITY_AUDITOR':
+      case 'REVENUE_USER':
       return <SubcityHome />;
     case 'REVENUE_ADMIN':
     case 'REVENUE_USER':

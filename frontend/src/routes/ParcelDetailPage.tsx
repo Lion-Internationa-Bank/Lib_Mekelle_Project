@@ -21,6 +21,7 @@ type DetailTab = "parcel" | "lease" | "encumbrances" | "history" | "buildings" |
 
 const ParcelDetailPage = () => {
   const { user } = useAuth();
+  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const navigate = useNavigate();
   const { upin } = useParams<{ upin: string }>();
 
@@ -62,7 +63,14 @@ const ParcelDetailPage = () => {
     }
   };
 
-  if (!user) return <Navigate to="/login" replace />;
+    if (!user) {
+
+    console.warn(
+      `[AuthGuard] No user found at ${new Date().toLocaleTimeString()}. Redirecting to /login...`
+    );
+    return <Navigate to="/login" replace />;
+  }
+
 
   if (loading) {
     return (
@@ -111,8 +119,11 @@ const ParcelDetailPage = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Parcel Documents</h2>
               <DocumentList documents={data.documents} />
             </div>
+            { isSubcityNormal &&
+            ( <DangerZone upin={data.upin} onDeleted={() => navigate("/home")} />)
+            }
 
-            <DangerZone upin={data.upin} onDeleted={() => navigate("/home")} />
+         
           </>
         )}
 

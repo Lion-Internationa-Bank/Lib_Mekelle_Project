@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface OwnerCardProps {
   ownerRelation: ParcelDetail["owners"][number];
@@ -15,7 +16,8 @@ const OwnerCard = ({
   onTransfer,
 }: OwnerCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-
+  const {user} = useAuth();
+const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   if (!ownerRelation || !ownerRelation.owner) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700">
@@ -30,6 +32,7 @@ const OwnerCard = ({
   return (
     <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       {/* 3-dot menu */}
+     {isSubcityNormal && (
       <div className="absolute top-4 right-4 z-10">
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -81,6 +84,9 @@ const OwnerCard = ({
           </>
         )}
       </div>
+     )
+
+     } 
 
       {/* Card Content - Better balanced layout */}
       <div className="p-8 pt-14 grid lg:grid-cols-[3fr_2fr] gap-10">

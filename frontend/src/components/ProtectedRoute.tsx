@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.tsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../assets/contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[]; // Optional: restrict to specific roles

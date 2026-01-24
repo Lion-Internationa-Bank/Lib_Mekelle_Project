@@ -10,7 +10,8 @@ import {
   ETHIOPIAN_WEEKDAYS,
   GREGORIAN_WEEKDAYS,
   parseDateString,
-  formatDate as formatDateUtil,
+  // compitableformatDate as formatDateUtil,
+  inputFormatDate,
   getCurrentDate,
   getMonthName,
   getDaysInMonth,
@@ -120,7 +121,9 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
 
   const toGregorian = useCallback(
     (displayDate: CalendarDate): Date => {
+      console.log("display date",displayDate)
       if (isEthiopian) {
+        console.log("ethiopian to gorigorian :", ethiopianToGregorian(displayDate as EthiopianDate))
         return ethiopianToGregorian(displayDate as EthiopianDate);
       } else {
         const gDate = displayDate as GregorianDate;
@@ -206,7 +209,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     if (!allowManualEntry || disabled) return;
 
     const newValue = e.target.value;
-    console.log("newvalue",newValue)
+    // console.log("newvalue",newValue)
     if (newValue.trim() === "") {
       setValidationError(null);
       onChange(null);
@@ -214,7 +217,7 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     }
 
     const result = parseDateString(newValue, calendarType);
-console.log("result",result)
+// console.log("result",result)
     if (result.isValid && result.date) {
       setInternalDate(result.date);
       setViewYear(result.date.year);
@@ -222,7 +225,7 @@ console.log("result",result)
       setValidationError(null);
 
       const gregDate = toGregorian(result.date);
-      console.log("gregdage",gregDate)
+      // console.log("gregdage",gregDate)
       onChange(gregDate);
     } else {
       setValidationError(result.error || "Invalid date format");
@@ -230,12 +233,15 @@ console.log("result",result)
   };
 
   const handleDateSelect = (selectedDate: CalendarDate) => {
+    console.log("selected date",selectedDate)
     setInternalDate(selectedDate);
+
     setValidationError(null);
     setIsPickerOpen(false);
     setViewMode("days");
 
     const gregDate = toGregorian(selectedDate);
+    console.log(" after to greg date",gregDate)
     onChange(gregDate);
   };
 
@@ -346,17 +352,22 @@ console.log("result",result)
     );
   })();
 
-  // This replaces the missing displayedValue
-  const displayedValue = useMemo(() => {
-    if (!value) return "";
-    console.log("initail datea",value)
-    const greg = parseExternalValue(value);
-    console.log("greg",greg)
-    if (!greg) return "";
-    const displayCal = toDisplayDate(greg);
-    console.log("display cal",displayCal,"calander type",calendarType)
-    return formatDateUtil(displayCal, calendarType, "short");
-  }, [value, calendarType, parseExternalValue, toDisplayDate]);
+
+
+ 
+
+const displayedValue = useMemo(() => {
+  if (!value) return "";
+  
+  const greg = parseExternalValue(value);
+  if (!greg) return "";
+  
+  const displayCal = toDisplayDate(greg);
+  
+  // Use inputFormatDate instead of compitableformatDate
+  // because displayCal is already in the correct calendar type
+  return inputFormatDate(displayCal, calendarType, "short");
+}, [value, calendarType, parseExternalValue, toDisplayDate]);
 
   const getAdjustedPickerStyle = () => {
     if (!pickerPosition) return {};

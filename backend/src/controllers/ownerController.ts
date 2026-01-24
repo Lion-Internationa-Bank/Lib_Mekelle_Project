@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
 
 
+
 export const createOwner = async (req: Request, res: Response) => {
   const {
     full_name,

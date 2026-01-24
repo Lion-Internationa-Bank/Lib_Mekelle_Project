@@ -1,14 +1,34 @@
 // src/contexts/CalendarContext.tsx
-import React, { createContext, useContext, useState, useEffect,type ReactNode } from 'react';
-import { type CalendarType,formatDate, gregorianToEthiopian,ethiopianToGregorian } from '../utils/calendarUtils';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { 
+  type CalendarType, 
+  type GregorianDate,
+  inputFormatDate,
+   compitableformatDate,
+  formatGregorianDateForDisplay,
+  formatEthiopianDateForDisplay,
+  parseDateString,
+  gregorianToEthiopian,
+  ethiopianToGregorian,
+  parseBackendDate,
+  convertEthiopianToBackendFormat,
+  validateEthiopianDate,
+  validateGregorianDate,
+ 
+} from '../utils/calendarUtils';
+
 
 interface CalendarContextType {
   calendarType: CalendarType;
   setCalendarType: (type: CalendarType) => void;
-  formatDateForDisplay: (date: Date | string | null, format?: 'short' | 'medium' | 'full') => string;
-  parseDisplayDate: (displayDate: string) => Date | null;
+  formatDateForDisplay: (date: Date | string | GregorianDate | null, format?: 'short' | 'medium' | 'full' | 'iso') => string;
+  parseDisplayDate: (displayDate: string, targetCalendarType?: CalendarType) => Date | null;
+  convertToBackendFormat: (date: string | GregorianDate | EthiopianDate) => string;
+  validateDateInput: (dateStr: string) => { isValid: boolean; error?: string };
+  getCurrentDate: () => GregorianDate;
   isEthiopian: boolean;
   toggleCalendar: () => void;
+  convertDateToCalendar: (date: Date | string | GregorianDate, targetCalendarType: CalendarType) => GregorianDate | EthiopianDate;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
@@ -33,34 +53,147 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     localStorage.setItem('preferredCalendarType', calendarType);
   }, [calendarType]);
 
+  /**
+   * Format date for display based on current calendar preference
+   * Handles backend dates (always Gregorian) and converts if needed
+   */
   const formatDateForDisplay = (
-    date: Date | string | null, 
-    format: 'short' | 'medium' | 'full' = 'medium'
+    date: Date | string | GregorianDate | null, 
+    format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
   ): string => {
     if (!date) return '-';
     
     try {
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
-      
-      if (isNaN(dateObj.getTime())) {
-        return '-';
-      }
-      
-      return formatDate(dateObj, calendarType, format);
-    } catch {
+      // Use the updated formatDate from calendarUtils
+      return compitableformatDate(date, calendarType, format);
+    } catch (error) {
+      console.error('Error formatting date:', error);
       return '-';
     }
   };
 
-  const parseDisplayDate = (displayDate: string): Date | null => {
-    if (!displayDate.trim()) return null;
+    const formatDate = (
+    date: Date | string | GregorianDate | null, 
+    format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
+  ): string => {
+    if (!date) return '-';
     
     try {
-      // This would need proper parsing logic based on calendarType
-      // For now, assume it's already in Gregorian format for backend
-      return new Date(displayDate);
-    } catch {
-      return null;
+      // Use the updated formatDate from calendarUtils
+      return inputFormatDate(date, calendarType, format);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '-';
+    }
+  };
+
+  /**
+   * Parse display date string to Date object
+   * If targetCalendarType is provided, parse according to that calendar
+   * Otherwise, use the current calendar context
+   */
+  const parseDisplayDate = (
+    displayDate: string, 
+    targetCalendarType?: CalendarType
+  ): Date | null => {
+    if (!displayDate.trim()) return null;
+    
+    const targetType = targetCalendarType || calendarType;
+    const result = parseDateString(displayDate, targetType);
+    
+    if (result.isValid && result.date) {
+      if (targetType === 'ETHIOPIAN') {
+        // Convert Ethiopian date to Gregorian Date object
+        return ethiopianToGregorian(result.date as EthiopianDate);
+      } else {
+        // Gregorian date - create Date object
+        const gregDate = result.date as GregorianDate;
+        return new Date(gregDate.year, gregDate.month - 1, gregDate.day);
+      }
+    }
+    
+    return null;
+  };
+
+  /**
+   * Convert date to backend format (Gregorian ISO string)
+   * Accepts various input formats and converts if needed
+   */
+  const convertToBackendFormat = (
+    date: string | GregorianDate | EthiopianDate
+  ): string => {
+    try {
+      if (typeof date === 'string') {
+        // Already in backend format or needs parsing
+        return new Date(date).toISOString().split('T')[0];
+      }
+      
+      if ('month' in date && date.month <= 12) {
+        // Gregorian date object
+        return `${date.year}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`;
+      } else {
+        // Ethiopian date object - convert to Gregorian first
+        return convertEthiopianToBackendFormat(date);
+      }
+    } catch (error) {
+      console.error('Error converting to backend format:', error);
+      return '';
+    }
+  };
+
+  /**
+   * Validate date input string according to current calendar type
+   */
+  const validateDateInput = (dateStr: string): { isValid: boolean; error?: string } => {
+    const result = parseDateString(dateStr, calendarType);
+    return {
+      isValid: result.isValid,
+      error: result.error
+    };
+  };
+
+  /**
+   * Get current date in Gregorian format (backend format)
+   */
+  const getCurrentDate = (): GregorianDate => {
+    const now = new Date();
+    return {
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      day: now.getDate()
+    };
+  };
+
+  /**
+   * Convert date to a specific calendar type
+   */
+  const convertDateToCalendar = (
+    date: Date | string | GregorianDate,
+    targetCalendarType: CalendarType
+  ): GregorianDate | EthiopianDate => {
+    let gregDate: GregorianDate;
+    
+    if (date instanceof Date) {
+      gregDate = {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate()
+      };
+    } else if (typeof date === 'string') {
+      const dateObj = new Date(date);
+      gregDate = {
+        year: dateObj.getFullYear(),
+        month: dateObj.getMonth() + 1,
+        day: dateObj.getDate()
+      };
+    } else {
+      gregDate = date;
+    }
+    
+    if (targetCalendarType === 'ETHIOPIAN') {
+      return gregorianToEthiopian(gregDate);
+    } else {
+      return gregDate;
     }
   };
 
@@ -76,8 +209,12 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       setCalendarType,
       formatDateForDisplay,
       parseDisplayDate,
+      convertToBackendFormat,
+      validateDateInput,
+      getCurrentDate,
       isEthiopian,
       toggleCalendar,
+      convertDateToCalendar,
     }}>
       {children}
     </CalendarContext.Provider>
@@ -91,3 +228,10 @@ export const useCalendar = () => {
   }
   return context;
 };
+
+// Helper type for EthiopianDate (needs to be imported or defined)
+interface EthiopianDate {
+  year: number;
+  month: number;
+  day: number;
+}

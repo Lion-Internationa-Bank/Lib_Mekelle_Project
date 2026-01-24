@@ -37,42 +37,59 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState<Partial<EditLeaseFormWithDates>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+useEffect(()=>{
+  console.log("lease",lease)
+   console.log("form",form)
+   console.log("not open",!open)
+})
+// In EditLeaseModal.tsx, update the useEffect and add debugging:
 
-  useEffect(() => {
-    if (!open || !lease) return;
+useEffect(() => {
+  if (!open || !lease) return;
+  
+  console.log("Lease data from backend:");
+  console.log("contract_date:", lease.contract_date, "type:", typeof lease.contract_date);
+  console.log("start_date:", lease.start_date, "type:", typeof lease.start_date);
+  console.log("expiry_date:", lease.expiry_date, "type:", typeof lease.expiry_date);
+  
+  const contractDate = lease.contract_date ? new Date(lease.contract_date) : undefined;
+  const startDate = lease.start_date ? new Date(lease.start_date) : undefined;
+  const expiryDate = lease.expiry_date ? new Date(lease.expiry_date) : undefined;
+  
+  console.log("Parsed dates:");
+  console.log("contract_date parsed:", contractDate, "isValid:", contractDate && !isNaN(contractDate.getTime()));
+  console.log("start_date parsed:", startDate, "isValid:", startDate && !isNaN(startDate.getTime()));
+  console.log("expiry_date parsed:", expiryDate, "isValid:", expiryDate && !isNaN(expiryDate.getTime()));
 
-    setForm({
-      annual_lease_fee: lease.annual_lease_fee
-        ? Number(lease.annual_lease_fee)
-        : undefined,
-      total_lease_amount: lease.total_lease_amount
-        ? Number(lease.total_lease_amount)
-        : undefined,
-      down_payment_amount: lease.down_payment_amount
-        ? Number(lease.down_payment_amount)
-        : undefined,
-      annual_installment: lease.annual_installment
-        ? Number(lease.annual_installment)
-        : undefined,
-      price_per_m2: lease.price_per_m2
-        ? Number(lease.price_per_m2)
-        : undefined,
-      lease_period_years: lease.lease_period_years
-        ? Number(lease.lease_period_years)
-        : undefined,
-      payment_term_years: lease.payment_term_years
-        ? Number(lease.payment_term_years)
-        : undefined,
-      // assume backend sends ISO YYYY-MM-DD
-      contract_date: lease.contract_date
-        ? new Date(lease.contract_date)
-        : undefined,
-      start_date: lease.start_date ? new Date(lease.start_date) : undefined,
-      expiry_date: lease.expiry_date ? new Date(lease.expiry_date) : undefined,
-      legal_framework: lease.legal_framework || undefined,
-    });
-    setError(null);
-  }, [open, lease]);
+  setForm({
+    total_lease_amount: lease.total_lease_amount
+      ? Number(lease.total_lease_amount)
+      : undefined,
+    down_payment_amount: lease.down_payment_amount
+      ? Number(lease.down_payment_amount)
+      : undefined,
+    price_per_m2: lease.price_per_m2
+      ? Number(lease.price_per_m2)
+      : undefined,
+    lease_period_years: lease.lease_period_years
+      ? Number(lease.lease_period_years)
+      : undefined,
+    payment_term_years: lease.payment_term_years
+      ? Number(lease.payment_term_years)
+      : undefined,
+    // assume backend sends ISO YYYY-MM-DD
+    contract_date: contractDate,
+    start_date: startDate,
+    legal_framework: lease.legal_framework || undefined,
+  });
+  
+  console.log("Form set with dates:", {
+    contract_date: contractDate,
+    start_date: startDate,
+  });
+  
+  setError(null);
+}, [open, lease]);
 
   const toLocalDateString = (d: Date) => {
     const y = d.getFullYear();
@@ -96,10 +113,6 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
         start_date:
           form.start_date instanceof Date
             ? toLocalDateString(form.start_date)
-            : undefined,
-        expiry_date:
-          form.expiry_date instanceof Date
-            ? toLocalDateString(form.expiry_date)
             : undefined,
       };
 
@@ -171,28 +184,6 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Annual Lease Fee */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Lease Fee (ETB)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.annual_lease_fee ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      annual_lease_fee: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
 
               {/* Total Lease Amount */}
               <div>
@@ -240,28 +231,6 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                 />
               </div>
 
-              {/* Annual Installment */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Installment (ETB)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.annual_installment ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      annual_installment: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
 
               {/* Price per m² */}
               <div>
@@ -387,6 +356,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                 <UniversalDateInput
                   value={form.start_date ?? null}
                   onChange={(date) =>
+                    
                     setForm((f) => ({
                       ...f,
                       start_date: date ?? undefined,
@@ -397,23 +367,6 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                 />
               </div>
 
-              {/* Expiry Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expiry Date
-                </label>
-                <UniversalDateInput
-                  value={form.expiry_date ?? null}
-                  onChange={(date) =>
-                    setForm((f) => ({
-                      ...f,
-                      expiry_date: date ?? undefined,
-                    }))
-                  }
-                  placeholder="Select expiry date"
-                  size="sm"
-                />
-              </div>
             </div>
           </div>
 

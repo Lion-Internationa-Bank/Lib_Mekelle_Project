@@ -17,14 +17,14 @@ const menuItems: MenuItem[] = [
     label: 'Land Parcels',
     icon: '📍',
     href: '/home',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN'],
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
   },
   {
     id: 'ownership',
     label: 'Ownership',
     icon: '👥',
     href: '/ownership',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'],
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','REVENUE_USER'],
   },
        {
   id: 'users',
@@ -39,6 +39,14 @@ const menuItems: MenuItem[] = [
     icon: '🏙️',
     href: '/sub-cities',
     allowedRoles: ['CITY_ADMIN'],
+  },
+   {
+    id: 'rateconfigs',
+    label: 'Rate Configs',
+    icon: '💱',
+    href: '/rateConfigs',
+    allowedRoles: [ 'REVENUE_ADMIN'],
+  
   },
   {
     id: 'configs',

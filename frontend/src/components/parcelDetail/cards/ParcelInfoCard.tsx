@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { MoreVertical, Edit, UserPlus, Scissors, ChevronDown, ChevronUp } from "lucide-react";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface ParcelInfoCardProps {
   data?: ParcelDetail | null; // ← Make data optional
@@ -18,7 +19,8 @@ export default function ParcelInfoCard({
 }: ParcelInfoCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCoords, setShowCoords] = useState(false);
-
+  const {user} = useAuth();
+    const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   // If no data yet, show loading/fallback UI
   if (!data) {
     return (
@@ -40,7 +42,8 @@ export default function ParcelInfoCard({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
       {/* 3-dot menu button */}
-      <button
+      {isSubcityNormal && (
+ <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="absolute top-5 right-5 p-2 rounded-full hover:bg-gray-100 transition-colors"
         aria-label="Parcel actions"
@@ -48,8 +51,12 @@ export default function ParcelInfoCard({
         <MoreVertical size={20} className="text-gray-600" />
       </button>
 
+      )
+
+      }
+     
       {/* Dropdown Menu */}
-      {menuOpen && (
+      {isSubcityNormal && menuOpen && (
         <>
           <div
             className="fixed inset-0 z-10"

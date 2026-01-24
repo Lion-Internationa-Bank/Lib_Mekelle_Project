@@ -5,6 +5,7 @@ import EditLeaseModal from "../modals/EditLeaseModal";
 import CreateLeaseModal from "../modals/CreateLeaseModal";
 import GenericDocsUpload from "../../GenericDocsUpload";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
+import { useAuth } from "../../../contexts/AuthContext"; 
 
 type Props = {
   parcel: ParcelDetail;
@@ -14,7 +15,8 @@ type Props = {
 
 const LeaseSection = ({ parcel, lease, onReload }: Props) => {
   const [editing, setEditing] = useState(false);
-
+  const {user} = useAuth();
+  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const [showCreateLease, setShowCreateLease] = useState(false);
   const [showLeaseDocsUpload, setShowLeaseDocsUpload] = useState(false);
   const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
@@ -42,7 +44,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
           <h2 className="text-xl font-semibold text-gray-900">
             Lease Agreement
           </h2>
-          {lease && (
+          {lease && isSubcityNormal && (
             <button
               onClick={() => setEditing(true)}
               className="px-5 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm"
@@ -54,7 +56,9 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
 
         {lease ? (
           <LeaseCard lease={lease} />
-        ) : (
+        ) : isSubcityNormal && 
+        (
+          (
           <div className="text-center py-12 bg-gray-50 rounded-xl">
             <p className="text-gray-500 mb-2">
               No lease agreement recorded for this parcel yet
@@ -70,11 +74,12 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
               + Create Lease Agreement
             </button>
           </div>
-        )}
+        
+        ))}
       </div>
 
       {/* Edit existing lease */}
-      {lease && (
+      {lease && isSubcityNormal && (
         <EditLeaseModal
           lease={lease}
           open={editing}
@@ -84,15 +89,19 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
       )}
 
       {/* Create lease modal */}
-      <CreateLeaseModal
+      {isSubcityNormal && (
+        <CreateLeaseModal
         parcel={parcel}
         open={showCreateLease}
         onClose={() => setShowCreateLease(false)}
         onCreated={handleLeaseCreated}
       />
+      )
+
+      }
 
       {/* Lease docs upload after creating lease */}
-      {showLeaseDocsUpload && createdLeaseId && (
+      {isSubcityNormal &&  showLeaseDocsUpload && createdLeaseId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
             <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">

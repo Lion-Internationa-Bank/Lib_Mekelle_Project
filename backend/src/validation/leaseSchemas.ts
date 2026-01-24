@@ -19,13 +19,9 @@ export const CreateLeaseSchema = z.object({
       .regex(/^[A-Za-z0-9\-_]+$/, {
         message: 'Invalid UPIN format – only letters, numbers, hyphens, and underscores allowed',
       }),
-
-
     total_lease_amount: z.coerce
       .number()
       .positive({ message: 'Total lease amount must be greater than 0' }),
-
-
     down_payment_amount: z.coerce
       .number()
       .min(0, { message: 'Down payment cannot be negative' }),

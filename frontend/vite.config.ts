@@ -7,7 +7,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react(),tailwindcss() ],
   server: {
-    host: true, // Exposes the project on your local network IP
-    port: 5173, // Optional: specify a port (default is 5173)
+    host: true, 
+    port: 5173, 
   },
 })

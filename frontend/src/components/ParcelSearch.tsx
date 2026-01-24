@@ -1,5 +1,7 @@
+// src/components/ParcelSearch.tsx
 import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
+import type { SubCity } from "../services/cityAdminService";
 
 interface ParcelSearchProps {
   onSearch: (filters: {
@@ -9,12 +11,38 @@ interface ParcelSearchProps {
     tenure_type: string;
     land_use: string;
   }) => void;
+
+  // Optional clear callback from parent
+  onClear?: () => void;
+
+  // Optional sub-city selection support for non-subcity roles
+  subCities?: SubCity[];
+  selectedSubCity?: string;
+  onSubCityChange?: (subCityId: string) => void;
+  subCitiesLoading?: boolean;
+
+  // For SUBCITY_* roles, show a locked label instead of an input
+  lockedSubCityName?: string;
 }
 
 const tenureTypes = ["Freehold", "Leasehold", "Government", "Communal"];
-const landUses = ["Residential", "Commercial", "Industrial", "Agricultural", "Public"];
+const landUses = [
+  "Residential",
+  "Commercial",
+  "Industrial",
+  "Agricultural",
+  "Public",
+];
 
-const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
+const ParcelSearch = ({
+  onSearch,
+  onClear,
+  subCities,
+  selectedSubCity,
+  onSubCityChange,
+  subCitiesLoading = false,
+  lockedSubCityName,
+}: ParcelSearchProps) => {
   const [filters, setFilters] = useState({
     search: "",
     sub_city: "",
@@ -25,20 +53,37 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
 
   const timeoutRef = useRef<number | null>(null);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Keep internal sub_city in sync with controlled prop when provided
+  useEffect(() => {
+    if (selectedSubCity !== undefined) {
+      setFilters((prev) => ({ ...prev, sub_city: selectedSubCity }));
+    }
+  }, [selectedSubCity]);
+
+  const triggerSearch = (nextFilters: typeof filters) => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
+      onSearch(nextFilters);
+    }, 300) as number;
+  };
+
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
+
+    // sub_city is special if parent controls it
+    if (name === "sub_city" && onSubCityChange) {
+      onSubCityChange(value);
+      // parent will update selectedSubCity, which syncs via useEffect
+      return;
+    }
 
     setFilters((prev) => {
       const newFilters = { ...prev, [name]: value };
-
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      timeoutRef.current = window.setTimeout(() => {
-        onSearch(newFilters);
-      }, 300) as number;
-
+      triggerSearch(newFilters);
       return newFilters;
     });
   };
@@ -53,6 +98,8 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
     };
     setFilters(cleared);
     onSearch(cleared);
+    if (onSubCityChange) onSubCityChange("");
+    if (onClear) onClear();
   };
 
   useEffect(() => {
@@ -69,7 +116,9 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
     <div className="bg-white/80 rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Search UPIN/File</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Search UPIN/File
+          </label>
           <input
             name="search"
             value={filters.search}
@@ -80,18 +129,50 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Sub City</label>
-          <input
-            name="sub_city"
-            value={filters.sub_city}
-            onChange={handleChange}
-            placeholder="Adi Haki..."
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Sub City
+          </label>
+
+          {lockedSubCityName ? (
+            // For SUBCITY_* roles: show fixed label, no input
+            <input
+              value={lockedSubCityName}
+              disabled
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+            />
+          ) : subCities && subCities.length > 0 ? (
+            // For other roles: dropdown of sub-cities from API
+            <select
+              name="sub_city"
+              value={selectedSubCity ?? filters.sub_city}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">
+                {subCitiesLoading ? "Loading..." : "All sub-cities"}
+              </option>
+              {subCities.map((sc) => (
+                <option key={sc.sub_city_id} value={sc.sub_city_id}>
+                  {sc.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            // Fallback: free-text if no list provided
+            <input
+              name="sub_city"
+              value={filters.sub_city}
+              onChange={handleChange}
+              placeholder="Adi Haki..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Ketena</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Ketena
+          </label>
           <input
             name="ketena"
             value={filters.ketena}
@@ -102,7 +183,9 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Tenure Type</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Tenure Type
+          </label>
           <select
             name="tenure_type"
             value={filters.tenure_type}
@@ -119,7 +202,9 @@ const ParcelSearch = ({ onSearch }: ParcelSearchProps) => {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Land Use</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Land Use
+          </label>
           <select
             name="land_use"
             value={filters.land_use}
