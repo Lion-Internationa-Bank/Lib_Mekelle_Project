@@ -7,8 +7,7 @@ import type {
   EditLeaseFormData,
   EncumbranceFormData,
 } from "../validation/schemas";
-
-const API_BASE = import.meta.env.VITE_API_URL;
+import apiFetch from './api';
 
 // ------------ Shared DTOs from backend ------------
 
@@ -172,9 +171,9 @@ export interface LiteOwner {
 export const fetchParcelDetail = async (
   upin: string
 ): Promise<ParcelDetailResponse> => {
-  const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`);
-  if (!res.ok) throw new Error("Failed to fetch parcel detail");
-  return res.json();
+  const apiRes = await apiFetch<ParcelDetailResponse>(`/parcels/${encodeURIComponent(upin)}`);
+  if (!apiRes.success) throw new Error(apiRes.error || "Failed to fetch parcel detail");
+  return apiRes.data!;
 };
 
 // ------------ Update parcel (uses EditParcelFormData) ------------
@@ -183,13 +182,15 @@ export const updateParcelApi = async (
   upin: string,
   data: EditParcelFormData
 ) => {
-  const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`, {
+  const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update parcel");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update parcel");
   }
   return json;
@@ -198,11 +199,14 @@ export const updateParcelApi = async (
 // ------------ Delete parcel ------------
 
 export const deleteParcelApi = async (upin: string) => {
-  const res = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}`, {
+  const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}`, {
     method: "DELETE",
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to delete parcel");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to delete parcel");
   }
   return json;
@@ -214,13 +218,15 @@ export const updateOwnerApi = async (
   owner_id: string,
   data: EditOwnerFormData
 ) => {
-  const res = await fetch(`${API_BASE}/owners/${owner_id}`, {
+  const apiRes = await apiFetch<any>(`/owners/${owner_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update owner");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update owner");
   }
   return json;
@@ -232,16 +238,15 @@ export const updateOwnerShareApi = async (
   parcel_owner_id: string,
   share_ratio: EditShareFormData["share_ratio"]
 ) => {
-  const res = await fetch(
-    `${API_BASE}/parcels/owners/${parcel_owner_id}/share`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ share_ratio }),
-    }
-  );
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  const apiRes = await apiFetch<any>(`/parcels/owners/${parcel_owner_id}/share`, {
+    method: "PUT",
+    body: JSON.stringify({ share_ratio }),
+  });
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update share");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update share");
   }
   return json;
@@ -253,13 +258,15 @@ export const updateLeaseApi = async (
   lease_id: string,
   data: EditLeaseFormData
 ) => {
-  const res = await fetch(`${API_BASE}/leases/${lease_id}`, {
+  const apiRes = await apiFetch<any>(`/leases/${lease_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update lease");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update lease");
   }
   return json;
@@ -270,9 +277,8 @@ export const updateLeaseApi = async (
 export const createEncumbranceApi = async (
   data: EncumbranceFormData & { upin: string }
 ) => {
-  const res = await fetch(`${API_BASE}/parcels/encumbrances`, {
+  const apiRes = await apiFetch<any>(`/parcels/encumbrances`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       upin: data.upin,
       type: data.type,
@@ -285,9 +291,11 @@ export const createEncumbranceApi = async (
       status: "ACTIVE",
     }),
   });
-
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to create encumbrance");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to create encumbrance");
   }
   return json;
@@ -297,25 +305,24 @@ export const updateEncumbranceApi = async (
   encumbrance_id: string,
   data: EncumbranceFormData
 ) => {
-  const res = await fetch(
-    `${API_BASE}/parcels/encumbrances/${encumbrance_id}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: data.type,
-        issuing_entity: data.issuing_entity,
-        reference_number: data.reference_number ?? undefined,
-        status: data.status,
-        registration_date:
-          data.registration_date && data.registration_date !== ""
-            ? data.registration_date
-            : undefined,
-      }),
-    }
-  );
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  const apiRes = await apiFetch<any>(`/parcels/encumbrances/${encumbrance_id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      type: data.type,
+      issuing_entity: data.issuing_entity,
+      reference_number: data.reference_number ?? undefined,
+      status: data.status,
+      registration_date:
+        data.registration_date && data.registration_date !== ""
+          ? data.registration_date
+          : undefined,
+    }),
+  });
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update encumbrance");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update encumbrance");
   }
   return json;
@@ -326,11 +333,12 @@ export const updateEncumbranceApi = async (
 export const searchOwnersLiteApi = async (search: string) => {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
-  const res = await fetch(
-    `${API_BASE}/owners/search-lite?${params.toString()}`
-  );
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  const apiRes = await apiFetch<any>(`/owners/search-lite?${params.toString()}`);
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to search owners");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to search owners");
   }
   return json.data.owners as LiteOwner[];
@@ -342,16 +350,15 @@ export const transferOwnershipApi = async (
   upin: string,
   body: TransferOwnershipFormData
 ) => {
-  const res = await fetch(
-    `${API_BASE}/parcels/${encodeURIComponent(upin)}/transfer`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }
-  );
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/transfer`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to transfer ownership");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to transfer ownership");
   }
   return json.data as {
@@ -369,21 +376,20 @@ export const addCoOwnerToParcel = async (
   owner_id: string,
   acquired_at?: string
 ) => {
-  const response = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/owners`, {
+  const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/owners`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       owner_id,
       acquired_at: acquired_at || undefined,
     }),
   });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to add co-owner");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to add co-owner");
   }
-
   return json.data;
 };
 
@@ -402,16 +408,16 @@ export const subdivideParcel = async (
     boundary_west?: string;
   }>
 ) => {
-  const response = await fetch(`${API_BASE}/parcels/${encodeURIComponent(upin)}/subdivide`, {
+  const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/subdivide`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ childParcels}),
   });
-
-  const json = await response.json();
-  if (!response.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to subdivide parcel");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to subdivide parcel");
   }
-
   return json.data;
 };

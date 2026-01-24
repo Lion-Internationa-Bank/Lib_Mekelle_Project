@@ -61,6 +61,9 @@ const OwnershipPage = () => {
   const [showOwnerUploadStep, setShowOwnerUploadStep] = useState(false);
   const [latestOwnerId, setLatestOwnerId] = useState<string | null>(null);
 
+
+
+
   const loadOwners = useCallback(async (pageArg: number, searchArg: string) => {
     try {
       setLoading(true);
@@ -198,13 +201,15 @@ const OwnershipPage = () => {
     e.preventDefault();
     setPage(1);
   };
-
+  const isSubcityNormal = user.role === "SUBCITY_NORMAL";
   return (
     <div className="max-w-7xl mx-auto space-y-8 mt-16">
     
 
       {/* Quick Action */}
-      <div className="flex justify-end">
+      {
+        isSubcityNormal && (
+            <div className="flex justify-end">
         <button
           onClick={() => setShowCreate(true)}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
@@ -213,6 +218,8 @@ const OwnershipPage = () => {
           Add New Owner
         </button>
       </div>
+        )
+      }
 
       {/* Search Form */}
       <form
@@ -235,7 +242,8 @@ const OwnershipPage = () => {
       </form>
 
       {/* Ownership Table */}
-      <OwnershipTable
+       {  (
+         <OwnershipTable
         owners={owners}
         loading={loading}
         error={error}
@@ -249,8 +257,11 @@ const OwnershipPage = () => {
         onPageChange={setPage}
       />
 
+       )
+
+       }
       {/* Create Owner Modal */}
-      {showCreate && (
+      { isSubcityNormal && showCreate && (
         <CreateOwnerModal
           saving={saving}
           form={createForm}
@@ -264,7 +275,7 @@ const OwnershipPage = () => {
       )}
 
       {/* Owner Document Upload Modal */}
-      {showOwnerUploadStep && latestOwnerId && (
+      {isSubcityNormal && showOwnerUploadStep && latestOwnerId && (
         <OwnerDocsUploadModal
           ownerId={latestOwnerId}
           onClose={() => {
@@ -276,7 +287,7 @@ const OwnershipPage = () => {
       )}
 
       {/* Edit Owner Modal */}
-      {editingOwner && (
+      {isSubcityNormal && editingOwner && (
         <EditOwnerModal
           saving={saving}
           form={editForm}
@@ -287,7 +298,7 @@ const OwnershipPage = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deletingOwner && (
+      {isSubcityNormal && deletingOwner && (
         <DeleteOwnerModal
           saving={saving}
           owner={deletingOwner}

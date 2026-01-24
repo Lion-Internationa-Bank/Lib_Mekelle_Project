@@ -63,7 +63,14 @@ const ParcelDetailPage = () => {
     }
   };
 
-  if (!user) return <Navigate to="/login" replace />;
+    if (!user) {
+
+    console.warn(
+      `[AuthGuard] No user found at ${new Date().toLocaleTimeString()}. Redirecting to /login...`
+    );
+    return <Navigate to="/login" replace />;
+  }
+
 
   if (loading) {
     return (

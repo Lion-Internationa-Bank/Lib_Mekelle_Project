@@ -22,7 +22,6 @@ const App = () => {
     return <div>Loading...</div>; // Or a spinner component
   }
   return (
-    <AuthProvider>
       <CalendarProvider>
         <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -45,7 +44,6 @@ const App = () => {
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       </CalendarProvider>
-    </AuthProvider>
   );
 };
 
@@ -53,7 +51,7 @@ const App = () => {
 const RoleBasedHome = () => {
   const { user ,isLoading} = useAuth();
      if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <div>Loading...</div>; 
   }
 
   if (!user) return <Navigate to="/login" replace />;

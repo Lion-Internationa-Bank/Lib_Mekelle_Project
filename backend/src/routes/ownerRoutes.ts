@@ -22,8 +22,11 @@ import {
 } from '../validation/ownerSchemas.ts';
 
 import { validateRequest } from '../middlewares/validateRequest.ts';
+import { authenticate } from '../middlewares/authMiddleware.ts';
+import { authorize } from '../middlewares/roleMiddleware.ts';
 
 const router = Router({ mergeParams: true });
+router.use(authenticate);
 
 // Create owner + link to parcel
 router.post('/', validateRequest(CreateOwnerSchema), createOwner);

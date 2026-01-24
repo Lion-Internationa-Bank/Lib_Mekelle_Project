@@ -1,10 +1,10 @@
 
-const API_BASE = import.meta.env.VITE_API_URL;
 import type {
   CreateOwnerOnlyData,
   UpdateOwnerFormData,
 } from "../validation/schemas";
 import type { SubCity } from "./cityAdminService";
+import apiFetch from './api';
 
 export interface OwnedParcel {
   share_ratio: string;
@@ -58,9 +58,9 @@ export const fetchOwnersWithParcels = async (params: {
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);
-  const res = await fetch(`${API_BASE}/owners/with-parcels?${query.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch owners");
-  return res.json();
+  const apiRes = await apiFetch<OwnersResponse>(`/owners/with-parcels?${query.toString()}`);
+  if (!apiRes.success) throw new Error(apiRes.error || "Failed to fetch owners");
+  return apiRes.data!;
 };
 
 
@@ -80,13 +80,15 @@ export interface CreateOwnerResponse {
 }
 
 export const createOwnerOnly = async (data: CreateOwnerOnlyData): Promise<CreateOwnerResponse> => {
-  const res = await fetch(`${API_BASE}/owners/only`, {
+  const apiRes = await apiFetch<any>(`/owners/only`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to create owner");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to create owner");
   }
   return json;
@@ -96,24 +98,29 @@ export const updateOwnerApi = async (
   owner_id: string,
   data: UpdateOwnerFormData
 ) => {
-  const res = await fetch(`${API_BASE}/owners/${owner_id}`, {
+  const apiRes = await apiFetch<any>(`/owners/${owner_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to update owner");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to update owner");
   }
   return json;
 };
 
 export const deleteOwnerApi = async (owner_id: string) => {
-  const res = await fetch(`${API_BASE}/owners/${owner_id}`, {
+  const apiRes = await apiFetch<any>(`/owners/${owner_id}`, {
     method: "DELETE",
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to delete owner");
+  }
+  const json = apiRes.data;
+  if (!json.success) {
     throw new Error(json.message || "Failed to delete owner");
   }
   return json;

@@ -4,6 +4,7 @@ import type {
   OwnerWithParcels,
   OwnersPagination,
 } from "../../services/ownersApi";
+import { useAuth } from "../../contexts/AuthContext";
 
 
 type Props = {
@@ -33,6 +34,9 @@ const OwnershipTable = ({
   onDelete,
   onPageChange,
 }: Props) => {
+
+  const {user } = useAuth();
+    
   return (
     <>
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-visible">
