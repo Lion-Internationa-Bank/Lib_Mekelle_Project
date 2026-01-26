@@ -8,6 +8,7 @@ import {
   LeaseStepFormSchema,
   type LeaseStepFormData,
 } from "../../validation/schemas";
+import {toast} from 'sonner';
 
 const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
   const [searchParams] = useSearchParams();
@@ -62,12 +63,14 @@ console.log("lease step errors", errors);
 
       const res = await createLease(payload);
       if (res.success) {
+        toast.success(res.message || "Lease successfully registered")
         const { lease_id } = res.data;
         onCreated({ lease_id });
       } else {
         console.error(res.message || "Failed to create lease");
       }
     } catch (err: any) {
+      toast.error(err.message || "Failed to create lease")
       console.error(err.message || "Failed to create lease");
     }
   };

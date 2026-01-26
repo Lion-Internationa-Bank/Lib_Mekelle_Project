@@ -1,6 +1,7 @@
 // src/auth/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {toast} from 'sonner';
 
 type User = {
   user_id: string;
@@ -59,9 +60,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      if (!res.ok) {
+      if (!res.ok) { 
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Login failed');
+        const error = errorData.message || 'Login failed'
+        toast.error(error);
+        throw new Error(error);
       }
 
       const data = await res.json();
@@ -72,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
 
       setUser(data.user);
+      toast.success( "Login successfully")
       return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);

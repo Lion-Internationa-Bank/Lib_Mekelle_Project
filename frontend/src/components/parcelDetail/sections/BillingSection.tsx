@@ -1,5 +1,4 @@
 // src/components/parcelDetail/sections/BillingSection.tsx
-import React from "react";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
 type Props = {

@@ -9,6 +9,7 @@ import type { ParcelStepProps } from "../../types/wizard";
 import { createParcel } from "../../services/parcelApi";
 import { getSubCities, getConfig, type SubCity } from "../../services/cityAdminService";
 import { useEffect, useState } from "react";
+import { toast } from 'sonner';
 
 const ParcelStep = ({ onCreated }: ParcelStepProps) => {
   const [subCities, setSubCities] = useState<SubCity[]>([]);
@@ -80,19 +81,22 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
   // Auto-uppercase UPIN
   const upinValue = watch("upin");
 
-  const onSubmit = async (data: ParcelFormData) => {
-    try {
-      const res = await createParcel(data);
-      if (res.success) {
-        const { upin, sub_city } = res.data;
-        onCreated({ upin, sub_city });
-      } else {
-        console.error("Parcel creation failed:", res.message);
-      }
-    } catch (err: any) {
-      console.error("Network/API error:", err);
+const onSubmit = async (data: ParcelFormData) => {
+  try {
+    const res = await createParcel(data);
+    if (res.success) {
+      const { upin, sub_city } = res.data;
+      onCreated({ upin, sub_city });
+      toast.success(`Parcel ${upin} created`); 
+    } else {
+      toast.error(res.message || 'Parcel creation failed');
+      console.error("Parcel creation failed:", res.message);
     }
-  };
+  } catch (err: any) {
+    toast.error(err.message || 'Network/API error'); 
+    console.error("Network/API error:", err);
+  }
+};
 
   const fillExampleGeometry = () => {
     const example = {
@@ -107,7 +111,7 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
         ],
       ],
     };
-    setValue("geometry_data", JSON.stringify(example, null, 2), {
+    setValue("boundary_coords", JSON.stringify(example, null, 2), {
       shouldValidate: true,
     });
   };

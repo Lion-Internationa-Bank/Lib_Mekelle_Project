@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
-
+// import {toast } from 'sonner';
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +22,7 @@ const LoginPage = () => {
 
     setLoading(false);
     if (success) {
+     
       navigate('/home');
     } else {
       setError('Invalid username or password');

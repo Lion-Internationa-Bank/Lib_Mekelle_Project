@@ -8,6 +8,7 @@ import {
   OwnerStepFormSchema,
   type OwnerStepFormData,
 } from "../../validation/schemas";
+import {toast } from 'sonner';
 
 const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
   const [searchParams] = useSearchParams();
@@ -30,7 +31,6 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
       national_id: "",
       tin_number: "",
       phone_number: "",
-      share_ratio: 1.0,
       acquired_at: today,
     },
   });
@@ -44,10 +44,12 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
 
       const res = await createOwner(payload);
       if (res.success) {
+        toast.success(res.message || "Parcel owner created successfully")
         const { owner_id } = res.data;
         onCreated({ owner_id });
       } else {
-        console.error(res.message || "Failed to create owner");
+        toast.error(res.message ||"Failed to create owner" )
+        console.error(res.message ||"Failed to create owner" );
       }
     } catch (err: any) {
       console.error(err.message || "Failed to create owner");

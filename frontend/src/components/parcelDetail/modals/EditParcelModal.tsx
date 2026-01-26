@@ -12,6 +12,7 @@ import {
   type ConfigOption,
 } from "../../../services/cityAdminService";
 import { useAuth } from "../../../contexts/AuthContext";
+import { toast } from "sonner";
 
 type Props = {
   parcel: ParcelDetail;
@@ -91,16 +92,18 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
 
       const parsed = EditParcelFormSchema.parse(form) as EditParcelFormData;
 
-      await updateParcelApi(parcel.upin, parsed);
+      const res = await updateParcelApi(parcel.upin, parsed);
+      toast.success(res.message || " Successfully updated parcle info ")
       await onSuccess();
       onClose();
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
+        
         setError(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
-        setError(err.message || "Failed to update parcel");
+        toast.error(err.message || "Failed to update parcel")
       } else {
-        setError("An unexpected error occurred");
+        toast.error("An unexpected error occurred")
       }
     } finally {
       setSaving(false);

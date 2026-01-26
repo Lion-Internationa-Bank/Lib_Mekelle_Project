@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { SimpleStepProps } from "../../types/wizard";
 import { uploadDocument } from "../../services/parcelApi";
+import {toast } from 'sonner';
 
 interface OwnerDocsStepProps {
   upin: string;
@@ -65,12 +66,14 @@ const ownerId = searchParams.get("owner_id") || "";
 
       const res = await uploadDocument(formData); // expects success + data[web:56]
       if (res.success) {
+         toast.success( `upload ${documentType}  document successfuly`)
         setDocuments(prev =>
           prev.map(d =>
             d.id === tempId ? { ...d, status: "success" } : d
           )
         );
       } else {
+      
         setDocuments(prev =>
           prev.map(d =>
             d.id === tempId ? { ...d, status: "error" } : d
@@ -78,6 +81,7 @@ const ownerId = searchParams.get("owner_id") || "";
         );
       }
     } catch (err) {
+         toast.error('Upload failed')
       setDocuments(prev =>
         prev.map(d =>
           d.id === tempId ? { ...d, status: "error" } : d

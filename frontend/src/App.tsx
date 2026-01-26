@@ -1,6 +1,8 @@
 // src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider,useAuth} from './contexts/AuthContext';
+import { Toaster } from 'sonner'; // Add Sonner import [web:7]
+// import 'sonner/toast.css'; // Import styles (Vite handles CSS) [web:7][web:14]
+import { useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
 import LoginPage from './routes/LoginPage';
@@ -17,13 +19,13 @@ import { CalendarProvider } from './contexts/CalendarContext';
 import RateConfigsPage from './routes/admin/RateConfigsPage';
 
 const App = () => {
-   const { isLoading } = useAuth();
-     if (isLoading) {
+  const { isLoading } = useAuth();
+  if (isLoading) {
     return <div>Loading...</div>; // Or a spinner component
   }
   return (
-      <CalendarProvider>
-        <Routes>
+    <CalendarProvider>
+      <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
@@ -37,20 +39,21 @@ const App = () => {
           <Route path="/users" element={<UserManagementPage />} />
           <Route path="/sub-cities" element={<SubCitiesPage />} />
           <Route path="/configs" element={<ConfigsPage />} />
-          <Route path= "/rateConfigs" element={<RateConfigsPage/>} />
+          <Route path="/rateConfigs" element={<RateConfigsPage />} />
         </Route>
-          <Route path='/parcels/:upin' element={<ParcelDetailPage />}></Route>
+        <Route path="/parcels/:upin" element={<ParcelDetailPage />} />
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
-      </CalendarProvider>
+      <Toaster position="top-right" richColors closeButton /> {/* Add global Toaster */}
+    </CalendarProvider>
   );
 };
 
-// Role-based home page (unchanged)
+// Role-based home page (unchanged, minor cleanup)
 const RoleBasedHome = () => {
-  const { user ,isLoading} = useAuth();
-     if (isLoading) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
     return <div>Loading...</div>; 
   }
 
@@ -62,7 +65,6 @@ const RoleBasedHome = () => {
       return <AdminHome />;
     case 'SUBCITY_NORMAL':
     case 'SUBCITY_AUDITOR':
-      case 'REVENUE_USER':
       return <SubcityHome />;
     case 'REVENUE_ADMIN':
     case 'REVENUE_USER':

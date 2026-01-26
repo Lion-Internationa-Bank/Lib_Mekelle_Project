@@ -37,7 +37,7 @@ import { authorize } from '../middlewares/roleMiddleware.ts';
 const router = Router({ mergeParams: true });
 
 // === Parcel Routes ===
-router.post('/', validateRequest(CreateParcelSchema),authorize(['SUBCITY_NORMAL']), createParcel);
+router.post('/', validateRequest(CreateParcelSchema),authenticate,authorize(['SUBCITY_NORMAL']), createParcel);
 
 // router.get('/', validateRequest(z.object({ query: GetParcelsQuerySchema })), authenticate, getParcels);
 

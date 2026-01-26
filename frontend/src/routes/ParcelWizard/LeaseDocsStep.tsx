@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { FinishStepProps } from "../../types/wizard";
 import { uploadDocument } from "../../services/parcelApi";
-
+import {toast} from 'sonner';
 
 
 type UploadStatus = "uploading" | "success" | "error";
@@ -59,6 +59,7 @@ const leaseId = searchParams.get("lease_id") || "";
 
       const res = await uploadDocument(formData);
       if (res.success) {
+          toast.success( `upload ${documentType}  document successfuly`)
         setDocuments(prev =>
           prev.map(d => (d.id === tempId ? { ...d, status: "success" } : d))
         );
@@ -68,6 +69,7 @@ const leaseId = searchParams.get("lease_id") || "";
         );
       }
     } catch (err) {
+        toast.error('Upload failed')
       setDocuments(prev =>
         prev.map(d => (d.id === tempId ? { ...d, status: "error" } : d))
       );

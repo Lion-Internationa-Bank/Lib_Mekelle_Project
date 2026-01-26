@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import type { SimpleStepProps } from "../../types/wizard";
 import { uploadDocument } from "../../services/parcelApi";
+import { toast } from 'sonner';
 
 interface Document {
   id: string;
@@ -66,10 +67,12 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
 
       const response = await uploadDocument(formData);
       if (response.success) {
+        toast.success( `upload ${docType}  document successfuly`)
         setDocuments(prev => prev.map(doc =>
           doc.id === newDoc.id ? { ...doc, status: "success" } : doc
         ));
       } else {
+        toast.error('Upload failed')
         throw new Error("Upload failed");
       }
     } catch (error) {

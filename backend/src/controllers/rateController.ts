@@ -2,6 +2,13 @@
 import type { Request, Response } from "express";
 import prisma from "../config/prisma.ts";
 import type { AuthRequest } from "../middlewares/authMiddleware.ts";
+import { 
+  UserRole, 
+  AuditAction, 
+  ConfigCategory, 
+  PaymentStatus, 
+  EncumbranceStatus 
+} from '../generated/prisma/enums.ts';
 
 type RateType =
   | "LEASE_INTEREST_RATE"
@@ -75,32 +82,45 @@ export const createRate = async (req: AuthRequest, res: Response) => {
     effective_until?: string | null;
   };
 
-  const userId = req.user?.user_id;
+  const actor = req.user!;
+  const userId = actor.user_id;
 
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return res
       .status(400)
-      .json({ message: "Value must be a finite number" });
+      .json({ 
+        success: false,
+        message: "Value must be a finite number" 
+      });
   }
 
-  // NEW: enforce 0 <= value <= 1
+  // enforce 0 <= value <= 1
   if (value < 0 || value > 1) {
     return res
       .status(400)
-      .json({ message: "Value must be between 0 and 1 (inclusive)" });
+      .json({ 
+        success: false,
+        message: "Value must be between 0 and 1 (inclusive)" 
+      });
   }
 
   if (!effective_from) {
     return res
       .status(400)
-      .json({ message: "effective_from is required" });
+      .json({ 
+        success: false,
+        message: "effective_from is required" 
+      });
   }
 
   const fromDate = new Date(effective_from);
   if (Number.isNaN(fromDate.getTime())) {
     return res
       .status(400)
-      .json({ message: "Invalid effective_from; must be ISO date string" });
+      .json({ 
+        success: false,
+        message: "Invalid effective_from; must be ISO date string" 
+      });
   }
 
   let untilDate: Date | null = null;
@@ -108,6 +128,7 @@ export const createRate = async (req: AuthRequest, res: Response) => {
     const d = new Date(effective_until);
     if (Number.isNaN(d.getTime())) {
       return res.status(400).json({
+        success: false,
         message: "Invalid effective_until; must be ISO date string or null",
       });
     }
@@ -126,12 +147,13 @@ export const createRate = async (req: AuthRequest, res: Response) => {
 
     if (existing) {
       return res.status(409).json({
-        message:
-          "Rate with this type and effective_from already exists. Use UPDATE endpoint instead.",
+        success: false,
+        message: "Rate with this type and effective_from already exists. Use UPDATE endpoint instead.",
       });
     }
 
     const created = await prisma.$transaction(async (tx) => {
+      // Find previous active rate
       const previousActive = await tx.rate_configurations.findFirst({
         where: {
           rate_type: type,
@@ -141,16 +163,21 @@ export const createRate = async (req: AuthRequest, res: Response) => {
         orderBy: { effective_from: "desc" },
       });
 
+      let previousRateUpdate = null;
+
+      // Deactivate previous rate if exists
       if (previousActive) {
-        await tx.rate_configurations.update({
+        previousRateUpdate = await tx.rate_configurations.update({
           where: { id: previousActive.id },
           data: {
             effective_until: fromDate,
+            is_active: false,
             updated_at: new Date(),
           },
         });
       }
 
+      // Create new rate
       const newRate = await tx.rate_configurations.create({
         data: {
           rate_type: type,
@@ -158,8 +185,62 @@ export const createRate = async (req: AuthRequest, res: Response) => {
           source: source?.trim() || null,
           effective_from: fromDate,
           effective_until: untilDate,
-          created_by: userId ?? null,
+          created_by: userId,
           is_active: true,
+        },
+      });
+
+      // Create audit log for rate creation
+      await tx.audit_logs.create({
+        data: {
+          user_id: userId,
+          action_type: AuditAction.CREATE,
+          entity_type: 'rate_configurations',
+          entity_id: newRate.id,
+          changes: {
+            action: 'create_rate',
+            rate_type: type,
+            value,
+            source: source?.trim() || null,
+            effective_from: fromDate,
+            effective_until: untilDate,
+            previous_active_rate: previousActive ? {
+              id: previousActive.id,
+              value: previousActive.value,
+              effective_from: previousActive.effective_from,
+              effective_until: previousActive.effective_until,
+            } : null,
+            previous_rate_updated: previousRateUpdate ? {
+              new_effective_until: previousRateUpdate.effective_until,
+              new_is_active: previousRateUpdate.is_active,
+            } : null,
+            actor_id: actor.user_id,
+            actor_role: actor.role,
+            timestamp: new Date().toISOString(),
+          },
+          timestamp: new Date(),
+          ip_address: req.ip || req.socket.remoteAddress,
+        },
+      });
+
+      // Create config change audit log
+      await tx.audit_logs.create({
+        data: {
+          user_id: userId,
+          action_type: AuditAction.CONFIG_CHANGE,
+          entity_type: 'rate_configurations',
+          entity_id: newRate.id,
+          changes: {
+            action: 'rate_configuration_created',
+            rate_type: type,
+            value,
+            effective_from: fromDate,
+            actor_id: actor.user_id,
+            actor_role: actor.role,
+            timestamp: new Date().toISOString(),
+          },
+          timestamp: new Date(),
+          ip_address: req.ip || req.socket.remoteAddress,
         },
       });
 
@@ -167,8 +248,9 @@ export const createRate = async (req: AuthRequest, res: Response) => {
     });
 
     return res.status(201).json({
+      success: true,
       message: "Rate created successfully",
-      rate: {
+      data: {
         id: created.id,
         rate_type: created.rate_type,
         value: created.value,
@@ -181,12 +263,23 @@ export const createRate = async (req: AuthRequest, res: Response) => {
         created_by: created.created_by,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create rate error:", error);
-    return res.status(500).json({ message: "Failed to create rate" });
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "Rate with this type and effective_from already exists",
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to create rate",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
-
 /**
  * PUT /api/rates/:type
  * Update existing ACTIVE row for (rate_type, effective_from).
@@ -309,17 +402,25 @@ export const deactivateRate = async (req: AuthRequest, res: Response) => {
   const { type } = req.params as { type: RateType };
   const { effective_from } = req.body as { effective_from: string };
 
+  const actor = req.user!;
+
   if (!effective_from) {
     return res
       .status(400)
-      .json({ message: "effective_from is required" });
+      .json({ 
+        success: false,
+        message: "effective_from is required" 
+      });
   }
 
   const fromDate = new Date(effective_from);
   if (Number.isNaN(fromDate.getTime())) {
     return res
       .status(400)
-      .json({ message: "Invalid effective_from; must be ISO date string" });
+      .json({ 
+        success: false,
+        message: "Invalid effective_from; must be ISO date string" 
+      });
   }
 
   try {
@@ -335,31 +436,100 @@ export const deactivateRate = async (req: AuthRequest, res: Response) => {
     if (!existing) {
       return res
         .status(404)
-        .json({ message: "Rate not found for this type and effective_from" });
+        .json({ 
+          success: false,
+          message: "Rate not found for this type and effective_from" 
+        });
     }
 
     if (!existing.is_active) {
       return res
         .status(400)
-        .json({ message: "Rate is already inactive" });
+        .json({ 
+          success: false,
+          message: "Rate is already inactive" 
+        });
     }
 
-    const updated = await prisma.rate_configurations.update({
+    // Check if there's an active rate after this one
+    const nextActiveRate = await prisma.rate_configurations.findFirst({
       where: {
-        rate_type_effective_from: {
-          rate_type: type,
-          effective_from: fromDate,
+        rate_type: type,
+        is_active: true,
+        effective_from: { gt: fromDate },
+      },
+      orderBy: { effective_from: "asc" },
+    });
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const deactivatedRate = await tx.rate_configurations.update({
+        where: {
+          rate_type_effective_from: {
+            rate_type: type,
+            effective_from: fromDate,
+          },
         },
-      },
-      data: {
-        is_active: false,
-        updated_at: new Date(),
-      },
+        data: {
+          is_active: false,
+          updated_at: new Date(),
+        },
+      });
+
+      // Create audit log for rate deactivation
+      await tx.audit_logs.create({
+        data: {
+          user_id: actor.user_id,
+          action_type: AuditAction.UPDATE,
+          entity_type: 'rate_configurations',
+          entity_id: existing.id,
+          changes: {
+            action: 'deactivate_rate',
+            rate_type: type,
+            value: existing.value,
+            effective_from: existing.effective_from,
+            effective_until: existing.effective_until,
+            previous_status: 'ACTIVE',
+            new_status: 'INACTIVE',
+            next_active_rate_exists: !!nextActiveRate,
+            next_active_rate: nextActiveRate ? {
+              effective_from: nextActiveRate.effective_from,
+              value: nextActiveRate.value,
+            } : null,
+            actor_id: actor.user_id,
+            actor_role: actor.role,
+            timestamp: new Date().toISOString(),
+          },
+          timestamp: new Date(),
+          ip_address: req.ip || req.socket.remoteAddress,
+        },
+      });
+
+      // Create config change audit log
+      await tx.audit_logs.create({
+        data: {
+          user_id: actor.user_id,
+          action_type: AuditAction.CONFIG_CHANGE,
+          entity_type: 'rate_configurations',
+          entity_id: existing.id,
+          changes: {
+            action: 'rate_configuration_deactivated',
+            rate_type: type,
+            actor_id: actor.user_id,
+            actor_role: actor.role,
+            timestamp: new Date().toISOString(),
+          },
+          timestamp: new Date(),
+          ip_address: req.ip || req.socket.remoteAddress,
+        },
+      });
+
+      return deactivatedRate;
     });
 
     return res.json({
+      success: true,
       message: "Rate deactivated successfully",
-      rate: {
+      data: {
         id: updated.id,
         rate_type: updated.rate_type,
         value: updated.value,
@@ -371,9 +541,21 @@ export const deactivateRate = async (req: AuthRequest, res: Response) => {
         updated_at: updated.updated_at,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Deactivate rate error:", error);
-    return res.status(500).json({ message: "Failed to deactivate rate" });
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: "Rate not found",
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to deactivate rate",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
