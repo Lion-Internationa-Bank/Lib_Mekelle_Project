@@ -1,36 +1,23 @@
 // src/components/CalendarToggle.tsx
 import React from 'react';
-import { Globe, RefreshCw } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useCalendar } from '../contexts/CalendarContext';
 
 const CalendarToggle: React.FC = () => {
-  const { calendarType, toggleCalendar, isEthiopian } = useCalendar();
+  const { toggleCalendar, isEthiopian } = useCalendar();
   
   return (
     <button
       onClick={toggleCalendar}
-      className="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] group"
-      title={`Switch to ${isEthiopian ? 'Gregorian' : 'Ethiopian'} calendar`}
-      aria-label={`Current calendar: ${calendarType}. Click to switch to ${isEthiopian ? 'Gregorian' : 'Ethiopian'}`}
+      className="relative flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all active:scale-95 shadow-sm group"
+      title={`Switch to ${isEthiopian ? 'Gregorian' : 'Ethiopian'}`}
     >
-      <div className={`p-1.5 rounded-lg ${isEthiopian ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
-        <Globe className="w-4 h-4" />
-      </div>
-      <div className="flex flex-col items-start">
-        <span className="text-xs font-medium text-gray-500">
-          Calendar
-        </span>
-        <span className="text-sm font-semibold text-gray-800">
-          {isEthiopian ? 'ዓ/ም' : 'GC'}
-        </span>
-      </div>
-      <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-all duration-300 ${isEthiopian ? 'bg-blue-500' : 'bg-gray-300'}`}>
-        <div className={`w-4 h-4 rounded-full bg-white shadow-lg transform transition-transform duration-300 ${isEthiopian ? 'translate-x-6' : 'translate-x-0'}`} />
-      </div>
-      <span className="text-sm font-medium text-gray-700 hidden md:inline">
-        {isEthiopian ? 'Ethiopian' : 'Gregorian'}
+      <Globe className={`w-5 h-5 ${isEthiopian ? 'text-blue-600' : 'text-gray-600'}`} />
+      
+      {/* Small Badge for Context */}
+      <span className="absolute -bottom-1 -right-1 flex items-center justify-center px-1 min-w-[1.25rem] h-4 bg-gray-800 text-[10px] font-bold text-white rounded-full border border-white">
+        {isEthiopian ? 'ዓ/ም' : 'GC'}
       </span>
-      <RefreshCw className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
     </button>
   );
 };

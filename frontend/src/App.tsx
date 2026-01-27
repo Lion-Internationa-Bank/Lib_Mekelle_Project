@@ -6,7 +6,8 @@ import { useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
 import LoginPage from './routes/LoginPage';
-import AdminHome from './routes/admin/AdminHome';
+import CityAdminHome from './routes/admin/CityAdminHome';
+import SubCityAdminHome from './routes/admin/SubCityAdminHome';
 import SubcityHome from './routes/subcity/SubcityHome';
 import RevenueHome from './routes/revenue/RevenueHome';
 import ParcelWizard from './routes/ParcelWizard';
@@ -61,8 +62,9 @@ const RoleBasedHome = () => {
 
   switch (user.role) {
     case 'CITY_ADMIN':
+       return <CityAdminHome />;
     case 'SUBCITY_ADMIN':
-      return <AdminHome />;
+      return <SubCityAdminHome />;
     case 'SUBCITY_NORMAL':
     case 'SUBCITY_AUDITOR':
       return <SubcityHome />;

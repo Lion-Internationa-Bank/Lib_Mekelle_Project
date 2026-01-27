@@ -4,7 +4,7 @@ import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus } fr
 import { searchOwnersLiteApi, transferOwnershipApi,type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
 import GenericDocsUpload from "../../../components/GenericDocsUpload"; // ← import for upload step
-
+import { toast } from 'sonner';
 
 // onRefreshParcel is not a function
 interface TransferOwnershipModalProps {
@@ -165,9 +165,11 @@ export default function TransferOwnershipModal({
       };
 
       const result = await transferOwnershipApi(parcelUpin, payload);
+      toast.success(result.message || "Transfer occurred successfully")
       await handleTransferSuccess(result.history.history_id);
     } catch (err: any) {
-      setError(err.message || 'Failed to transfer ownership');
+      toast.error(err.message || 'Failed to transfer ownership' )
+     
     } finally {
       setLoading(false);
     }

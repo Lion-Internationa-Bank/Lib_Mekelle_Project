@@ -4,6 +4,15 @@ import DocumentList from "../DocumentList";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import DateDisplay from "../../DateDisplay";
 import { useAuth } from "../../../contexts/AuthContext";
+import { 
+  CalendarDays, 
+  FileText, 
+  Info, 
+  Clock, 
+  Scale,
+  DollarSign,
+  Calendar
+} from "lucide-react";
 
 interface LeaseCardProps {
   lease: NonNullable<ParcelDetail["lease_agreement"]>;
@@ -11,22 +20,40 @@ interface LeaseCardProps {
 
 const LeaseCard = ({ lease }: LeaseCardProps) => {
   const { calendarType, isEthiopian } = useCalendar();
-  const {user} = useAuth();
+  const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
-  // console.log('Current calendar type:', calendarType, 'Is Ethiopian:', isEthiopian);
+
+  const formatCurrency = (value: number) => {
+    return Number(value).toLocaleString('en-ET', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
 
   return (
-    <div className="bg-white/80 border border-gray-200 rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Lease Agreement</h2>
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-medium text-gray-600">
-              {isEthiopian ? 'የኢትዮጵያ ቀን መቁጠሪያ' : 'Gregorian Calendar'}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Header with Calendar Indicator */}
+      <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
-            <div className={`text-xs px-2 py-1 rounded-full ${isEthiopian ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
-              {isEthiopian ? 'ዓ/ም' : 'GC'}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Lease Agreement</h2>
+              <p className="text-sm text-gray-600">Contract details and financial terms</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {isEthiopian ? 'ዓ/ም' : 'GC'}
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              {isEthiopian ? 'የኢትዮጵያ ቀን መቁጠሪያ' : 'Gregorian Calendar'}
             </div>
           </div>
         </div>
@@ -34,147 +61,214 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
 
       {/* Main Content */}
       <div className="p-6">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left Column - Lease Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Lease Info
-            </h3>
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="font-medium text-gray-600">Lease ID</dt>
-                <dd className="mt-1 font-mono text-gray-900">
-                  {lease.lease_id}
-                </dd>
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Financial Information */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <h3 className="text-base font-semibold text-gray-900">Financial Details</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Lease Amount</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.total_lease_amount)} ETB
+                </div>
               </div>
-              <div>
-                <dt className="font-medium text-gray-600">Total Lease Amount</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {Number(lease.total_lease_amount).toLocaleString()} ETB
-                </dd>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Down Payment</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.down_payment_amount)} ETB
+                </div>
               </div>
-              <div>
-                <dt className="font-medium text-gray-600">Down Payment</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {Number(lease.down_payment_amount).toLocaleString()} ETB
-                </dd>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Price per m²</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.price_per_m2)} ETB
+                </div>
               </div>
-              <div>
-                <dt className="font-medium text-gray-600">Price per m²</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {Number(lease.price_per_m2).toLocaleString()} ETB
-                </dd>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Annual Fee</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.annual_lease_fee)} ETB
+                </div>
               </div>
-              <div>
-                <dt className="font-medium text-gray-600">Annual Lease Fee</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {Number(lease.annual_lease_fee).toLocaleString()} ETB
-                </dd>
+            </div>
+            
+            {/* Additional Financial Info */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Annual Installment</div>
+                  <div className="text-2xl font-bold text-blue-700">
+                    {formatCurrency(lease.annual_installment)} ETB
+                  </div>
+                </div>
+                <div className="text-sm text-blue-600 bg-white px-3 py-1 rounded-full border border-blue-200">
+                  Yearly
+                </div>
               </div>
-            </dl>
+              
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Lease ID</div>
+                  <div className="font-mono text-gray-900">{lease.lease_id}</div>
+                </div>
+                <div className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded">
+                  Unique Identifier
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column - Period & Legal */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Period & Legal
-            </h3>
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="font-medium text-gray-600">Lease Period</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {lease.lease_period_years} years
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-gray-600">Payment Term</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {lease.payment_term_years} years
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-gray-600">Annual Installment</dt>
-                <dd className="mt-1 font-semibold text-gray-900">
-                  {Number(lease.annual_installment).toLocaleString()} ETB
-                </dd>
-              </div>
-              
-              {/* Contract Date */}
-              <div>
-                <dt className="font-medium text-gray-600">Contract Date</dt>
-                <dd className="mt-1 text-gray-900">
-                  <DateDisplay 
-                    date={lease.contract_date} 
-                    format="medium"
-                    className="font-semibold"
-                    showTooltip={true}
-                    showCalendarIndicator={true}
-                  />
-                </dd>
+          {/* Timeline & Legal Information */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-5 h-5 text-purple-600" />
+              <h3 className="text-base font-semibold text-gray-900">Timeline & Legal</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Period Information */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Lease Period</div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {lease.lease_period_years} years
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Payment Term</div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {lease.payment_term_years} years
+                  </div>
+                </div>
               </div>
               
-              {/* Start Date */}
-              <div>
-                <dt className="font-medium text-gray-600">Start Date</dt>
-                <dd className="mt-1 text-gray-900">
-                  <DateDisplay 
-                    date={lease.start_date} 
-                    format="medium"
-                    className="font-semibold"
-                    showTooltip={true}
-                    showCalendarIndicator={true}
-                  />
-                </dd>
-              </div>
-              
-              {/* Expiry Date */}
-              <div>
-                <dt className="font-medium text-gray-600">Expiry Date</dt>
-                <dd className="mt-1 text-gray-900">
-                  <DateDisplay 
-                    date={lease.expiry_date} 
-                    format="medium"
-                    className="font-semibold"
-                    showTooltip={true}
-                    showCalendarIndicator={true}
-                  />
-                </dd>
+              {/* Date Timeline */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Key Dates</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-green-100 rounded">
+                        <CalendarDays className="w-3 h-3 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500">Contract Date</div>
+                        <DateDisplay 
+                          date={lease.contract_date} 
+                          format="medium"
+                          className="font-semibold"
+                          showTooltip={true}
+                          showCalendarIndicator={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-blue-100 rounded">
+                        <CalendarDays className="w-3 h-3 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500">Start Date</div>
+                        <DateDisplay 
+                          date={lease.start_date} 
+                          format="medium"
+                          className="font-semibold"
+                          showTooltip={true}
+                          showCalendarIndicator={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-white border border-red-100 rounded-lg bg-red-50">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-red-100 rounded">
+                        <CalendarDays className="w-3 h-3 text-red-600" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500">Expiry Date</div>
+                        <DateDisplay 
+                          date={lease.expiry_date} 
+                          format="medium"
+                          className="font-semibold"
+                          showTooltip={true}
+                          showCalendarIndicator={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {/* Legal Framework */}
-              <div>
-                <dt className="font-medium text-gray-600">Legal Framework</dt>
-                <dd className="mt-1 text-gray-700">
-                  {lease.legal_framework || "-"}
-                </dd>
-              </div>
-            </dl>
-            
-            {/* Tooltip Hint */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-start gap-2 text-xs text-gray-500">
-                <div className="mt-0.5">
-                  <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Scale className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">Legal Framework</span>
                 </div>
-                <p>
-                  {isEthiopian 
-                    ? "Hover over dates to see Gregorian equivalent" 
-                    : "Hover over dates to see Ethiopian equivalent"}
-                </p>
+                <div className="text-gray-900">
+                  {lease.legal_framework || "No legal framework specified"}
+                </div>
+              </div>
+              
+              {/* Calendar Tooltip Hint */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="flex items-start gap-3">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-medium text-blue-900 mb-1">
+                      Calendar Information
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      {isEthiopian 
+                        ? "Hover over dates to view Gregorian calendar equivalents" 
+                        : "Hover over dates to view Ethiopian calendar equivalents"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Lease Documents */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Lease Documents</h3>
-          <DocumentList
-            documents={lease.documents}
-            title="Lease Documents"
-          />
+        {/* Documents Section */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <FileText className="w-5 h-5 text-gray-700" />
+            <h3 className="text-lg font-semibold text-gray-900">Lease Documents</h3>
+            <span className="ml-2 text-sm text-gray-500">
+              • {lease.documents?.length || 0} document(s)
+            </span>
+          </div>
+          
+          <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+            <DocumentList
+              documents={lease.documents}
+              title="Lease Documents"
+            />
+          </div>
         </div>
       </div>
     </div>

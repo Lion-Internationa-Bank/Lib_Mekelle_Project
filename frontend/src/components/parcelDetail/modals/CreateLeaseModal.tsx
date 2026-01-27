@@ -7,6 +7,7 @@ import {
 } from "../../../validation/schemas";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { createLease } from "../../../services/parcelApi";
+import { toast } from "sonner";
 
 type Props = {
   parcel: ParcelDetail;
@@ -50,10 +51,12 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
 
       reset();
       await onCreated(leaseId);
+    toast.success(response.message || "Successfuly registered lease agreement")
       onClose();
     } catch (err: any) {
+      toast.error(err.message || "Failed to create lease")
       console.error(err);
-      alert("Failed to create lease: " + (err.message || "Unknown error"));
+  
     }
   };
 

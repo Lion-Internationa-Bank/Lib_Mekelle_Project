@@ -7,6 +7,7 @@ import {
   type EditOwnerFormData,
 } from "../../../validation/schemas";
 import { z } from "zod";
+import { toast } from "sonner";
 
 type Owner = ParcelDetail["owners"][number]["owner"];
 
@@ -48,14 +49,16 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
         tin_number: form.tin_number || undefined,
       }) as EditOwnerFormData;
 
-      await updateOwnerApi(owner.owner_id, parsed);
+     const res = await updateOwnerApi(owner.owner_id, parsed);
+      
       await onSuccess();
+      toast.success(res.message || "Owner updated successfuly")
       onClose();
     } catch (err: any) {
       if (err instanceof z.ZodError) {
         setError(err.issues[0]?.message || "Validation failed");
       } else {
-        alert(err.message || "Update failed");
+        toast.error(err.message || "Update failed")
       }
     }
   };

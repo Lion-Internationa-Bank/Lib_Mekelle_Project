@@ -365,6 +365,7 @@ export const transferOwnershipApi = async (
     history: { history_id: string };
     newOwnership: any;
     transfer_type: string;
+    message:any;
   };
 };
 

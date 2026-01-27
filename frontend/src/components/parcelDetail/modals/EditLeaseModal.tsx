@@ -12,6 +12,7 @@ import { z } from "zod";
 import UniversalDateInput from "../../UniversalDateInput";
 import { Calendar, DollarSign, Clock, FileText } from "lucide-react";
 import { useCalendar } from "../../../contexts/CalendarContext";
+import { toast } from "sonner";
 
 type Lease = NonNullable<ParcelDetail["lease_agreement"]>;
 
@@ -124,16 +125,18 @@ useEffect(() => {
         filteredData
       ) as EditLeaseFormData;
 
-      await updateLeaseApi(lease.lease_id, parsed);
+     const res =  await updateLeaseApi(lease.lease_id, parsed);
       await onSuccess();
+    toast.success(res.message  || "Lease data successfully updated." )
       onClose();
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         setError(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
+        toast.error(err.message || "Failed to update lease")
         setError(err.message || "Failed to update lease");
       } else {
-        setError("An unexpected error occurred");
+        toast.error("An unexpected error occurred")
       }
     } finally {
       setSaving(false);

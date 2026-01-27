@@ -4,6 +4,7 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
 type Props = {
   buildings: ParcelDetail["buildings"];
+
 };
 
 const BuildingsSection = ({ buildings }: Props) => {

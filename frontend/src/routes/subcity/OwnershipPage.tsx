@@ -22,6 +22,7 @@ import {
   CreateOwnerOnlySchema,
   UpdateOwnerFormSchema,
 } from "../../validation/schemas";
+import { toast } from "sonner";
 
 const PAGE_LIMIT = 20;
 
@@ -127,7 +128,7 @@ const OwnershipPage = () => {
       });
 
       const result = await createOwnerOnly(parsed);
-
+      toast.success( "User created succssfully")
       const newOwnerId = result.data?.owner_id;
       if (!newOwnerId) {
         console.warn("No owner_id returned after creation", result);
@@ -144,11 +145,11 @@ const OwnershipPage = () => {
       await loadOwners(page, search);
     } catch (err: unknown) {
       if (err instanceof ZodError) {
-        alert(err.issues[0]?.message || "Validation failed");
+        toast.error(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
-        alert(err.message || "Failed to create owner");
+        toast.error(err.message || "Failed to create owner")
       } else {
-        alert("Failed to create owner");
+        toast.error("Failed to create owner");
       }
     } finally {
       setSaving(false);
@@ -167,16 +168,17 @@ const OwnershipPage = () => {
         phone_number: editForm.phone_number || undefined,
       });
 
-      await updateOwnerApi(editingOwner.owner_id, parsed);
+      const res = await updateOwnerApi(editingOwner.owner_id, parsed);
+      toast.success(res.message || "owner updated successfully")
       setEditingOwner(null);
       await loadOwners(page, search);
     } catch (err: unknown) {
       if (err instanceof ZodError) {
         alert(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
-        alert(err.message || "Failed to update owner");
+        toast.error(err.message || "Failed to update owner");
       } else {
-        alert("Failed to update owner");
+        toast.error("Failed to update owner");
       }
     } finally {
       setSaving(false);
@@ -187,11 +189,12 @@ const OwnershipPage = () => {
     if (!deletingOwner) return;
     try {
       setSaving(true);
-      await deleteOwnerApi(deletingOwner.owner_id);
+     const res =  await deleteOwnerApi(deletingOwner.owner_id)
+     toast.success(res.message || " Owner deleted successfully")
       setDeletingOwner(null);
       await loadOwners(page, search);
     } catch (err: any) {
-      alert(err.message || "Failed to delete owner");
+      toast.error(err.message || "Failed to delete owner");
     } finally {
       setSaving(false);
     }

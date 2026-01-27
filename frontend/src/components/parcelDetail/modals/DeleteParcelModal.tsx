@@ -2,6 +2,7 @@
 import { useState } from "react";
 
 import { deleteParcelApi } from "../../../services/parcelDetailApi";
+import { toast } from "sonner";
 
 type Props = {
   upin: string;
@@ -18,10 +19,11 @@ const DeleteParcelModal = ({ upin, open, onClose, onDeleted }: Props) => {
     if (input !== upin) return;
     try {
       setDeleting(true);
-      await deleteParcelApi(upin);
+   const res =    await deleteParcelApi(upin);
+    toast.success(res.message || "Successfully deleted Land parcel")
       onDeleted();
     } catch (err: any) {
-      alert(err.message || "Failed to delete");
+      toast.error(err.message || "Failed to delete")
       setDeleting(false);
     }
   };

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import UniversalDateInput from "../../components/UniversalDateInput";
 import DateDisplay from "../../components/DateDisplay";
+import { toast } from "sonner";
 
 const RATE_TYPES = [
   "LEASE_INTEREST_RATE",
@@ -186,72 +187,110 @@ const RateConfigsPage: React.FC = () => {
     loadHistory(selectedRateType);
   }, [selectedRateType]);
 
-  const handleSave = async () => {
-    if (!selectedRateType) return;
-    setSaving(true);
-    setError("");
-    setSuccess("");
+const handleSave = async () => {
+  if (!selectedRateType) return;
+  setSaving(true);
+  setError("");
+  setSuccess("");
 
-    try {
-      let numericValue: number;
+  try {
+    let numericValue: number;
 
-      if (selectedRateType === "LATE_PAYMENT_GRACE_DAYS") {
-        numericValue = Number(value);
-        if (!Number.isFinite(numericValue) || numericValue < 0) {
-          setError("Grace days must be a non-negative number");
-          setSaving(false);
-          return;
-        }
-      } else {
-        const percent = parseFloat(value);
-        if (isNaN(percent) || percent < 0 || percent > 100) {
-          setError("Rate must be a number between 0 and 100");
-          setSaving(false);
-          return;
-        }
-        // Convert percent to decimal 0–1 for backend
-        numericValue = percent / 100;
-      }
-
-      if (!effectiveFrom) {
-        setError("Effective from date is required");
+    if (selectedRateType === "LATE_PAYMENT_GRACE_DAYS") {
+      numericValue = Number(value);
+      if (!Number.isFinite(numericValue) || numericValue < 0) {
+        setError("Grace days must be a non-negative number");
         setSaving(false);
         return;
       }
-
-      const payload = {
-        value: numericValue,
-        source: source.trim() || undefined,
-        effective_from: effectiveFrom.toISOString(),
-        effective_until: effectiveUntil
-          ? effectiveUntil.toISOString()
-          : undefined,
-      };
-
-      const res =
-        formMode === "edit-existing"
-          ? await updateRate(selectedRateType, payload)
-          : await createRate(selectedRateType, payload);
-
-      if (res.success && res.data) {
-        setSuccess(
-          formMode === "edit-existing"
-            ? "Rate updated successfully!"
-            : "Rate created successfully!"
-        );
-        setCurrentRate(res.data);
-        setFormMode("view");
-        setTimeout(() => setSuccess(""), 3000);
-        loadHistory(selectedRateType);
-      } else {
-        setError(res.error || "Failed to save rate");
+    } else {
+      const percent = parseFloat(value);
+      if (isNaN(percent) || percent < 0 || percent > 100) {
+        setError("Rate must be a number between 0 and 100");
+        setSaving(false);
+        return;
       }
-    } catch {
-      setError("Network error while saving");
-    } finally {
-      setSaving(false);
+      // Convert percent to decimal 0–1 for backend
+      numericValue = percent / 100;
     }
-  };
+
+    if (!effectiveFrom) {
+      setError("Effective from date is required");
+      setSaving(false);
+      return;
+    }
+
+    const payload = {
+      value: numericValue,
+      source: source.trim() || undefined,
+      effective_from: effectiveFrom.toISOString(),
+      effective_until: effectiveUntil
+        ? effectiveUntil.toISOString()
+        : undefined,
+    };
+
+    const res =
+      formMode === "edit-existing"
+        ? await updateRate(selectedRateType, payload)
+        : await createRate(selectedRateType, payload);
+
+    if (res.success && res.data) {
+      // Success toast based on form mode
+      if (formMode === "edit-existing") {
+        toast.success("Rate updated successfully!", {
+          description: `The ${selectedRateType.replace(/_/g, ' ').toLowerCase()} has been updated.`,
+          duration: 3000,
+        });
+      } else {
+        toast.success("Rate created successfully!", {
+          description: `New ${selectedRateType.replace(/_/g, ' ').toLowerCase()} rate has been created.`,
+          duration: 3000,
+        });
+      }
+      
+      setSuccess(
+        formMode === "edit-existing"
+          ? "Rate updated successfully!"
+          : "Rate created successfully!"
+      );
+      setCurrentRate(res.data);
+      setFormMode("view");
+      setTimeout(() => setSuccess(""), 3000);
+      loadHistory(selectedRateType);
+    } else {
+      // Error toast based on form mode
+      if (formMode === "edit-existing") {
+        toast.error("Failed to update rate", {
+          description: res.error || "Could not update the rate. Please try again.",
+          duration: 5000,
+        });
+      } else {
+        toast.error("Failed to create rate", {
+          description: res.error || "Could not create the rate. Please try again.",
+          duration: 5000,
+        });
+      }
+    }
+  } catch (error) {
+    // Network/unknown error toast based on form mode
+    if (formMode === "edit-existing") {
+      toast.error("Update failed", {
+        description: "A network error occurred while updating the rate.",
+        duration: 5000,
+      });
+    } else {
+      toast.error("Creation failed", {
+        description: "A network error occurred while creating the rate.",
+        duration: 5000,
+      });
+    }
+    
+    // Also log to console for debugging
+    console.error("Save error:", error);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeactivate = async () => {
     if (!currentRate || !currentRate.effective_from) return;

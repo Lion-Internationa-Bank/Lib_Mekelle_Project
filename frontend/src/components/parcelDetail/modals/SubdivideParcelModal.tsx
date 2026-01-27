@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { X, Plus, Trash2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { subdivideParcel } from './../../../services/parcelDetailApi';
 import type { ParcelDetail } from '../../../services/parcelDetailApi';
+import { toast } from 'sonner';
 
 interface SubdivideParcelModalProps {
   isOpen: boolean;
@@ -123,12 +124,13 @@ export default function SubdivideParcelModal({
       }));
 
       // Call API
-      await subdivideParcel(parcel.upin, payload);
+    const res =  await subdivideParcel(parcel.upin, payload);
 
       await onSuccess();
+      toast.success(res.message || "Subdived successfully ")
       onClose();
     } catch (err: any) {
-      setError(err.message || "Failed to subdivide parcel");
+      toast.error(err.message || "Failed to subdivide parcel")
     } finally {
       setLoading(false);
     }

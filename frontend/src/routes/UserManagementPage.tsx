@@ -10,6 +10,7 @@ import {
   type UserCreateInput,
 } from '../services/userService';
 import { Plus, RefreshCw, AlertCircle, User, Shield, Building, TrendingUp, Eye } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Import components
 import UserStats from '../components/userMgt/UserStats';
@@ -19,6 +20,7 @@ import AddUserModal from '../components/userMgt/AddUserModal';
 import SuspendActivateModal from '../components/userMgt/SuspendActivateModal';
 import DeleteUserModal from '../components/userMgt/DeleteUserModal';
 import MessageAlert from '../components/common/MessageAlert';
+
 
 const UserManagementPage = () => {
   const { user: currentUser } = useAuth();
@@ -67,9 +69,11 @@ const UserManagementPage = () => {
     if (res.success) {
       fetchUsers();
       setSuspendModal(null);
-      setSuccessMessage(`User ${suspend ? 'suspended' : 'activated'} successfully`);
+      toast.success(`User ${suspend ? 'suspended' : 'activated'} successfully`)
+      // setSuccessMessage(`User ${suspend ? 'suspended' : 'activated'} successfully`);
     } else {
-      setError(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`);
+      toast.error(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`)
+      // setError(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`);
     }
   };
 
@@ -80,9 +84,11 @@ const UserManagementPage = () => {
     if (res.success) {
       fetchUsers();
       setDeleteModal(null);
-      setSuccessMessage('User deleted successfully');
+      toast.success('User deleted successfully')
+      // setSuccessMessage('User deleted successfully');
     } else {
-      setError(res.error || 'Failed to delete user');
+      toast.error(res.error || 'Failed to delete user')
+      // setError(res.error || 'Failed to delete user');
     }
   };
 
@@ -95,12 +101,15 @@ const UserManagementPage = () => {
       if (res.success) {
         fetchUsers();
         setAddUserModal(false);
-        setSuccessMessage('User created successfully');
+        toast.success('User created successfully')
+        // setSuccessMessage('User created successfully');
       } else {
+
         setError(res.error || 'Failed to create user');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+      toast.error(err.message || 'Failed to create user')
+      // setError(err.message || 'Failed to create user');
     } finally {
       setCreatingUser(false);
     }

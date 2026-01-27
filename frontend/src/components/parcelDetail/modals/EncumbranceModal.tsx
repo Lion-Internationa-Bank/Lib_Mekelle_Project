@@ -14,6 +14,7 @@ import {
   type EncumbranceFormData,
 } from "../../../validation/schemas";
 import { ZodError } from "zod";
+import { toast } from "sonner";
 
 type Encumbrance = ParcelDetail["encumbrances"][number];
 
@@ -86,7 +87,8 @@ const EncumbranceModal = ({
       const parsed = EncumbranceFormSchema.parse(form);
 
       if (isEdit && encumbrance) {
-        await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
+       const res =  await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
+       toast.success(res.message || "Encumbrance data successfuly updated")
         await onSuccess();
       } else {
         const result = await createEncumbranceApi({
@@ -96,6 +98,7 @@ const EncumbranceModal = ({
 
         const createdId =
           result.data?.encumbrance_id || result.data?.id || result.id;
+         toast.success(result.message || "Encumbrance data created successfuly")
         await onSuccess(createdId);
       }
 
@@ -104,9 +107,9 @@ const EncumbranceModal = ({
       if (err instanceof ZodError) {
         setError(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
-        setError(err.message || "Operation failed");
+        toast.error(err.message || "Operation failed")
       } else {
-        setError("Operation failed");
+         toast.error( "Operation failed")
       }
     } finally {
       setSaving(false);

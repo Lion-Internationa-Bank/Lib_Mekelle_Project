@@ -1,12 +1,12 @@
 // src/routes/subcity/SubcityHome.tsx
 import { useAuth } from '../../contexts/AuthContext';
 
-const AdminHome = () => {
+const CityAdminHome = () => {
   const { user } = useAuth();
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Sub-city Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">City Dashboard</h1>
       <div className="bg-white p-6 rounded-lg shadow">
         <p className="text-lg mb-4">
           <strong>Welcome:</strong> {user?.full_name}
@@ -22,4 +22,4 @@ const AdminHome = () => {
   );
 };
 
-export default AdminHome;
+export default CityAdminHome;
