@@ -43,6 +43,7 @@ export type LeaseAgreement = {
   annual_lease_fee: number;
   total_lease_amount: number;
   down_payment_amount: number;
+  other_payment: number;
   annual_installment: number;
   price_per_m2: number;
   lease_period_years: number;

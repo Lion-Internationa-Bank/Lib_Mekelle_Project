@@ -99,10 +99,10 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
               
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500">Annual Fee</span>
+                  <span className="text-xs font-medium text-gray-500">Other Payment</span>
                 </div>
                 <div className="text-lg font-bold text-gray-900">
-                  {formatCurrency(lease.annual_lease_fee)} ETB
+                  {formatCurrency(lease.other_payment)} ETB
                 </div>
               </div>
             </div>

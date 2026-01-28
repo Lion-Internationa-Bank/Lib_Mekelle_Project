@@ -69,19 +69,19 @@ model configurations {
   is_deleted  Boolean         @default(false)
 }
 
-
 model audit_logs {
-  log_id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id String @db.Uuid
+  log_id      String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String      @db.Uuid
   action_type AuditAction
   entity_type String
-  entity_id String
-  changes Json?
-  timestamp DateTime @default(now())
-  ip_address String?
-  deleted_at DateTime?
-  is_deleted Boolean @default(false)
-  user users @relation(fields: [user_id], references: [user_id])
+  entity_id   String
+  changes     Json?
+  timestamp   DateTime    @default(now())
+  ip_address  String?
+  deleted_at  DateTime?
+  is_deleted  Boolean     @default(false)
+  user        users       @relation(fields: [user_id], references: [user_id])
+
   @@index([timestamp])
   @@index([user_id, action_type])
   @@index([entity_type, entity_id])
@@ -202,6 +202,7 @@ model lease_agreements {
   is_deleted          Boolean           @default(false)
   interest_rate       Decimal?          @db.Decimal(5, 4)
   status              LeaseStatus       @default(ACTIVE)
+  other_payment       Decimal?          @db.Decimal(18, 2)
   billing_records     billing_records[]
   documents           documents[]
   land_parcel         land_parcels      @relation(fields: [upin], references: [upin])
@@ -225,7 +226,6 @@ model billing_records {
   upin               String             @db.VarChar(50)
   fiscal_year        Int
   amount_due         Decimal            @db.Decimal(18, 2)
-  amount_paid        Decimal            @db.Decimal(18,2)
   penalty_amount     Decimal?           @default(0) @db.Decimal(18, 2)
   payment_status     PaymentStatus      @default(UNPAID)
   created_at         DateTime           @default(now())
@@ -243,6 +243,7 @@ model billing_records {
   base_payment       Decimal?           @db.Decimal(18, 2)
   remaining_amount   Decimal?           @default(0) @db.Decimal(18, 2)
   last_payment_date  DateTime?
+  amount_paid        Decimal            @db.Decimal(18, 2)
   lease_agreement    lease_agreements?  @relation(fields: [lease_id], references: [lease_id])
   parcel             land_parcels       @relation(fields: [upin], references: [upin])
   order_bill_items   order_bill_items[]
@@ -347,7 +348,8 @@ model order_bill_items {
   fiscal_year     Int
   billing_records billing_records @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
   peyment_orders  payment_orders  @relation(fields: [order_number], references: [order_number], onDelete: Cascade)
-  land_parcels    land_parcels    @relation(fields: [upin], references: [upin]) 
+  land_parcels    land_parcels    @relation(fields: [upin], references: [upin])
+
   @@unique([order_number, bill_id])
   @@unique([order_number, upin, bill_type])
   @@index([bill_id])
@@ -384,11 +386,11 @@ model payment_orders {
 
 enum UserRole {
   CITY_ADMIN
-  SUBCITY_ADMIN
   SUBCITY_NORMAL
   SUBCITY_AUDITOR
   REVENUE_ADMIN
   REVENUE_USER
+  SUBCITY_ADMIN
 }
 
 enum RateType {
@@ -473,4 +475,3 @@ enum ParcelStatus {
   RETIRED
   PENDING
 }
-

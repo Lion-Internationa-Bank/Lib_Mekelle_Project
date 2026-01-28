@@ -26,6 +26,7 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
       price_per_m2: 0,
       total_lease_amount: 0,
       down_payment_amount: 0,
+      other_payment:0,
       lease_period_years: 0,
       payment_term_years: 0,
       start_date: today,
@@ -97,7 +98,6 @@ console.log("lease step errors", errors);
           <input
             type="number"
             min="0"
-            step="0.01"
             {...register("price_per_m2")}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
@@ -139,6 +139,23 @@ console.log("lease step errors", errors);
           {errors.down_payment_amount && (
             <p className="mt-1 text-sm text-red-600">
               {errors.down_payment_amount.message}
+            </p>
+          )}
+        </div>
+          {/* Row 3 */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Other Payment Amount (ETB)
+          </label>
+          <input
+            type="number"
+            min="0"
+            {...register("other_payment")}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          {errors.other_payment && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.other_payment.message}
             </p>
           )}
         </div>

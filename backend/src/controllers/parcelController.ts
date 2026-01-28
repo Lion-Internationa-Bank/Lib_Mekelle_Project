@@ -426,6 +426,7 @@ export const getParcelByUpin = async (
             annual_lease_fee: true,
             total_lease_amount: true,
             down_payment_amount: true,
+            other_payment: true,
             annual_installment: true,
             price_per_m2: true,
             lease_period_years: true,
