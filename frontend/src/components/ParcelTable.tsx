@@ -30,7 +30,7 @@ const ParcelTable = ({ parcels }: ParcelTableProps) => {
         <div>Area (m²)</div>
         <div>Land Use</div>
         <div>Tenure Type</div>
-        <div>Status</div>
+        <div>Encumbrance</div>
         <div className="hidden xl:block">Owner(s)</div>
       </div>
 

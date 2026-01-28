@@ -346,9 +346,8 @@ model order_bill_items {
   updated_at      DateTime?
   fiscal_year     Int
   billing_records billing_records @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
-  payment_orders  payment_orders  @relation(fields: [order_number], references: [order_number], onDelete: Cascade)
-  land_parcels    land_parcels    @relation(fields: [upin], references: [upin])
-
+  peyment_orders  payment_orders  @relation(fields: [order_number], references: [order_number], onDelete: Cascade)
+  land_parcels    land_parcels    @relation(fields: [upin], references: [upin]) 
   @@unique([order_number, bill_id])
   @@unique([order_number, upin, bill_type])
   @@index([bill_id])

@@ -60,6 +60,7 @@ backend/src/generated/
 backend/generated/
 backend/prisma/generated/
 backend/prisma/client/
+backend/uploads/
 
 # Local Prisma dev DB (if using SQLite for dev)
 backend/prisma/dev.db

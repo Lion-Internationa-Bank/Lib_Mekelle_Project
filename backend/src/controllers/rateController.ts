@@ -35,6 +35,7 @@ export const getCurrentRate = async (req: Request, res: Response) => {
         rate_type: type,
         is_active: true,
         effective_from: { lte: now },
+      
         OR: [
           { effective_until: null },
           { effective_until: { gte: now } },
@@ -295,13 +296,13 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
 
   const userId = req.user?.user_id;
 
+  // Validation for value (0 <= value <= 1)
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return res
       .status(400)
       .json({ message: "Value must be a finite number" });
   }
 
-  // NEW: enforce 0 <= value <= 1
   if (value < 0 || value > 1) {
     return res
       .status(400)
@@ -333,38 +334,101 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const existing = await prisma.rate_configurations.findUnique({
+    // Find the active rate for this type (only one should be active at a time)
+    const existing = await prisma.rate_configurations.findFirst({
       where: {
-        rate_type_effective_from: {
-          rate_type: type,
-          effective_from: fromDate,
-        },
+        rate_type: type,
+        is_active: true,
       },
     });
 
     if (!existing) {
       return res
         .status(404)
-        .json({ message: "Rate not found for this type and effective_from" });
+        .json({ message: "No active rate found for this type" });
     }
 
-    if (!existing.is_active) {
-      return res.status(400).json({
-        message:
-          "Cannot update an inactive rate record. Create a new record instead.",
-      });
-    }
-
-    const updated = await prisma.rate_configurations.update({
-      where: {
-        rate_type_effective_from: {
+    // Check if the new effective_from date is different from the current one
+    const isEffectiveFromChanging = fromDate.getTime() !== existing.effective_from.getTime();
+    
+    // If changing effective_from, check for duplicates
+    if (isEffectiveFromChanging) {
+      const duplicateCheck = await prisma.rate_configurations.findFirst({
+        where: {
           rate_type: type,
           effective_from: fromDate,
+          NOT: {
+            id: existing.id, // Exclude current record
+          },
         },
+      });
+
+      if (duplicateCheck) {
+        return res.status(400).json({
+          message: "A rate with this effective_from date already exists for this type",
+        });
+      }
+    }
+
+    // If updating to a new effective_from date, we need to check if it creates overlaps
+    if (isEffectiveFromChanging) {
+      // Find the rate that should come before this one (with latest effective_from < new effective_from)
+      const previousRate = await prisma.rate_configurations.findFirst({
+        where: {
+          rate_type: type,
+          effective_from: {
+            lt: fromDate,
+          },
+        },
+        orderBy: {
+          effective_from: 'desc',
+        },
+      });
+
+      // Find the rate that should come after this one (with earliest effective_from > new effective_from)
+      const nextRate = await prisma.rate_configurations.findFirst({
+        where: {
+          rate_type: type,
+          effective_from: {
+            gt: fromDate,
+          },
+          is_active: false, // Looking for inactive rates that might be in sequence
+        },
+        orderBy: {
+          effective_from: 'asc',
+        },
+      });
+
+      // Check for gaps or overlaps in the timeline
+      if (previousRate && previousRate.effective_until) {
+        const prevUntil = previousRate.effective_until.getTime();
+        if (prevUntil > fromDate.getTime()) {
+          return res.status(400).json({
+            message: "New effective_from creates overlap with previous rate period",
+          });
+        }
+      }
+
+      if (nextRate && untilDate) {
+        const nextFrom = nextRate.effective_from.getTime();
+        const newUntil = untilDate.getTime();
+        if (newUntil > nextFrom) {
+          return res.status(400).json({
+            message: "New effective_until creates overlap with next rate period",
+          });
+        }
+      }
+    }
+
+    // Update the rate with new data
+    const updated = await prisma.rate_configurations.update({
+      where: {
+        id: existing.id, // Use ID instead of composite key
       },
       data: {
         value,
         source: source?.trim() || null,
+        effective_from: fromDate,
         effective_until: untilDate,
         updated_at: new Date(),
         created_by: userId ?? existing.created_by,
@@ -391,7 +455,6 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: "Failed to update rate" });
   }
 };
-
 
 /**
  * PATCH /api/rates/:type/deactivate
