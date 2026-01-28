@@ -25,7 +25,6 @@ interface GetParcelsQuery {
 interface CreateParcelBody {
   upin: string;           
   file_number: string;
-  sub_city_id: string;
   tabia: string;
   ketena: string;
   block: string;
@@ -59,6 +58,14 @@ interface CreateEncumbranceBody {
   registration_date?: string;
 }
 
+interface AuthRequest extends Request {
+  user?: {
+    user_id: string;
+    role: UserRole;
+    sub_city_id?: string;
+  };
+}
+
 interface UpdateEncumbranceBody {
   type?: string;  // From ConfigCategory.ENCUMBRANCE_TYPE
   issuing_entity?: string;
@@ -84,14 +91,19 @@ const validateConfigValue = async (category: ConfigCategory, value: string): Pro
   }
 };
 
-export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: Response) => {
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+export const createParcel = async (req: AuthRequest, res: Response) => {
+  const user = req.user!; 
+  // if(!user){
+  //   return res.status(404).json({
+  //     success:false,
+  //     message:"Anauthorized access"
+  //   })
+  // }
   
   try {
     const {
       upin,           
       file_number,
-      sub_city_id,
       tabia,
       ketena,
       block,
@@ -107,17 +119,25 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
     } = req.body;
 
     // Validate required fields
-    if (!upin || !file_number || !sub_city_id || !tabia || !ketena || !block || !total_area_m2 || land_grade === undefined) {
+    if (!upin || !file_number  || !tabia || !ketena || !block || !total_area_m2 || land_grade === undefined) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
       });
     }
+    const subcityId = user.sub_city_id;
+    
+    if(!subcityId){
+        return res.status(404).json({
+          success:false,
+          message: "Sub city id not found",
+        })
+      }
 
-    // Check if sub_city exists
+       // Check if sub_city exists
     const subCity = await prisma.sub_cities.findFirst({
       where: {
-        sub_city_id,
+        sub_city_id:subcityId,
         is_deleted: false,
       },
     });
@@ -152,7 +172,7 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
       data: {
         upin,
         file_number,
-        sub_city_id,
+        sub_city_id:subcityId,
         tabia,
         ketena,
         block,
@@ -171,7 +191,7 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
     // Create audit log for parcel creation
     await prisma.audit_logs.create({
       data: {
-        user_id: actor?.user_id || null,
+        user_id: user?.user_id ,
         action_type: AuditAction.CREATE,
         entity_type: 'land_parcels',
         entity_id: parcel.upin,
@@ -192,9 +212,9 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
           has_boundary_south: !!parcel.boundary_south,
           has_boundary_west: !!parcel.boundary_west,
           has_boundary_east: !!parcel.boundary_east,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
+          actor_id: user?.user_id,
+          actor_role: user?.role,
+          // actor_username: user?.username,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -240,7 +260,7 @@ export const createParcel = async (req: Request<{}, {}, CreateParcelBody>, res: 
   }
 };
 
-export const getParcels = async (req: AuthRequest<{}, any, any, GetParcelsQuery>, res: Response) => {
+export const getParcels = async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page || '1');
     const limit = parseInt(req.query.limit || '10');

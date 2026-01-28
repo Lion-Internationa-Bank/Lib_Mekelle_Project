@@ -7,12 +7,11 @@ import {
 } from "../../validation/schemas";
 import type { ParcelStepProps } from "../../types/wizard";
 import { createParcel } from "../../services/parcelApi";
-import { getSubCities, getConfig, type SubCity } from "../../services/cityAdminService";
+import {  getConfig,  } from "../../services/cityAdminService";
 import { useEffect, useState } from "react";
 import { toast } from 'sonner';
 
 const ParcelStep = ({ onCreated }: ParcelStepProps) => {
-  const [subCities, setSubCities] = useState<SubCity[]>([]);
   const [landUseOptions, setLandUseOptions] = useState<string[]>([]);
   const [tenureOptions, setTenureOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState({
@@ -31,7 +30,6 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
     defaultValues: {
       upin: "",
       file_number: "",
-      sub_city_id: "",
       tabia: "",
       ketena: "",
       block: "",
@@ -51,12 +49,9 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading((prev) => ({ ...prev, subCities: true }));
-        const subCitiesRes = await getSubCities();
-        if (subCitiesRes.success) {
-          setSubCities(subCitiesRes.data?.sub_cities || []);
-        }
-        setLoading((prev) => ({ ...prev, subCities: false }));
+        setLoading((prev) => ({ ...prev,  }));
+    
+        setLoading((prev) => ({ ...prev,  }));
 
         setLoading((prev) => ({ ...prev, categories: true }));
         const landUseRes = await getConfig("LAND_USE");
@@ -166,33 +161,6 @@ const onSubmit = async (data: ParcelFormData) => {
           )}
         </div>
 
-        {/* Sub City */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Sub City *
-          </label>
-          <select
-            {...register("sub_city_id")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={loading.subCities}
-          >
-            <option value="">Select Sub City</option>
-            {loading.subCities ? (
-              <option value="" disabled>Loading sub-cities...</option>
-            ) : (
-              subCities.map((subCity) => (
-                <option key={subCity.sub_city_id} value={subCity.sub_city_id}>
-                  {subCity.name}
-                </option>
-              ))
-            )}
-          </select>
-          {errors.sub_city_id && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.sub_city_id.message}
-            </p>
-          )}
-        </div>
 
         {/* Ketena */}
         <div>
