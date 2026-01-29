@@ -37,7 +37,7 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
       land_use: "",
       land_grade: 1.0,
       tenure_type: "",
-      boundary_cords: undefined,
+      boundary_coords: "",
       boundary_north: "",
       boundary_east: "",
       boundary_south: "",

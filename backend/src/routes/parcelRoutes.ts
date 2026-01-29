@@ -14,7 +14,7 @@ import {
   updateEncumbrance,
   deleteEncumbrance,
   getEncumbrancesByParcel,
-  addCoOwner,
+  addParcelOwner,
   subdivideParcel
 } from '../controllers/parcelController.ts';
 
@@ -59,7 +59,7 @@ router.delete(
 // === Ownership Routes ===
 router.post('/:upin/transfer', validateRequest(TransferOwnershipSchema),authenticate,authorize(['SUBCITY_NORMAL']), transferOwnership);
 
-router.post('/:upin/owners',authenticate, authorize(['SUBCITY_NORMAL']),addCoOwner);
+router.post('/:upin/owners',authenticate, authorize(['SUBCITY_NORMAL']),addParcelOwner);
 
 router.post('/:upin/subdivide',authenticate, authorize(['SUBCITY_NORMAL']), subdivideParcel); 
 

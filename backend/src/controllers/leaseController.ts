@@ -1,7 +1,7 @@
 // src/controllers/leaseController.ts
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
-import { AuditAction } from '../generated/prisma/enums.ts'; 
+import { AuditAction, } from '../generated/prisma/enums.ts'; 
 
 
 // Use Prisma namespace types
@@ -139,6 +139,18 @@ export const createLease = async (req: Request, res: Response) => {
         message: "Land parcel not found",
       });
     }
+    else{
+      if(landParcel.tenure_type !== "LEASE"){
+        return res.status(403).json({
+          success: false,
+          message: "Land Tenure Type Must Be LEASE to Register Lease Agreement"
+        })
+      }
+    }
+     
+    
+
+    
 
     // 2. Expiry date from start_date + lease_period_years
     const startDate = new Date(start_date);

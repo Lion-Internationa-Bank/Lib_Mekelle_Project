@@ -14,7 +14,6 @@ export const ParcelFormSchema = z.object({
     .transform((val) => val.toUpperCase()),
 
   file_number: z.string().min(1, { message: "File number is required" }),
-  sub_city_id: z.string().min(1, { message: "Please select a sub-city" }),
   tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
   ketena: z.string().min(1, { message: "Ketena is required" }),
   block: z.string().min(1, { message: "Block is required" }),

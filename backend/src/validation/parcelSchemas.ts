@@ -63,12 +63,6 @@ export const CreateParcelSchema = z.object({
       }),
 
     file_number: z.string().trim().min(1, { message: 'File number cannot be empty' }).optional(),
-  sub_city_id: z
-      .string()
-      .trim()
-      .min(1, { message: 'Sub-city ID is required' })
-      .uuid({ message: 'Sub-city ID must be a valid UUID' }),
-
     tabia: z
       .string()
       .trim()

@@ -5,7 +5,7 @@ import ParcelInfoCard from "../cards/ParcelInfoCard";
 import EditParcelModal from "../modals/EditParcelModal";
 import { CreateOwnerModal, OwnerDocsUploadModal } from "../../ownership/OwnershipModals";
 import SubdivideParcelModal from "../modals/SubdivideParcelModal"; // ← Make sure this import exists
-import { searchOwnersLiteApi, addCoOwnerToParcel } from "../../../services/parcelDetailApi";
+import { searchOwnersLiteApi, addOwnerToParcel } from "../../../services/parcelDetailApi";
 import { createOwner } from "../../../services/parcelApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -64,7 +64,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
 
   const handleAddExistingOwner = async (ownerId: string) => {
     try {
-      await addCoOwnerToParcel(parcel.upin, ownerId);
+      await addOwnerToParcel(parcel.upin, ownerId);
       await onReload();
       setShowAddCoOwnerSearch(false);
       alert("Co-owner added successfully!");

@@ -3,7 +3,7 @@ import prisma from '../config/prisma.ts';
 import { 
   AuditAction, 
 } from '../generated/prisma/enums.ts';
-
+import {type AuthRequest } from '../middlewares/authMiddleware.ts';
 
 
 export const createOwner = async (req: Request, res: Response) => {
@@ -530,8 +530,10 @@ export const deleteOwner = async (req: Request<{ owner_id: string }>, res: Respo
   }
 };
 
-export const getOwnersWithParcels = async (req: Request, res: Response) => {
+export const getOwnersWithParcels = async (req: AuthRequest, res: Response) => {
   try {
+    const user = req.user!;
+    
     // Pagination
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 100);
@@ -540,8 +542,8 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
     // Search term (optional)
     const search = req.query.search?.toString().trim() || '';
 
-    // Build search condition for owners
-    const ownerWhere: any = {
+    // Build where condition
+    const whereCondition: any = {
       is_deleted: false,
       ...(search && {
         OR: [
@@ -550,17 +552,30 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
           { phone_number: { contains: search, mode: 'insensitive' } },
         ],
       }),
+      // Filter owners who have at least one parcel in the specified sub_city (if applicable)
+      ...(user.sub_city_id && {
+        parcels: {
+          some: {
+            is_active: true,
+            is_deleted: false,
+            parcel: {
+              is_deleted: false,
+              sub_city_id: user.sub_city_id,
+            },
+          },
+        },
+      }),
     };
 
     const [total, owners] = await prisma.$transaction([
       // Count total matching owners
       prisma.owners.count({
-        where: ownerWhere,
+        where: whereCondition,
       }),
 
       // Fetch paginated owners with their active owned parcels
       prisma.owners.findMany({
-        where: ownerWhere,
+        where: whereCondition,
         skip,
         take: limit,
         orderBy: { full_name: 'asc' },
@@ -576,6 +591,8 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
               is_deleted: false,
               parcel: {
                 is_deleted: false,
+                // Apply sub_city filter to parcels as well
+                ...(user.sub_city_id && { sub_city_id: user.sub_city_id }),
               },
             },
             select: {
@@ -606,7 +623,7 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: {
-        owners, // Array of owners with their owned parcels
+        owners,
         pagination: {
           page,
           limit,
@@ -627,29 +644,47 @@ export const getOwnersWithParcels = async (req: Request, res: Response) => {
   }
 };
 
-export const searchOwnersLite = async (req: Request, res: Response) => {
+export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
   try {
-    // Search term
+    const user = req.user!;
+    const subcityId = user.sub_city_id;
     const search = req.query.search?.toString().trim() || '';
-
-    // Fixed limit for performance (auto-limited)
     const LIMIT = 10;
 
-    // Build search condition
-    const where: any = {
-      is_deleted: false,
-      ...(search && {
-        OR: [
-          { full_name: { contains: search, mode: 'insensitive' } },
-          { national_id: { contains: search, mode: 'insensitive' } },
-          { phone_number: { contains: search, mode: 'insensitive' } },
-          { tin_number: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
-    };
+    // If user doesn't have a subcity assigned, return empty
+    if (!subcityId) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          owners: [],
+        },
+      });
+    }
 
-    const owners = await prisma.owners.findMany({
-      where,
+    // Find owner IDs that have parcels in this subcity
+    const ownersInSubCity = await prisma.owners.findMany({
+      where: {
+        is_deleted: false,
+        parcels: {
+          some: {
+            is_active: true,
+            is_deleted: false,
+            parcel: {
+              is_deleted: false,
+              sub_city_id: subcityId,
+            },
+          },
+        },
+        // Add search filter directly here to avoid second query
+        ...(search && {
+          OR: [
+            { full_name: { contains: search, mode: 'insensitive' } },
+            { national_id: { contains: search, mode: 'insensitive' } },
+            { phone_number: { contains: search, mode: 'insensitive' } },
+            { tin_number: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
       take: LIMIT,
       orderBy: { full_name: 'asc' },
       select: {
@@ -664,7 +699,7 @@ export const searchOwnersLite = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: {
-        owners, // Array of matching owners (max 50)
+        owners: ownersInSubCity,
       },
     });
   } catch (error: any) {

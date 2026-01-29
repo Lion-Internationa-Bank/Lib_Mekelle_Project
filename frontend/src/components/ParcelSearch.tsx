@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import type { SubCity } from "../services/cityAdminService";
+import { getConfig } from "../services/cityAdminService";
 
 interface ParcelSearchProps {
   onSearch: (filters: {
@@ -25,15 +26,6 @@ interface ParcelSearchProps {
   lockedSubCityName?: string;
 }
 
-const tenureTypes = ["Freehold", "Leasehold", "Government", "Communal"];
-const landUses = [
-  "Residential",
-  "Commercial",
-  "Industrial",
-  "Agricultural",
-  "Public",
-];
-
 const ParcelSearch = ({
   onSearch,
   onClear,
@@ -51,7 +43,51 @@ const ParcelSearch = ({
     land_use: "",
   });
 
+  const [tenureTypes, setTenureTypes] = useState<string[]>([]);
+  const [landUses, setLandUses] = useState<string[]>([]);
+  const [loadingTenureTypes, setLoadingTenureTypes] = useState(false);
+  const [loadingLandUses, setLoadingLandUses] = useState(false);
+  const [errorTenureTypes, setErrorTenureTypes] = useState("");
+  const [errorLandUses, setErrorLandUses] = useState("");
+
   const timeoutRef = useRef<number | null>(null);
+
+// Replace the two separate useEffects with this single one:
+useEffect(() => {
+  const fetchConfigs = async () => {
+    try {
+      // Fetch both configs in parallel
+      const [tenureResponse, landUseResponse] = await Promise.all([
+        getConfig('LAND_TENURE'),
+        getConfig('LAND_USE'),
+      ]);
+
+      if (tenureResponse.success && tenureResponse.data) {
+        setTenureTypes(tenureResponse.data.options.map(opt => opt.value));
+      } else {
+        setErrorTenureTypes(tenureResponse.error || "Failed to load tenure types");
+      }
+
+      if (landUseResponse.success && landUseResponse.data) {
+        setLandUses(landUseResponse.data.options.map(opt => opt.value));
+      } else {
+        setErrorLandUses(landUseResponse.error || "Failed to load land use types");
+      }
+    } catch (err) {
+      setErrorTenureTypes("Failed to load tenure types");
+      setErrorLandUses("Failed to load land use types");
+      console.error("Error fetching configs:", err);
+    } finally {
+      setLoadingTenureTypes(false);
+      setLoadingLandUses(false);
+    }
+  };
+
+  // Set loading states before fetching
+  setLoadingTenureTypes(true);
+  setLoadingLandUses(true);
+  fetchConfigs();
+}, []);
 
   // Keep internal sub_city in sync with controlled prop when provided
   useEffect(() => {
@@ -190,15 +226,25 @@ const ParcelSearch = ({
             name="tenure_type"
             value={filters.tenure_type}
             onChange={handleChange}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loadingTenureTypes}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
           >
             <option value="">All</option>
-            {tenureTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
+            {loadingTenureTypes ? (
+              <option value="" disabled>Loading tenure types...</option>
+            ) : errorTenureTypes ? (
+              <option value="" disabled>Error loading tenure types</option>
+            ) : (
+              tenureTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))
+            )}
           </select>
+          {errorTenureTypes && (
+            <p className="text-xs text-red-500 mt-1">{errorTenureTypes}</p>
+          )}
         </div>
 
         <div>
@@ -209,15 +255,25 @@ const ParcelSearch = ({
             name="land_use"
             value={filters.land_use}
             onChange={handleChange}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loadingLandUses}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
           >
             <option value="">All</option>
-            {landUses.map((use) => (
-              <option key={use} value={use}>
-                {use}
-              </option>
-            ))}
+            {loadingLandUses ? (
+              <option value="" disabled>Loading land uses...</option>
+            ) : errorLandUses ? (
+              <option value="" disabled>Error loading land uses</option>
+            ) : (
+              landUses.map((use) => (
+                <option key={use} value={use}>
+                  {use}
+                </option>
+              ))
+            )}
           </select>
+          {errorLandUses && (
+            <p className="text-xs text-red-500 mt-1">{errorLandUses}</p>
+          )}
         </div>
       </div>
 

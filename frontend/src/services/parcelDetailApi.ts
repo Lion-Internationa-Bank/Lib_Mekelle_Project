@@ -373,7 +373,7 @@ export const transferOwnershipApi = async (
 
 
 
-export const addCoOwnerToParcel = async (
+export const addOwnerToParcel = async (
   upin: string,
   owner_id: string,
   acquired_at?: string
@@ -385,14 +385,8 @@ export const addCoOwnerToParcel = async (
       acquired_at: acquired_at || undefined,
     }),
   });
-  if (!apiRes.success) {
-    throw new Error(apiRes.error || "Failed to add co-owner");
-  }
-  const json = apiRes.data;
-  if (!json.success) {
-    throw new Error(json.message || "Failed to add co-owner");
-  }
-  return json.data;
+  
+  return apiRes;
 };
 
 

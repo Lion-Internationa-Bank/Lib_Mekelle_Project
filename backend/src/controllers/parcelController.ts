@@ -58,13 +58,6 @@ interface CreateEncumbranceBody {
   registration_date?: string;
 }
 
-interface AuthRequest extends Request {
-  user?: {
-    user_id: string;
-    role: UserRole;
-    sub_city_id?: string;
-  };
-}
 
 interface UpdateEncumbranceBody {
   type?: string;  // From ConfigCategory.ENCUMBRANCE_TYPE
@@ -260,14 +253,16 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
 export const getParcels = async (req: AuthRequest, res: Response) => {
   try {
+    const user = req.user!;
     const page = parseInt(req.query.page || '1');
     const limit = parseInt(req.query.limit || '10');
     const skip = (page - 1) * limit;
 
     const { search, sub_city_id, tenure_type, ketena, land_use } = req.query;
-    console.log("subcity",req.user)
+    console.log("subcity", req.user);
 
     const where: any = {
       is_deleted: false,
@@ -285,12 +280,43 @@ export const getParcels = async (req: AuthRequest, res: Response) => {
       ...(land_use && { land_use }),
     };
 
-    // Restrict to user's sub_city_id if present (e.g., for non-admin users)
-    if (req.user?.sub_city_id) {
-      where.sub_city_id = req.user.sub_city_id;
-    } else if (sub_city_id) {
-      // Allow admins (sub_city_id null) to filter by query sub_city_id
-      where.sub_city_id = sub_city_id;
+    // Define which roles can see all sub-cities
+    const canSeeAllSubCities = (
+      user.role === UserRole.CITY_ADMIN || 
+      user.role === UserRole.REVENUE_USER || 
+      user.role === UserRole.REVENUE_ADMIN
+    );
+
+    // Apply sub_city restrictions based on user role
+    if (canSeeAllSubCities) {
+      // CITY_ADMIN, REVENUE_USER, REVENUE_ADMIN can see all or filter by specific sub_city_id
+      if (sub_city_id) {
+        where.sub_city_id = sub_city_id;
+      }
+      // If no sub_city_id filter provided, they see all parcels (no sub_city restriction)
+    } else {
+      // For all other roles (SUBCITY_NORMAL, SUBCITY_AUDITOR, SUBCITY_ADMIN, etc.)
+      // Force restrict to their assigned sub_city_id
+      if (user.sub_city_id) {
+        where.sub_city_id = user.sub_city_id;
+      } else {
+        // If user has no sub_city_id assigned but is not an admin role,
+        // they shouldn't see any parcels
+        return res.status(200).json({
+          success: true,
+          data: {
+            parcels: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              totalPages: 0,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        });
+      }
     }
 
     const [parcels, total] = await Promise.all([
@@ -1235,7 +1261,7 @@ export const transferOwnership = async (
   }
 };
 
-export const addCoOwner = async (req: Request, res: Response) => {
+export const addParcelOwner = async (req: Request, res: Response) => {
   const { upin } = req.params as { upin: string };
   const { owner_id, acquired_at } = req.body as { 
     owner_id: string; 
@@ -1296,26 +1322,33 @@ export const addCoOwner = async (req: Request, res: Response) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 5. Check for existing links
-      const existingLinks = await tx.parcel_owners.findMany({
+      // 5. Check if there are any existing owners for this parcel
+      const existingParcelOwners = await tx.parcel_owners.findMany({
         where: {
           upin,
-          owner_id,
           is_deleted: false,
-        },
-        orderBy: {
-          acquired_at: 'desc',
+          is_active: true,
+          retired_at: null,
         },
       });
 
-      // If there's an active link
-      const activeLink = existingLinks.find(link => 
-        link.is_active && !link.retired_at
-      );
+      // Determine if this is the first owner or a co-owner
+      const isFirstOwner = existingParcelOwners.length === 0;
+      const transferType = isFirstOwner ? "FIRST_OWNER" : "CO_OWNER_ADDITION";
+      const actionType = isFirstOwner ? "first_owner_added" : "parcel_co_owner_added";
 
-      if (activeLink) {
-        throw new Error("ACTIVE_COOWNER_EXISTS");
-      }
+      // // 6. Check for existing active links for this specific owner
+      // const existingOwnerLinks = existingParcelOwners.filter(link => 
+      //   link.owner_id === owner_id
+      // );
+
+      // const activeLink = existingOwnerLinks.find(link => 
+      //   link.is_active && !link.retired_at
+      // );
+
+      // if (activeLink) {
+      //   throw new Error("ACTIVE_OWNER_EXISTS");
+      // }
 
       // Determine acquired_at date
       const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
@@ -1325,16 +1358,12 @@ export const addCoOwner = async (req: Request, res: Response) => {
         throw new Error("FUTURE_ACQUISITION_DATE");
       }
 
-      // Check if there's already an owner with the same acquisition date
-      const duplicateDateLink = existingLinks.find(link => 
-        link.acquired_at.toISOString() === acquiredDate.toISOString()
-      );
-
-      if (duplicateDateLink) {
-        throw new Error("DUPLICATE_ACQUISITION_DATE");
+      // 7. If this is the first owner, ensure acquired date is reasonable
+      if (isFirstOwner && acquiredDate < new Date('1900-01-01')) {
+        throw new Error("INVALID_ACQUISITION_DATE");
       }
 
-      // 6. Create the link
+      // 8. Create the parcel-owner link
       const parcelOwner = await tx.parcel_owners.create({
         data: {
           upin,
@@ -1345,7 +1374,7 @@ export const addCoOwner = async (req: Request, res: Response) => {
         },
       });
 
-      // 7. Create audit log for co-owner addition
+      // 10. Create audit log for owner addition
       await tx.audit_logs.create({
         data: {
           user_id: actor?.user_id || null,
@@ -1353,12 +1382,14 @@ export const addCoOwner = async (req: Request, res: Response) => {
           entity_type: 'parcel_owners',
           entity_id: parcelOwner.parcel_owner_id,
           changes: {
-            action: 'add_co_owner',
+            action: isFirstOwner ? 'add_first_owner' : 'add_co_owner',
             upin,
             owner_id,
             owner_name: existingOwner.full_name,
             owner_national_id: existingOwner.national_id,
             acquired_at: parcelOwner.acquired_at,
+            is_first_owner: isFirstOwner,
+            existing_owners_count: existingParcelOwners.length,
             actor_id: actor?.user_id,
             actor_role: actor?.role,
             actor_username: actor?.username,
@@ -1369,7 +1400,7 @@ export const addCoOwner = async (req: Request, res: Response) => {
         },
       });
 
-      // 8. Also audit the parcel update
+      // 11. Also audit the parcel update
       await tx.audit_logs.create({
         data: {
           user_id: actor?.user_id || null,
@@ -1377,9 +1408,11 @@ export const addCoOwner = async (req: Request, res: Response) => {
           entity_type: 'land_parcels',
           entity_id: upin,
           changes: {
-            action: 'parcel_co_owner_added',
+            action: actionType,
             added_owner_id: owner_id,
             added_owner_name: existingOwner.full_name,
+            is_first_owner: isFirstOwner,
+            total_active_owners: existingParcelOwners.length + 1,
             actor_id: actor?.user_id,
             actor_role: actor?.role,
             actor_username: actor?.username,
@@ -1390,46 +1423,55 @@ export const addCoOwner = async (req: Request, res: Response) => {
         },
       });
 
-      // 9. Create ownership history record
+      // 12. Create ownership history record
       const historyEntry = await tx.ownership_history.create({
         data: {
           upin,
+          from_owner_id: isFirstOwner ? null : undefined, // First owner has no "from"
           to_owner_id: owner_id,
-          transfer_type: "CO_OWNER_ADDITION",
+          transfer_type: transferType,
           event_snapshot: {
             parcel: parcel.upin,
             owner: existingOwner.full_name,
             owner_id: owner_id,
             acquired_at: acquiredDate,
+            is_first_owner: isFirstOwner,
+            existing_owners_before: existingParcelOwners.map(po => ({
+              owner_id: po.owner_id,
+            })),
             added_by: actor?.user_id,
             added_by_username: actor?.username,
           } as any,
-          reference_no: `COOWNER-${Date.now()}`,
+          reference_no: `${transferType}-${Date.now()}`,
           transfer_date: new Date(),
         },
       });
 
-      return { parcelOwner, historyEntry };
+      return { parcelOwner, historyEntry, isFirstOwner };
     });
 
     return res.status(201).json({
       success: true,
-      message: "Co-owner added successfully",
+      message: result.isFirstOwner 
+        ? "First owner added successfully" 
+        : "Co-owner added successfully",
       data: {
         parcel_owner_id: result.parcelOwner.parcel_owner_id,
         upin: result.parcelOwner.upin,
         owner_id: result.parcelOwner.owner_id,
         owner_name: existingOwner.full_name,
         acquired_at: result.parcelOwner.acquired_at,
+        is_first_owner: result.isFirstOwner,
         history_id: result.historyEntry.history_id,
       },
     });
   } catch (error: any) {
-    console.error("Add co-owner error:", error);
+    console.error("Add parcel owner error:", error);
 
     const errorMessages: Record<string, string> = {
-      ACTIVE_COOWNER_EXISTS: "This owner is already an active co-owner of the parcel",
+      ACTIVE_OWNER_EXISTS: "This owner is already an active owner of the parcel",
       FUTURE_ACQUISITION_DATE: "Acquisition date cannot be in the future",
+      INVALID_ACQUISITION_DATE: "First owner acquisition date appears to be invalid",
       DUPLICATE_ACQUISITION_DATE: "Owner already linked to this parcel with the same acquisition date",
     };
 
@@ -1448,7 +1490,7 @@ export const addCoOwner = async (req: Request, res: Response) => {
       } else if (error.code === 'P2025') {
         message = "Related record not found";
       } else {
-        message = "Failed to add co-owner";
+        message = "Failed to add owner";
       }
     }
 
