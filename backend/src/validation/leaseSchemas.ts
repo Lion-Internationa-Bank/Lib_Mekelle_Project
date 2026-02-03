@@ -25,6 +25,9 @@ export const CreateLeaseSchema = z.object({
     down_payment_amount: z.coerce
       .number()
       .min(0, { message: 'Down payment cannot be negative' }),
+      other_payment: z.coerce
+      .number()
+      .min(0, { message: 'Other payment cannot be negative' }),
 
     price_per_m2: z.coerce
       .number()
@@ -62,6 +65,7 @@ export const UpdateLeaseSchema = z.object({
     .object({
       total_lease_amount: z.coerce.number().positive().optional(),
       down_payment_amount: z.coerce.number().min(0).optional(),
+      other_payment: z.coerce.number().min(0).optional(),
       price_per_m2: z.coerce.number().positive().optional(),
       lease_period_years: z.coerce.number().int().positive().optional(),
       payment_term_years: z.coerce.number().int().positive().optional(),

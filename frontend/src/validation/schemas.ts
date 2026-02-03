@@ -14,7 +14,6 @@ export const ParcelFormSchema = z.object({
     .transform((val) => val.toUpperCase()),
 
   file_number: z.string().min(1, { message: "File number is required" }),
-  sub_city_id: z.string().min(1, { message: "Please select a sub-city" }),
   tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
   ketena: z.string().min(1, { message: "Ketena is required" }),
   block: z.string().min(1, { message: "Block is required" }),
@@ -234,6 +233,9 @@ export const LeaseStepFormSchema = z.object({
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
+  other_payment: z.coerce
+    .number()
+    .min(0, { message: "Down payment cannot be negative" }),
   lease_period_years: z.coerce
     .number()
     .int()
@@ -366,7 +368,10 @@ export const EditLeaseFormSchema = z
       .nonnegative({ message: "Down payment cannot be negative" })
       .optional(),
 
- 
+  other_payment: z
+      .number()
+      .nonnegative({ message: "Other payment cannot be negative" })
+      .optional(),
 
     price_per_m2: z
       .number()

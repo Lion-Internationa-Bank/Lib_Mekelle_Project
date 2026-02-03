@@ -82,6 +82,14 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                     {formatCurrency(Number(lease.down_payment_amount) || 0)} ETB
                   </span>
                 </div>
+                 <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200">
+                  <span className="text-sm text-gray-600">Other Payment</span>
+                  <span className="font-semibold text-green-600">
+                    {formatCurrency(Number(lease.other_payment) || 0)} ETB
+                  </span>
+                </div>
+              
+
                 <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-blue-100 bg-blue-50">
                   <span className="text-sm text-gray-600">Annual Installment</span>
                   <span className="font-semibold text-blue-600">
@@ -233,10 +241,10 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase -tracking-tight">
-                    Installment
+                    S.NO
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-tight">
-                    Fiscal Year
+                  Year
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Due Date

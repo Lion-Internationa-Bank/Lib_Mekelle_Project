@@ -69,6 +69,9 @@ useEffect(() => {
     down_payment_amount: lease.down_payment_amount
       ? Number(lease.down_payment_amount)
       : undefined,
+    other_payment: lease.other_payment
+      ? Number(lease.other_payment)
+      : undefined,
     price_per_m2: lease.price_per_m2
       ? Number(lease.price_per_m2)
       : undefined,
@@ -225,6 +228,28 @@ useEffect(() => {
                     setForm((f) => ({
                       ...f,
                       down_payment_amount: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+                 {/* Other Payment Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Other Payment Amount (ETB)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={form.other_payment ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      other_payment: e.target.value
                         ? Number(e.target.value)
                         : undefined,
                     }))

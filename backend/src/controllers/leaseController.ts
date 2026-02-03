@@ -1,7 +1,7 @@
 // src/controllers/leaseController.ts
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
-import { AuditAction } from '../generated/prisma/enums.ts'; 
+import { AuditAction, } from '../generated/prisma/enums.ts'; 
 
 
 // Use Prisma namespace types
@@ -51,13 +51,14 @@ const generateLeaseBillsCore = async (
   const interestRate = parseFloat(rateConfig.value.toString());
 
   const downPayment = parseFloat(lease.down_payment_amount.toString());
+  const otherPayment = parseFloat(lease.other_payment.toString());
   const totalLeaseAmount = parseFloat(lease.total_lease_amount.toString());
   const paymentTermYears = lease.payment_term_years;
   const annualMainPayment = Number(
     lease.annualMainPayment ?? lease.annual_installment ?? 0
   );
 
-  let remainingAmount = totalLeaseAmount - downPayment;
+  let remainingAmount = totalLeaseAmount - (downPayment + otherPayment) ;
   if (remainingAmount <= 0) {
     throw new Error("Down payment must be less than total lease amount");
   }
@@ -121,6 +122,7 @@ export const createLease = async (req: Request, res: Response) => {
     payment_term_years,
     price_per_m2,
     start_date,
+    other_payment,
   } = req.body;
 
   const actor = (req as any).user; // Assuming AuthRequest extends Request
@@ -137,6 +139,18 @@ export const createLease = async (req: Request, res: Response) => {
         message: "Land parcel not found",
       });
     }
+    else{
+      if(landParcel.tenure_type !== "LEASE"){
+        return res.status(403).json({
+          success: false,
+          message: "Land Tenure Type Must Be LEASE to Register Lease Agreement"
+        })
+      }
+    }
+     
+    
+
+    
 
     // 2. Expiry date from start_date + lease_period_years
     const startDate = new Date(start_date);
@@ -146,14 +160,16 @@ export const createLease = async (req: Request, res: Response) => {
     // 3. Calculate principal and annual main payment
     const totalLeaseAmountNum = Number(total_lease_amount ?? 0);
     const downPaymentNum = Number(down_payment_amount ?? 0);
-    const principal = totalLeaseAmountNum - downPaymentNum;
+    const otherPaymentNum = Number(other_payment ?? 0)
+    const principal = totalLeaseAmountNum - (downPaymentNum + otherPaymentNum);
 
     if (principal <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Down payment must be less than total lease amount",
+        message: "Down payment plus Other payment must be less than total lease amount",
       });
     }
+
 
     const annualMainPayment =
       payment_term_years > 0 ? principal / payment_term_years : 0;
@@ -165,6 +181,7 @@ export const createLease = async (req: Request, res: Response) => {
         total_lease_amount,
         contract_date: new Date(contract_date),
         down_payment_amount,
+        other_payment,
         lease_period_years,
         legal_framework,
         payment_term_years,
@@ -193,6 +210,7 @@ export const createLease = async (req: Request, res: Response) => {
           upin,
           total_lease_amount: lease.total_lease_amount,
           down_payment_amount: lease.down_payment_amount,
+          other_payment: lease.other_payment,
           lease_period_years: lease.lease_period_years,
           payment_term_years: lease.payment_term_years,
           price_per_m2: lease.price_per_m2,
@@ -276,6 +294,7 @@ export const updateLease = async (
       annual_lease_fee: true,
       total_lease_amount: true,
       down_payment_amount: true,
+      other_payment:true,
       annual_installment: true,
       price_per_m2: true,
       lease_period_years: true,
@@ -310,6 +329,7 @@ export const updateLease = async (
             "annual_lease_fee",
             "total_lease_amount",
             "down_payment_amount",
+            "other_payment",
             "annual_installment",
             "price_per_m2",
             "lease_period_years",
@@ -348,6 +368,8 @@ export const updateLease = async (
       updates.total_lease_amount ?? existingLease.total_lease_amount;
     const downPaymentAmount =
       updates.down_payment_amount ?? existingLease.down_payment_amount;
+    const otherPaymentAmount = 
+      updates.other_payment ?? existingLease.other_payment; 
     const paymentTermYears =
       updates.payment_term_years ?? existingLease.payment_term_years;
     const leasePeriodYears =
@@ -371,11 +393,11 @@ export const updateLease = async (
     }
 
     const principal =
-      Number(totalLeaseAmount ?? 0) - Number(downPaymentAmount ?? 0);
+      Number(totalLeaseAmount ?? 0) - (Number(downPaymentAmount ?? 0) + Number(otherPaymentAmount ?? 0 ));
     if (principal <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Down payment must be less than total lease amount",
+        message: "Down payment plus Other payment must be less than total lease amount",
       });
     }
 

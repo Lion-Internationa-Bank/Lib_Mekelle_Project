@@ -11,14 +11,26 @@ if (!JWT_SECRET) {
 }
 
 // ← THIS IS THE FIX: add generics to AuthRequest
-export interface AuthRequest<P = {}, ResBody = any, ReqBody = any, ReqQuery = {}> extends Request<P, ResBody, ReqBody, ReqQuery> {
+export interface AuthRequest<
+  P = {},
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = {
+    page?: string;
+    limit?: string;
+    search?: string;
+    sub_city_id?: string;
+    tenure_type?: string;
+    ketena?: string;
+    land_use?: string;
+  }
+> extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {
     user_id: string;
     role: UserRole;
     sub_city_id: string | null;
   };
 }
-
 export const authenticate = async (
   req: AuthRequest,
   res: Response,

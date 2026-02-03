@@ -71,71 +71,53 @@ export const login = async (req: Request, res: Response) => {
 
 // POST /auth/users - Create user (role-restricted)
 export const createUser = async (req: AuthRequest, res: Response) => {
-  console.log("create user endpoint hitted");
-  const { username, password, full_name, role, email } = req.body;
-  let { sub_city_id } = req.body;
+  console.log("create user endpoint hitted")
+  const { username, password, full_name, role } = req.body;
+  let {sub_city_id} = req.body
   const creator = req.user!;
-  
+
   if (!username || !password || !full_name || !role) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
-  
-  if (role === 'REVENUE_USER') {
+
+  if( role === 'REVENUE_USER'){
     sub_city_id = null;
   }
-  
+
   try {
     // Role-based creation rules
     if (creator.role === 'CITY_ADMIN' && role !== 'SUBCITY_ADMIN') {
       return res.status(403).json({ message: 'CITY_ADMIN can only create SUBCITY_ADMIN' });
     }
+
     if (creator.role === 'SUBCITY_ADMIN' && !['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(role)) {
       return res.status(403).json({ message: 'SUBCITY_ADMIN can only create NORMAL or AUDITOR' });
     }
+
     if (creator.role === 'REVENUE_ADMIN' && role !== 'REVENUE_USER') {
       return res.status(403).json({ message: 'REVENUE_ADMIN can only create REVENUE_USER' });
     }
-    
+
     // Sub-city restriction for sub-city roles
     if (['SUBCITY_ADMIN', 'SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(role) && !sub_city_id) {
       return res.status(400).json({ message: 'sub_city_id required for sub-city roles' });
     }
-    
+
     // Enforce same sub-city for sub-city creator
     if (creator.role === 'SUBCITY_ADMIN' && sub_city_id !== creator.sub_city_id) {
       return res.status(403).json({ message: 'Can only create users in your own sub-city' });
     }
     
+
     const hashedPassword = await bcrypt.hash(password, 12);
+
     const newUser = await prisma.users.create({
       data: {
         username,
         password_hash: hashedPassword,
         full_name,
-        email: email || null,
         role: role as UserRole,
         sub_city_id: sub_city_id || null,
-      },
-    });
-
-    // Create audit log for user creation
-    await prisma.audit_logs.create({
-      data: {
-        user_id: creator.user_id,
-        action_type: AuditAction.CREATE,
-        entity_type: 'users',
-        entity_id: newUser.user_id,
-        changes: {
-          action: 'create_user',
-          username: newUser.username,
-          role: newUser.role,
-          sub_city_id: newUser.sub_city_id,
-          email: newUser.email,
-          created_by: creator.user_id,
-          creator_role: creator.role,
-        },
-        timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
       },
     });
 
@@ -145,31 +127,16 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         user_id: newUser.user_id,
         username: newUser.username,
         full_name: newUser.full_name,
-        email: newUser.email,
         role: newUser.role,
         sub_city_id: newUser.sub_city_id,
-        is_active: newUser.is_active,
-        created_at: newUser.created_at,
       },
     });
   } catch (error: any) {
-    console.error('Create user error:', error);
-    
     if (error.code === 'P2002') {
-      const field = error.meta?.target?.[0];
-      let message = 'Duplicate entry';
-      if (field === 'username') {
-        message = 'Username already exists';
-      } else if (field === 'email') {
-        message = 'Email already exists';
-      }
-      return res.status(409).json({ message });
+      return res.status(409).json({ message: 'Username already exists' });
     }
-    
-    res.status(500).json({ 
-      message: 'Server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
-    });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -253,38 +220,40 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 
 // PATCH /auth/users/:id/suspend
 export const suspendUser = async (req: AuthRequest, res: Response) => {
+  // Type cast the params
   const { id } = req.params as { id: string };
   const { suspend } = req.body as { suspend: boolean };
   const actor = req.user!;
 
   // Validate ID parameter
+  if (Array.isArray(id)) {
+    return res.status(400).json({ message: 'Invalid user ID format' });
+  }
+  
   if (!id || typeof id !== 'string') {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Valid user ID is required' 
-    });
+    return res.status(400).json({ message: 'User ID is required' });
   }
 
   try {
-    const targetUser = await prisma.users.findUnique({
-      where: {
+    const targetUser = await prisma.users.findUnique({ 
+      where: { 
         user_id: id,
-        is_deleted: false
-      }
+        is_deleted: false 
+      } 
     });
-   
+    
     if (!targetUser) {
-      return res.status(404).json({
+      return res.status(404).json({ 
         success: false,
-        message: 'User not found'
+        message: 'User not found' 
       });
     }
 
     // Authorization check
     if (!canManageUser(actor, targetUser)) {
-      return res.status(403).json({
+      return res.status(403).json({ 
         success: false,
-        message: 'Not authorized to manage this user'
+        message: 'Not authorized to manage this user' 
       });
     }
 
@@ -292,24 +261,15 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
     if (targetUser.user_id === actor.user_id) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot suspend or activate your own account'
-      });
-    }
-
-    // Check if already in desired state
-    if (targetUser.is_active === !suspend) {
-      return res.status(400).json({
-        success: false,
-        message: `User is already ${suspend ? 'suspended' : 'active'}`
+        message: 'Cannot suspend your own account'
       });
     }
 
     const updatedUser = await prisma.users.update({
       where: { user_id: id },
-      data: {
+      data: { 
         is_active: !suspend,
-        updated_at: new Date(),
-        last_login: suspend ? null : targetUser.last_login, // Clear last login if suspending
+        updated_at: new Date()
       },
     });
 
@@ -324,38 +284,34 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
           action: suspend ? 'suspend_user' : 'activate_user',
           previous_status: targetUser.is_active,
           new_status: !suspend,
-          username: targetUser.username,
-          role: targetUser.role,
-          actor_id: actor.user_id,
+          actor: actor.user_id,
           actor_role: actor.role,
-          timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
+        ip_address: req.ip,
       },
     });
 
-    return res.json({
+    return res.json({ 
       success: true,
       message: `User ${suspend ? 'suspended' : 'activated'} successfully`,
       data: {
         user_id: updatedUser.user_id,
         username: updatedUser.username,
         is_active: updatedUser.is_active,
-        updated_at: updatedUser.updated_at,
       }
     });
   } catch (error: any) {
     console.error('Suspend user error:', error);
-    
+
     if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
-    return res.status(500).json({
+
+    return res.status(500).json({ 
       success: false,
       message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -365,37 +321,39 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
 
 // DELETE /auth/users/:id
 export const deleteUser = async (req: AuthRequest, res: Response) => {
+  // Type cast the params
   const { id } = req.params as { id: string };
   const actor = req.user!;
 
   // Validate ID parameter
+  if (Array.isArray(id)) {
+    return res.status(400).json({ message: 'Invalid user ID format' });
+  }
+  
   if (!id || typeof id !== 'string') {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Valid user ID is required' 
-    });
+    return res.status(400).json({ message: 'User ID is required' });
   }
 
   try {
-    const targetUser = await prisma.users.findUnique({
-      where: {
+    const targetUser = await prisma.users.findUnique({ 
+      where: { 
         user_id: id,
-        is_deleted: false
-      }
+        is_deleted: false 
+      } 
     });
-   
+    
     if (!targetUser) {
-      return res.status(404).json({
+      return res.status(404).json({ 
         success: false,
-        message: 'User not found'
+        message: 'User not found' 
       });
     }
 
     // Authorization check
     if (!canManageUser(actor, targetUser)) {
-      return res.status(403).json({
+      return res.status(403).json({ 
         success: false,
-        message: 'Not authorized to delete this user'
+        message: 'Not authorized to delete this user' 
       });
     }
 
@@ -407,23 +365,13 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check if user is already deleted
-    if (targetUser.is_deleted) {
-      return res.status(400).json({
-        success: false,
-        message: 'User is already deleted'
-      });
-    }
-
     const deletedUser = await prisma.users.update({
       where: { user_id: id },
-      data: {
-        is_deleted: true,
+      data: { 
+        is_deleted: true, 
         deleted_at: new Date(),
         is_active: false, // Also deactivate when deleting
-        updated_at: new Date(),
-        username: `${targetUser.username}_deleted_${Date.now()}`, // Modify username to allow reuse
-        email: targetUser.email ? `${targetUser.email}_deleted_${Date.now()}` : null,
+        updated_at: new Date()
       },
     });
 
@@ -436,42 +384,36 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
         entity_id: targetUser.user_id,
         changes: {
           action: 'soft_delete_user',
-          original_username: targetUser.username,
-          new_username: deletedUser.username,
+          username: targetUser.username,
           role: targetUser.role,
-          actor_id: actor.user_id,
+          actor: actor.user_id,
           actor_role: actor.role,
-          actor_username: actor.username,
-          deleted_at: deletedUser.deleted_at,
-          timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
+        ip_address: req.ip,
       },
     });
 
-    return res.json({
+    return res.json({ 
       success: true,
-      message: 'User soft deleted successfully',
+      message: 'User deleted (soft delete) successfully',
       data: {
         user_id: deletedUser.user_id,
-        original_username: targetUser.username,
-        new_username: deletedUser.username,
+        username: deletedUser.username,
         deleted_at: deletedUser.deleted_at,
-        is_active: deletedUser.is_active,
       }
     });
   } catch (error: any) {
     console.error('Delete user error:', error);
-    
+
     if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
-    return res.status(500).json({
+
+    return res.status(500).json({ 
       success: false,
       message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined

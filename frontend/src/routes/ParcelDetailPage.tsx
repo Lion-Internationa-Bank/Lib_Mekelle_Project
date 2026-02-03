@@ -19,6 +19,7 @@ import TransferHistorySection from "../components/parcelDetail/sections/Transfer
 
 type DetailTab = "parcel" | "lease" | "encumbrances" | "history" | "buildings" | "billing";
 
+
 const ParcelDetailPage = () => {
   const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
@@ -128,8 +129,8 @@ const ParcelDetailPage = () => {
         )}
 
         {/* Lease Tab */}
-       {/* Lease Tab */}
-{tab === "lease" && (
+      
+{ tab === "lease" && data.tenure_type == "LEASE" && (
   <LeaseSection
     parcel={data}
     lease={data.lease_agreement}
