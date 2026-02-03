@@ -49,7 +49,7 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
 
       {/* Lease Summary Card */}
       {hasValidLease ? (
-        <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-linear-to-r from-gray-50 to-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-6">
             <FileText className="w-5 h-5 text-blue-600" />
             <div>
@@ -90,7 +90,7 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                 </div>
               
 
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-blue-100 bg-blue-50">
+                <div className="flex justify-between items-center p-3  rounded-lg border border-blue-100 bg-blue-50">
                   <span className="text-sm text-gray-600">Annual Installment</span>
                   <span className="font-semibold text-blue-600">
                     {formatCurrency(Number(lease.annual_installment) || 0)} ETB
@@ -106,7 +106,7 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                 <h4 className="text-sm font-medium text-gray-700">Payment Terms</h4>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-purple-100 bg-purple-50">
+                <div className="flex justify-between items-center p-3  rounded-lg border border-purple-100 bg-purple-50">
                   <span className="text-sm text-gray-600">Payment Term</span>
                   <span className="font-bold text-purple-700">
                     {lease.payment_term_years || 0} years
@@ -134,7 +134,7 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                 <h4 className="text-sm font-medium text-gray-700">Lease Timeline</h4>
               </div>
               <div className="space-y-3">
-                <div className="p-3 bg-white rounded-lg border border-green-100 bg-green-50">
+                <div className="p-3  rounded-lg border border-green-100 bg-green-50">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-medium text-gray-600">Start Date</span>
                     {lease.start_date ? (
@@ -168,7 +168,7 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                   <div className="text-xs text-gray-500 mt-1">Agreement signing date</div>
                 </div>
                 
-                <div className="p-3 bg-white rounded-lg border border-red-100 bg-red-50">
+                <div className="p-3  rounded-lg border border-red-100 bg-red-50">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-medium text-gray-600">Expiry Date</span>
                     {lease.expiry_date ? (
@@ -325,7 +325,12 @@ const BillingSection = ({ billingRecords, lease }: Props) => {
                           <div className="flex items-center gap-2">
                             <CalendarDays className="w-3 h-3 text-gray-400" />
                             <span className={`font-medium ${isPastDue ? 'text-red-600' : 'text-gray-700'}`}>
-                              {dueDate.toLocaleDateString()}
+                             <DateDisplay 
+                        date={dueDate} 
+                        format="short"
+                        className="font-semibold text-gray-900"
+                        showTooltip={true}
+                      />
                             </span>
                             {isPastDue && (
                               <span className="text-xs text-red-500">Overdue</span>

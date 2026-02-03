@@ -212,13 +212,13 @@ const OwnershipPage = () => {
       {/* Quick Action */}
       {
         isSubcityNormal && (
-            <div className="flex justify-end">
+        <div className="flex justify-end">
         <button
           onClick={() => setShowCreate(true)}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
         >
-          <span className="text-lg">+</span>
-          Add New Owner
+        <span className="text-lg">+</span>
+         Add New Owner
         </button>
       </div>
         )

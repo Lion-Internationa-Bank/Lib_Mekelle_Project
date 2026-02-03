@@ -3,7 +3,7 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import DateDisplay from "../../DateDisplay";
-import { useAuth } from "../../../contexts/AuthContext";
+// import { useAuth } from "../../../contexts/AuthContext";
 import { 
   CalendarDays, 
   FileText, 
@@ -19,9 +19,9 @@ interface LeaseCardProps {
 }
 
 const LeaseCard = ({ lease }: LeaseCardProps) => {
-  const { calendarType, isEthiopian } = useCalendar();
-  const { user } = useAuth();
-  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
+  const {  isEthiopian } = useCalendar();
+  // const { user } = useAuth();
+  // const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
 
   const formatCurrency = (value: number) => {
     return Number(value).toLocaleString('en-ET', {
@@ -33,7 +33,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header with Calendar Indicator */}
-      <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+      <div className="px-6 py-4 bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -103,6 +103,30 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                 </div>
                 <div className="text-lg font-bold text-gray-900">
                   {formatCurrency(lease.other_payment)} ETB
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Engineering Service Fee</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.engineering_service_fee)} ETB
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Contract Registration Fee</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.contract_registration_fee)} ETB
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Demarcation Fee</span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(lease.demarcation_fee)} ETB
                 </div>
               </div>
             </div>
@@ -202,7 +226,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-white border border-red-100 rounded-lg bg-red-50">
+                  <div className="flex items-center justify-between p-3  border border-red-100 rounded-lg bg-red-50">
                     <div className="flex items-center gap-3">
                       <div className="p-1.5 bg-red-100 rounded">
                         <CalendarDays className="w-3 h-3 text-red-600" />
@@ -236,7 +260,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
               {/* Calendar Tooltip Hint */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex items-start gap-3">
-                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                   <div>
                     <div className="text-sm font-medium text-blue-900 mb-1">
                       Calendar Information

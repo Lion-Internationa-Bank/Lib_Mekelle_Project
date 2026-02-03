@@ -33,8 +33,8 @@ const DateDisplay: React.FC<DateDisplayProps> = ({
   const { 
     formatDateForDisplay, 
     isEthiopian, 
-    calendarType,
-    convertDateToCalendar 
+    // calendarType,
+    // convertDateToCalendar 
   } = useCalendar();
   
   const displayText = formatDateForDisplay(date, format);
@@ -154,7 +154,7 @@ const DateDisplay: React.FC<DateDisplayProps> = ({
           px-3 py-2 bg-gray-900 text-white text-sm rounded-lg
           opacity-0 invisible group-hover:opacity-100 group-hover:visible
           transition-all duration-200 whitespace-pre-line
-          shadow-lg z-50 min-w-[180px] text-center
+          shadow-lg z-50 min-w-45 text-center
           after:absolute after:top-full after:left-1/2 after:-translate-x-1/2
           after:border-4 after:border-transparent after:border-t-gray-900
         ">

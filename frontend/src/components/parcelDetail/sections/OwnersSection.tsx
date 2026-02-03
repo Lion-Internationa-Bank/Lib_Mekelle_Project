@@ -171,7 +171,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
       {showUploadStep && latestTransferHistoryId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
-            <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+            <div className="p-8 border-b border-gray-200 bg-linear-to-r from-emerald-50 to-green-50">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -226,7 +226,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
 
               <button
                 onClick={handleUploadComplete}
-                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
                 Done – Close
                 <span className="text-lg">→</span>

@@ -1,5 +1,4 @@
 // src/components/Header.tsx
-import React from 'react';
 import { Bell, Search, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarToggle from './CalendarToggle';
@@ -29,7 +28,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-200">
+              <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-200">
                 ML
               </div>
               <div className="hidden sm:block">

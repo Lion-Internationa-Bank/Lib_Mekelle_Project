@@ -94,7 +94,7 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       {/* Documents List */}
       <div className="space-y-4 mb-8">
         {documents.map((doc) => (
-          <div key={doc.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-100">
+          <div key={doc.id} className="flex items-center justify-between p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-100">
             <div className="flex items-center gap-4 flex-1">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-md ${
                 doc.status === "success" ? "bg-green-100 text-green-700 border-green-300" :
@@ -122,9 +122,9 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       </div>
 
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+      <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-linear-to-br from-blue-50/50 to-indigo-50/50">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
+          <div className="w-20 h-20 mx-auto mb-4 bg-linear-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
             📄
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Parcel Documents</h3>
@@ -159,7 +159,7 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
         pt-12 mt-12 border-t border-gray-200">
         <button
           onClick={nextStep}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
           disabled={uploadingDoc}
         >
           Next Step →

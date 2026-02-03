@@ -29,6 +29,12 @@ export interface AuthRequest<
     user_id: string;
     role: UserRole;
     sub_city_id: string | null;
+      page?: string;
+      limit?: string;
+      search?: string;
+      ketena?: string;
+      land_use?: string;
+      tenure_type?: string;
   };
 }
 export const authenticate = async (

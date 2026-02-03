@@ -424,7 +424,7 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || (mode === 'search' && !selectedOwner)}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting 
               ? (selectedOwner ? "Linking Owner..." : "Creating Owner...") 
@@ -432,16 +432,6 @@ const OwnerStep = ({ nextStep, prevStep, onCreated }: OwnerStepProps) => {
           </button>
         </div>
       </form>
-
-      {/* Help text */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <h4 className="font-medium text-blue-800 mb-1">How it works:</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• <span className="font-medium">Search Existing:</span> Find an owner already in the system and link them to this parcel</li>
-          <li>• <span className="font-medium">Create New:</span> Register a new owner and link them to this parcel</li>
-          <li>• <span className="font-medium">Acquisition Date:</span> When the owner acquired/started owning this parcel</li>
-        </ul>
-      </div>
     </>
   );
 };

@@ -1,6 +1,6 @@
 import GenericDocsUpload from "../../components/GenericDocsUpload";
 import type { OwnerWithParcels } from "../../services/ownersApi";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 
 export const CreateOwnerModal = ({
   saving,
@@ -97,7 +97,7 @@ export const OwnerDocsUploadModal = ({
 }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
     <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+      <div className="p-8 border-b border-gray-200 bg-linear-to-r from-emerald-50 to-green-50">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -146,7 +146,7 @@ export const OwnerDocsUploadModal = ({
             onClose();
             onRefresh();
           }}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          className="px-8 py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
           Done – Close
           <span className="text-lg">→</span>

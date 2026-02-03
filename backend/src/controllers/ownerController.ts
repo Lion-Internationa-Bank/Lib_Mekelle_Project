@@ -64,6 +64,8 @@ export const createOwner = async (req: Request, res: Response) => {
           national_id,
           tin_number,
           phone_number,
+          sub_city_id:actor.sub_city_id,
+          
         },
       });
 
@@ -212,6 +214,7 @@ export const onlyCreateOwner = async (req: Request, res: Response) => {
           national_id,
           tin_number,
           phone_number,
+          sub_city_id: actor.sub_city_id
         },
       });
 
@@ -542,40 +545,42 @@ export const getOwnersWithParcels = async (req: AuthRequest, res: Response) => {
     // Search term (optional)
     const search = req.query.search?.toString().trim() || '';
 
-    // Build where condition
-    const whereCondition: any = {
+    // Build where condition for owners
+    const ownerWhereCondition: any = {
       is_deleted: false,
+      // Direct filter by sub_city_id from owners table
+      ...(user.sub_city_id && { sub_city_id: user.sub_city_id }),
       ...(search && {
         OR: [
           { full_name: { contains: search, mode: 'insensitive' } },
           { national_id: { contains: search, mode: 'insensitive' } },
           { phone_number: { contains: search, mode: 'insensitive' } },
+          { tin_number: { contains: search, mode: 'insensitive' } },
         ],
       }),
-      // Filter owners who have at least one parcel in the specified sub_city (if applicable)
-      ...(user.sub_city_id && {
-        parcels: {
-          some: {
-            is_active: true,
-            is_deleted: false,
-            parcel: {
-              is_deleted: false,
-              sub_city_id: user.sub_city_id,
-            },
-          },
-        },
-      }),
+    };
+
+    // Build where condition for parcels (to filter parcels within the same subcity)
+    const parcelWhereCondition: any = {
+      is_active: true,
+      is_deleted: false,
+      parcel: {
+        is_deleted: false,
+        // Optional: Also filter parcels by sub_city if needed
+        // This ensures owners only see parcels in their subcity
+        ...(user.sub_city_id && { sub_city_id: user.sub_city_id }),
+      },
     };
 
     const [total, owners] = await prisma.$transaction([
       // Count total matching owners
       prisma.owners.count({
-        where: whereCondition,
+        where: ownerWhereCondition,
       }),
 
       // Fetch paginated owners with their active owned parcels
       prisma.owners.findMany({
-        where: whereCondition,
+        where: ownerWhereCondition,
         skip,
         take: limit,
         orderBy: { full_name: 'asc' },
@@ -585,23 +590,27 @@ export const getOwnersWithParcels = async (req: AuthRequest, res: Response) => {
           national_id: true,
           tin_number: true,
           phone_number: true,
-          parcels: {
-            where: {
-              is_active: true,
-              is_deleted: false,
-              parcel: {
-                is_deleted: false,
-                // Apply sub_city filter to parcels as well
-                ...(user.sub_city_id && { sub_city_id: user.sub_city_id }),
-              },
+          sub_city_id: true,
+          // Include sub_city details if needed
+          sub_city: {
+            select: {
+              name: true,
             },
+          },
+          parcels: {
+            where: parcelWhereCondition,
             select: {
               acquired_at: true,
               parcel: {
                 select: {
                   upin: true,
                   file_number: true,
-                  sub_city: true,
+                  sub_city: {
+                    select: {
+                      name: true,
+                      sub_city_id: true,
+                    },
+                  },
                   tabia: true,
                   ketena: true,
                   block: true,
@@ -661,21 +670,12 @@ export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Find owner IDs that have parcels in this subcity
+    // Direct query using the sub_city_id on owners table
     const ownersInSubCity = await prisma.owners.findMany({
       where: {
         is_deleted: false,
-        parcels: {
-          some: {
-            is_active: true,
-            is_deleted: false,
-            parcel: {
-              is_deleted: false,
-              sub_city_id: subcityId,
-            },
-          },
-        },
-        // Add search filter directly here to avoid second query
+        sub_city_id: subcityId, // Direct filter by subcity ID
+        // Search filters
         ...(search && {
           OR: [
             { full_name: { contains: search, mode: 'insensitive' } },
@@ -693,6 +693,8 @@ export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
         national_id: true,
         phone_number: true,
         tin_number: true,
+        // You can also include sub_city_id if needed for frontend
+        sub_city_id: true,
       },
     });
 

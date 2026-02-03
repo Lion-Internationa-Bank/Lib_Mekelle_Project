@@ -44,6 +44,9 @@ export type LeaseAgreement = {
   total_lease_amount: number;
   down_payment_amount: number;
   other_payment: number;
+  engineering_service_fee: number;
+  contract_registration_fee: number;
+  demarcation_fee: number;
   annual_installment: number;
   price_per_m2: number;
   lease_period_years: number;
@@ -387,6 +390,7 @@ export const addOwnerToParcel = async (
   });
   
   return apiRes;
+
 };
 
 

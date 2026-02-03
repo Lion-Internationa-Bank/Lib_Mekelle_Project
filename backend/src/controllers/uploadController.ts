@@ -15,7 +15,6 @@ export const handleUpload = async (req: Request, res: Response) => {
     const {
       document_type,
       upin,
-      sub_city,
       owner_id,
       lease_id,
       history_id,
@@ -35,10 +34,9 @@ export const handleUpload = async (req: Request, res: Response) => {
 
     // Sanitize inputs safely
     const rawUpin = typeof upin === 'string' ? upin.trim() : '';
-    const rawSubCity = typeof sub_city === 'string' ? sub_city.trim() : 'unknown';
 
     const safeUpin = rawUpin ? sanitizeFolderName(rawUpin) : null;
-    const safeSubCity = sanitizeFolderName(rawSubCity);
+
 
     // Resolve document type config (folders + Prisma enum value)
     const config = resolveDocumentConfig(document_type);
@@ -54,7 +52,7 @@ export const handleUpload = async (req: Request, res: Response) => {
     const { folders, prismaEnum: docTypeString } = config;
 
     // Build final directory and file path
-    const finalDir = path.join(UPLOADS_BASE, safeSubCity, ...(safeUpin ? [safeUpin] : []), ...folders);
+    const finalDir = path.join(UPLOADS_BASE,...(safeUpin ? [safeUpin] : []), ...folders);
     const finalPath = path.join(finalDir, file.filename);
 
     // Ensure directory exists and move file

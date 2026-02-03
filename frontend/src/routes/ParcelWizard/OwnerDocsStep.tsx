@@ -4,13 +4,13 @@ import type { SimpleStepProps } from "../../types/wizard";
 import { uploadDocument } from "../../services/parcelApi";
 import {toast } from 'sonner';
 
-interface OwnerDocsStepProps {
-  upin: string;
-  subCity: string;
-  ownerId: string;
-  nextStep: () => void;
-  prevStep: () => void;
-}
+// interface OwnerDocsStepProps {
+//   upin: string;
+//   subCity: string;
+//   ownerId: string;
+//   nextStep: () => void;
+//   prevStep: () => void;
+// }
 
 type UploadStatus = "uploading" | "success" | "error";
 
@@ -26,7 +26,7 @@ const ownerDocumentTypes = [
 
 ];
 
-const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
+const OwnerDocsStep = ({ nextStep, }: SimpleStepProps) => {
     const [searchParams] = useSearchParams();
 const upin = searchParams.get("upin") || "";
 const subCity = searchParams.get("sub_city") || "";
@@ -113,7 +113,7 @@ const ownerId = searchParams.get("owner_id") || "";
         {documents.map(doc => (
           <div
             key={doc.id}
-            className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200"
+            className="flex items-center justify-between p-4 bg-linear-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200"
           >
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div
@@ -198,7 +198,7 @@ const ownerId = searchParams.get("owner_id") || "";
           type="button"
           disabled={!!uploadingId}
           onClick={nextStep}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          className="px-8 py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
           Continue to Lease
           {uploadingId && (

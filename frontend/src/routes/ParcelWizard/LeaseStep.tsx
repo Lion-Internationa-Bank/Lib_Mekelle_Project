@@ -10,7 +10,7 @@ import {
 } from "../../validation/schemas";
 import {toast} from 'sonner';
 
-const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
+const LeaseStep = ({  prevStep, onCreated }: LeaseStepProps) => {
   const [searchParams] = useSearchParams();
   const upin = searchParams.get("upin") || "";
 
@@ -27,6 +27,9 @@ const LeaseStep = ({ nextStep, prevStep, onCreated }: LeaseStepProps) => {
       total_lease_amount: 0,
       down_payment_amount: 0,
       other_payment:0,
+      engineering_service_fee:0,
+      contract_registration_fee:0,
+      demarcation_fee:0,
       lease_period_years: 0,
       payment_term_years: 0,
       start_date: today,
@@ -159,6 +162,57 @@ console.log("lease step errors", errors);
             </p>
           )}
         </div>
+          {/* Row 3 */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Engineering Service Fee (ETB)
+          </label>
+          <input
+            type="number"
+            min="0"
+            {...register("engineering_service_fee")}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          {errors.engineering_service_fee && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.engineering_service_fee.message}
+            </p>
+          )}
+        </div>
+          {/* Row 3 */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Contract Registration Fee (ETB)
+          </label>
+          <input
+            type="number"
+            min="0"
+            {...register("contract_registration_fee")}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          {errors.contract_registration_fee && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.contract_registration_fee.message}
+            </p>
+          )}
+        </div>
+          {/* Row 3 */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Demarcation Fee (ETB)
+          </label>
+          <input
+            type="number"
+            min="0"
+            {...register("demarcation_fee")}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          {errors.demarcation_fee && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.demarcation_fee.message}
+            </p>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -179,17 +233,17 @@ console.log("lease step errors", errors);
 
         {/* Row 4 */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className ="block text-sm font-semibold text-gray-700 mb-2">
             Payment Term (Years) *
           </label>
           <input
             type="number"
             min="1"
             {...register("payment_term_years")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className ="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
           {errors.payment_term_years && (
-            <p className="mt-1 text-sm text-red-600">
+            <p className ="mt-1 text-sm text-red-600">
               {errors.payment_term_years.message}
             </p>
           )}
@@ -254,7 +308,7 @@ console.log("lease step errors", errors);
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
+            className="bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
             {isSubmitting ? "Creating Lease..." : "Create Lease & Next"}
           </button>

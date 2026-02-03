@@ -1,6 +1,7 @@
 // components/DocumentList.tsx
 import type { ParcelDocument } from "../../services/parcelDetailApi";
-const API_BASE = import.meta.env.VITE_API_URL;
+// const API_BASE = import.meta.env.VITE_API_URL;
+import DateDisplay from "../DateDisplay";
 
 interface DocumentListProps {
   documents: ParcelDocument[];
@@ -26,7 +27,14 @@ const DocumentList = ({ documents, title = "Documents" }: DocumentListProps) => 
             <div>
               <div className="font-medium text-gray-900 truncate max-w-xs">{doc.file_name}</div>
               <div className="text-xs text-gray-500">
-                {doc.doc_type} • {new Date(doc.upload_date).toLocaleString()}
+                {doc.doc_type} • {<DateDisplay
+                                date={doc.upload_date}
+                                format="medium"
+                                className="font-semibold"
+                                showTooltip={true}
+                                showCalendarIndicator={true}
+                              />}
+               
               </div>
             </div>
             <button

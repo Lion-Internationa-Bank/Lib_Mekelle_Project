@@ -128,8 +128,15 @@ export const LeaseFormSchema = z.object({
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
-
-
+  engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering serivce fee cannot be negative" }),
+  contract_registration_fee: z.coerce
+    .number()
+    .min(0, { message: "Contract registration fee cannot be negative" }),
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" }),
   lease_period_years: z.coerce
     .number()
     .int()
@@ -183,7 +190,7 @@ export const OwnerStepFormSchema = z.object({
 
   tin_number: z.string().trim().optional(),
 
-phone_number: z
+  phone_number: z
   .string()
   .trim()
   .min(1, { message: "Phone number is required" })
@@ -235,7 +242,19 @@ export const LeaseStepFormSchema = z.object({
     .min(0, { message: "Down payment cannot be negative" }),
   other_payment: z.coerce
     .number()
-    .min(0, { message: "Down payment cannot be negative" }),
+    .min(0, { message: "Other payment cannot be negative" }),
+   engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering service fee cannot be negative" }),
+ 
+  contract_registration_fee: z.coerce
+    .number()
+    .min(0, { message: "Contract registration cannot be negative" }),
+ 
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" }),
+ 
   lease_period_years: z.coerce
     .number()
     .int()
@@ -371,6 +390,21 @@ export const EditLeaseFormSchema = z
   other_payment: z
       .number()
       .nonnegative({ message: "Other payment cannot be negative" })
+      .optional(),
+      
+  engineering_service_fee: z
+      .number()
+      .nonnegative({ message: "Enginnering service fee cannot be negative" })
+      .optional(),
+      
+  contract_registration_fee: z
+      .number()
+      .nonnegative({ message: "Contract registration fee cannot be negative" })
+      .optional(),
+      
+  demarcation_fee: z
+      .number()
+      .nonnegative({ message: "Demarcation fee cannot be negative" })
       .optional(),
 
     price_per_m2: z

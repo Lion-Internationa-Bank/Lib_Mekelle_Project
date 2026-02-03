@@ -4,7 +4,7 @@ import type {
   OwnerWithParcels,
   OwnersPagination,
 } from "../../services/ownersApi";
-import { useAuth } from "../../contexts/AuthContext";
+// import { useAuth } from "../../contexts/AuthContext";
 
 
 type Props = {
@@ -35,7 +35,7 @@ const OwnershipTable = ({
   onPageChange,
 }: Props) => {
 
-  const {user } = useAuth();
+  // const {user } = useAuth();
     
   return (
     <>
@@ -97,7 +97,7 @@ const ErrorBlock = ({
 );
 
 const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => (
-  <div className="p-16 text-center border-t border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+  <div className="p-16 text-center border-t border-gray-200 bg-linear-to-br from-blue-50 to-indigo-50">
     <span className="text-6xl mb-4 block">👥</span>
     <h3 className="text-2xl font-bold text-gray-800 mb-3">No owners found</h3>
     <p className="text-gray-600 mb-6">

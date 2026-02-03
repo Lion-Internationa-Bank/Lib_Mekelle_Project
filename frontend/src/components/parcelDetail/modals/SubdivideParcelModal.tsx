@@ -165,7 +165,7 @@ export default function SubdivideParcelModal({
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-lg mb-6 flex items-start gap-3">
-              <AlertTriangle size={20} className="mt-0.5 flex-shrink-0" />
+              <AlertTriangle size={20} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}

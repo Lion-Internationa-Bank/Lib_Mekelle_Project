@@ -24,7 +24,7 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch,
+    // watch,
   } = useForm<ParcelFormData>({
     resolver: zodResolver(ParcelFormSchema),
     defaultValues: {
@@ -74,7 +74,7 @@ const ParcelStep = ({ onCreated }: ParcelStepProps) => {
   }, []);
 
   // Auto-uppercase UPIN
-  const upinValue = watch("upin");
+  // const upinValue = watch("upin");
 
 const onSubmit = async (data: ParcelFormData) => {
   try {
@@ -216,7 +216,6 @@ const onSubmit = async (data: ParcelFormData) => {
             {...register("total_area_m2")}
             type="number"
             min="0"
-            step="0.01"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {errors.total_area_m2 && (
@@ -379,7 +378,7 @@ const onSubmit = async (data: ParcelFormData) => {
           <button
             type="submit"
             disabled={isSubmitting || loading.subCities || loading.categories}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center gap-3"
+            className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center gap-3"
           >
             {isSubmitting ? (
               <>

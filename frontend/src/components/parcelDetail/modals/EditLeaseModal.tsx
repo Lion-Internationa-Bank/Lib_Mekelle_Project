@@ -72,6 +72,15 @@ useEffect(() => {
     other_payment: lease.other_payment
       ? Number(lease.other_payment)
       : undefined,
+    engineering_service_fee: lease.engineering_service_fee
+      ? Number(lease.other_payment)
+      : undefined,
+    contract_registration_fee: lease.contract_registration_fee
+      ? Number(lease.other_payment)
+      : undefined,
+    demarcation_fee: lease.demarcation_fee
+      ? Number(lease.other_payment)
+      : undefined,
     price_per_m2: lease.price_per_m2
       ? Number(lease.price_per_m2)
       : undefined,
@@ -228,6 +237,70 @@ useEffect(() => {
                     setForm((f) => ({
                       ...f,
                       down_payment_amount: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+                  {/* Enginnering service fee */}
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enginnering Service Fee (ETB)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.engineering_service_fee ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      engineering_service_fee: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+              {/* Contract registration Fee */}
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contract Registration Fee (ETB)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.contract_registration_fee ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      contract_registration_fee: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+               <div>
+                {/* Demarcation Fee */}
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Demarcation Fee (ETB)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.demarcation_fee ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      demarcation_fee: e.target.value
                         ? Number(e.target.value)
                         : undefined,
                     }))
@@ -438,7 +511,7 @@ useEffect(() => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 rounded-lg bg-linear-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? (
               <>

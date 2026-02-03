@@ -89,7 +89,7 @@ const Sidebar = () => {
             to={item.href}
             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
               activeMenu === item.id
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                ? 'bg-linear-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >

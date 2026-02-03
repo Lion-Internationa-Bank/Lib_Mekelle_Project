@@ -112,7 +112,7 @@ const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
         {/* Right: Owner Documents - Slightly shifted left, more compact */}
         <div className="lg:pl-6">
           <h4 className="text-base font-semibold text-gray-700 mb-4">Owner Documents</h4>
-          <div className="bg-gray-50 rounded-xl p-5 min-h-[160px] border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-5 min-h-40 border border-gray-200">
             <DocumentList documents={owner.documents || []} />
           </div>
         </div>

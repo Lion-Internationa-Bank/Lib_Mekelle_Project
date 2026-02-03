@@ -165,7 +165,7 @@ const SubcityHome = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
             to="/parcels/new"
-            className="group bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full"
+            className="group bg-linear-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full"
           >
             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
               <span className="text-3xl">Add</span>
@@ -176,7 +176,7 @@ const SubcityHome = () => {
             </p>
           </Link>
 
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-8 rounded-3xl shadow-2xl flex items-center justify-center">
+          <div className="bg-linear-to-br from-emerald-500 to-emerald-600 text-white p-8 rounded-3xl shadow-2xl flex items-center justify-center">
             <div className="text-center">
               <div className="text-4xl font-bold">
                 {pagination?.total?.toLocaleString() || "0"}
@@ -226,7 +226,7 @@ const SubcityHome = () => {
         )}
 
         {!loading && !error && parcels.length === 0 && (
-          <div className="p-16 text-center border-t border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <div className="p-16 text-center border-t border-gray-200 bg-linear-to-br from-blue-50 to-indigo-50">
             <span className="text-7xl mb-8 block animate-bounce">📭</span>
             <h3 className="text-3xl font-bold text-gray-800 mb-4">
               No parcels found
@@ -237,7 +237,7 @@ const SubcityHome = () => {
             {isSubcityNormal && (
               <Link
                 to="/parcels/new"
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
+                className="bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
               >
                 <span>Add</span>
                 Add First Parcel
@@ -282,7 +282,7 @@ const SubcityHome = () => {
               Previous
             </button>
 
-            <span className="px-6 py-3 text-sm font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl min-w-[140px] text-center">
+            <span className="px-6 py-3 text-sm font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl min-w-35 text-center">
               Page {currentFilters.page} of {pagination.totalPages}
             </span>
 

@@ -258,7 +258,8 @@ export const getParcels = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const page = parseInt(req.query.page || '1');
-    const limit = parseInt(req.query.limit || '10');
+    // const limit = parseInt(req.query.limit || '10');
+    const limit = parseInt( '5');
     const skip = (page - 1) * limit;
 
     const { search, sub_city_id, tenure_type, ketena, land_use } = req.query;
@@ -473,6 +474,9 @@ export const getParcelByUpin = async (
             total_lease_amount: true,
             down_payment_amount: true,
             other_payment: true,
+            contract_registration_fee:true,
+            engineering_service_fee:true,
+            demarcation_fee:true,
             annual_installment: true,
             price_per_m2: true,
             lease_period_years: true,

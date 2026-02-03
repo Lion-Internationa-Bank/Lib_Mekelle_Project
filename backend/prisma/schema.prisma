@@ -35,6 +35,7 @@ model sub_cities {
   deleted_at   DateTime?
   is_deleted   Boolean        @default(false)
   land_parcels land_parcels[]
+  owners       owners[]
   users        users[]
 }
 
@@ -133,6 +134,7 @@ model owners {
   national_id      String              @unique @db.VarChar(50)
   tin_number       String?             @unique @db.VarChar(50)
   phone_number     String
+  sub_city_id      String              @db.Uuid
   created_at       DateTime?           @default(now())
   updated_at       DateTime?           @updatedAt
   deleted_at       DateTime?
@@ -140,7 +142,10 @@ model owners {
   documents        documents[]
   transferred_from ownership_history[] @relation("OwnershipHistoryFrom")
   transferred_to   ownership_history[] @relation("OwnershipHistoryTo")
+  sub_city         sub_cities               @relation(fields: [sub_city_id], references: [sub_city_id])
   parcels          parcel_owners[]
+
+  @@unique([owner_id,sub_city_id])
 }
 
 model parcel_owners {
@@ -193,6 +198,7 @@ model lease_agreements {
   contract_date       DateTime          @db.Date
   created_at          DateTime          @default(now())
   down_payment_amount Decimal           @db.Decimal(18, 2)
+  remaining_amount    Decimal?           @db.Decimal(18, 2)
   lease_period_years  Int
   legal_framework     String
   payment_term_years  Int
@@ -203,6 +209,9 @@ model lease_agreements {
   interest_rate       Decimal?          @db.Decimal(5, 4)
   status              LeaseStatus       @default(ACTIVE)
   other_payment       Decimal?          @db.Decimal(18, 2)
+  engineering_service_fee         Decimal?          @db.Decimal(18, 2)
+  contract_registration_fee       Decimal?          @db.Decimal(18, 2)
+  demarcation_fee                 Decimal?          @db.Decimal(18, 2)
   billing_records     billing_records[]
   documents           documents[]
   land_parcel         land_parcels      @relation(fields: [upin], references: [upin])

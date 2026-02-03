@@ -2,6 +2,7 @@
 
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
+import DateDisplay from "../../DateDisplay";
 
 interface TransferHistoryCardProps {
   entry: ParcelDetail["history"][number];
@@ -10,8 +11,8 @@ interface TransferHistoryCardProps {
 }
 
 const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
-  const formatDate = (dateStr: string | null) =>
-    dateStr ? new Date(dateStr).toLocaleDateString("en-GB") : "-";
+  // const formatDate = (dateStr: string | null) =>
+  //   dateStr ? new Date(dateStr).toLocaleDateString("en-GB") : "-";
 
   // FIXED: Properly handle transfer_price as string | null
   const formatPrice = (price: string | null) => {
@@ -31,14 +32,20 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+      <div className="bg-linear-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b border-gray-200">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
               {entry.transfer_type.replace("_", " ")} Transfer
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Date: <span className="font-medium">{formatDate(entry.transfer_date)}</span>
+              Date: <DateDisplay
+                                date={entry.transfer_date}
+                                format="medium"
+                                className="font-semibold"
+                                showTooltip={true}
+                                showCalendarIndicator={true}
+                              />
               {entry.reference_no && (
                 <> • Ref: <span className="font-mono">{entry.reference_no}</span></>
               )}

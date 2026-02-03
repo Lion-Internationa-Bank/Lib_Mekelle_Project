@@ -114,7 +114,7 @@ const ParcelWizard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Progress */}
         <div className="mb-10">
@@ -126,7 +126,7 @@ const ParcelWizard = () => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full shadow-lg transition-all duration-500"
+              className="bg-linear-to-r from-blue-500 to-indigo-600 h-3 rounded-full shadow-lg transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -152,7 +152,7 @@ const ParcelWizard = () => {
                 className={[
                   "px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all",
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                    ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-md"
                     : isDone && hasRequiredData
                     ? "bg-green-100 text-green-800 hover:bg-green-200"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60",

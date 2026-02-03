@@ -16,7 +16,7 @@ const TransferHistorySection = ({ history, upin, onReload }: Props) => {
         </h2>
 
         {history.length === 0 ? (
-          <div className="text-center py-12 bg-gradient-to-b from-blue-50 to-indigo-50 rounded-xl">
+          <div className="text-center py-12 bg-linear-to-b from-blue-50 to-indigo-50 rounded-xl">
             <div className="max-w-md mx-auto">
               <div className="text-5xl mb-4">Initial Allocation</div>
               <p className="text-xl font-semibold text-gray-800 mb-2">

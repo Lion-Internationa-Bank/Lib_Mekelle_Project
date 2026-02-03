@@ -124,7 +124,7 @@ export const uploadDocument = multer({
   storage,
   limits: { fileSize: 30 * 1024 * 1024 },
   fileFilter: (_, file, cb) => {
-    const allowed = /\.(jpe?g|png|pdf|docx?|xlsx?|pptx?)$/i;
+    const allowed = /\.(pdf)$/i;
     if (allowed.test(file.originalname)) {
       cb(null, true);
     } else {

@@ -19,7 +19,7 @@ const leaseDocumentTypes = [
 
 ];
 
-const LeaseDocsStep = ({ prevStep, onFinish }: FinishStepProps) => {
+const LeaseDocsStep = ({  onFinish }: FinishStepProps) => {
 
   const [documents, setDocuments] = useState<LeaseDocItem[]>([]);
   const [searchParams] = useSearchParams();
@@ -101,7 +101,7 @@ const leaseId = searchParams.get("lease_id") || "";
         {documents.map(doc => (
           <div
             key={doc.id}
-            className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200"
+            className="flex items-center justify-between p-4 bg-linear-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200"
           >
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div
@@ -183,7 +183,7 @@ const leaseId = searchParams.get("lease_id") || "";
           type="button"
           disabled={!!uploadingId}
           onClick={finishWizard}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          className="px-8 py-3 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
           Finish & Go to Dashboard
           {uploadingId && (

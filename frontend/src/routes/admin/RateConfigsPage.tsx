@@ -134,6 +134,7 @@ const RateConfigsPage: React.FC = () => {
       const res = await getCurrentRate(type);
       if (res.success && res.data) {
         const r = res.data;
+       
         setCurrentRate(r);
 
         // Backend stores 0–1; UI shows percent except for grace days
@@ -525,7 +526,7 @@ const handleSave = async () => {
                         <input
                           type="number"
                           step="0.01"
-                          value={value}
+                          value={Number(value).toFixed(2)}
                           onChange={(e) => setValue(e.target.value)}
                           className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                           placeholder={
@@ -723,7 +724,7 @@ const handleSave = async () => {
                             className="border-b last:border-0 hover:bg-gray-50"
                           >
                             <td className="px-3 py-2">
-                              {uiValue}
+                              {Number(uiValue).toFixed(2)}
                               {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS"
                                 ? " %"
                                 : ""}
