@@ -6,14 +6,16 @@ import {
 import {type AuthRequest } from '../middlewares/authMiddleware.ts';
 
 
-export const createOwner = async (req: Request, res: Response) => {
+export const createOwner = async (req: AuthRequest, res: Response) => {
   const actor = (req as any).user; // Assuming AuthRequest extends Request
+  const subcityId = actor.sub_city_id;
   
   const {
     full_name,
     national_id,
     tin_number,
     phone_number,
+
     upin,           // parcel UPIN to link
     acquired_at,    // optional
   } = req.body;
@@ -60,6 +62,7 @@ export const createOwner = async (req: Request, res: Response) => {
       // **STEP 3: Create owner**
       const owner = await tx.owners.create({
         data: {
+          sub_city_id:subcityId,
           full_name,
           national_id,
           tin_number,
@@ -189,7 +192,7 @@ export const createOwner = async (req: Request, res: Response) => {
 
 export const onlyCreateOwner = async (req: Request, res: Response) => {
   const actor = (req as any).user; // Assuming AuthRequest extends Request
-  
+  const sub_city_id = actor.sub_city_id;
   const {
     full_name,
     national_id,
@@ -208,6 +211,7 @@ export const onlyCreateOwner = async (req: Request, res: Response) => {
     const result = await prisma.$transaction(async (tx) => {
       const owner = await tx.owners.create({
         data: {
+          sub_city_id,
           full_name,
           national_id,
           tin_number,
