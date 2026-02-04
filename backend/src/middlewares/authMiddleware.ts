@@ -12,7 +12,13 @@ if (!JWT_SECRET) {
 
 // ← THIS IS THE FIX: add generics to AuthRequest
 export interface AuthRequest<
-  P = {},
+  P = {
+    request_id?: string;
+    session_id?: string;
+    document_id?:string;
+    step?:string;
+    filename?:string;
+  },
   ResBody = any,
   ReqBody = any,
   ReqQuery = {
@@ -23,6 +29,7 @@ export interface AuthRequest<
     tenure_type?: string;
     ketena?: string;
     land_use?: string;
+    
   }
 > extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {

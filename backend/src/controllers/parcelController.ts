@@ -67,22 +67,7 @@ interface UpdateEncumbranceBody {
   registration_date?: string;
 }
 
-// Helper function to validate config values
-const validateConfigValue = async (category: ConfigCategory, value: string): Promise<boolean> => {
-  try {
-    const config = await prisma.configurations.findFirst({
-      where: {
-        category,
-        is_active: true,
-        is_deleted: false,
-        key: value,
-      },
-    });
-    return !!config;
-  } catch (error) {
-    return false;
-  }
-};
+
 
 export const createParcel = async (req: AuthRequest, res: Response) => {
   const user = req.user!; 

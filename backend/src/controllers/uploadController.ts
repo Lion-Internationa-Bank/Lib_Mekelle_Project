@@ -1,138 +1,244 @@
-// src/controllers/uploadController.ts
+// src/controllers/uploadController.ts (Updated)
 import type { Request, Response } from 'express';
-import prisma from '../config/prisma.ts';
-import fs from 'fs';
+import multer from 'multer';
 import path from 'path';
-import {
-  sanitizeFolderName,
-  resolveDocumentConfig,
-  UPLOADS_BASE,
-} from '../middlewares/upload.ts';
+import fs from 'fs';
+import prisma from '../config/prisma.ts';
+import { AuditAction } from '../generated/prisma/enums.ts';
+import type { AuthRequest } from '../middlewares/authMiddleware.ts';
 
-export const handleUpload = async (req: Request, res: Response) => {
+// Configure multer for regular uploads (non-wizard)
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/png', 
+      'image/jpg', 
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, PDF, and DOC/DOCX are allowed.'));
+    }
+  }
+});
+
+export const uploadDocument = async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  
   try {
-    const file = req.file;
     const {
       document_type,
       upin,
-      sub_city,
       owner_id,
       lease_id,
-      history_id,
-      encumbrance_id,
+      is_lease,
+      sub_city,
     } = req.body;
 
-    // Basic required fields validation
-    if (!file || !document_type) {
-      if (file?.path) {
-        try { fs.unlinkSync(file.path); } catch {}
-      }
+    const file = (req as any).file;
+
+    if (!file) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: file and document_type are required.',
+        message: 'No file uploaded',
       });
     }
 
-    // Sanitize inputs safely
-    const rawUpin = typeof upin === 'string' ? upin.trim() : '';
-    const rawSubCity = typeof sub_city === 'string' ? sub_city.trim() : 'unknown';
-
-    const safeUpin = rawUpin ? sanitizeFolderName(rawUpin) : null;
-    const safeSubCity = sanitizeFolderName(rawSubCity);
-
-    // Resolve document type config (folders + Prisma enum value)
-    const config = resolveDocumentConfig(document_type);
-    if (!config) {
-      if (file.path) {
-        try { fs.unlinkSync(file.path); } catch {}
-      }
+    // Validate required fields based on context
+    if (!document_type) {
       return res.status(400).json({
         success: false,
-        message: `Invalid document_type: ${document_type}`,
+        message: 'Document type is required',
       });
     }
-    const { folders, prismaEnum: docTypeString } = config;
 
-    // Build final directory and file path
-    const finalDir = path.join(UPLOADS_BASE, safeSubCity, ...(safeUpin ? [safeUpin] : []), ...folders);
-    const finalPath = path.join(finalDir, file.filename);
+    // Build document data
+    const documentData: any = {
+      file_url: `/uploads/${file.filename}`,
+      file_name: file.originalname,
+      doc_type: document_type,
+      is_verified: false,
+      upload_date: new Date(),
+    };
 
-    // Ensure directory exists and move file
-    fs.mkdirSync(finalDir, { recursive: true });
-    fs.renameSync(file.path, finalPath);
-
-    // Generate relative URL for DB storage
-    const relativeUrl = path.relative(UPLOADS_BASE, finalPath).replace(/\\/g, '/');
-
-    // Validate UPIN exists if provided
-    let validatedUpin: string | null = null;
-    if (safeUpin) {
-      const parcelExists = await prisma.land_parcels.findUnique({
-        where: { upin: safeUpin },
-        select: { upin: true }, // Minimal select for performance
+    // Determine entity to link to
+    if (is_lease === 'true' && lease_id) {
+      // Check if lease exists
+      const lease = await prisma.lease_agreements.findUnique({
+        where: { lease_id },
       });
 
-      if (!parcelExists) {
-        // Clean up uploaded file since UPIN is invalid
-        try { fs.unlinkSync(finalPath); } catch {}
-        return res.status(400).json({
+      if (!lease) {
+        // Clean up uploaded file
+        fs.unlinkSync(file.path);
+        return res.status(404).json({
           success: false,
-          message: `Parcel with UPIN "${rawUpin}" does not exist. Cannot attach document to non-existent parcel.`,
+          message: 'Lease not found',
         });
       }
-      validatedUpin = safeUpin;
+
+      documentData.lease_id = lease_id;
+      documentData.upin = lease.upin;
+    } 
+    else if (upin) {
+      // Check if parcel exists
+      const parcel = await prisma.land_parcels.findUnique({
+        where: { upin },
+      });
+
+      if (!parcel) {
+        // Clean up uploaded file
+        fs.unlinkSync(file.path);
+        return res.status(404).json({
+          success: false,
+          message: 'Parcel not found',
+        });
+      }
+
+      documentData.upin = upin;
+    } 
+    else if (owner_id) {
+      // Check if owner exists
+      const owner = await prisma.owners.findUnique({
+        where: { owner_id },
+      });
+
+      if (!owner) {
+        // Clean up uploaded file
+        fs.unlinkSync(file.path);
+        return res.status(404).json({
+          success: false,
+          message: 'Owner not found',
+        });
+      }
+
+      documentData.owner_id = owner_id;
+    } 
+    else {
+      // Clean up uploaded file
+      fs.unlinkSync(file.path);
+      return res.status(400).json({
+        success: false,
+        message: 'Either upin, owner_id, or lease_id must be provided',
+      });
     }
 
-    // Create document record in database
+    // Create document record
     const document = await prisma.documents.create({
-      data: {
-        upin: validatedUpin,
-        doc_type: docTypeString as any,
-        file_url: `/uploads/${relativeUrl}`,
-        file_name: file.originalname,
-        is_verified: false,
-        upload_date: new Date(),
+      data: documentData,
+    });
 
-        // Optional foreign keys — only set if valid UUIDs are provided
-        owner_id: owner_id || null,
-        lease_id: lease_id || null,
-        history_id: history_id || null,
-        encumbrance_id: encumbrance_id || null,
+    // Create audit log
+    await prisma.audit_logs.create({
+      data: {
+        user_id: user.user_id,
+        action_type: AuditAction.CREATE,
+        entity_type: 'documents',
+        entity_id: document.doc_id,
+        changes: {
+          action: 'upload_document',
+          document_type: document.doc_type,
+          file_name: document.file_name,
+          linked_to: documentData.upin ? 'parcel' : 
+                    documentData.owner_id ? 'owner' : 'lease',
+          linked_id: documentData.upin || documentData.owner_id || documentData.lease_id,
+          actor_id: user.user_id,
+          actor_role: user.role,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: (req as any).ip || req.socket.remoteAddress,
       },
     });
 
     return res.status(201).json({
       success: true,
-      data: document,
+      message: 'Document uploaded successfully',
+      data: {
+        doc_id: document.doc_id,
+        file_url: document.file_url,
+        file_name: document.file_name,
+        doc_type: document.doc_type,
+        upload_date: document.upload_date,
+      },
     });
   } catch (error: any) {
-    console.error('Upload error:', error);
-
-    // Cleanup temp file if still present
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      try { fs.unlinkSync(req.file.path); } catch (err) {
-        console.error('Failed to cleanup temp file:', err);
-      }
+    console.error('Upload document error:', error);
+    
+    // Clean up file if it was uploaded
+    if ((req as any).file?.path && fs.existsSync((req as any).file.path)) {
+      fs.unlinkSync((req as any).file.path);
     }
-
-    // Handle Prisma-specific errors more gracefully
-    if (error.code === 'P2002') {
-      return res.status(409).json({
-        success: false,
-        message: 'A document with this reference already exists.',
-      });
-    }
-
-    if (error.code === 'P2025') {
-      return res.status(400).json({
-        success: false,
-        message: 'Referenced record not found (e.g., invalid owner_id, lease_id, etc.)',
-      });
-    }
-
+    
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to upload document',
+      message: 'Failed to upload document',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
+
+// Separate endpoint for wizard document serving
+export const serveWizardDocument = async (req: Request, res: Response) => {
+  try {
+
+    const session_id = req.params.session_id as string;
+      const  step = req.params.step as string;
+       const  filename = req.params.filename as string;
+    
+    // Get file path from wizard temporary storage
+    const wizardDocsDir = path.join(process.cwd(), 'temp', 'wizard_docs');
+    const filePath = path.join(wizardDocsDir, session_id, step, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found',
+      });
+    }
+    
+    // Determine content type
+    const ext = path.extname(filename as string).toLowerCase();
+    const contentType = {
+      '.pdf': 'application/pdf',
+        }[ext] || 'application/octet-stream';
+    
+    res.setHeader('Content-Type', contentType);
+    
+    // Stream file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Serve wizard document error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to serve document',
+    });
+  }
+};
+
+// Export middleware
+export const uploadMiddleware = upload.single('document');
