@@ -19,6 +19,13 @@ const menuItems: MenuItem[] = [
     href: '/home',
     allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
   },
+   {
+    id: 'sessions',
+    label: 'Sessions',
+    icon: '📍',
+    href: '/sessions',
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
+  },
   {
     id: 'ownership',
     label: 'Ownership',

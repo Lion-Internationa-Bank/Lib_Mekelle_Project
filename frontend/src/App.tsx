@@ -18,7 +18,10 @@ import ConfigsPage from './routes/admin/ConfigsPage';
 import UserManagementPage from './routes/UserManagementPage';
 import { CalendarProvider } from './contexts/CalendarContext';
 import RateConfigsPage from './routes/admin/RateConfigsPage';
-
+import { WizardProvider } from './contexts/WizardContext';
+import ParcelWizardV2 from './components/wizard/ParcelWizard';
+import UserSessionsPage from './routes/subcity/UserSessionsPage';
+import SessionDetailsPage from './routes/subcity/SessionDetailsPage';
 const App = () => {
   const { isLoading } = useAuth();
   if (isLoading) {
@@ -26,7 +29,8 @@ const App = () => {
   }
   return (
     <CalendarProvider>
-      <Routes>
+      <WizardProvider>
+          <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
@@ -35,7 +39,9 @@ const App = () => {
           <Route path="/home" element={<RoleBasedHome />} />
 
           {/* Common protected routes */}
-          <Route path="/parcels/new" element={<ParcelWizard />} />
+          <Route path="/parcels/new" element={<ParcelWizardV2 />} />
+          <Route path="/sessions" element={<UserSessionsPage />} />
+        <Route path="/sessions/:sessionId" element={<SessionDetailsPage />} />
           <Route path="/ownership" element={<OwnershipPage />} />
           <Route path="/users" element={<UserManagementPage />} />
           <Route path="/sub-cities" element={<SubCitiesPage />} />
@@ -47,7 +53,9 @@ const App = () => {
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       <Toaster position="top-right" richColors closeButton /> {/* Add global Toaster */}
-    </CalendarProvider>
+  
+      </WizardProvider>
+      </CalendarProvider>
   );
 };
 

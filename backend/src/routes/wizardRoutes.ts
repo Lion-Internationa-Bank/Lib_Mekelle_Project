@@ -5,7 +5,7 @@ import { authenticate } from '../middlewares/authMiddleware.ts';
 import { authorize } from '../middlewares/roleMiddleware.ts';
 
 // Initialize services
-import prisma from '../config/prisma.ts';
+// import prisma from '../config/prisma.ts';
 import { WizardSessionService } from '../services/wizardSessionService.ts';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { AuditService } from '../services/auditService.ts';

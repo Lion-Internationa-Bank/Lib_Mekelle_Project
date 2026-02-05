@@ -37,10 +37,16 @@ const upload = multer({
 });
 
 export class WizardController {
+  private wizardService: WizardSessionService;
+  private documentStorage: DocumentStorageService;
+
   constructor(
-    private wizardService: WizardSessionService,
-    private documentStorage: DocumentStorageService
-  ) {}
+    wizardService: WizardSessionService,
+    documentStorage: DocumentStorageService
+  ) {
+    this.wizardService = wizardService;
+    this.documentStorage = documentStorage;
+  }
 
   // Create new wizard session
   async createSession(req: AuthRequest, res: Response) {
@@ -84,6 +90,8 @@ export class WizardController {
     try {
       const session_id = req.params.session_id as string;
       const user = req.user!;
+      console.log("user",user)
+      console.log("session id",session_id)
 
       const session = await this.wizardService.getSession(session_id);
       if (!session) {

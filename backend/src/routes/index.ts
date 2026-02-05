@@ -23,6 +23,7 @@ router.use('/revenue-admin', revenueAdminRoutes);
 router.use('/maker-checker', makerCheckerRoutes); // NEW
 router.use('/wizard', wizardRoutes); // NEW
 
+
 router.get('/health', (req: Request, res: Response) => {
   res.json({ message: 'Land Parcel API v1 - Ready!' });
 });

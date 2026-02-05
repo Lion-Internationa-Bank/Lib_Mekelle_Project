@@ -6,10 +6,16 @@ import type { AuthRequest } from '../middlewares/authMiddleware.ts';
 // import { validateMakerCheckerRequest } from '../validation/makerCheckerSchemas.ts';
 
 export class MakerCheckerController {
+  private makerCheckerService: MakerCheckerService;
+  private wizardSessionService: WizardSessionService;
+
   constructor(
-    private makerCheckerService: MakerCheckerService,
-    private wizardSessionService: WizardSessionService
-  ) {}
+    makerCheckerService: MakerCheckerService,
+    wizardSessionService: WizardSessionService
+  ) {
+    this.makerCheckerService = makerCheckerService;
+    this.wizardSessionService = wizardSessionService;
+  }
 
   // Get pending requests for approver
   async getPendingRequests(req: AuthRequest, res: Response) {
@@ -33,7 +39,7 @@ export class MakerCheckerController {
   // Get request details
   async getRequestDetails(req: AuthRequest, res: Response) {
     try {
-      const request_id  = req.params as string;
+      const request_id  = req.params.request_id as string;
       const user = req.user!;
 
       const request = await this.makerCheckerService.getRequestDetails(request_id);
@@ -70,7 +76,7 @@ export class MakerCheckerController {
   async approveRequest(req: AuthRequest, res: Response) {
     try {
       const user = req.user!;
-       const request_id  = req.params.request_id as string;
+      const request_id  = req.params.request_id as string;
       const { comments } = req.body;
 
       const result = await this.makerCheckerService.approveRequest(
@@ -144,7 +150,7 @@ export class MakerCheckerController {
   async getSessionDetails(req: AuthRequest, res: Response) {
     try {
      
-       const session_id = req.params.session_id as string;
+      const session_id  = req.params.session_id as string;
       const user = req.user!;
 
       const session = await this.wizardSessionService.getSession(session_id);

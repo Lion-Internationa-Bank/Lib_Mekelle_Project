@@ -67,44 +67,44 @@ router.post('/requests/:request_id/reject',
 
 // === Wizard Session Routes ===
 
-// Create new wizard session
-router.post('/wizard/sessions',
-  validateRequest(createWizardSessionSchema),
-  (req, res) => wizardController.createSession(req, res)
-);
+// // Create new wizard session
+// router.post('/wizard/sessions',
+//   validateRequest(createWizardSessionSchema),
+//   (req, res) => wizardController.createSession(req, res)
+// );
 
-// Get wizard session
-router.get('/wizard/sessions/:session_id',
-  (req, res) => wizardController.getSession(req, res)
-);
+// // Get wizard session
+// router.get('/wizard/sessions/:session_id',
+//   (req, res) => wizardController.getSession(req, res)
+// );
 
-// Save wizard step
-router.post('/wizard/sessions/:session_id/steps',
-  validateRequest(saveWizardStepSchema),
-  (req, res) => wizardController.saveStep(req, res)
-);
+// // Save wizard step
+// router.post('/wizard/sessions/:session_id/steps',
+//   validateRequest(saveWizardStepSchema),
+//   (req, res) => wizardController.saveStep(req, res)
+// );
 
-// Upload document for wizard
-router.post('/wizard/sessions/:session_id/documents',
-  uploadMiddleware,
-  validateRequest(uploadDocumentSchema),
-  (req, res) => wizardController.uploadDocument(req, res)
-);
+// // Upload document for wizard
+// router.post('/wizard/sessions/:session_id/documents',
+//   uploadMiddleware,
+//   validateRequest(uploadDocumentSchema),
+//   (req, res) => wizardController.uploadDocument(req, res)
+// );
 
-// Submit wizard for approval
-router.post('/wizard/sessions/:session_id/submit',
-  validateRequest(submitWizardSchema),
-  (req, res) => wizardController.submitForApproval(req, res)
-);
+// // Submit wizard for approval
+// router.post('/wizard/sessions/:session_id/submit',
+//   validateRequest(submitWizardSchema),
+//   (req, res) => wizardController.submitForApproval(req, res)
+// );
 
-// Validate wizard session
-router.get('/wizard/sessions/:session_id/validate',
-  (req, res) => wizardController.validateSession(req, res)
-);
+// // Validate wizard session
+// router.get('/wizard/sessions/:session_id/validate',
+//   (req, res) => wizardController.validateSession(req, res)
+// );
 
-// Get user's wizard sessions
-router.get('/wizard/sessions',
-  (req, res) => makerCheckerController.getUserSessions(req, res)
-);
+// // Get user's wizard sessions
+// router.get('/wizard/sessions',
+//   (req, res) => makerCheckerController.getUserSessions(req, res)
+// );
 
 export default router;
