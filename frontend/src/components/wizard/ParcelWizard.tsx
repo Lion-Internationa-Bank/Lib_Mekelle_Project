@@ -94,19 +94,27 @@ const ParcelWizard = () => {
     }
   }, [currentStepParam]);
 
+
+   const stepIndex = STEPS.indexOf(currentStep) ;
+  const progress = ((stepIndex + 1) / STEPS.length) * 100;
   // Debug log to see current session state
   useEffect(() => {
-    console.log("Current session state:", {
+    console.log("ParcelWizard state:", {
+      currentStep,
       hasSessionLoaded,
-      currentSession,
-      sessionId,
-      isInitializing,
-      isLoading
+      currentSession: currentSession ? {
+        hasParcelData: !!currentSession.parcel_data,
+        hasOwnerData: !!currentSession.owner_data,
+        hasLeaseData: !!currentSession.lease_data,
+        sessionId: currentSession.session_id,
+        status: currentSession.status
+      } : 'No session',
+      canAccessValidation: canAccessStep("validation"),
+      stepIndex
     });
-  }, [hasSessionLoaded, currentSession, sessionId, isInitializing, isLoading]);
+  }, [currentStep, hasSessionLoaded, currentSession, stepIndex]);
 
-  const stepIndex = STEPS.indexOf(currentStep);
-  const progress = ((stepIndex + 1) / STEPS.length) * 100;
+ 
 
   const updateUrl = (step: Step, extra?: Record<string, string>) => {
     const params = new URLSearchParams({ 
@@ -131,6 +139,7 @@ const ParcelWizard = () => {
   };
 
   const goToStep = (step: Step, extra?: Record<string, string>) => {
+    console.log(`Navigating to step: ${step}`, { extra });
     setCurrentStep(step);
     updateUrl(step, extra);
   };
@@ -148,6 +157,7 @@ const ParcelWizard = () => {
   };
 
   const handleValidationComplete = () => {
+    console.log("Navigating to validation step from LeaseDocsStep");
     goToStep("validation");
   };
 
@@ -198,14 +208,16 @@ const ParcelWizard = () => {
       case "lease-docs":
         return !!currentSession.lease_data;
       case "validation":
-        return !!currentSession.lease_data || !!currentSession.owner_data;
+        // Allow access if we have at least parcel data completed
+        // User can still review what they've filled so far
+        return !!currentSession.parcel_data;
       default:
         return false;
     }
   };
 
   // Show loading state
-  if (isLoading) {
+  if (isInitializing || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
@@ -326,6 +338,17 @@ const ParcelWizard = () => {
           })}
         </div>
 
+        {/* Debug info (temporary) */}
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+          <div className="font-medium text-yellow-800 mb-1">Debug Info:</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div>Step: <span className="font-bold">{currentStep}</span></div>
+            <div>Parcel: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
+            <div>Owner: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
+            <div>Lease: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
+          </div>
+        </div>
+
         {/* Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 lg:p-10">
           {currentStep === "parcel" && (
@@ -358,9 +381,16 @@ const ParcelWizard = () => {
             <LeaseDocsStep nextStep={handleValidationComplete} prevStep={prevStep} />
           )}
 
+
+
           {currentStep === "validation" && (
-            <ValidationStep prevStep={prevStep} onFinish={finishWizard} />
+            <>
+              {console.log("Rendering ValidationStep component...")}
+              <ValidationStep   key={currentSession?.session_id}  prevStep={prevStep} onFinish={finishWizard} />
+            </>
           )}
+
+
 
           {/* Back to Dashboard button */}
           <div className="mt-8 flex justify-end">

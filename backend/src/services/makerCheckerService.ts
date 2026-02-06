@@ -1,12 +1,13 @@
 // src/services/makerCheckerService.ts
 import prisma from '../config/prisma.ts';
-import { UserRole, RequestStatus, ApprovalAction, AuditAction } from '../generated/prisma/enums.ts';
+import { UserRole, RequestStatus, ApprovalAction, AuditAction,ActionType, EntityType } from '../generated/prisma/enums.ts';
 import { AuditService } from './auditService.ts';
+import { ActionExecutionService } from './actionExecutionService.ts';
 
 export interface CreateApprovalRequestParams {
-  entityType: string;
+  entityType: EntityType;
   entityId: string;
-  actionType: 'CREATE' | 'UPDATE' | 'DELETE' | 'BULK';
+  actionType: ActionType;
   requestData: any;
   makerId: string;
   makerRole: UserRole;
@@ -24,12 +25,12 @@ export interface ApprovalResult {
 export class MakerCheckerService {
   private prisma: typeof prisma;
   private auditService: AuditService;
+  private actionExecutionService: ActionExecutionService;
 
-  constructor(
-    auditService: AuditService
-  ) {
+  constructor(auditService: AuditService) {
     this.prisma = prisma;
     this.auditService = auditService;
+    this.actionExecutionService = new ActionExecutionService();
   }
 
   async createApprovalRequest(params: CreateApprovalRequestParams): Promise<ApprovalResult> {
@@ -65,7 +66,7 @@ export class MakerCheckerService {
       // Create approval request
       const approvalRequest = await tx.approval_requests.create({
         data: {
-          entity_type: params.entityType,
+          entity_type: params.entityType ,
           entity_id: params.entityId,
           action_type: params.actionType,
           request_data: params.requestData,
@@ -144,77 +145,141 @@ export class MakerCheckerService {
     return { message: 'Executed immediately' };
   }
 
-  async approveRequest(requestId: string, approverId: string, userRole: UserRole, comments?: string) {
-    return await this.prisma.$transaction(async (tx) => {
-      const approvalRequest = await tx.approval_requests.findUnique({
-        where: { request_id: requestId },
-        include: {
-          wizard_session: true
-        }
-      });
-
-      if (!approvalRequest) {
-        throw new Error('Approval request not found');
+async approveRequest(requestId: string, approverId: string, userRole: UserRole, comments?: string) {
+  return await this.prisma.$transaction(async (tx) => {
+    const approvalRequest = await tx.approval_requests.findUnique({
+      where: { request_id: requestId },
+      include: {
+        wizard_session: true // Important: Include wizard session
       }
-
-      if (approvalRequest.status !== 'PENDING') {
-        throw new Error(`Request is already ${approvalRequest.status.toLowerCase()}`);
-      }
-
-      // Verify approver has correct role
-      if (userRole !== approvalRequest.approver_role) {
-        throw new Error('Insufficient permissions to approve this request');
-      }
-
-      // Update approval request
-      const updatedRequest = await tx.approval_requests.update({
-        where: { request_id: requestId },
-        data: {
-          status: 'APPROVED',
-          approved_at: new Date(),
-          updated_at: new Date()
-        }
-      });
-
-      // Create approval log
-      await tx.approval_logs.create({
-        data: {
-          request_id: requestId,
-          action: 'APPROVE',
-          performed_by: approverId,
-          performed_by_role: userRole,
-          comments,
-          previous_status: 'PENDING',
-          new_status: 'APPROVED',
-          created_at: new Date()
-        }
-      });
-
-      // Audit the approval
-      await this.auditService.log({
-        userId: approverId,
-        action: AuditAction.UPDATE,
-        entityType: 'APPROVAL_REQUEST',
-        entityId: requestId,
-        changes: {
-          entity_type: approvalRequest.entity_type,
-          entity_id: approvalRequest.entity_id,
-          action_type: approvalRequest.action_type,
-          approver_id: approverId,
-          approver_role: userRole,
-          comments,
-          status: 'APPROVED'
-        },
-        ipAddress: 'SYSTEM'
-      });
-
-      return {
-        success: true,
-        message: 'Request approved successfully',
-        data: updatedRequest
-      };
     });
-  }
+
+    if (!approvalRequest) {
+      throw new Error('Approval request not found');
+    }
+
+    if (approvalRequest.status !== 'PENDING') {
+      throw new Error(`Request is already ${approvalRequest.status.toLowerCase()}`);
+    }
+
+    // Verify approver has correct role
+    if (userRole !== approvalRequest.approver_role) {
+      throw new Error('Insufficient permissions to approve this request');
+    }
+
+    let executionResult: any = null;
+    
+    // Execute the actual business logic using ActionExecutionService
+    try {
+      // For wizard sessions, we need to pass the session data
+      let requestData = approvalRequest.request_data as Record<string, any> || {};
+      
+      if (approvalRequest.entity_type === 'WIZARD_SESSION') {
+        // Create a new object with session info
+        const enhancedData = {
+          ...requestData,
+          session_id: approvalRequest.entity_id,
+          sub_city_id: approvalRequest.sub_city_id,
+          user_id: approvalRequest.maker_id,
+          user_role: approvalRequest.maker_role
+        };
+        
+        executionResult = await this.actionExecutionService.executeAction(
+          approvalRequest.entity_type,
+          approvalRequest.action_type,
+          approvalRequest.entity_id,
+          enhancedData,
+          approverId
+        );
+        
+        await this.actionExecutionService.updateWizardSessionAfterExecution(
+          tx,
+          approvalRequest.entity_id,
+          approverId,
+          true
+        );
+      } else {
+        // For non-wizard requests, use the original request data
+        executionResult = await this.actionExecutionService.executeAction(
+          approvalRequest.entity_type,
+          approvalRequest.action_type,
+          approvalRequest.entity_id,
+          requestData,
+          approverId
+        );
+      }
+      
+    } catch (error: any) {
+      console.error('Action execution failed:', error);
+      
+      // Update wizard session if execution failed
+      if (approvalRequest.entity_type === 'WIZARD_SESSION') {
+        await tx.wizard_sessions.update({
+          where: { session_id: approvalRequest.entity_id },
+          data: {
+            status: RequestStatus.FAILED,
+            updated_at: new Date()
+          }
+        });
+      }
+      
+      throw new Error(`Failed to execute approved action: ${error.message}`);
+    }
+
+    // Update approval request
+    const updatedRequest = await tx.approval_requests.update({
+      where: { request_id: requestId },
+      data: {
+        status: RequestStatus.APPROVED,
+        approved_at: new Date(),
+        updated_at: new Date(),
+      }
+    });
+
+    // Create approval log
+    await tx.approval_logs.create({
+      data: {
+        request_id: requestId,
+        action: ApprovalAction.APPROVE,
+        performed_by: approverId,
+        performed_by_role: userRole,
+        comments,
+        previous_status: RequestStatus.PENDING,
+        new_status: RequestStatus.APPROVED, // Fixed: This should be APPROVED
+        created_at: new Date()
+      }
+    });
+
+    // Audit the approval and execution
+    await this.auditService.log({
+      userId: approverId,
+      action: AuditAction.UPDATE,
+      entityType: EntityType.APPROVAL_REQUEST,
+      entityId: requestId,
+      changes: {
+        entity_type: approvalRequest.entity_type,
+        entity_id: approvalRequest.entity_id,
+        action_type: approvalRequest.action_type,
+        approver_id: approverId,
+        approver_role: userRole,
+        comments,
+        status: RequestStatus.APPROVED,
+        execution_result: executionResult
+      },
+      ipAddress: 'SYSTEM'
+    });
+
+    return {
+      success: true,
+      message: 'Request approved and executed successfully',
+      data: {
+        approval: updatedRequest,
+        execution: executionResult
+      }
+    };
+  });
+}
+
 
   async rejectRequest(requestId: string, approverId: string, userRole: UserRole, rejectionReason: string) {
     return await this.prisma.$transaction(async (tx) => {
@@ -250,12 +315,12 @@ export class MakerCheckerService {
       await tx.approval_logs.create({
         data: {
           request_id: requestId,
-          action: 'REJECT',
+          action: ApprovalAction.REJECT,
           performed_by: approverId,
           performed_by_role: userRole,
           comments: rejectionReason,
-          previous_status: 'PENDING',
-          new_status: 'REJECTED',
+          previous_status:RequestStatus.PENDING,
+          new_status: RequestStatus.REJECTED,
           created_at: new Date()
         }
       });
@@ -264,7 +329,7 @@ export class MakerCheckerService {
       await this.auditService.log({
         userId: approverId,
         action: AuditAction.UPDATE,
-        entityType: 'APPROVAL_REQUEST',
+        entityType: EntityType.APPROVAL_REQUEST,
         entityId: requestId,
         changes: {
           entity_type: approvalRequest.entity_type,
@@ -273,7 +338,7 @@ export class MakerCheckerService {
           approver_id: approverId,
           approver_role: userRole,
           rejection_reason: rejectionReason,
-          status: 'REJECTED'
+          status: RequestStatus.REJECTED,
         },
         ipAddress: 'SYSTEM'
       });
@@ -311,53 +376,23 @@ export class MakerCheckerService {
 
     const requests = await this.prisma.approval_requests.findMany({
       where,
-      include: {
-        maker: {
-          select: {
+      orderBy: { created_at: 'desc' },
+      select:{
+        request_id:true,
+        entity_type: true,
+        action_type: true,
+        status: true,
+        created_at: true,
+        maker:{
+          select :{
             user_id: true,
             username: true,
             full_name: true,
             role: true
           }
-        },
-        sub_city: {
-          select: {
-            sub_city_id: true,
-            name: true
-          }
-        },
-        approval_logs: {
-          orderBy: { created_at: 'desc' },
-          take: 5,
-          include: {
-            user: {
-              select: {
-                user_id: true,
-                username: true,
-                full_name: true,
-                role: true
-              }
-            }
-          }
-        },
-        wizard_session: {
-          include: {
-            user: {
-              select: {
-                user_id: true,
-                username: true,
-                full_name: true
-              }
-            },
-            sub_city: {
-              select: {
-                name: true
-              }
-            }
-          }
         }
       },
-      orderBy: { created_at: 'desc' }
+    
     });
 
     return requests;
@@ -381,31 +416,19 @@ export class MakerCheckerService {
             name: true
           }
         },
-        approval_logs: {
-          orderBy: { created_at: 'desc' },
-          include: {
-            user: {
-              select: {
-                user_id: true,
-                username: true,
-                full_name: true,
-                role: true
-              }
-            }
-          }
-        },
-        wizard_session: {
-          include: {
-            user: {
-              select: {
-                user_id: true,
-                username: true,
-                full_name: true
-              }
-            }
-          }
-        }
       }
     });
   }
+
+
 }
+
+
+
+
+
+
+
+
+
+

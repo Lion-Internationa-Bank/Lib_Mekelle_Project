@@ -9,10 +9,45 @@ interface WizardSession {
   session_id: string;
   status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "MERGED";
   current_step: string;
-  parcel_data?: any;
-  owner_data?: any;
-  lease_data?: any;
-  sub_city_id: string;
+  parcel_data?: {
+    upin: string;
+    block: string;
+    tabia: string;
+    ketena: string;
+    land_use: string;
+    land_grade: number;
+    file_number: string;
+    tenure_type: string;
+    total_area_m2: number;
+  } | null;
+  owner_data?: Array<{
+    full_name: string;
+    tin_number: string;
+    national_id: string;
+    phone_number: string;
+    acquired_at: string;
+  }> | null;
+  lease_data?: {
+    start_date: string;
+    price_per_m2: number;
+    total_lease_amount: number;
+    lease_period_years: number;
+    payment_term_years: number;
+    down_payment_amount: number;
+    legal_framework: string;
+  } | null;
+  parcel_docs?: Array<{
+    document_type: string;
+    file_name: string;
+  }> | null;
+  owner_docs?: Array<{
+    document_type: string;
+    file_name: string;
+  }> | null;
+  lease_docs?: Array<{
+    document_type: string;
+    file_name: string;
+  }> | null;
   created_at: string;
   updated_at: string;
   expires_at?: string;
@@ -20,10 +55,11 @@ interface WizardSession {
     request_id: string;
     status: string;
     approver_role?: string;
-  };
-  sub_city?: {
-    name: string;
-  };
+  } | null;
+  user_role: string;
+  sub_city_id: string;
+  approval_request_id: string | null;
+  submitted_at: string | null;
 }
 
 const UserSessionsPage = () => {
@@ -36,35 +72,38 @@ const UserSessionsPage = () => {
     loadSessions();
   }, []);
 
-// src/pages/UserSessionsPage.tsx - Fix the loadSessions function
-const loadSessions = async () => {
-  try {
-    setIsLoading(true);
-    const response = await wizardApi.getUserSessions();
-    
-    console.log('Sessions response:', response); // Debug log
-    
-    if (response.success && response.data) {
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setSessions(response.data);
+  const loadSessions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await wizardApi.getUserSessions();
+      
+      console.log('Sessions response:', response);
+      
+      if (response.success && response.data) {
+        // The API returns { success: true, data: [...] }
+        // So we need to access response.data (which contains the array)
+        if (Array.isArray(response.data)) {
+          setSessions(response.data);
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // Handle nested data structure if needed
+          setSessions(response.data.data);
+        } else {
+          console.error('Sessions data is not an array:', response.data);
+          setSessions([]);
+          toast.error('Invalid sessions data format');
+        }
       } else {
-        console.error('Sessions data is not an array:', response.data);
+        toast.error(response.error || "Failed to load sessions");
         setSessions([]);
-        toast.error('Invalid sessions data format');
       }
-    } else {
-      toast.error(response.error || "Failed to load sessions");
+    } catch (error: any) {
+      console.error('Load sessions error:', error);
+      toast.error(error.message || "Failed to load sessions");
       setSessions([]);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    console.error('Load sessions error:', error);
-    toast.error(error.message || "Failed to load sessions");
-    setSessions([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const filteredSessions = sessions.filter((session) => {
     switch (filter) {
@@ -125,6 +164,50 @@ const loadSessions = async () => {
     return stepMap[step] || step;
   };
 
+  const getDocumentCount = (session: WizardSession) => {
+    let count = 0;
+    if (session.parcel_docs?.length) count += session.parcel_docs.length;
+    if (session.owner_docs?.length) count += session.owner_docs.length;
+    if (session.lease_docs?.length) count += session.lease_docs.length;
+    return count;
+  };
+
+  const getLandUseBadge = (landUse: string) => {
+    switch (landUse) {
+      case "COMMERCIAL":
+        return "bg-purple-100 text-purple-800";
+      case "RESIDENTIAL":
+        return "bg-green-100 text-green-800";
+      case "INDUSTRIAL":
+        return "bg-orange-100 text-orange-800";
+      case "AGRICULTURAL":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getLandUseText = (landUse: string) => {
+    return landUse?.charAt(0) + landUse?.slice(1).toLowerCase();
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return (new Date(dateString), "MMM d, yyyy");
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-ET', {
+      style: 'currency',
+      currency: 'ETB',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const handleContinueSession = (sessionId: string) => {
     navigate(`/wizard?session_id=${sessionId}`);
   };
@@ -154,14 +237,11 @@ const loadSessions = async () => {
     }
   };
 
-  const getParcelInfo = (session: WizardSession) => {
-    if (session.parcel_data) {
-      return {
-        upin: session.parcel_data.upin,
-        fileNumber: session.parcel_data.file_number,
-      };
-    }
-    return null;
+  const handleDuplicateSession = async (session: WizardSession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // You might want to implement a duplicate functionality
+    toast.info("Duplicate functionality coming soon!");
   };
 
   if (isLoading) {
@@ -179,7 +259,7 @@ const loadSessions = async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Wizard Sessions</h1>
@@ -237,7 +317,10 @@ const loadSessions = async () => {
             onClick={handleCreateNew}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
           >
-            <span>+</span> New Registration
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Registration
           </button>
         </div>
 
@@ -263,10 +346,13 @@ const loadSessions = async () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {filteredSessions.map((session) => {
-              const parcelInfo = getParcelInfo(session);
               const isExpired = session.status === "DRAFT" && session.expires_at && new Date(session.expires_at) < new Date();
+              const documentCount = getDocumentCount(session);
+              const progressSteps = ["parcel", "parcel-docs", "owner", "owner-docs", "lease", "lease-docs", "validation"];
+              const currentStepIndex = progressSteps.indexOf(session.current_step);
+              const progressPercentage = currentStepIndex >= 0 ? ((currentStepIndex + 1) / progressSteps.length) * 100 : 0;
 
               return (
                 <div
@@ -274,9 +360,9 @@ const loadSessions = async () => {
                   className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-6 hover:shadow-2xl transition-all duration-300"
                 >
                   {/* Session Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-2">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(session.status)}`}>
                           {getStatusText(session.status)}
                         </span>
@@ -285,86 +371,192 @@ const loadSessions = async () => {
                             Expired
                           </span>
                         )}
+                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                          {getStepText(session.current_step)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span>ID: {session.session_id.substring(0, 8)}...</span>
-                        {session.sub_city?.name && (
-                          <>
-                            <span>•</span>
-                            <span>{session.sub_city.name}</span>
-                          </>
-                        )}
+                        <span>Session ID: {session.session_id.substring(0, 8)}...</span>
+                        <span>•</span>
+                        <span>Created: {formatDate(session.created_at)}</span>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">
-                        {(new Date(session.updated_at), "MMM d, yyyy")}
+                      <div className="text-sm text-gray-900 font-medium">
+                        {formatDate(session.updated_at)}
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-gray-500">
                         Last updated
                       </div>
                     </div>
                   </div>
 
                   {/* Session Content */}
-                  <div className="mb-6">
-                    {parcelInfo ? (
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-gray-900 mb-2">Parcel Information</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    {/* Parcel Information */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Parcel Information
+                      </h3>
+                      
+                      {session.parcel_data ? (
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-blue-50 rounded-lg p-3">
-                            <div className="text-xs text-blue-600 font-medium mb-1">UPIN</div>
-                            <div className="font-mono text-sm">{parcelInfo.upin}</div>
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-xs text-gray-500">UPIN</div>
+                              <div className="font-mono text-sm font-medium">{session.parcel_data.upin || "Not set"}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">File Number</div>
+                              <div className="text-sm font-medium">{session.parcel_data.file_number || "Not set"}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Land Use</div>
+                              {session.parcel_data.land_use ? (
+                                <span className={`px-2 py-1 text-xs rounded-full ${getLandUseBadge(session.parcel_data.land_use)}`}>
+                                  {getLandUseText(session.parcel_data.land_use)}
+                                </span>
+                              ) : (
+                                <div className="text-sm">Not set</div>
+                              )}
+                            </div>
                           </div>
-                          <div className="bg-blue-50 rounded-lg p-3">
-                            <div className="text-xs text-blue-600 font-medium mb-1">File Number</div>
-                            <div className="font-mono text-sm">{parcelInfo.fileNumber}</div>
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-xs text-gray-500">Total Area</div>
+                              <div className="text-sm font-medium">{session.parcel_data.total_area_m2 || 0} m²</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Tenure Type</div>
+                              <div className="text-sm font-medium">{session.parcel_data.tenure_type || "Not set"}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Location</div>
+                              <div className="text-sm font-medium">
+                                {[session.parcel_data.block, session.parcel_data.tabia, session.parcel_data.ketena]
+                                  .filter(Boolean)
+                                  .join(", ") || "Not set"}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-gray-900 mb-2">Session Progress</h4>
-                        <div className="text-sm text-gray-600">
-                          Current step: <span className="font-medium">{getStepText(session.current_step)}</span>
-                        </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-gray-500 italic text-sm">No parcel information added yet</div>
+                      )}
+                    </div>
 
-                    {/* Progress indicators */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                        <span>Progress</span>
-                        <span className="font-medium">{session.current_step ? getStepText(session.current_step) : "Not started"}</span>
+                    {/* Owner & Lease Information */}
+                    <div className="space-y-6">
+                      {/* Owner Information */}
+                      <div>
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Owner Information
+                        </h3>
+                        {session.owner_data?.length ? (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">{session.owner_data[0].full_name}</div>
+                            <div className="text-xs text-gray-600">
+                              {session.owner_data[0].national_id && `ID: ${session.owner_data[0].national_id}`}
+                              {session.owner_data[0].tin_number && ` • TIN: ${session.owner_data[0].tin_number}`}
+                            </div>
+                            {session.owner_data.length > 1 && (
+                              <div className="text-xs text-blue-600">
+                                +{session.owner_data.length - 1} more owner(s)
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 italic text-sm">No owner information added yet</div>
+                        )}
                       </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+
+                      {/* Lease Information */}
+                      <div>
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Lease Information
+                        </h3>
+                        {session.lease_data ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <div className="text-xs text-gray-500">Total Amount</div>
+                              <div className="text-sm font-medium">{formatCurrency(session.lease_data.total_lease_amount)}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Lease Period</div>
+                              <div className="text-sm font-medium">{session.lease_data.lease_period_years} years</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Price per m²</div>
+                              <div className="text-sm font-medium">{formatCurrency(session.lease_data.price_per_m2)}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Start Date</div>
+                              <div className="text-sm font-medium">{formatDate(session.lease_data.start_date)}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 italic text-sm">No lease information added yet</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress and Documents */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    {/* Progress */}
+                    <div>
+                      <div className="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Progress</span>
+                        <span className="font-medium">{Math.round(progressPercentage)}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1">
                         <div 
                           className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${(() => {
-                              const steps = ["parcel", "parcel-docs", "owner", "owner-docs", "lease", "lease-docs", "validation"];
-                              const currentIndex = steps.indexOf(session.current_step);
-                              return currentIndex >= 0 ? ((currentIndex + 1) / steps.length) * 100 : 0;
-                            })()}%`
-                          }}
+                          style={{ width: `${progressPercentage}%` }}
                         />
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Current step: {getStepText(session.current_step)}
                       </div>
                     </div>
 
-                    {/* Additional info */}
-                    {session.approval_request && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">Approval:</span> {session.approval_request.status}
-                          {session.approval_request.approver_role && (
-                            <span className="ml-2 text-gray-500">
-                              (Awaiting {session.approval_request.approver_role})
-                            </span>
-                          )}
-                        </div>
+                    {/* Documents */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">Documents</span>
+                        <span className="text-sm font-medium">{documentCount} file(s)</span>
                       </div>
-                    )}
+                      <div className="flex flex-wrap gap-2">
+                        {session.parcel_docs?.map((doc, index) => (
+                          <span key={index} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full">
+                            {doc.document_type}
+                          </span>
+                        ))}
+                        {session.owner_docs?.map((doc, index) => (
+                          <span key={index} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded-full">
+                            {doc.document_type}
+                          </span>
+                        ))}
+                        {session.lease_docs?.map((doc, index) => (
+                          <span key={index} className="px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded-full">
+                            {doc.document_type}
+                          </span>
+                        ))}
+                        {documentCount === 0 && (
+                          <span className="text-gray-500 italic text-xs">No documents uploaded</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -372,44 +564,65 @@ const loadSessions = async () => {
                     {session.status === "DRAFT" && !isExpired && (
                       <button
                         onClick={() => handleContinueSession(session.session_id)}
-                        className="flex-1 min-w-[120px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center"
+                        className="flex-1 min-w-[140px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
                       >
-                        Continue
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                        Continue Session
                       </button>
                     )}
 
-                    {session.status === "PENDING_APPROVAL" && (
+                    {["PENDING_APPROVAL", "APPROVED", "REJECTED", "MERGED"].includes(session.status) && (
                       <button
                         onClick={() => handleViewDetails(session.session_id)}
-                        className="flex-1 min-w-[120px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center"
+                        className={`flex-1 min-w-[140px] font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2 ${
+                          session.status === "PENDING_APPROVAL"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                            : session.status === "APPROVED" || session.status === "MERGED"
+                            ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                            : "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white"
+                        }`}
                       >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
                         View Details
                       </button>
                     )}
 
-                    {["APPROVED", "REJECTED", "MERGED"].includes(session.status) && (
-                      <button
-                        onClick={() => handleViewDetails(session.session_id)}
-                        className="flex-1 min-w-[120px] bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center"
-                      >
-                        View Results
-                      </button>
-                    )}
-
                     {session.status === "DRAFT" && (
-                      <button
-                        onClick={(e) => handleDeleteSession(session.session_id, e)}
-                        className="px-4 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-xl transition-colors"
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => handleDuplicateSession(session, e)}
+                          className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteSession(session.session_id, e)}
+                          className="px-4 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-xl transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </>
                     )}
 
                     <button
                       onClick={() => navigate(`/sessions/${session.session_id}`)}
-                      className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-colors"
+                      className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-colors flex items-center gap-2"
                     >
-                      Details
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      More Details
                     </button>
                   </div>
 
@@ -417,7 +630,9 @@ const loadSessions = async () => {
                   {isExpired && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
                       <div className="flex items-center gap-2 text-sm text-red-700">
-                        <span>⚠️</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
                         <span>This draft session has expired and cannot be continued.</span>
                       </div>
                     </div>
@@ -430,7 +645,7 @@ const loadSessions = async () => {
 
         {/* Stats */}
         {sessions.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white/80 rounded-xl p-4 border border-gray-200">
               <div className="text-2xl font-bold text-gray-900">{sessions.length}</div>
               <div className="text-sm text-gray-600">Total Sessions</div>
@@ -452,6 +667,12 @@ const loadSessions = async () => {
                 {sessions.filter(s => ["APPROVED", "MERGED"].includes(s.status)).length}
               </div>
               <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div className="bg-white/80 rounded-xl p-4 border border-gray-200">
+              <div className="text-2xl font-bold text-red-600">
+                {sessions.filter(s => s.status === "REJECTED").length}
+              </div>
+              <div className="text-sm text-gray-600">Rejected</div>
             </div>
           </div>
         )}

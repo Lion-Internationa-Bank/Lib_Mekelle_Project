@@ -1,4 +1,4 @@
-// src/components/wizard/ValidationStep.tsx - FIXED WITH useCallback
+// src/components/wizard/ValidationStep.tsx - FIXED VERSION
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { FinishStepProps } from "../../types/wizard";
 import { useWizard } from "../../contexts/WizardContext";
@@ -16,6 +16,13 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const validationCalledRef = useRef(false);
 
+  // Debug: Log when component renders
+  console.log("ValidationStep rendering with session:", {
+    hasSession: !!currentSession,
+    sessionId: currentSession?.session_id,
+    validationCalled: validationCalledRef.current
+  });
+
   // Memoize the validation function
   const runValidation = useCallback(async () => {
     if (!currentSession) {
@@ -23,7 +30,6 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       return;
     }
     
-    // Prevent multiple simultaneous validations
     if (isValidating) {
       console.log("Validation already in progress, skipping...");
       return;
@@ -33,11 +39,10 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     console.log("Starting validation...");
     
     try {
+      console.log("Calling validateSession API...");
       const result = await validateSession();
       console.log("Validation API response:", result);
       
-      // Handle the result based on your API structure
-      // If result is already the validation data
       if (result && typeof result === 'object') {
         if ('valid' in result && 'missing' in result) {
           setValidationResult(result as ValidationResult);
@@ -58,23 +63,22 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       setIsValidating(false);
       console.log("Validation completed");
     }
-  }, [currentSession, isValidating, validateSession]);
+  }, [currentSession, validateSession]);
 
-  // Run validation once when component mounts or session changes
+  // Run validation ONCE when component mounts
   useEffect(() => {
-    console.log("ValidationStep useEffect running, validationCalledRef:", validationCalledRef.current);
+    console.log("ValidationStep useEffect running");
     
-    if (currentSession && !validationCalledRef.current && !validationResult) {
+    if (currentSession && !validationCalledRef.current) {
       console.log("Running initial validation...");
       validationCalledRef.current = true;
       runValidation();
     }
 
-    // Cleanup
     return () => {
       console.log("ValidationStep cleanup");
     };
-  }, [currentSession, runValidation, validationResult]);
+  }, []); // Empty dependency array - run only once on mount
 
   const handleSubmit = async () => {
     if (!currentSession || !validationResult?.valid) {
@@ -118,16 +122,6 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       setIsSubmitting(false);
     }
   };
-
-  // Also add a separate effect to debug renders
-  useEffect(() => {
-    console.log("ValidationStep rendered with:", {
-      hasSession: !!currentSession,
-      validationResult,
-      isValidating,
-      isSubmitting
-    });
-  });
 
   if (!currentSession) {
     return (
@@ -246,7 +240,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           <h3 className="font-bold text-lg">
             {isValidating ? 'Validating...' : 
              validationResult ? (validationResult.valid ? 'Ready to Submit' : 'Missing Information') : 
-             'Click Validate to check'}
+             'Validating session...'}
           </h3>
         </div>
         
@@ -270,9 +264,9 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           </div>
         )}
         
-        {!validationResult && !isValidating && (
+        {!validationResult && isValidating && (
           <div className="ml-11">
-            <p className="text-gray-700">Validation not run yet. Click the button below to validate.</p>
+            <p className="text-blue-700">Validating your session data...</p>
           </div>
         )}
       </div>
@@ -297,7 +291,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
                 <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                 Validating...
               </>
-            ) : 'Validate Session'}
+            ) : 'Re-validate Session'}
           </button>
           
           <button

@@ -1,5 +1,5 @@
 // src/contexts/WizardContext.tsx - UPDATED FOR response.data.data STRUCTURE
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect,useCallback } from 'react';
 import wizardApi from '../services/wizardApi';
 import { toast } from 'sonner';
 
@@ -178,7 +178,9 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setIsLoading(true);
       const response = await wizardApi.deleteDocument(currentSession.session_id, documentId, step);
-      if (response.success && response.data?.data) {
+      console.log("delete result",response)
+      if (response.data.success && response.data.message) {
+        console.log("internal if ")
         const stepField = getDocumentsField(step);
         setCurrentSession(prev => {
           if (!prev) return null;
@@ -202,7 +204,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const validateSession = async (): Promise<ValidationResult> => {
+ const validateSession = useCallback(async (): Promise<ValidationResult> => {
     if (!currentSession) {
       toast.error('No active session');
       throw new Error('No active session');
@@ -212,8 +214,8 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       const response = await wizardApi.validateSession(currentSession.session_id);
       console.log(response)
-      if (response.success && response.data?.data) {
-        return response.data.data;
+      if (response.success && response.data) {
+        return response.data;
       } else {
         toast.error(response.error || 'Failed to validate session');
         throw new Error(response.error || 'Failed to validate session');
@@ -224,7 +226,12 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setIsLoading(false);
     }
-  };
+    }, [currentSession?.session_id]); 
+
+
+
+
+
 
   const submitForApproval = async (): Promise<SubmitResult> => {
     if (!currentSession) {
@@ -247,7 +254,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             updated_at: new Date().toISOString()
           };
         });
-        
+        console.log()
         const message = response.data.data.requiresApproval 
           ? 'Submitted for approval' 
           : 'Parcel registered successfully';

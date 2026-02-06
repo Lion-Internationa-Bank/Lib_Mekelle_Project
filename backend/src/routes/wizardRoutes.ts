@@ -3,6 +3,12 @@ import express from 'express';
 import { WizardController, uploadMiddleware } from '../controllers/wizardController.ts';
 import { authenticate } from '../middlewares/authMiddleware.ts';
 import { authorize } from '../middlewares/roleMiddleware.ts';
+import {
+  createWizardSessionSchema,
+  saveWizardStepSchema,
+  uploadDocumentSchema,
+  submitWizardSchema
+} from '../validation/makerCheckerSchemas.ts';
 
 // Initialize services
 // import prisma from '../config/prisma.ts';
@@ -10,10 +16,12 @@ import { WizardSessionService } from '../services/wizardSessionService.ts';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { AuditService } from '../services/auditService.ts';
 import { DocumentStorageService } from '../services/documentStorageService.ts';
+import { ActionExecutionService } from '../services/actionExecutionService.ts';
 
 const auditService = new AuditService();
 const makerCheckerService = new MakerCheckerService( auditService);
-const wizardSessionService = new WizardSessionService( makerCheckerService, auditService);
+const actionExecutionService = new ActionExecutionService()
+const wizardSessionService = new WizardSessionService( makerCheckerService, auditService,actionExecutionService);
 const documentStorageService = new DocumentStorageService();
 
 const wizardController = new WizardController(wizardSessionService, documentStorageService);

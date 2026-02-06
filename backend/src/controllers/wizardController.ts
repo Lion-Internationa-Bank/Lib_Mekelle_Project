@@ -4,6 +4,7 @@ import multer from 'multer';
 import { WizardSessionService } from '../services/wizardSessionService.ts';
 import { DocumentStorageService } from '../services/documentStorageService.ts';
 import type { AuthRequest } from '../middlewares/authMiddleware.ts';
+import { ActionExecutionService } from '../services/actionExecutionService.ts';
 import path from 'path';
 import fs from 'fs';
 import prisma from '../config/prisma.ts';
@@ -14,7 +15,8 @@ import { AuditService } from '../services/auditService.ts';
 // Initialize services
 const auditService = new AuditService();
 const makerCheckerService = new MakerCheckerService( auditService);
-const wizardSessionService = new WizardSessionService(makerCheckerService, auditService);
+const actionExecutionService = new ActionExecutionService()
+const wizardSessionService = new WizardSessionService(makerCheckerService, auditService,actionExecutionService);
 const documentStorageService = new DocumentStorageService();
 
 // Configure multer for file uploads
@@ -254,6 +256,10 @@ export class WizardController {
       const { step } = req.body;
       const user = req.user!;
 
+
+      console.log('SID',session_id)
+      console.log("document id",document_id)
+
       // Verify session belongs to user
       const session = await this.wizardService.getSession(session_id);
       if (!session || session.user_id !== user.user_id) {
@@ -275,8 +281,9 @@ export class WizardController {
                        step === 'owner-docs' ? 'owner_docs' : 'lease_docs';
       
       const currentDocs: any[] = Array.isArray(session[stepField]) ? session[stepField] : [];
+      console.log("current docs",currentDocs)
       const documentToDelete = currentDocs.find((doc: any) => doc.id === document_id);
-
+        console.log("document to delete",documentToDelete)
       if (!documentToDelete) {
         return res.status(404).json({
           success: false,

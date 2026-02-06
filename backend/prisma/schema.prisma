@@ -68,9 +68,9 @@ model wizard_documents_temp {
 
 model approval_requests {
   request_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  entity_type       String         @db.VarChar(50)
+  entity_type       EntityType
   entity_id         String         @db.VarChar(255)
-  action_type       String         @db.VarChar(50)
+  action_type       ActionType      
   request_data      Json
   status            RequestStatus  @default(PENDING)
   maker_id          String         @db.Uuid
@@ -124,6 +124,29 @@ enum SessionStatus {
   REJECTED
   EXPIRED
   MERGED
+  FAILED
+}
+
+enum EntityType{
+  WIZARD_SESSION
+  LAND_PARCELS
+  OWNERS
+  LEASE_AGREEMENTS
+  ENCUMBRANCES
+  APPROVAL_REQUEST
+}
+
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  TRANSFER
+  SUBDIVIDE
+  MERGE
+  TERMINATE
+  EXTEND
+  ADD_OWNER
 }
 
 enum RequestStatus {
@@ -132,7 +155,9 @@ enum RequestStatus {
   REJECTED
   RETURNED
   CANCELLED
+  FAILED
 }
+
 
 enum ApprovalAction {
   CREATE
@@ -214,7 +239,7 @@ model audit_logs {
   user_id     String      @db.Uuid
   action_type AuditAction
   entity_type String
-  entity_id   String
+  entity_id   String?
   changes     Json?
   timestamp   DateTime    @default(now())
   ip_address  String?

@@ -90,9 +90,13 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      await deleteDocument('owner-docs', documentId);
+    const result =   await  deleteDocument('owner-docs', documentId);
+    console.log("document delete result",result)
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      toast.success('Document deleted');
+      if(result.success){
+         toast.success('Document deleted');
+      }
+    
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete document');
     }

@@ -7,7 +7,7 @@ import "./index.css";
 import { CalendarProvider } from './contexts/CalendarContext';
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <CalendarProvider>
@@ -15,5 +15,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         </CalendarProvider>
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
+  // {/* </React.StrictMode> */}
 );
