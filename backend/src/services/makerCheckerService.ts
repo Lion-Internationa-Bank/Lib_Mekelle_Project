@@ -281,75 +281,107 @@ async approveRequest(requestId: string, approverId: string, userRole: UserRole, 
 }
 
 
-  async rejectRequest(requestId: string, approverId: string, userRole: UserRole, rejectionReason: string) {
-    return await this.prisma.$transaction(async (tx) => {
-      const approvalRequest = await tx.approval_requests.findUnique({
-        where: { request_id: requestId }
-      });
+async rejectRequest(requestId: string, approverId: string, userRole: UserRole, rejectionReason: string) {
+  return await this.prisma.$transaction(async (tx) => {
+    const approvalRequest = await tx.approval_requests.findUnique({
+      where: { request_id: requestId }
+    });
 
-      if (!approvalRequest) {
-        throw new Error('Approval request not found');
+    if (!approvalRequest) {
+      throw new Error('Approval request not found');
+    }
+
+    if (approvalRequest.status !== 'PENDING') {
+      throw new Error(`Request is already ${approvalRequest.status.toLowerCase()}`);
+    }
+
+    // Verify approver has correct role
+    if (userRole !== approvalRequest.approver_role) {
+      throw new Error('Insufficient permissions to reject this request');
+    }
+
+    // Update approval request
+    const updatedRequest = await tx.approval_requests.update({
+      where: { request_id: requestId },
+      data: {
+        status: 'REJECTED',
+        rejection_reason: rejectionReason,
+        rejected_at: new Date(),
+        updated_at: new Date()
       }
+    });
 
-      if (approvalRequest.status !== 'PENDING') {
-        throw new Error(`Request is already ${approvalRequest.status.toLowerCase()}`);
+    // Create approval log
+    await tx.approval_logs.create({
+      data: {
+        request_id: requestId,
+        action: ApprovalAction.REJECT,
+        performed_by: approverId,
+        performed_by_role: userRole,
+        comments: rejectionReason,
+        previous_status: RequestStatus.PENDING,
+        new_status: RequestStatus.REJECTED,
+        created_at: new Date()
       }
+    });
 
-      // Verify approver has correct role
-      if (userRole !== approvalRequest.approver_role) {
-        throw new Error('Insufficient permissions to reject this request');
-      }
-
-      // Update approval request
-      const updatedRequest = await tx.approval_requests.update({
-        where: { request_id: requestId },
+    // If the request is for a WIZARD_SESSION, update the wizard session status
+    if (approvalRequest.entity_type === 'WIZARD_SESSION') {
+      await tx.wizard_sessions.update({
+        where: { 
+          session_id: approvalRequest.entity_id 
+        },
         data: {
           status: 'REJECTED',
-          rejection_reason: rejectionReason,
-          rejected_at: new Date(),
           updated_at: new Date()
         }
       });
 
-      // Create approval log
-      await tx.approval_logs.create({
-        data: {
-          request_id: requestId,
-          action: ApprovalAction.REJECT,
-          performed_by: approverId,
-          performed_by_role: userRole,
-          comments: rejectionReason,
-          previous_status:RequestStatus.PENDING,
-          new_status: RequestStatus.REJECTED,
-          created_at: new Date()
-        }
-      });
-
-      // Audit the rejection
+      // Optional: Create a specific audit log for wizard session rejection
       await this.auditService.log({
         userId: approverId,
         action: AuditAction.UPDATE,
-        entityType: EntityType.APPROVAL_REQUEST,
-        entityId: requestId,
+        entityType: EntityType.WIZARD_SESSION,
+        entityId: approvalRequest.entity_id,
         changes: {
-          entity_type: approvalRequest.entity_type,
-          entity_id: approvalRequest.entity_id,
-          action_type: approvalRequest.action_type,
+          request_id: requestId,
+          rejection_reason: rejectionReason,
           approver_id: approverId,
           approver_role: userRole,
-          rejection_reason: rejectionReason,
-          status: RequestStatus.REJECTED,
+          previous_status: 'PENDING_APPROVAL',
+          new_status: 'REJECTED',
+          timestamp: new Date().toISOString()
         },
         ipAddress: 'SYSTEM'
       });
+    }
 
-      return {
-        success: true,
-        message: 'Request rejected',
-        data: updatedRequest
-      };
+    // Audit the rejection
+    await this.auditService.log({
+      userId: approverId,
+      action: AuditAction.UPDATE,
+      entityType: EntityType.APPROVAL_REQUEST,
+      entityId: requestId,
+      changes: {
+        entity_type: approvalRequest.entity_type,
+        entity_id: approvalRequest.entity_id,
+        action_type: approvalRequest.action_type,
+        approver_id: approverId,
+        approver_role: userRole,
+        rejection_reason: rejectionReason,
+        status: RequestStatus.REJECTED,
+      },
+      ipAddress: 'SYSTEM'
     });
-  }
+
+    return {
+      success: true,
+      message: 'Request rejected',
+      data: updatedRequest,
+      wizard_session_updated: approvalRequest.entity_type === 'WIZARD_SESSION'
+    };
+  });
+}
 
   async getPendingRequests(user: any) {
     const where: any = {

@@ -16,10 +16,12 @@ import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { WizardSessionService } from '../services/wizardSessionService.ts';
 import { AuditService } from '../services/auditService.ts';
 import { DocumentStorageService } from '../services/documentStorageService.ts';
+import { ActionExecutionService } from '../services/actionExecutionService.ts';
 
 const auditService = new AuditService();
 const makerCheckerService = new MakerCheckerService( auditService);
-const wizardSessionService = new WizardSessionService(makerCheckerService, auditService);
+const actionExecutionService = new ActionExecutionService();
+const wizardSessionService = new WizardSessionService(makerCheckerService, auditService,actionExecutionService);
 const documentStorageService = new DocumentStorageService();
 
 const makerCheckerController = new MakerCheckerController(makerCheckerService, wizardSessionService);

@@ -30,6 +30,7 @@ model wizard_sessions {
   current_step       String        @default("parcel")
   
   // Timestamps
+  completed_at       DateTime?
   created_at         DateTime      @default(now()) @db.Timestamptz(6)
   updated_at         DateTime      @updatedAt @db.Timestamptz(6)
   submitted_at       DateTime?
@@ -37,6 +38,7 @@ model wizard_sessions {
   
   // Relationships
   user               users         @relation(fields: [user_id], references: [user_id])
+
   sub_city           sub_cities?   @relation(fields: [sub_city_id], references: [sub_city_id])
   approval_request   approval_requests? @relation(fields: [approval_request_id], references: [request_id])
   wizard_documents_temps  wizard_documents_temp[]
@@ -89,8 +91,7 @@ model approval_requests {
   sub_city          sub_cities?    @relation(fields: [sub_city_id], references: [sub_city_id])
   approval_logs     approval_logs[]
   wizard_session    wizard_sessions?
-  
-  @@unique([entity_type, entity_id, action_type, status], name: "unique_pending_request")
+
   @@index([maker_id])
   @@index([status])
   @@index([entity_type, entity_id])

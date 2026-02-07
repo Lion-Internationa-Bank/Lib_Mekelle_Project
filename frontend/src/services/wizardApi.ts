@@ -1,4 +1,4 @@
-// src/services/wizardApi.ts - CORRECTED VERSION
+// src/services/wizardApi.ts
 import { api, type ApiResponse } from './api';
 import type {
   SaveStepData,

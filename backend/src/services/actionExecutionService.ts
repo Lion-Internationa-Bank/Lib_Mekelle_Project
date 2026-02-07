@@ -243,7 +243,6 @@ export class ActionExecutionService {
           boundary_east: parcelData.boundary_east,
           created_at: new Date(),
           updated_at: new Date(),
-          created_by: approverId
         }
       });
 
@@ -276,7 +275,6 @@ export class ActionExecutionService {
               sub_city_id: data.sub_city_id,
               created_at: new Date(),
               updated_at: new Date(),
-              created_by: approverId
             }
           });
         }
@@ -356,7 +354,6 @@ export class ActionExecutionService {
             annual_installment: annualInstallment,
             created_at: new Date(),
             updated_at: new Date(),
-            created_by: approverId
           }
         });
 
@@ -407,77 +404,80 @@ export class ActionExecutionService {
   }
 
   private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData, results: any, approverId: string) {
-    const permanentDocs = [];
+  const permanentDocs = [];
 
-    // Process parcel documents
-    if (wizardData.parcel_docs && Array.isArray(wizardData.parcel_docs)) {
-      for (const doc of wizardData.parcel_docs) {
-        const permanentDoc = await tx.documents.create({
-          data: {
-            upin: results.parcel.upin,
-            file_url: doc.file_url,
-            file_name: doc.file_name,
-            doc_type: doc.document_type || 'PARCEL_MAP',
-            is_verified: false,
-            upload_date: new Date(),
-            created_at: new Date(),
-            updated_at: new Date(),
-            created_by: approverId
-          }
-        });
-        permanentDocs.push(permanentDoc);
-      }
-    }
-
-    // Process owner documents
-    if (wizardData.owner_docs && Array.isArray(wizardData.owner_docs)) {
-      for (let i = 0; i < wizardData.owner_docs.length; i++) {
-        const doc = wizardData.owner_docs[i];
-        const owner = results.owners[i];
-        
-        if (owner) {
-          const permanentDoc = await tx.documents.create({
-            data: {
-              owner_id: owner.owner_id,
-              file_url: doc.file_url,
-              file_name: doc.file_name,
-              doc_type: doc.document_type || 'OWNER_ID_COPY',
-              is_verified: false,
-              upload_date: new Date(),
-              created_at: new Date(),
-              updated_at: new Date(),
-              created_by: approverId
-            }
-          });
-          permanentDocs.push(permanentDoc);
+  // Process parcel documents
+  if (wizardData.parcel_docs && Array.isArray(wizardData.parcel_docs)) {
+    for (const doc of wizardData.parcel_docs) {
+      const permanentDoc = await tx.documents.create({
+        data: {
+          upin: results.parcel.upin,  // Direct foreign key
+          file_url: doc.file_url,
+          file_name: doc.file_name,
+          doc_type: doc.document_type || 'PARCEL_MAP',
+          is_verified: false,
+          upload_date: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
+          // created_by is not in your schema, remove it
+          // created_by: approverId
         }
-      }
+      });
+      permanentDocs.push(permanentDoc);
     }
-
-    // Process lease documents
-    if (wizardData.lease_docs && Array.isArray(wizardData.lease_docs) && results.lease) {
-      for (const doc of wizardData.lease_docs) {
-        const permanentDoc = await tx.documents.create({
-          data: {
-            lease_id: results.lease.lease_id,
-            file_url: doc.file_url,
-            file_name: doc.file_name,
-            doc_type: doc.document_type || 'LEASE_CONTRACT',
-            is_verified: false,
-            upload_date: new Date(),
-            created_at: new Date(),
-            updated_at: new Date(),
-            created_by: approverId
-          }
-        });
-        permanentDocs.push(permanentDoc);
-      }
-    }
-
-    return permanentDocs;
   }
 
-  private async createWizardAuditLogs(tx: any, wizardData: WizardExecutionData, results: any, approverId: string) {
+  // Process owner documents
+  if (wizardData.owner_docs && Array.isArray(wizardData.owner_docs)) {
+    for (let i = 0; i < wizardData.owner_docs.length; i++) {
+      const doc = wizardData.owner_docs[i];
+      const owner = results.owners[i];
+      
+      if (owner) {
+        const permanentDoc = await tx.documents.create({
+          data: {
+            owner_id: owner.owner_id,  // Direct foreign key
+            file_url: doc.file_url,
+            file_name: doc.file_name,
+            doc_type: doc.document_type || 'OWNER_ID_COPY',
+            is_verified: false,
+            upload_date: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
+            // created_by is not in your schema, remove it
+            // created_by: approverId
+          }
+        });
+        permanentDocs.push(permanentDoc);
+      }
+    }
+  }
+
+  // Process lease documents
+  if (wizardData.lease_docs && Array.isArray(wizardData.lease_docs) && results.lease) {
+    for (const doc of wizardData.lease_docs) {
+      const permanentDoc = await tx.documents.create({
+        data: {
+          lease_id: results.lease.lease_id,  // Direct foreign key
+          file_url: doc.file_url,
+          file_name: doc.file_name,
+          doc_type: doc.document_type || 'LEASE_CONTRACT',
+          is_verified: false,
+          upload_date: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
+          // created_by is not in your schema, remove it
+          // created_by: approverId
+        }
+      });
+      permanentDocs.push(permanentDoc);
+    }
+  }
+
+  return permanentDocs;
+}
+
+ private async createWizardAuditLogs(tx: any, wizardData: WizardExecutionData, results: any, approverId: string) {
     // Wizard session audit log
     await tx.audit_logs.create({
       data: {
@@ -591,7 +591,7 @@ export class ActionExecutionService {
             user_id: approverId,
             action_type: AuditAction.CREATE,
             entity_type: 'billing_records',
-            entity_id: results.bills[0].billing_record_id,
+            entity_id: results.bills[0].bill_id,  // Changed from billing_record_id to bill_id
             changes: {
               action: 'generate_lease_bills',
               upin: results.lease.upin,
@@ -613,17 +613,27 @@ export class ActionExecutionService {
 
     // Document creation audit log if documents exist
     if (results.documents && results.documents.length > 0) {
+      // Filter out undefined document types and get unique document types
+      const documentTypes = [...new Set(
+        results.documents
+          .map((doc: any) => doc.doc_type)  // Use doc_type field (not document_type)
+          .filter((type: string | undefined) => type !== undefined && type !== null)
+      )];
+
+      // Get the first document's doc_id (not document_id)
+      const firstDocId = results.documents[0]?.doc_id;
+
       await tx.audit_logs.create({
         data: {
           user_id: approverId,
           action_type: AuditAction.CREATE,
           entity_type: 'documents',
-          entity_id: results.documents[0]?.document_id,
+          entity_id: firstDocId || `batch_${results.parcel.upin}`,
           changes: {
             action: 'upload_documents',
             parcel_upin: results.parcel.upin,
             documents_count: results.documents.length,
-            document_types: [...new Set(results.documents.map((doc: any) => doc.document_type))],
+            document_types: documentTypes,
             actor_id: approverId,
             actor_role: 'APPROVER',
             timestamp: new Date().toISOString(),
@@ -2401,7 +2411,6 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
         data: {
           status: 'MERGED',
           completed_at: new Date(),
-          approved_by: approverId,
           updated_at: new Date()
         }
       });

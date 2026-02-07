@@ -18,6 +18,9 @@ export interface AuthRequest<
     document_id?:string;
     step?:string;
     filename?:string;
+    lease_id?:string;
+    upin?:string;
+    encumbrance_id?:string;
   },
   ResBody = any,
   ReqBody = any,

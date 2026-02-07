@@ -4,6 +4,8 @@ import prisma from '../config/prisma.ts';
 import { AuditAction } from '../generated/prisma/enums.ts';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { AuditService } from '../services/auditService.ts';
+import { type AuthRequest } from '../middlewares/authMiddleware.ts';
+
 
 // Initialize services
 const auditService = new AuditService();
@@ -175,10 +177,11 @@ export const createLease = async (req: Request, res: Response) => {
 // ---- UPDATE LEASE ----
 
 export const updateLease = async (
-  req: Request<{ lease_id: string }>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const { lease_id } = req.params;
+  const  lease_id  = req.params.lease_id as string;
+
   const data = req.body;
   const actor = (req as any).user;
 
@@ -395,8 +398,8 @@ export const updateLease = async (
 
 // ---- DELETE LEASE ----
 
-export const deleteLease = async (req: Request<{ lease_id: string }>, res: Response) => {
-  const { lease_id } = req.params;
+export const deleteLease = async (req: AuthRequest, res: Response) => {
+  const lease_id  = req.params.lease_id as string;
   const actor = (req as any).user;
 
   try {

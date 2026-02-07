@@ -323,19 +323,21 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
 };
 // ---- UPDATE PARCEL (Approval Request) ----
 
-export const updateParcel = async (req: Request<{ upin: string }>, res: Response) => {
-  const { upin } = req.params;
+export const updateParcel = async (req: AuthRequest, res: Response) => {
+  const  upin  = req.params.upin as string;
   const data = req.body as UpdateParcelBody;
   const actor = (req as any).user;
 
   try {
     // Get current parcel data for validation
     const currentParcel = await prisma.land_parcels.findFirst({
-      where: { 
-        upin,
-        is_deleted: false 
-      },
-    });
+  where: { 
+    // Ensure you are passing the string, not the object
+    upin: upin, 
+    is_deleted: false 
+  },
+});
+
 
     if (!currentParcel) {
       return res.status(404).json({ 
@@ -513,8 +515,8 @@ export const updateParcel = async (req: Request<{ upin: string }>, res: Response
 
 // ---- DELETE PARCEL (Approval Request) ----
 
-export const deleteParcel = async (req: Request<{ upin: string }>, res: Response) => {
-  const { upin } = req.params;
+export const deleteParcel = async (req: AuthRequest, res: Response) => {
+  const  upin  = req.params as string ;
   const data = req.body as DeleteParcelBody;
   const actor = (req as any).user;
 
@@ -837,11 +839,11 @@ export const getParcels = async (req: AuthRequest, res: Response) => {
 };
 
 export const getParcelByUpin = async (
-  req: Request<{ upin: string }>,
+  req: AuthRequest,
   res: Response
 ) => {
   try {
-    const { upin } = req.params;
+    const  upin  = req.params.upin as string;
 
     const parcel = await prisma.land_parcels.findUnique({
       where: { upin, is_deleted: false },
@@ -1084,11 +1086,11 @@ export const getParcelByUpin = async (
 // ---- TRANSFER OWNERSHIP (Approval Request) ----
 
 export const transferOwnership = async (
-  req: Request<{ upin: string }, {}, TransferOwnershipBody>,
+  req: AuthRequest,
   res: Response
 ) => {
   const actor = (req as any).user;
-  const { upin } = req.params;
+  const upin  = req.params as string;
   const {
     from_owner_id,
     to_owner_id,
@@ -1716,10 +1718,10 @@ export const createEncumbrance = async (
 };
 
 export const updateEncumbrance = async (
-  req: Request<{ encumbrance_id: string }, {}, UpdateEncumbranceBody>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const { encumbrance_id } = req.params;
+  const  encumbrance_id  = req.params.encumbrance_id as string;
   const { type, issuing_entity, reference_number, status, registration_date } = req.body;
   const actor = (req as any).user;
 
@@ -1912,8 +1914,8 @@ export const updateEncumbrance = async (
   }
 };
 
-export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }, {}, { reason?: string }>, res: Response) => {
-  const { encumbrance_id } = req.params;
+export const deleteEncumbrance = async (req: AuthRequest, res: Response) => {
+  const  encumbrance_id  = req.params as string;
   const { reason } = req.body;
   const actor = (req as any).user;
 
@@ -2039,9 +2041,9 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string },
   }
 };
 
-export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, res: Response) => {
+export const getEncumbrancesByParcel = async (req: AuthRequest, res: Response) => {
   try {
-    const { upin } = req.params;
+    const upin  = req.params as string;
 
     const encumbrances = await prisma.encumbrances.findMany({
       where: {
