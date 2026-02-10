@@ -117,6 +117,8 @@ model approval_logs {
   @@index([performed_by])
 }
 
+
+
 // Add these enums
 enum SessionStatus {
   DRAFT

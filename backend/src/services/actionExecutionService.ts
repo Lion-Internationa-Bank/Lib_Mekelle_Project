@@ -765,7 +765,7 @@ export class ActionExecutionService {
         data: {
           ...updates,
           updated_at: new Date(),
-          last_modified_by: approverId
+    
         }
       });
 
@@ -1490,211 +1490,170 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
     }
   }
 
-  // ========== OWNER ACTIONS ==========
+ // ========== OWNER ACTIONS ==========
 
-  async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
-    try {
-      // Check if owner already exists
-      const existingOwner = await tx.owners.findFirst({
+async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
+  try {
+    // Check if owner already exists
+    const existingOwner = await tx.owners.findFirst({
+      where: { 
+        national_id: data.national_id,
+        is_deleted: false
+      }
+    });
+
+    if (existingOwner) {
+      throw new Error('Owner with this national ID already exists');
+    }
+
+    // Check TIN uniqueness if provided
+    if (data.tin_number) {
+      const existingTINOwner = await tx.owners.findFirst({
         where: { 
-          national_id: data.national_id,
+          tin_number: data.tin_number,
           is_deleted: false
         }
       });
-
-      if (existingOwner) {
-        throw new Error('Owner with this national ID already exists');
+      
+      if (existingTINOwner) {
+        throw new Error('Owner with this TIN number already exists');
       }
-
-      // Create owner
-      const owner = await tx.owners.create({
-        data: {
-          full_name: data.full_name,
-          national_id: data.national_id,
-          tin_number: data.tin_number,
-          phone_number: data.phone_number,
-          sub_city_id: data.sub_city_id,
-          created_at: new Date(),
-          updated_at: new Date(),
-          created_by: approverId
-        }
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.CREATE,
-          entity_type: 'owners',
-          entity_id: owner.owner_id,
-          changes: {
-            action: 'create_owner',
-            owner_id: owner.owner_id,
-            full_name: owner.full_name,
-            national_id: owner.national_id,
-            sub_city_id: owner.sub_city_id,
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: 'OWNER_CREATE',
-        owner_id: owner.owner_id,
-        full_name: owner.full_name,
-        national_id: owner.national_id
-      };
-    } catch (error) {
-      console.error('Execute create owner error:', error);
-      throw error;
     }
-  }
 
-  async executeUpdateOwner(tx: any, owner_id: string, data: UpdateOwnerData, approverId: string) {
-    try {
-      // Get current owner for audit
-      const currentOwner = await tx.owners.findUnique({
-        where: { owner_id, is_deleted: false }
-      });
-
-      if (!currentOwner) {
-        throw new Error('Owner not found');
+    // Create owner
+    const owner = await tx.owners.create({
+      data: {
+        full_name: data.full_name,
+        national_id: data.national_id,
+        tin_number: data.tin_number,
+        phone_number: data.phone_number,
+        sub_city_id: data.sub_city_id,
+        created_at: new Date(),
+        updated_at: new Date(),
       }
+    });
 
-      const updates: any = {};
-      const changesForAudit: any = {};
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.CREATE,
+        entity_type: 'owners',
+        entity_id: owner.owner_id,
+        changes: {
+          action: 'create_owner',
+          owner_id: owner.owner_id,
+          full_name: owner.full_name,
+          national_id: owner.national_id,
+          sub_city_id: owner.sub_city_id,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
 
-      // Apply validated changes
-      for (const [key, value] of Object.entries(data.changes)) {
-        if (value !== undefined) {
-          // Special validation for national_id - check uniqueness
-          if (key === 'national_id' && value !== currentOwner.national_id) {
-            const existingWithNationalId = await tx.owners.findFirst({
-              where: { 
-                national_id: value,
-                owner_id: { not: owner_id },
-                is_deleted: false 
-              }
-            });
-            
-            if (existingWithNationalId) {
-              throw new Error('National ID already exists for another owner');
+    return {
+      success: true,
+      action: 'OWNER_CREATE',
+      owner_id: owner.owner_id,
+      full_name: owner.full_name,
+      national_id: owner.national_id,
+      sub_city_id: owner.sub_city_id,
+      created_at: owner.created_at
+    };
+  } catch (error) {
+    console.error('Execute create owner error:', error);
+    throw error;
+  }
+}
+
+async executeUpdateOwner(tx: any, owner_id: string, data: UpdateOwnerData, approverId: string) {
+  try {
+    // Get current owner for audit
+    const currentOwner = await tx.owners.findUnique({
+      where: { owner_id, is_deleted: false }
+    });
+
+    if (!currentOwner) {
+      throw new Error('Owner not found');
+    }
+
+    const updates: any = {};
+    const changesForAudit: any = {};
+
+    // Apply validated changes
+    for (const [key, value] of Object.entries(data.changes)) {
+      if (value !== undefined) {
+        // Special validation for national_id - check uniqueness
+        if (key === 'national_id' && value !== currentOwner.national_id) {
+          const existingWithNationalId = await tx.owners.findFirst({
+            where: { 
+              national_id: value,
+              owner_id: { not: owner_id },
+              is_deleted: false 
             }
-          }
-
-          updates[key] = value;
+          });
           
-          // Track changes for audit
-          const currentValue = currentOwner[key as keyof typeof currentOwner];
-          if (JSON.stringify(currentValue) !== JSON.stringify(value)) {
-            changesForAudit[key] = {
-              from: currentValue,
-              to: value
-            };
+          if (existingWithNationalId) {
+            throw new Error('National ID already exists for another owner');
           }
         }
-      }
 
-      if (Object.keys(updates).length === 0) {
-        throw new Error('No valid changes to apply');
-      }
-
-      // Update owner
-      const updatedOwner = await tx.owners.update({
-        where: { owner_id },
-        data: {
-          ...updates,
-          updated_at: new Date(),
-          last_modified_by: approverId
-        }
-      });
-
-      // Create audit log if there were changes
-      if (Object.keys(changesForAudit).length > 0) {
-        await tx.audit_logs.create({
-          data: {
-            user_id: approverId,
-            action_type: AuditAction.UPDATE,
-            entity_type: 'owners',
-            entity_id: owner_id,
-            changes: {
-              action: 'update_owner',
-              changed_fields: changesForAudit,
-              actor_id: approverId,
-              actor_role: 'APPROVER',
-              timestamp: new Date().toISOString(),
-            },
-            timestamp: new Date(),
-            ip_address: 'SYSTEM'
+        // Special validation for TIN number
+        if (key === 'tin_number' && value !== currentOwner.tin_number && value) {
+          const existingWithTIN = await tx.owners.findFirst({
+            where: { 
+              tin_number: value,
+              owner_id: { not: owner_id },
+              is_deleted: false 
+            }
+          });
+          
+          if (existingWithTIN) {
+            throw new Error('TIN number already exists for another owner');
           }
-        });
-      }
+        }
 
-      return {
-        success: true,
-        action: 'OWNER_UPDATE',
-        owner_id,
-        changes_applied: Object.keys(changesForAudit)
-      };
-    } catch (error) {
-      console.error('Execute update owner error:', error);
-      throw error;
+        updates[key] = value;
+        
+        // Track changes for audit
+        const currentValue = currentOwner[key as keyof typeof currentOwner];
+        if (JSON.stringify(currentValue) !== JSON.stringify(value)) {
+          changesForAudit[key] = {
+            from: currentValue,
+            to: value
+          };
+        }
+      }
     }
-  }
 
-  async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, approverId: string) {
-    try {
-      // Get current owner for audit
-      const currentOwner = await tx.owners.findUnique({
-        where: { owner_id, is_deleted: false },
-        include: {
-          parcels: {
-            where: { is_active: true, is_deleted: false },
-            include: { parcel: true }
-          }
-        }
-      });
+    if (Object.keys(updates).length === 0) {
+      throw new Error('No valid changes to apply');
+    }
 
-      if (!currentOwner) {
-        throw new Error('Owner not found');
+    // Update owner
+    const updatedOwner = await tx.owners.update({
+      where: { owner_id },
+      data: {
+        ...updates,
+        updated_at: new Date(),
       }
+    });
 
-      // Check if owner has active parcels
-      if (currentOwner.parcels.length > 0) {
-        const parcelList = currentOwner.parcels.map((p: any) => p.parcel.upin).join(', ');
-        throw new Error(`Owner has active parcels: ${parcelList}. Unlink parcels before deletion.`);
-      }
-
-      // Soft delete owner
-      const deletedOwner = await tx.owners.update({
-        where: { owner_id },
-        data: {
-          is_deleted: true,
-          deleted_at: new Date(),
-          deleted_by: approverId,
-          updated_at: new Date()
-        }
-      });
-
-      // Create audit log
+    // Create audit log if there were changes
+    if (Object.keys(changesForAudit).length > 0) {
       await tx.audit_logs.create({
         data: {
           user_id: approverId,
-          action_type: AuditAction.DELETE,
+          action_type: AuditAction.UPDATE,
           entity_type: 'owners',
           entity_id: owner_id,
           changes: {
-            action: 'soft_delete_owner',
-            owner_id,
-            full_name: currentOwner.full_name,
-            national_id: currentOwner.national_id,
-            reason: data.reason,
-            active_parcels_at_deletion: currentOwner.parcels.length,
+            action: 'update_owner',
+            changed_fields: changesForAudit,
             actor_id: approverId,
             actor_role: 'APPROVER',
             timestamp: new Date().toISOString(),
@@ -1703,19 +1662,93 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
           ip_address: 'SYSTEM'
         }
       });
-
-      return {
-        success: true,
-        action: 'OWNER_DELETE',
-        owner_id,
-        deleted_at: deletedOwner.deleted_at
-      };
-    } catch (error) {
-      console.error('Execute delete owner error:', error);
-      throw error;
     }
-  }
 
+    return {
+      success: true,
+      action: 'OWNER_UPDATE',
+      owner_id,
+      changes_applied: Object.keys(changesForAudit),
+      updated_at: updatedOwner.updated_at
+    };
+  } catch (error) {
+    console.error('Execute update owner error:', error);
+    throw error;
+  }
+}
+
+async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, approverId: string) {
+  try {
+    // Get current owner for audit
+    const currentOwner = await tx.owners.findUnique({
+      where: { owner_id, is_deleted: false },
+      include: {
+        parcels: {
+          where: { is_active: true, is_deleted: false },
+          select: { parcel: true }
+        }
+      }
+    });
+
+    if (!currentOwner) {
+      throw new Error('Owner not found');
+    }
+
+    // Check if owner has active parcels
+    if (currentOwner.parcels.length > 0) {
+      throw new Error(`Owner has ${currentOwner.parcels.length} active parcels. Unlink parcels before deletion.`);
+    }
+
+    // Soft delete owner
+    const deletedOwner = await tx.owners.update({
+      where: { owner_id },
+      data: {
+        is_deleted: true,
+        deleted_at: new Date(),
+        updated_at: new Date(),
+        national_id: `${currentOwner.national_id}_deleted_${Date.now()}`,
+        tin_number: currentOwner.tin_number ? 
+          `${currentOwner.tin_number}_deleted_${Date.now()}` : null,
+      }
+    });
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.DELETE,
+        entity_type: 'owners',
+        entity_id: owner_id,
+        changes: {
+          action: 'soft_delete_owner',
+          owner_id,
+          full_name: currentOwner.full_name,
+          original_national_id: currentOwner.national_id,
+          new_national_id: deletedOwner.national_id,
+          reason: data.reason,
+          active_parcels_at_deletion: currentOwner.parcels.length,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: 'OWNER_DELETE',
+      owner_id,
+      full_name: currentOwner.full_name,
+      deleted_at: deletedOwner.deleted_at,
+      is_deleted: deletedOwner.is_deleted
+    };
+  } catch (error) {
+    console.error('Execute delete owner error:', error);
+    throw error;
+  }
+}
   // ========== LEASE ACTIONS ==========
 
   async executeCreateLease(tx: any, data: CreateLeaseData, approverId: string) {
@@ -1775,7 +1808,6 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
           status: 'ACTIVE',
           created_at: new Date(),
           updated_at: new Date(),
-          created_by: approverId
         }
       });
 
@@ -1940,9 +1972,9 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
       }
 
       // Calculate new annual installment if needed
-      const principal = Number(totalLeaseAmount ?? 0) - (Number(downPaymentAmount ?? 0) + Number(otherPaymentAmount ?? 0));
+      const principal = Number(totalLeaseAmount ?? 0) - Number(downPaymentAmount ?? 0);
       if (principal <= 0) {
-        throw new Error('Down payment plus other payment must be less than total lease amount');
+        throw new Error('Down payment must be less than total lease amount');
       }
 
       const annualMainPayment = paymentTermYears > 0 ? principal / paymentTermYears : 0;
@@ -1961,7 +1993,6 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
         data: {
           ...updates,
           updated_at: new Date(),
-          last_modified_by: approverId
         },
       });
 
@@ -2125,7 +2156,7 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
           registration_date: data.registration_date ? new Date(data.registration_date) : new Date(),
           created_at: new Date(),
           updated_at: new Date(),
-          created_by: approverId
+          
         }
       });
 
@@ -2224,7 +2255,6 @@ async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, a
         data: {
           ...updates,
           updated_at: new Date(),
-          last_modified_by: approverId
         }
       });
 

@@ -22,6 +22,9 @@ import { WizardProvider } from './contexts/WizardContext';
 import ParcelWizardV2 from './components/wizard/ParcelWizard';
 import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import SessionDetailsPage from './routes/subcity/SessionDetailsPage';
+import PendingRequestsPage from './routes/admin/PendingRequestsPage';
+import RequestDetailPage from './routes/admin/RequestDetailPage';
+
 const App = () => {
   const { isLoading } = useAuth();
   if (isLoading) {
@@ -47,8 +50,13 @@ const App = () => {
           <Route path="/sub-cities" element={<SubCitiesPage />} />
           <Route path="/configs" element={<ConfigsPage />} />
           <Route path="/rateConfigs" element={<RateConfigsPage />} />
+          {/* pending requests  */}
+        <Route path="/pending-requests" element={<PendingRequestsPage/>}/> 
+        <Route path="/pending-requests/:requestId" element={<RequestDetailPage/>}/>
         </Route>
         <Route path="/parcels/:upin" element={<ParcelDetailPage />} />
+
+        
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>

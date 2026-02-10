@@ -13,21 +13,21 @@ export interface ApprovalConfig {
 }
 
 export const APPROVAL_CONFIGS: Record<string, ApprovalConfig> = {
-  LAND_PARCEL: {
+  LAND_PARCELS: {
     entityType: 'LAND_PARCEL',
     requireApproval: true,
     makerRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'],
     approverRoles: ['SUBCITY_ADMIN'],
     sameSubCityOnly: true
   },
-  OWNER: {
-    entityType: 'OWNER',
+  OWNERS: {
+    entityType: 'OWNERS',
     requireApproval: true,
     makerRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'],
     approverRoles: ['SUBCITY_ADMIN'],
     sameSubCityOnly: true
   },
-  LEASE: {
+  LEASE_AGREEMENTS: {
     entityType: 'LEASE',
     requireApproval: true,
     makerRoles: ['SUBCITY_NORMAL'],
@@ -41,13 +41,20 @@ export const APPROVAL_CONFIGS: Record<string, ApprovalConfig> = {
     approverRoles: ['SUBCITY_ADMIN'],
     sameSubCityOnly: true
   },
-  REVENUE: {
+  REVENUES: {
     entityType: 'REVENUE',
     requireApproval: true,
     makerRoles: ['REVENUE_USER'],
     approverRoles: ['REVENUE_ADMIN'],
     sameSubCityOnly: false
-  }
+  },
+    ENCUMBRANCES: {
+    entityType: 'LAND_PARCEL',
+    requireApproval: true,
+    makerRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'],
+    approverRoles: ['SUBCITY_ADMIN'],
+    sameSubCityOnly: true
+  },
 };
 
 // Middleware to check if user can approve a specific request
@@ -86,6 +93,7 @@ export const canApproveRequest = async (
 
     // Get config for this entity type
     const config = APPROVAL_CONFIGS[approvalRequest.entity_type];
+    console.log(approvalRequest.entity_type)
     if (!config) {
       return res.status(400).json({
         success: false,

@@ -415,5 +415,6 @@ export const subdivideParcel = async (
   if (!json.success) {
     throw new Error(json.message || "Failed to subdivide parcel");
   }
-  return json.data;
+
+  return json.apiRes;
 };

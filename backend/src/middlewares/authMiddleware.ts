@@ -21,6 +21,7 @@ export interface AuthRequest<
     lease_id?:string;
     upin?:string;
     encumbrance_id?:string;
+    owner_id?:string;
   },
   ResBody = any,
   ReqBody = any,

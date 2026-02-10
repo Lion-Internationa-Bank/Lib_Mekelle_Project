@@ -26,6 +26,13 @@ const menuItems: MenuItem[] = [
     href: '/sessions',
     allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
   },
+     {
+    id: 'pending-requests',
+    label: 'Pending Requests',
+    icon: '📍',
+    href: '/pending-requests',
+    allowedRoles: ['SUBCITY_ADMIN','REVENUE_ADMIN'],
+  },
   {
     id: 'ownership',
     label: 'Ownership',

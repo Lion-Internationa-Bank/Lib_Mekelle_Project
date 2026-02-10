@@ -127,61 +127,7 @@ export class MakerCheckerController {
     }
   }
 
-  // Get user's wizard sessions
-  async getUserSessions(req: AuthRequest, res: Response) {
-    try {
-      const user = req.user!;
-      const sessions = await this.wizardSessionService.getUserSessions(user.user_id);
 
-      return res.status(200).json({
-        success: true,
-        data: sessions
-      });
-    } catch (error) {
-      console.error('Get user sessions error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch user sessions'
-      });
-    }
-  }
-
-  // Get session details
-  async getSessionDetails(req: AuthRequest, res: Response) {
-    try {
-     
-      const session_id  = req.params.session_id as string;
-      const user = req.user!;
-
-      const session = await this.wizardSessionService.getSession(session_id);
-
-      if (!session) {
-        return res.status(404).json({
-          success: false,
-          message: 'Session not found'
-        });
-      }
-
-      // Check permissions
-      if (session.user_id !== user.user_id && !this.canViewSessionAsApprover(user, session)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Insufficient permissions to view this session'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: session
-      });
-    } catch (error) {
-      console.error('Get session details error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch session details'
-      });
-    }
-  }
 
   private canViewRequest(user: any, request: any): boolean {
     // Maker can view their own requests
@@ -205,17 +151,5 @@ export class MakerCheckerController {
     return false;
   }
 
-  private canViewSessionAsApprover(user: any, session: any): boolean {
-    // Approver can view sessions they can approve
-    if (user.role === 'SUBCITY_ADMIN' && session.sub_city_id === user.sub_city_id) {
-      return true;
-    }
 
-    // City admin can view all
-    if (user.role === 'CITY_ADMIN') {
-      return true;
-    }
-
-    return false;
-  }
 }

@@ -124,10 +124,11 @@ export default function SubdivideParcelModal({
       }));
 
       // Call API
-    const res =  await subdivideParcel(parcel.upin, payload);
+      await subdivideParcel(parcel.upin, payload);
 
       await onSuccess();
-      toast.success(res.message || "Subdived successfully ")
+     
+      toast.success( "Parcel subdivision request submitted for approval ")
       onClose();
     } catch (err: any) {
       toast.error(err.message || "Failed to subdivide parcel")
