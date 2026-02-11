@@ -1,19 +1,19 @@
-// components/modals/TransferOwnershipModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus } from 'lucide-react';
-import { searchOwnersLiteApi, transferOwnershipApi,type LiteOwner } from "../../../services/parcelDetailApi";
+import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, FileText, AlertCircle } from 'lucide-react';
+import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
-import GenericDocsUpload from "../../../components/GenericDocsUpload"; // ← import for upload step
+import GenericDocsUpload from "../../../components/GenericDocsUpload";
+import ApprovalRequestDocsModal from "../../../components/ApprovalRequestDocsModal";
 import { toast } from 'sonner';
+import { useAuth } from '../../../contexts/AuthContext';
 
-// onRefreshParcel is not a function
 interface TransferOwnershipModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcelUpin: string;
   currentOwners: Array<{ owner_id: string; full_name: string }>;
-  onSuccess?: (historyId: string) => void; // optional external callback
-  onRefreshParcel: () => Promise<void>;    // required: to refresh parcel after transfer/upload
+  onSuccess?: (historyId: string) => void;
+  onRefreshParcel: () => Promise<void>;
 }
 
 export default function TransferOwnershipModal({
@@ -39,9 +39,18 @@ export default function TransferOwnershipModal({
   const [transferTypes, setTransferTypes] = useState<{ value: string; label: string }[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
-  // Document upload step after transfer
+  // Document upload step after immediate execution
   const [showUploadStep, setShowUploadStep] = useState(false);
   const [latestHistoryId, setLatestHistoryId] = useState<string | null>(null);
+
+  // Approval request document upload
+  const [showApprovalDocsModal, setShowApprovalDocsModal] = useState(false);
+  const [currentApprovalRequest, setCurrentApprovalRequest] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    resultData?: any;
+  } | null>(null);
 
   // Searchable buyer
   const [buyerSearch, setBuyerSearch] = useState('');
@@ -51,6 +60,7 @@ export default function TransferOwnershipModal({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const {user} = useAuth();
 
   // Fetch transfer types
   useEffect(() => {
@@ -119,15 +129,32 @@ export default function TransferOwnershipModal({
 
   const selectBuyer = (owner: LiteOwner) => {
     setFormData(prev => ({ ...prev, to_owner_id: owner.owner_id }));
-    setBuyerSearch('');
+    setBuyerSearch(owner.full_name);
     setShowDropdown(false);
   };
 
-  const handleTransferSuccess = async (historyId: string) => {
-    setLatestHistoryId(historyId);
-    setShowUploadStep(true);
-    await onRefreshParcel(); // refresh parcel data immediately
-    if (onSuccess) onSuccess(historyId);
+  const handleTransferSuccess = async (result: any) => {
+    console.log("Transfer success result:", result);
+    
+    // Check if approval is required
+    if (result?.approval_request_id) {
+      setCurrentApprovalRequest({
+        id: result.approval_request_id,
+        title: "Upload Ownership Transfer Documents",
+        description: "Upload supporting documents for the ownership transfer approval request",
+        resultData: result
+      });
+      setShowApprovalDocsModal(true);
+    } 
+    // If immediate execution (self-approval or no approval needed)
+    else if (result?.history_id) {
+      setLatestHistoryId(result.history_id);
+      setShowUploadStep(true);
+      
+      if (onSuccess) onSuccess(result.history_id);
+    }
+    
+    await onRefreshParcel();
   };
 
   const handleUploadComplete = async () => {
@@ -141,6 +168,25 @@ export default function TransferOwnershipModal({
     setShowUploadStep(false);
     setLatestHistoryId(null);
     await onRefreshParcel();
+    onClose();
+  };
+
+  const handleApprovalDocsModalClose = () => {
+    setShowApprovalDocsModal(false);
+    setCurrentApprovalRequest(null);
+    onRefreshParcel();
+    onClose();
+  };
+
+  const handleApprovalDocsComplete = () => {
+    setShowApprovalDocsModal(false);
+    setCurrentApprovalRequest(null);
+    
+    if (currentApprovalRequest?.resultData?.history_id) {
+      if (onSuccess) onSuccess(currentApprovalRequest.resultData.history_id);
+    }
+    
+    onRefreshParcel();
     onClose();
   };
 
@@ -165,11 +211,36 @@ export default function TransferOwnershipModal({
       };
 
       const result = await transferOwnershipApi(parcelUpin, payload);
-      toast.success(result.message || "Transfer occurred successfully")
-      await handleTransferSuccess(result.history.history_id);
+      
+      if (result.success) {
+        // Check if approval is required
+        if (result.data?.approval_request_id) {
+          toast.info(result.message || "Transfer request submitted for approval");
+          await handleTransferSuccess({
+            approval_request_id: result.data.approval_request_id,
+            ...result.data
+          });
+        } else if (result.history?.history_id || result.data?.history_id) {
+          // Immediate execution
+          const historyId = result.history?.history_id || result.data?.history_id;
+          toast.success(result.message || "Transfer completed successfully");
+          await handleTransferSuccess({
+            history_id: historyId,
+            ...result.data
+          });
+        } else {
+          // Fallback
+          toast.success(result.message || "Transfer completed successfully");
+          await onRefreshParcel();
+          onClose();
+        }
+      } else {
+        throw new Error(result.error || 'Failed to transfer ownership');
+      }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to transfer ownership' )
-     
+      console.error('Transfer error:', err);
+      toast.error(err.message || 'Failed to transfer ownership');
+      setError(err.message || 'Failed to transfer ownership');
     } finally {
       setLoading(false);
     }
@@ -179,7 +250,7 @@ export default function TransferOwnershipModal({
   const selectedBuyer = searchResults.find(o => o.owner_id === formData.to_owner_id);
 
   // ──────────────────────────────────────────────
-  // Show document upload step after successful transfer
+  // Show document upload step after successful immediate transfer
   // ──────────────────────────────────────────────
   if (showUploadStep && latestHistoryId) {
     return (
@@ -208,7 +279,7 @@ export default function TransferOwnershipModal({
             <GenericDocsUpload
               title="Transfer supporting documents"
               upin={parcelUpin}
-              subCity="" // can be passed if you have subcity info
+              subCity=""
               historyId={latestHistoryId}
               hideTitle={true}
               allowedDocTypes={[
@@ -245,234 +316,256 @@ export default function TransferOwnershipModal({
   }
 
   // ──────────────────────────────────────────────
-  // Main transfer form (shown before upload)
+  // Main transfer form (shown before submission)
   // ──────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Transfer Ownership
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              UPIN: {parcelUpin}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Info banner */}
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle size={20} className="text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
-              <div className="text-sm text-blue-800 dark:text-blue-200">
-                <strong className="font-medium block mb-1">Full Ownership Transfer</strong>
-                <p>The selected current owner's entire share will be transferred to the new owner.</p>
-              </div>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Transfer Ownership
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                UPIN: {parcelUpin}
+              </p>
             </div>
-          </div>
-
-          {/* From Owner */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Current Owner (Seller) <span className="text-gray-500 font-normal">(optional)</span>
-            </label>
-            <select
-              name="from_owner_id"
-              value={formData.from_owner_id}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Close"
             >
-              <option value="">— Whole parcel transfer —</option>
-              {currentOwners.map(owner => (
-                <option key={owner.owner_id} value={owner.owner_id}>
-                  {owner.full_name}
-                </option>
-              ))}
-            </select>
+              <X size={20} />
+            </button>
           </div>
 
-          {/* Buyer Search */}
-          <div className="relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
-              <UserPlus size={16} />
-              New Owner (Buyer/Receiver) <span className="text-red-500">*</span>
-            </label>
-
-            <div className="relative">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={buyerSearch}
-                onChange={e => {
-                  setBuyerSearch(e.target.value);
-                  setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                placeholder="Search by name, national ID, phone or TIN..."
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-              />
-              <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Info banner */}
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={20} className="text-blue-600 dark:text-blue-400 mt-1 shrink-0" />
+                <div className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong className="font-medium block mb-1">Full Ownership Transfer</strong>
+                  <p>The selected current owner's entire share will be transferred to the new owner.</p>
+                  <p className="mt-2 text-xs">
+                    {user?.role === "SUBCITY_NORMAL" ? 
+                      "Your request will be submitted for approval by a higher authority." :
+                      "You have permission to execute transfers directly."
+                    }
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {showDropdown && (
-              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {isSearching ? (
-                  <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    Searching...
-                  </div>
-                ) : searchResults.length === 0 && buyerSearch.length >= 2 ? (
-                  <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No matching owners found
-                    <button
-                      type="button"
-                      onClick={() => alert("Create new owner feature - to be implemented")}
-                      className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 transition-colors"
-                    >
-                      <Plus size={14} className="mr-1" />
-                      Create New
-                    </button>
-                  </div>
-                ) : (
-                  <div className="py-1">
-                    {searchResults.map(owner => (
-                      <div
-                        key={owner.owner_id}
-                        onClick={() => selectBuyer(owner)}
-                        className={`px-4 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
-                          formData.to_owner_id === owner.owner_id ? 'bg-blue-50 dark:bg-blue-950/30' : ''
-                        }`}
-                      >
-                        {formData.to_owner_id === owner.owner_id && (
-                          <Check size={16} className="text-blue-600" />
-                        )}
-                        <div>
-                          <div className="font-medium">{owner.full_name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {owner.national_id} • {owner.phone_number || '—'} • {owner.tin_number || '—'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Transfer Type - Dynamic */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Transfer Type <span className="text-red-500">*</span>
-            </label>
-            {loadingTypes ? (
-              <div className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-500">
-                Loading transfer types...
-              </div>
-            ) : (
+            {/* From Owner */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Current Owner (Seller) <span className="text-gray-500 font-normal">(optional)</span>
+              </label>
               <select
-                name="transfer_type"
-                value={formData.transfer_type}
+                name="from_owner_id"
+                value={formData.from_owner_id}
                 onChange={handleChange}
-                required
-                disabled={transferTypes.length === 0}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">— Select type —</option>
-                {transferTypes.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
+                <option value="">— Whole parcel transfer —</option>
+                {currentOwners.map(owner => (
+                  <option key={owner.owner_id} value={owner.owner_id}>
+                    {owner.full_name}
                   </option>
                 ))}
               </select>
-            )}
-          </div>
+            </div>
 
-          {/* Price & Reference */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Transfer Price (ETB)
+            {/* Buyer Search */}
+            <div className="relative" ref={dropdownRef}>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
+                <UserPlus size={16} />
+                New Owner (Buyer/Receiver) <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                name="transfer_price"
-                value={formData.transfer_price}
-                onChange={handleChange}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Reference Number
-              </label>
-              <input
-                type="text"
-                name="reference_no"
-                value={formData.reference_no}
-                onChange={handleChange}
-                placeholder="Optional"
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+              <div className="relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={buyerSearch}
+                  onChange={e => {
+                    setBuyerSearch(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder="Search by name, national ID, phone or TIN..."
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                />
+                <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+              </div>
 
-          {error && (
-            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {formData.to_owner_id && selectedBuyer && (
-            <div className="text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-700">
-              Transferring full ownership → <strong>{selectedBuyer.full_name}</strong>
-              {formData.from_owner_id && <> from <strong>{fromOwnerName}</strong></>}
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-6 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading || !formData.to_owner_id || !formData.transfer_type || loadingTypes}
-              className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <UserMinus size={18} />
-                  Confirm Transfer
-                </>
+              {showDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {isSearching ? (
+                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      Searching...
+                    </div>
+                  ) : searchResults.length === 0 && buyerSearch.length >= 2 ? (
+                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No matching owners found
+                      <button
+                        type="button"
+                        onClick={() => alert("Create new owner feature - to be implemented")}
+                        className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 transition-colors"
+                      >
+                        <Plus size={14} className="mr-1" />
+                        Create New
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      {searchResults.map(owner => (
+                        <div
+                          key={owner.owner_id}
+                          onClick={() => selectBuyer(owner)}
+                          className={`px-4 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
+                            formData.to_owner_id === owner.owner_id ? 'bg-blue-50 dark:bg-blue-950/30' : ''
+                          }`}
+                        >
+                          {formData.to_owner_id === owner.owner_id && (
+                            <Check size={16} className="text-blue-600" />
+                          )}
+                          <div>
+                            <div className="font-medium">{owner.full_name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {owner.national_id} • {owner.phone_number || '—'} • {owner.tin_number || '—'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
-            </button>
-          </div>
-        </form>
+            </div>
+
+            {/* Transfer Type - Dynamic */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Transfer Type <span className="text-red-500">*</span>
+              </label>
+              {loadingTypes ? (
+                <div className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-500">
+                  Loading transfer types...
+                </div>
+              ) : (
+                <select
+                  name="transfer_type"
+                  value={formData.transfer_type}
+                  onChange={handleChange}
+                  required
+                  disabled={transferTypes.length === 0}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                >
+                  <option value="">— Select type —</option>
+                  {transferTypes.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Price & Reference */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Transfer Price (ETB)
+                </label>
+                <input
+                  type="number"
+                  name="transfer_price"
+                  value={formData.transfer_price}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Reference Number
+                </label>
+                <input
+                  type="text"
+                  name="reference_no"
+                  value={formData.reference_no}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {formData.to_owner_id && selectedBuyer && (
+              <div className="text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-700">
+                Transferring full ownership → <strong>{selectedBuyer.full_name}</strong>
+                {formData.from_owner_id && <> from <strong>{fromOwnerName}</strong></>}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 px-6 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading || !formData.to_owner_id || !formData.transfer_type || loadingTypes}
+                className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <UserMinus size={18} />
+                    Confirm Transfer
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* === Approval Request Document Upload Modal === */}
+      {showApprovalDocsModal && currentApprovalRequest && (
+        <ApprovalRequestDocsModal
+          isOpen={showApprovalDocsModal}
+          onClose={handleApprovalDocsModalClose}
+          onComplete={handleApprovalDocsComplete}
+          approvalRequestId={currentApprovalRequest.id}
+          title={currentApprovalRequest.title}
+          description={currentApprovalRequest.description}
+          entityType="HISTORY"
+          actionType="TRANSFER"
+        />
+      )}
+    </>
   );
 }

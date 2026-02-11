@@ -1,10 +1,48 @@
-
+import { toast } from 'sonner';
 import type {
-  CreateOwnerOnlyData,
   UpdateOwnerFormData,
 } from "../validation/schemas";
 import type { SubCity } from "./cityAdminService";
 import apiFetch from './api';
+
+
+export interface CreateOwnerResponse {
+  success: boolean;
+  message: string;
+  data: {
+    owner_id?: string;
+    approval_request_id?: string;
+    entity_type: string;
+    action_type: string;
+    status: string;
+    approver_role: string;
+    estimated_processing: string;
+    submitted_at: string;
+    document_upload?: {
+      allowed: boolean;
+      endpoint: string;
+      allowed_types: string[];
+      max_files: number;
+      max_size_mb: number;
+      current_count: number;
+    };
+    maker_info?: {
+      user_id: string;
+      role: string;
+    };
+  };
+}
+
+
+
+
+export interface CreateOwnerOnlyData {
+  full_name: string;
+  national_id: string;
+  tin_number?: string;
+  phone_number: string;
+}
+
 
 export interface OwnedParcel {
   share_ratio: string;
@@ -64,36 +102,32 @@ export const fetchOwnersWithParcels = async (params: {
 };
 
 
-
-export interface CreateOwnerResponse {
-  success: boolean;
-  data: {
-    owner_id: string;
-    owner: {
-      owner_id: string;
-      full_name: string;
-      national_id: string;
-      tin_number: string | null;
-      phone_number: string | null;
-    };
-  };
-}
-
 export const createOwnerOnly = async (data: CreateOwnerOnlyData): Promise<CreateOwnerResponse> => {
-  const apiRes = await apiFetch<any>(`/owners/only`, {
+  const apiRes = await apiFetch<any>('/owners/only', {
     method: "POST",
     body: JSON.stringify(data),
   });
+  
   if (!apiRes.success) {
     throw new Error(apiRes.error || "Failed to create owner");
   }
+  
   const json = apiRes.data;
   if (!json.success) {
     throw new Error(json.message || "Failed to create owner");
   }
+  
+  // Handle different success responses
+  if (json.data.approval_request_id) {
+    // Approval required
+    toast.info(json.message || 'Owner creation request submitted for approval');
+  } else {
+    // Immediate execution
+    toast.success(json.message || 'Owner created successfully');
+  }
+  
   return json;
 };
-
 export const updateOwnerApi = async (
   owner_id: string,
   data: UpdateOwnerFormData
@@ -125,3 +159,9 @@ export const deleteOwnerApi = async (owner_id: string) => {
   }
   return json;
 };
+
+
+
+
+
+

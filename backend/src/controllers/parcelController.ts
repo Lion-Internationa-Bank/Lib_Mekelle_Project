@@ -1143,7 +1143,7 @@ export const transferOwnership = async (
   res: Response
 ) => {
   const actor = (req as any).user;
-  const upin  = req.params as string;
+  const { upin } = req.params; 
   const {
     from_owner_id,
     to_owner_id,
@@ -1209,7 +1209,7 @@ export const transferOwnership = async (
       // Check if FROM owner is currently an owner of the parcel
       const isCurrentOwner = await prisma.parcel_owners.findFirst({
         where: {
-          upin,
+          upin:upin,
           owner_id: from_owner_id,
           is_active: true,
           is_deleted: false,
@@ -1227,7 +1227,7 @@ export const transferOwnership = async (
     // Create approval request
     const approvalRequest = await makerCheckerService.createApprovalRequest({
       entityType: EntityType.LAND_PARCELS,
-      entityId: upin,
+      entityId: upin as string,
       actionType: ActionType.TRANSFER,
       requestData: {
         from_owner_id,
@@ -1624,7 +1624,11 @@ export const subdivideParcel = async (req: AuthRequest, res: Response) => {
       entityId: upin,
       actionType: 'SUBDIVIDE',
       requestData: {
-        childParcels,
+        childParcels: childParcels.map(p => ({
+          ...p,
+          // Add placeholder for documents
+          documents: [] // Will be populated by document uploads
+        })),
         parent_details: {
           upin: parent.upin,
           file_number: parent.file_number,
@@ -1636,12 +1640,21 @@ export const subdivideParcel = async (req: AuthRequest, res: Response) => {
           parent_area: parentArea,
           total_child_area: totalChildArea,
           area_match: Math.abs(totalChildArea - parentArea) <= 0.1
-        }
+        },
+        // Store list of all parcels for document association
+        parcels: [
+          { upin: parent.upin, type: 'PARENT', file_number: parent.file_number },
+          ...childParcels.map(p => ({ 
+            upin: p.upin, 
+            type: 'CHILD', 
+            file_number: p.file_number 
+          }))
+        ]
       },
       makerId: actor.user_id,
       makerRole: actor.role,
       subCityId: actor.sub_city_id,
-      comments: req.body.comments || `Request to subdivide parcel ${upin}`
+      comments: req.body.comments || `Request to subdivide parcel ${upin} into ${childParcels.length} parcels`
     });
 
     // Create audit log for subdivision request

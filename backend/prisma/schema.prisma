@@ -83,6 +83,7 @@ model approval_requests {
   created_at        DateTime       @default(now()) @db.Timestamptz(6)
   updated_at        DateTime       @updatedAt @db.Timestamptz(6)
   approved_at       DateTime?
+  comments          String?
   rejected_at       DateTime?
   deleted_at        DateTime?
   is_deleted        Boolean        @default(false)
@@ -221,6 +222,7 @@ model users {
   approval_logs approval_logs[]
   wizard_sessions wizard_sessions[]
   approval_requests approval_requests[]
+  documents         documents[]
   sub_city      sub_cities?  @relation(fields: [sub_city_id], references: [sub_city_id])
 }
 
@@ -499,10 +501,12 @@ model documents {
   deleted_at     DateTime?
   is_deleted     Boolean            @default(false)
   doc_type       String
+  verified_by    String?            @db.Uuid
   encumbrance    encumbrances?      @relation(fields: [encumbrance_id], references: [encumbrance_id], onDelete: Cascade)
   history        ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
   lease          lease_agreements?  @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
   owner          owners?            @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
+  user           users?             @relation(fields: [verified_by], references: [user_id], onDelete: Cascade)
   parcel         land_parcels?      @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 

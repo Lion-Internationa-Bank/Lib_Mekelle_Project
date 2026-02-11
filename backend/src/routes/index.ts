@@ -10,6 +10,7 @@ import cityAdminRoutes from './cityAdminRoutes.ts';
 import revenueAdminRoutes from './revenueAdminRoutes.ts';
 import makerCheckerRoutes from './makerCheckerRoutes.ts'; // NEW
 import wizardRoutes from './wizardRoutes.ts'; // NEW
+import docApproval from './approvalDocuments.ts'
 
 const router: Router = express.Router();
 
@@ -22,6 +23,8 @@ router.use('/city-admin', cityAdminRoutes);
 router.use('/revenue-admin', revenueAdminRoutes);
 router.use('/maker-checker', makerCheckerRoutes); // NEW
 router.use('/wizard', wizardRoutes); // NEW
+router.use('/doc-approval',docApproval)
+
 
 
 router.get('/health', (req: Request, res: Response) => {

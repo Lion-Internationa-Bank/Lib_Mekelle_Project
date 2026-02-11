@@ -169,6 +169,135 @@ export class WizardController {
     }
   }
 
+  
+  // Validate session
+  async validateSession(req: AuthRequest, res: Response) {
+    try {
+      const session_id = req.params.session_id as string;
+      const user = req.user!;
+
+      // Verify session belongs to user
+      const session = await this.wizardService.getSession(session_id);
+      if (!session || session.user_id !== user.user_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      const validation = await this.wizardService.validateSession(session_id);
+
+      return res.status(200).json({
+        success: true,
+        data: validation
+      });
+    } catch (error: any) {
+      console.error('Validate session error:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to validate session'
+      });
+    }
+  }
+
+  // Submit session for approval
+  async submitForApproval(req: AuthRequest, res: Response) {
+    try {
+      const session_id = req.params.session_id as string;
+      const user = req.user!;
+
+      // Verify session belongs to user
+      const session = await this.wizardService.getSession(session_id);
+      if (!session || session.user_id !== user.user_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      const result = await this.wizardService.submitForApproval(session_id);
+
+      return res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error: any) {
+      console.error('Submit for approval error:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to submit for approval'
+      });
+    }
+  }
+
+  // Get user's wizard sessions
+  async getUserSessions(req: AuthRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const sessions = await this.wizardService.getUserSessions(user.user_id);
+
+      return res.status(200).json({
+        success: true,
+        data: sessions
+      });
+    } catch (error) {
+      console.error('Get user sessions error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user sessions'
+      });
+    }
+  }
+
+  // Serve temporary document
+  async serveDocument(req: AuthRequest, res: Response) {
+    try {
+      const session_id = req.params.session_id as string;
+      const step = req.params.step as string;
+      const filename = req.params.filename as string;
+      const user = req.user!;
+
+      // Verify session belongs to user or approver can view
+      const session = await this.wizardService.getSession(session_id);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          message: 'Session not found'
+        });
+      }
+
+      const canView = session.user_id === user.user_id || this.canViewAsApprover(user, session);
+      if (!canView) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      const filePath = await this.documentStorage.getTemporaryFile(session_id, step, filename);
+      
+      // Determine content type
+      const contentType = this.getContentType(filename);
+      res.setHeader('Content-Type', contentType);
+      
+      // Stream file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      
+    } catch (error: any) {
+      console.error('Serve document error:', error);
+      if (error.message === 'File not found') {
+        return res.status(404).json({
+          success: false,
+          message: 'File not found'
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to serve document'
+      });
+    }
+  }
   // Upload document for wizard
   async uploadDocument(req: AuthRequest, res: Response) {
     try {
@@ -320,134 +449,6 @@ export class WizardController {
     }
   }
 
-  // Validate session
-  async validateSession(req: AuthRequest, res: Response) {
-    try {
-      const session_id = req.params.session_id as string;
-      const user = req.user!;
-
-      // Verify session belongs to user
-      const session = await this.wizardService.getSession(session_id);
-      if (!session || session.user_id !== user.user_id) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
-      }
-
-      const validation = await this.wizardService.validateSession(session_id);
-
-      return res.status(200).json({
-        success: true,
-        data: validation
-      });
-    } catch (error: any) {
-      console.error('Validate session error:', error);
-      return res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to validate session'
-      });
-    }
-  }
-
-  // Submit session for approval
-  async submitForApproval(req: AuthRequest, res: Response) {
-    try {
-      const session_id = req.params.session_id as string;
-      const user = req.user!;
-
-      // Verify session belongs to user
-      const session = await this.wizardService.getSession(session_id);
-      if (!session || session.user_id !== user.user_id) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
-      }
-
-      const result = await this.wizardService.submitForApproval(session_id);
-
-      return res.status(200).json({
-        success: true,
-        data: result
-      });
-    } catch (error: any) {
-      console.error('Submit for approval error:', error);
-      return res.status(400).json({
-        success: false,
-        message: error.message || 'Failed to submit for approval'
-      });
-    }
-  }
-
-  // Get user's wizard sessions
-  async getUserSessions(req: AuthRequest, res: Response) {
-    try {
-      const user = req.user!;
-      const sessions = await this.wizardService.getUserSessions(user.user_id);
-
-      return res.status(200).json({
-        success: true,
-        data: sessions
-      });
-    } catch (error) {
-      console.error('Get user sessions error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch user sessions'
-      });
-    }
-  }
-
-  // Serve temporary document
-  async serveDocument(req: AuthRequest, res: Response) {
-    try {
-      const session_id = req.params.session_id as string;
-      const step = req.params.step as string;
-      const filename = req.params.filename as string;
-      const user = req.user!;
-
-      // Verify session belongs to user or approver can view
-      const session = await this.wizardService.getSession(session_id);
-      if (!session) {
-        return res.status(404).json({
-          success: false,
-          message: 'Session not found'
-        });
-      }
-
-      const canView = session.user_id === user.user_id || this.canViewAsApprover(user, session);
-      if (!canView) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
-      }
-
-      const filePath = await this.documentStorage.getTemporaryFile(session_id, step, filename);
-      
-      // Determine content type
-      const contentType = this.getContentType(filename);
-      res.setHeader('Content-Type', contentType);
-      
-      // Stream file
-      const fileStream = fs.createReadStream(filePath);
-      fileStream.pipe(res);
-      
-    } catch (error: any) {
-      console.error('Serve document error:', error);
-      if (error.message === 'File not found') {
-        return res.status(404).json({
-          success: false,
-          message: 'File not found'
-        });
-      }
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to serve document'
-      });
-    }
-  }
 
   private canViewAsApprover(user: any, session: any): boolean {
     if (user.role === 'SUBCITY_ADMIN' && session.sub_city_id === user.sub_city_id) {

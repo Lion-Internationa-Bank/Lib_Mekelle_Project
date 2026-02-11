@@ -1,7 +1,8 @@
 // src/components/modals/SubdivideParcelModal.tsx
 import { useState } from 'react';
-import { X, Plus, Trash2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Plus, Trash2, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { subdivideParcel } from './../../../services/parcelDetailApi';
+import SubdivisionDocsUploadModal from './SubdivisionDocsUploadModal';
 import type { ParcelDetail } from '../../../services/parcelDetailApi';
 import { toast } from 'sonner';
 
@@ -22,12 +23,12 @@ export default function SubdivideParcelModal({
     upin: string;
     file_number: string;
     total_area_m2: number;
-    boundary_coords?: string; // JSON string
+    boundary_coords?: string;
     boundary_north?: string;
     boundary_east?: string;
     boundary_south?: string;
     boundary_west?: string;
-    showBoundaries?: boolean; // toggle visibility
+    showBoundaries?: boolean;
   }>>([
     { 
       upin: `${parcel.upin}-A`, 
@@ -45,6 +46,11 @@ export default function SubdivideParcelModal({
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // New state for document upload modal
+  const [showDocsUpload, setShowDocsUpload] = useState(false);
+  const [approvalRequestId, setApprovalRequestId] = useState<string | null>(null);
+  const [submittedChildParcels, setSubmittedChildParcels] = useState<any[]>([]);
 
   if (!isOpen) return null;
 
@@ -101,6 +107,12 @@ export default function SubdivideParcelModal({
         );
       }
 
+      if (Math.abs(totalChildArea - parentArea) > 0.1) {
+        throw new Error(
+          `Total child area (${totalChildArea.toFixed(2)} m²) must equal parent area (${parentArea.toFixed(2)} m²)`
+        );
+      }
+
       if (children.some(c => Number(c.total_area_m2) <= 0)) {
         throw new Error("All child parcels must have positive area");
       }
@@ -109,6 +121,12 @@ export default function SubdivideParcelModal({
       const upins = new Set(children.map(c => c.upin.trim()));
       if (upins.size !== children.length) {
         throw new Error("Duplicate UPINs detected. Each child must have a unique UPIN.");
+      }
+
+      // Check duplicate file numbers
+      const fileNumbers = new Set(children.map(c => c.file_number.trim()));
+      if (fileNumbers.size !== children.length) {
+        throw new Error("Duplicate file numbers detected. Each child must have a unique file number.");
       }
 
       // Prepare payload (filter out undefined/empty boundary fields)
@@ -124,227 +142,310 @@ export default function SubdivideParcelModal({
       }));
 
       // Call API
-      await subdivideParcel(parcel.upin, payload);
-
-      await onSuccess();
-     
-      toast.success( "Parcel subdivision request submitted for approval ")
-      onClose();
+      const response = await subdivideParcel(parcel.upin, payload);
+      
+      // Check if approval is required and we got an approval request ID
+      if (response.data?.approval_request_id) {
+        setApprovalRequestId(response.data.approval_request_id);
+        setSubmittedChildParcels(children);
+        setShowDocsUpload(true); // Show the document upload modal
+        toast.success(response.message || "Subdivision request submitted for approval");
+      } else {
+        // Immediate execution (self-approval)
+        toast.success(response.message || "Parcel subdivided successfully");
+        await onSuccess();
+        onClose();
+      }
     } catch (err: any) {
-      toast.error(err.message || "Failed to subdivide parcel")
+      toast.error(err.message || "Failed to subdivide parcel");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b px-6 py-5 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Subdivide Parcel</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
-            <X size={24} />
-          </button>
-        </div>
+  const handleDocsModalClose = () => {
+    setShowDocsUpload(false);
+    setApprovalRequestId(null);
+    setSubmittedChildParcels([]);
+    onClose();
+  };
 
-        <div className="p-6">
-          {/* Parent Info */}
-          <div className="bg-blue-50 p-5 rounded-lg mb-8">
-            <p className="text-blue-800 font-medium text-lg">
-              Parent Parcel: <strong>{parcel.upin}</strong>
-            </p>
-            <p className="text-sm text-blue-700 mt-2">
-              Total Area: <strong>{parcel.total_area_m2.toLocaleString()} m²</strong>
-            </p>
-            <p className="text-sm text-blue-600 mt-3">
-              All active owners will be automatically copied to every child parcel.
-              Boundary fields are optional — they will default to parent's values if left blank.
-            </p>
+  const handleDocsModalComplete = async () => {
+    setShowDocsUpload(false);
+    setApprovalRequestId(null);
+    setSubmittedChildParcels([]);
+    await onSuccess();
+    onClose();
+  };
+
+  const parentArea = Number(parcel.total_area_m2);
+  const totalChildArea = children.reduce((sum, c) => sum + Number(c.total_area_m2 || 0), 0);
+  const areaDifference = Math.abs(totalChildArea - parentArea);
+  const isValidArea = areaDifference <= 0.1 && totalChildArea > 0;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <FileText size={24} />
+                Subdivide Parcel
+              </h2>
+              <p className="text-blue-100 mt-1">
+                Parent UPIN: <span className="font-mono bg-blue-700/30 px-2 py-0.5 rounded">{parcel.upin}</span>
+              </p>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              disabled={loading}
+            >
+              <X size={24} />
+            </button>
           </div>
 
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-lg mb-6 flex items-start gap-3">
-              <AlertTriangle size={20} className="mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
+          <div className="p-6">
+            {/* Parent Info */}
+            <div className="bg-blue-50 p-5 rounded-lg mb-8 border border-blue-200">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-blue-800 font-medium text-lg">
+                    Parent Parcel: <strong>{parcel.upin}</strong>
+                  </p>
+                  <p className="text-sm text-blue-700 mt-2">
+                    Total Area: <strong>{parentArea.toLocaleString()} m²</strong>
+                  </p>
+                  <p className="text-sm text-blue-600 mt-3">
+                    <span className="font-medium">Area Balance:</span>{' '}
+                    {totalChildArea > 0 ? (
+                      <span className={isValidArea ? 'text-green-700' : 'text-red-700'}>
+                        {totalChildArea.toFixed(2)} m² / {parentArea.toFixed(2)} m²
+                        {isValidArea ? ' ✓' : ` (${areaDifference.toFixed(2)} m² difference)`}
+                      </span>
+                    ) : (
+                      'Enter child areas'
+                    )}
+                  </p>
+                </div>
+                <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
+                  <span className="text-sm font-medium text-gray-600">Owners to copy:</span>
+                  <span className="ml-2 text-lg font-bold text-blue-700">{parcel.owners?.length || 0}</span>
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* Children */}
-          {children.map((child, index) => (
-            <div key={index} className="border border-gray-200 rounded-xl p-6 mb-8 bg-gray-50">
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="font-semibold text-lg text-gray-800">
-                  Child Parcel {String.fromCharCode(65 + index)}
-                </h3>
-                {children.length > 2 && (
-                  <button
-                    onClick={() => removeChild(index)}
-                    className="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                )}
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-lg mb-6 flex items-start gap-3">
+                <AlertTriangle size={20} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* UPIN */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    UPIN *
-                  </label>
-                  <input
-                    value={child.upin}
-                    onChange={e => updateChild(index, 'upin', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+            {/* Children */}
+            {children.map((child, index) => (
+              <div key={index} className="border border-gray-200 rounded-xl p-6 mb-8 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-semibold text-lg text-gray-800 flex items-center gap-2">
+                    <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold">
+                      {String.fromCharCode(65 + index)}
+                    </span>
+                    Child Parcel {String.fromCharCode(65 + index)}
+                  </h3>
+                  {children.length > 2 && (
+                    <button
+                      onClick={() => removeChild(index)}
+                      className="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition-colors"
+                      disabled={loading}
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  )}
                 </div>
 
-                {/* File Number */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    File Number *
-                  </label>
-                  <input
-                    value={child.file_number}
-                    onChange={e => updateChild(index, 'file_number', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                {/* Area */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Total Area (m²) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={child.total_area_m2}
-                    onChange={e => updateChild(index, 'total_area_m2', Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Optional Boundaries - Collapsible */}
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => toggleBoundaries(index)}
-                  className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {child.showBoundaries ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  <span className="ml-1.5">
-                    {child.showBoundaries ? 'Hide' : 'Add/Edit'} Boundary Details (optional)
-                  </span>
-                </button>
-
-                {child.showBoundaries && (
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-200">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Boundary Coordinates (JSON)
-                      </label>
-                      <textarea
-                        value={child.boundary_coords || ''}
-                        onChange={e => updateChild(index, 'boundary_coords', e.target.value)}
-                        rows={4}
-                        placeholder='{"type":"Polygon","coordinates":[[[...]]]}'
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        North Boundary
-                      </label>
-                      <input
-                        value={child.boundary_north || ''}
-                        onChange={e => updateChild(index, 'boundary_north', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        East Boundary
-                      </label>
-                      <input
-                        value={child.boundary_east || ''}
-                        onChange={e => updateChild(index, 'boundary_east', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        South Boundary
-                      </label>
-                      <input
-                        value={child.boundary_south || ''}
-                        onChange={e => updateChild(index, 'boundary_south', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        West Boundary
-                      </label>
-                      <input
-                        value={child.boundary_west || ''}
-                        onChange={e => updateChild(index, 'boundary_west', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* UPIN */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      UPIN *
+                    </label>
+                    <input
+                      value={child.upin}
+                      onChange={e => updateChild(index, 'upin', e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={loading}
+                    />
                   </div>
-                )}
+
+                  {/* File Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      File Number *
+                    </label>
+                    <input
+                      value={child.file_number}
+                      onChange={e => updateChild(index, 'file_number', e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Area */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Total Area (m²) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={child.total_area_m2}
+                      onChange={e => updateChild(index, 'total_area_m2', Number(e.target.value))}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Boundaries - Collapsible */}
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => toggleBoundaries(index)}
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    disabled={loading}
+                  >
+                    {child.showBoundaries ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    <span className="ml-1.5">
+                      {child.showBoundaries ? 'Hide' : 'Add/Edit'} Boundary Details (optional)
+                    </span>
+                  </button>
+
+                  {child.showBoundaries && (
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-200">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Boundary Coordinates (JSON)
+                        </label>
+                        <textarea
+                          value={child.boundary_coords || ''}
+                          onChange={e => updateChild(index, 'boundary_coords', e.target.value)}
+                          rows={4}
+                          placeholder='{"type":"Polygon","coordinates":[[[...]]]}'
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          North Boundary
+                        </label>
+                        <input
+                          value={child.boundary_north || ''}
+                          onChange={e => updateChild(index, 'boundary_north', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          East Boundary
+                        </label>
+                        <input
+                          value={child.boundary_east || ''}
+                          onChange={e => updateChild(index, 'boundary_east', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          South Boundary
+                        </label>
+                        <input
+                          value={child.boundary_south || ''}
+                          onChange={e => updateChild(index, 'boundary_south', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          West Boundary
+                        </label>
+                        <input
+                          value={child.boundary_west || ''}
+                          onChange={e => updateChild(index, 'boundary_west', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
+
+            {/* Add More Child */}
+            <button
+              onClick={addChild}
+              disabled={loading || children.length >= 10}
+              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-400 flex items-center justify-center gap-2 mt-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={20} />
+              Add Another Child Parcel
+            </button>
+
+            {/* Footer Actions */}
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-end">
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="px-8 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !isValidArea}
+                className="px-10 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+              >
+                {loading ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Processing...
+                  </>
+                ) : (
+                  'Submit for Approval'
+                )}
+              </button>
             </div>
-          ))}
-
-          {/* Add More Child */}
-          <button
-            onClick={addChild}
-            className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-400 flex items-center justify-center gap-2 mt-6 transition-all"
-          >
-            <Plus size={20} />
-            Add Another Child Parcel
-          </button>
-
-          {/* Footer Actions */}
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-end">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="px-8 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-10 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
-            >
-              {loading ? (
-                <>
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Processing...
-                </>
-              ) : (
-                'Confirm Subdivision'
-              )}
-            </button>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Document Upload Modal for Subdivision */}
+      {showDocsUpload && approvalRequestId && (
+        <SubdivisionDocsUploadModal
+          isOpen={showDocsUpload}
+          onClose={handleDocsModalClose}
+          approvalRequestId={approvalRequestId}
+          parentUpin={parcel.upin}
+          childParcels={submittedChildParcels}
+          onComplete={handleDocsModalComplete}
+        />
+      )}
+    </>
   );
 }

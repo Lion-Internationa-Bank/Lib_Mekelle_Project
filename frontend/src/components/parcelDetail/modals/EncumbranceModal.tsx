@@ -1,4 +1,3 @@
-// src/modals/EncumbranceModal.tsx
 import { useEffect, useState } from "react";
 import {
   createEncumbranceApi,
@@ -23,7 +22,7 @@ type Props = {
   encumbrance?: Encumbrance | null;
   open: boolean;
   onClose: () => void;
-  onSuccess: (encumbranceId?: string) => Promise<void>;
+  onSuccess: (result?: any) => Promise<void>;
 };
 
 const EncumbranceModal = ({
@@ -87,29 +86,62 @@ const EncumbranceModal = ({
       const parsed = EncumbranceFormSchema.parse(form);
 
       if (isEdit && encumbrance) {
-       const res =  await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
-       toast.success(res.message || "Encumbrance data successfuly updated")
-        await onSuccess();
+        const res = await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
+        if (res.success) {
+          toast.success(res.message || "Encumbrance updated successfully");
+          await onSuccess(res.data);
+        } else {
+          throw new Error(res.error || "Failed to update encumbrance");
+        }
       } else {
         const result = await createEncumbranceApi({
           ...parsed,
           upin,
         });
 
-        const createdId =
-          result.data?.encumbrance_id || result.data?.id || result.id;
-         toast.success(result.message || "Encumbrance data created successfuly")
-        await onSuccess(createdId);
+        console.log("Create encumbrance result:", result);
+        
+        if (result.success) {
+          // Check if approval is required
+          if (result.data?.approval_request_id) {
+            toast.info(result.message || "Encumbrance creation request submitted for approval");
+            await onSuccess({
+              approval_request_id: result.data.approval_request_id,
+              ...result.data
+            });
+          } else if (result.data?.encumbrance_id) {
+            // Immediate execution (self-approval or no approval needed)
+            toast.success(result.message || "Encumbrance created successfully");
+            await onSuccess({
+              encumbrance_id: result.data.encumbrance_id,
+              ...result.data
+            });
+          } else {
+            // Fallback - try to extract ID from response
+            const createdId = result.data?.encumbrance_id || result.data?.id || result.id;
+            toast.success(result.message || "Encumbrance created successfully");
+            await onSuccess({
+              encumbrance_id: createdId,
+              ...result.data
+            });
+          }
+        } else {
+          throw new Error(result.error || "Failed to create encumbrance");
+        }
       }
 
       onClose();
     } catch (err: unknown) {
       if (err instanceof ZodError) {
-        setError(err.issues[0]?.message || "Validation failed");
+        const errorMsg = err.issues[0]?.message || "Validation failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
       } else if (err instanceof Error) {
-        toast.error(err.message || "Operation failed")
+        setError(err.message);
+        toast.error(err.message || "Operation failed");
       } else {
-         toast.error( "Operation failed")
+        setError("An unexpected error occurred");
+        toast.error("Operation failed");
       }
     } finally {
       setSaving(false);
@@ -131,6 +163,12 @@ const EncumbranceModal = ({
           </div>
         )}
 
+        {typesError && !loadingTypes && (
+          <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+            {typesError}
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* Type - Dynamic from backend */}
           <div>
@@ -139,8 +177,6 @@ const EncumbranceModal = ({
             </label>
             {loadingTypes ? (
               <div className="text-sm text-gray-500">Loading types...</div>
-            ) : typesError ? (
-              <div className="text-sm text-red-600">{typesError}</div>
             ) : encumbranceTypes.length === 0 ? (
               <div className="text-sm text-gray-500">No types available</div>
             ) : (

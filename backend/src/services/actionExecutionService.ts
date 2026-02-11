@@ -7,11 +7,12 @@ import {
   PaymentStatus, 
   EncumbranceStatus,
   LeaseStatus,
-  ParcelStatus
+  ParcelStatus,
+  EntityType
 } from '../generated/prisma/enums.ts';
 import { generateLeaseBillsInTx, calculateLeasePaymentDetails } from './leaseBillingService.ts';
 import { DocumentStorageService } from './documentStorageService.ts'; 
-
+import { ApprovalDocumentStorageService } from './approvalDocumentStorageService.ts';
 // Types for different entities
 interface CreateParcelData {
   upin: string;
@@ -188,10 +189,12 @@ interface CreateWizardData extends WizardExecutionData {}
 
 export class ActionExecutionService {
   private documentStorageService: DocumentStorageService;
+  private approvalDocService: ApprovalDocumentStorageService;
 
   constructor() {
     // Initialize if you have a document storage service
     this.documentStorageService = new DocumentStorageService();
+    this.approvalDocService = new ApprovalDocumentStorageService();
   }
 
   // Add this method to handle wizard execution
@@ -923,581 +926,743 @@ export class ActionExecutionService {
     }
   }
 
-async executeTransferOwnership(tx: any, upin: string, data: TransferOwnershipData, approverId: string) {
-    try {
-      const { from_owner_id, to_owner_id, transfer_type, transfer_price, reference_no } = data;
 
-      // Basic validations
-      if (!to_owner_id || !transfer_type) {
-        throw new Error('to_owner_id and transfer_type are required');
-      }
 
-      if (from_owner_id && from_owner_id === to_owner_id) {
-        throw new Error('Self-transfer is not allowed');
-      }
+async executeTransferOwnership(
+  tx: any, 
+  upin: string, 
+  data: TransferOwnershipData & { 
+    approval_request_id?: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
+  try {
+    // Extract transfer data from request_data if available
+    const transferData = data.request_data?.transfer_details || data;
+    const { from_owner_id, to_owner_id, transfer_type, transfer_price, reference_no } = transferData;
 
-      // Define interface for parcel owner with owner relation
-      interface ParcelOwnerWithOwner {
-        parcel_owner_id: string;
-        upin: string;
+    // Basic validations
+    if (!to_owner_id || !transfer_type) {
+      throw new Error('to_owner_id and transfer_type are required');
+    }
+
+    if (from_owner_id && from_owner_id === to_owner_id) {
+      throw new Error('Self-transfer is not allowed');
+    }
+
+    // Define interface for parcel owner with owner relation
+    interface ParcelOwnerWithOwner {
+      parcel_owner_id: string;
+      upin: string;
+      owner_id: string;
+      is_active: boolean;
+      acquired_at: Date | null;
+      retired_at: Date | null;
+      is_deleted: boolean;
+      created_at: Date;
+      updated_at: Date;
+      owner: {
         owner_id: string;
-        is_active: boolean;
-        acquired_at: Date | null;
-        retired_at: Date | null;
-        is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
-        owner: {
-          owner_id: string;
-          full_name: string;
-        };
-      }
+        full_name: string;
+      };
+    }
 
-      // Get current active owners
-      const activeOwners: ParcelOwnerWithOwner[] = await tx.parcel_owners.findMany({
+    // Get current active owners
+    const activeOwners: ParcelOwnerWithOwner[] = await tx.parcel_owners.findMany({
+      where: {
+        upin,
+        is_active: true,
+        is_deleted: false,
+      },
+      include: {
+        owner: {
+          select: { owner_id: true, full_name: true },
+        },
+      },
+    });
+
+    if (activeOwners.length === 0) {
+      throw new Error('NO_ACTIVE_OWNERS');
+    }
+
+    // Validate FROM owner
+    let fromOwnerRecord: ParcelOwnerWithOwner | undefined;
+    if (from_owner_id) {
+      fromOwnerRecord = activeOwners.find((po: ParcelOwnerWithOwner) => po.owner_id === from_owner_id);
+      if (!fromOwnerRecord) {
+        throw new Error('FROM_OWNER_NOT_ACTIVE');
+      }
+    }
+
+    // Check if TO owner exists in system
+    const toOwner = await tx.owners.findUnique({
+      where: { owner_id: to_owner_id, is_deleted: false },
+    });
+
+    if (!toOwner) {
+      throw new Error('TO_OWNER_NOT_FOUND');
+    }
+
+    // Check if TO owner is already active on parcel
+    const existingToOwnerRecord = activeOwners.find((po: ParcelOwnerWithOwner) => po.owner_id === to_owner_id);
+
+    // Create event snapshot
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      owners_before: activeOwners.map((po: ParcelOwnerWithOwner) => ({
+        id: po.owner_id,
+        name: po.owner.full_name,
+      })),
+      transfer_type,
+      transfer_price,
+      reference_no,
+    };
+
+    // Perform updates
+    const updates: Promise<any>[] = [];
+
+    // Update tenure to LEASE unless it's heredity
+    if (transfer_type !== "HEREDITY") {
+      const leaseTenure = await tx.configurations.findFirst({
         where: {
-          upin,
+          category: ConfigCategory.LAND_TENURE,
+          key: "LEASE",
           is_active: true,
           is_deleted: false,
         },
-        include: {
-          owner: {
-            select: { owner_id: true, full_name: true },
-          },
-        },
       });
 
-      if (activeOwners.length === 0) {
-        throw new Error('NO_ACTIVE_OWNERS');
-      }
-
-      // Validate FROM owner
-      let fromOwnerRecord: ParcelOwnerWithOwner | undefined;
-      if (from_owner_id) {
-        fromOwnerRecord = activeOwners.find((po: ParcelOwnerWithOwner) => po.owner_id === from_owner_id);
-        if (!fromOwnerRecord) {
-          throw new Error('FROM_OWNER_NOT_ACTIVE');
-        }
-      }
-
-      // Check if TO owner exists in system
-      const toOwner = await tx.owners.findUnique({
-        where: { owner_id: to_owner_id, is_deleted: false },
-      });
-
-      if (!toOwner) {
-        throw new Error('TO_OWNER_NOT_FOUND');
-      }
-
-      // Check if TO owner is already active on parcel
-      const existingToOwnerRecord = activeOwners.find((po: ParcelOwnerWithOwner) => po.owner_id === to_owner_id);
-
-      // Create event snapshot
-      const snapshot = {
-        timestamp: new Date().toISOString(),
-        owners_before: activeOwners.map((po: ParcelOwnerWithOwner) => ({
-          id: po.owner_id,
-          name: po.owner.full_name,
-        })),
-        transfer_type,
-        transfer_price,
-        reference_no,
-      };
-
-      // Perform updates
-      const updates: Promise<any>[] = [];
-
-      // Update tenure to LEASE unless it's heredity
-      if (transfer_type !== "HEREDITY") {
-        const leaseTenure = await tx.configurations.findFirst({
-          where: {
-            category: ConfigCategory.LAND_TENURE,
-            key: "LEASE",
-            is_active: true,
-            is_deleted: false,
-          },
-        });
-
-        if (leaseTenure) {
-          updates.push(
-            tx.land_parcels.update({
-              where: { upin },
-              data: { 
-                tenure_type: "LEASE",
-                updated_at: new Date()
-              },
-            })
-          );
-        }
-      }
-
-      // Handle FROM owner
-      if (from_owner_id && fromOwnerRecord) {
+      if (leaseTenure) {
         updates.push(
-          tx.parcel_owners.update({
-            where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
-            data: {
-              is_active: false,
-              retired_at: new Date(),
-              updated_at: new Date(),
-            },
-          })
-        );
-      }
-
-      // Handle TO owner
-      if (existingToOwnerRecord) {
-        updates.push(
-          tx.parcel_owners.update({
-            where: { parcel_owner_id: existingToOwnerRecord.parcel_owner_id },
-            data: {
-              acquired_at: new Date(),
-              updated_at: new Date(),
-            },
-          })
-        );
-      } else {
-        updates.push(
-          tx.parcel_owners.create({
-            data: {
-              upin,
-              owner_id: to_owner_id,
-              acquired_at: new Date(),
-              is_active: true,
-              created_at: new Date(),
+          tx.land_parcels.update({
+            where: { upin },
+            data: { 
+              tenure_type: "LEASE",
               updated_at: new Date()
             },
           })
         );
       }
-
-      await Promise.all(updates);
-
-      // Record transfer in history
-      const historyEntry = await tx.ownership_history.create({
-        data: {
-          upin,
-          transfer_type,
-          transfer_date: new Date(),
-          transfer_price: transfer_price ? Number(transfer_price) : null,
-          reference_no: reference_no || null,
-          from_owner_id: from_owner_id || null,
-          to_owner_id: to_owner_id,
-          event_snapshot: snapshot as any,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      });
-
-      // Get final active owners
-      const finalOwners = await tx.parcel_owners.findMany({
-        where: { upin, is_active: true, is_deleted: false },
-        include: { owner: true }
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'parcel_owners',
-          entity_id: `${upin}_${to_owner_id}`,
-          changes: {
-            action: 'transfer_ownership',
-            upin,
-            from_owner_id,
-            to_owner_id,
-            transfer_type,
-            transfer_price,
-            reference_no,
-            parcel_tenure_updated: transfer_type !== "HEREDITY",
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: 'OWNERSHIP_TRANSFER',
-        parcel_upin: upin,
-        from_owner_id,
-        to_owner_id,
-        history_id: historyEntry.history_id,
-        final_owners_count: finalOwners.length
-      };
-    } catch (error) {
-      console.error('Execute transfer ownership error:', error);
-      throw error;
     }
+
+    // Handle FROM owner
+    if (from_owner_id && fromOwnerRecord) {
+      updates.push(
+        tx.parcel_owners.update({
+          where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
+          data: {
+            is_active: false,
+            retired_at: new Date(),
+            updated_at: new Date(),
+          },
+        })
+      );
+    }
+
+    // Handle TO owner
+    if (existingToOwnerRecord) {
+      updates.push(
+        tx.parcel_owners.update({
+          where: { parcel_owner_id: existingToOwnerRecord.parcel_owner_id },
+          data: {
+            acquired_at: new Date(),
+            updated_at: new Date(),
+          },
+        })
+      );
+    } else {
+      updates.push(
+        tx.parcel_owners.create({
+          data: {
+            upin,
+            owner_id: to_owner_id,
+            acquired_at: new Date(),
+            is_active: true,
+            created_at: new Date(),
+            updated_at: new Date()
+          },
+        })
+      );
+    }
+
+    await Promise.all(updates);
+
+    // Record transfer in history
+    const historyEntry = await tx.ownership_history.create({
+      data: {
+        upin,
+        transfer_type,
+        transfer_date: new Date(),
+        transfer_price: transfer_price ? Number(transfer_price) : null,
+        reference_no: reference_no || null,
+        from_owner_id: from_owner_id || null,
+        to_owner_id: to_owner_id,
+        event_snapshot: snapshot as any,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    });
+
+    // Process documents if they exist in request_data
+    let processedDocs = [];
+    if (data.request_data?.documents && Array.isArray(data.request_data.documents) && data.approval_request_id) {
+      processedDocs = await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        'HISTORY',
+        historyEntry.history_id,
+        data.request_data.documents,
+        approverId,
+        tx  // Add transaction parameter
+      );
+    }
+
+    // Get final active owners
+    const finalOwners = await tx.parcel_owners.findMany({
+      where: { upin, is_active: true, is_deleted: false },
+      include: { owner: true }
+    });
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'parcel_owners',
+        entity_id: `${upin}_${to_owner_id}`,
+        changes: {
+          action: 'transfer_ownership',
+          upin,
+          from_owner_id,
+          to_owner_id,
+          transfer_type,
+          transfer_price,
+          reference_no,
+          history_id: historyEntry.history_id,
+          documents_processed: processedDocs.length,
+          parcel_tenure_updated: transfer_type !== "HEREDITY",
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: 'OWNERSHIP_TRANSFER',
+      parcel_upin: upin,
+      from_owner_id,
+      to_owner_id,
+      history_id: historyEntry.history_id,
+      final_owners_count: finalOwners.length,
+      documents_processed: processedDocs.length
+    };
+  } catch (error) {
+    console.error('Execute transfer ownership error:', error);
+    throw error;
+  }
+}
+
+async executeAddParcelOwner(
+  tx: any, 
+  upin: string, 
+  data: AddParcelOwnerData & { 
+    approval_request_id?: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
+  interface ParcelOwnerRecord {
+    parcel_owner_id: string;
+    upin: string;
+    owner_id: string;
+    acquired_at: Date | null;
+    is_active: boolean;
+    retired_at: Date | null;
+    is_deleted: boolean;
+    created_at: Date;
+    updated_at: Date;
   }
 
-  async executeAddParcelOwner(tx: any, upin: string, data: AddParcelOwnerData, approverId: string) {
+  try {
+    // Extract data from request_data if available
+    console.log("data",data)
+    const ownerData = data.request_data?.owner_details || data;
+     const ownerDatav2 = data;
+    const { owner_id, acquired_at } = ownerDatav2;
 
-         interface ParcelOwnerRecord {
-        parcel_owner_id: string;
-        upin: string;
-        owner_id: string;
-        acquired_at: Date | null;
-        is_active: boolean;
-        retired_at: Date | null;
-        is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
-      } 
-    try {
-      const { owner_id, acquired_at } = data;
+    // Validate required fields
+    if (!owner_id) {
+      throw new Error('owner_id is required');
+    }
 
-      // Validate required fields
-      if (!owner_id) {
-        throw new Error('owner_id is required');
-      }
+    // Check if parcel exists
+    const parcel = await tx.land_parcels.findUnique({
+      where: { upin, is_deleted: false }
+    });
 
-      // Check if parcel exists
-      const parcel = await tx.land_parcels.findUnique({
-        where: { upin, is_deleted: false }
-      });
+    if (!parcel) {
+      throw new Error('Parcel not found');
+    }
 
-      if (!parcel) {
-        throw new Error('Parcel not found');
-      }
+    // Check if owner exists
+    const owner = await tx.owners.findUnique({
+      where: { owner_id, is_deleted: false }
+    });
 
-      // Check if owner exists
-      const owner = await tx.owners.findUnique({
-        where: { owner_id, is_deleted: false }
-      });
+    if (!owner) {
+      throw new Error('Owner not found');
+    }
 
-      if (!owner) {
-        throw new Error('Owner not found');
-      }
+    // Check existing active owners
+    const existingParcelOwners = await tx.parcel_owners.findMany({
+      where: {
+        upin,
+        is_deleted: false,
+        is_active: true,
+        retired_at: null,
+      },
+    });
 
-      // Check existing active owners
-      const existingParcelOwners = await tx.parcel_owners.findMany({
-        where: {
-          upin,
-          is_deleted: false,
-          is_active: true,
-          retired_at: null,
-        },
-      });
+    const isFirstOwner = existingParcelOwners.length === 0;
 
-      const isFirstOwner = existingParcelOwners.length === 0;
+    // Determine acquired_at date
+    const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
+    
+    if (acquiredDate > new Date()) {
+      throw new Error('Acquisition date cannot be in the future');
+    }
 
-      // Determine acquired_at date
-      const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
-      
-      if (acquiredDate > new Date()) {
-        throw new Error('Acquisition date cannot be in the future');
-      }
+    if (isFirstOwner && acquiredDate < new Date('1900-01-01')) {
+      throw new Error('Invalid acquisition date for first owner');
+    }
 
-      if (isFirstOwner && acquiredDate < new Date('1900-01-01')) {
-        throw new Error('Invalid acquisition date for first owner');
-      }
+    // Create parcel-owner link
+    const parcelOwner = await tx.parcel_owners.create({
+      data: {
+        upin,
+        owner_id,
+        acquired_at: acquiredDate,
+        is_active: true,
+        retired_at: null,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+    });
 
-      // Create parcel-owner link
-      const parcelOwner = await tx.parcel_owners.create({
-        data: {
-          upin,
+    // Create ownership history record
+    const historyEntry = await tx.ownership_history.create({
+      data: {
+        upin,
+        to_owner_id: owner_id,
+        transfer_type: isFirstOwner ? "FIRST_OWNER" : "CO_OWNER_ADDITION",
+        event_snapshot: {
+          parcel: parcel.upin,
+          owner: owner.full_name,
           owner_id,
           acquired_at: acquiredDate,
-          is_active: true,
-          retired_at: null,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-      });
+          is_first_owner: isFirstOwner,
+          existing_owners_before: existingParcelOwners.map((po: ParcelOwnerRecord) => ({
+            owner_id: po.owner_id,
+          })),
+        } as any,
+        reference_no: `${isFirstOwner ? 'FIRST_OWNER' : 'CO_OWNER'}-${Date.now()}`,
+        transfer_date: new Date(),
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+    });
 
-      // Create ownership history record
-      const historyEntry = await tx.ownership_history.create({
-        data: {
-          upin,
-          to_owner_id: owner_id,
-          transfer_type: isFirstOwner ? "FIRST_OWNER" : "CO_OWNER_ADDITION",
-          event_snapshot: {
-            parcel: parcel.upin,
-            owner: owner.full_name,
-            owner_id,
-            acquired_at: acquiredDate,
-            is_first_owner: isFirstOwner,
-            existing_owners_before: existingParcelOwners.map((po : ParcelOwnerRecord) => ({
-              owner_id: po.owner_id,
-            })),
-          } as any,
-          reference_no: `${isFirstOwner ? 'FIRST_OWNER' : 'CO_OWNER'}-${Date.now()}`,
-          transfer_date: new Date(),
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.CREATE,
-          entity_type: 'parcel_owners',
-          entity_id: parcelOwner.parcel_owner_id,
-          changes: {
-            action: isFirstOwner ? 'add_first_owner' : 'add_co_owner',
-            upin,
-            owner_id,
-            owner_name: owner.full_name,
-            acquired_at: parcelOwner.acquired_at,
-            is_first_owner: isFirstOwner,
-            existing_owners_count: existingParcelOwners.length,
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: isFirstOwner ? 'ADD_FIRST_OWNER' : 'ADD_CO_OWNER',
-        parcel_upin: upin,
-        owner_id,
-        parcel_owner_id: parcelOwner.parcel_owner_id,
-        history_id: historyEntry.history_id
-      };
-    } catch (error) {
-      console.error('Execute add parcel owner error:', error);
-      throw error;
-    }
-  }
-
-async executeSubdivideParcel(tx: any, upin: string, data: SubdivideParcelData, approverId: string) {
-    try {
-      const { childParcels } = data;
-
-      // Validate child parcels
-      if (!Array.isArray(childParcels) || childParcels.length < 2) {
-        throw new Error('At least two child parcels are required');
-      }
-
-      // Define types for parent with owners
-      interface ParcelOwnerWithOwner {
-        owner_id: string;
-        owner: {
-          full_name: string;
-        };
-      }
-
-      interface ParentParcel {
-        upin: string;
-        file_number: string;
-        sub_city_id: string;
-        tabia: string;
-        ketena: string;
-        block: string;
-        total_area_m2: number | string | bigint;
-        land_use: string | null;
-        land_grade: number;
-        tenure_type: string;
-        status: string;
-        boundary_coords: any;
-        boundary_north: string | null;
-        boundary_east: string | null;
-        boundary_south: string | null;
-        boundary_west: string | null;
-        owners: ParcelOwnerWithOwner[];
-      }
-
-      // Get parent with active owners
-      const parent: ParentParcel | null = await tx.land_parcels.findUnique({
-        where: { upin, is_deleted: false },
-        include: {
-          owners: {
-            where: { 
-              is_active: true, 
-              is_deleted: false 
-            },
-            include: { 
-              owner: true 
-            },
-          },
-        },
-      });
-
-      if (!parent) throw new Error('PARENT_NOT_FOUND');
-      if (parent.status !== 'ACTIVE') throw new Error('PARENT_NOT_ACTIVE');
-
-      // Validate child parcels
-      for (const childData of childParcels) {
-        if (!childData.upin?.trim()) {
-          throw new Error('CHILD_UPIN_REQUIRED');
-        }
-        if (!childData.file_number?.trim()) {
-          throw new Error('CHILD_FILE_NUMBER_REQUIRED');
-        }
-        if (!childData.total_area_m2 || Number(childData.total_area_m2) <= 0) {
-          throw new Error('INVALID_CHILD_AREA');
-        }
-        
-        // Check for duplicate UPIN
-        const existingParcel = await tx.land_parcels.findUnique({
-          where: { upin: childData.upin },
-        });
-        
-        if (existingParcel) {
-          throw new Error(`DUPLICATE_UPIN: ${childData.upin}`);
-        }
-      }
-
-      // Area validation
-      const totalChildArea = childParcels.reduce(
-        (sum: number, c: any) => sum + Number(c.total_area_m2), 
-        0
+    // Process documents if they exist in request_data
+    let processedDocs = [];
+    if (data.request_data?.documents && Array.isArray(data.request_data.documents) && data.approval_request_id) {
+      processedDocs = await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        'HISTORY',
+        historyEntry.history_id,
+        data.request_data.documents,
+        approverId,
+        tx  // Add transaction parameter
       );
-      const parentArea = Number(parent.total_area_m2);
-      
-      if (Math.abs(totalChildArea - parentArea) > 0.1) {
-        throw new Error('CHILD_AREAS_MUST_MATCH_PARENT');
-      }
+    }
 
-      // Retire parent
-      await tx.land_parcels.update({
-        where: { upin },
-        data: { 
-          status: 'RETIRED',
-          updated_at: new Date(),
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.CREATE,
+        entity_type: 'parcel_owners',
+        entity_id: parcelOwner.parcel_owner_id,
+        changes: {
+          action: isFirstOwner ? 'add_first_owner' : 'add_co_owner',
+          upin,
+          owner_id,
+          owner_name: owner.full_name,
+          acquired_at: parcelOwner.acquired_at,
+          is_first_owner: isFirstOwner,
+          history_id: historyEntry.history_id,
+          documents_processed: processedDocs.length,
+          existing_owners_count: existingParcelOwners.length,
+          from_approval_request: data.approval_request_id,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: isFirstOwner ? 'ADD_FIRST_OWNER' : 'ADD_CO_OWNER',
+      parcel_upin: upin,
+      owner_id,
+      parcel_owner_id: parcelOwner.parcel_owner_id,
+      history_id: historyEntry.history_id,
+      documents_processed: processedDocs.length
+    };
+  } catch (error) {
+    console.error('Execute add parcel owner error:', error);
+    throw error;
+  }
+}
+
+
+async executeSubdivideParcel(
+  tx: any, 
+  upin: string, 
+  data: SubdivideParcelData & { 
+    approval_request_id: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
+  try {
+    // Extract data from request_data if available
+    const subdivisionData = data.request_data?.subdivision_details || data;
+    const { childParcels } = subdivisionData;
+
+    // Validate child parcels
+    if (!Array.isArray(childParcels) || childParcels.length < 2) {
+      throw new Error('At least two child parcels are required');
+    }
+
+    // Define types for parent with owners
+    interface ParcelOwnerWithOwner {
+      owner_id: string;
+      owner: {
+        full_name: string;
+      };
+    }
+
+    interface ParentParcel {
+      upin: string;
+      file_number: string;
+      sub_city_id: string;
+      tabia: string;
+      ketena: string;
+      block: string;
+      total_area_m2: number | string | bigint;
+      land_use: string | null;
+      land_grade: number;
+      tenure_type: string;
+      status: string;
+      boundary_coords: any;
+      boundary_north: string | null;
+      boundary_east: string | null;
+      boundary_south: string | null;
+      boundary_west: string | null;
+      owners: ParcelOwnerWithOwner[];
+    }
+
+    // Get parent with active owners
+    const parent: ParentParcel | null = await tx.land_parcels.findUnique({
+      where: { upin, is_deleted: false },
+      include: {
+        owners: {
+          where: { 
+            is_active: true, 
+            is_deleted: false 
+          },
+          include: { 
+            owner: true 
+          },
+        },
+      },
+    });
+
+    if (!parent) throw new Error('PARENT_NOT_FOUND');
+    if (parent.status !== 'ACTIVE') throw new Error('PARENT_NOT_ACTIVE');
+
+    // Validate child parcels
+    for (const childData of childParcels) {
+      if (!childData.upin?.trim()) {
+        throw new Error('CHILD_UPIN_REQUIRED');
+      }
+      if (!childData.file_number?.trim()) {
+        throw new Error('CHILD_FILE_NUMBER_REQUIRED');
+      }
+      if (!childData.total_area_m2 || Number(childData.total_area_m2) <= 0) {
+        throw new Error('INVALID_CHILD_AREA');
+      }
+      
+      // Check for duplicate UPIN
+      const existingParcel = await tx.land_parcels.findUnique({
+        where: { upin: childData.upin },
+      });
+      
+      if (existingParcel) {
+        throw new Error(`DUPLICATE_UPIN: ${childData.upin}`);
+      }
+    }
+
+    // Area validation
+    const totalChildArea = childParcels.reduce(
+      (sum: number, c: any) => sum + Number(c.total_area_m2), 
+      0
+    );
+    const parentArea = Number(parent.total_area_m2);
+    
+    if (Math.abs(totalChildArea - parentArea) > 0.1) {
+      throw new Error('CHILD_AREAS_MUST_MATCH_PARENT');
+    }
+
+    // Retire parent
+    await tx.land_parcels.update({
+      where: { upin },
+      data: { 
+        status: 'RETIRED',
+        updated_at: new Date(),
+      },
+    });
+
+    const createdChildren: any[] = [];
+    const createdOwnerships: any[] = [];
+
+    // Create children and copy owners
+    for (const childData of childParcels) {
+      const child = await tx.land_parcels.create({
+        data: {
+          upin: childData.upin,
+          file_number: childData.file_number,
+          sub_city_id: parent.sub_city_id,
+          tabia: parent.tabia,
+          ketena: parent.ketena,
+          block: parent.block,
+          total_area_m2: childData.total_area_m2,
+          land_use: childData.land_use || parent.land_use,
+          land_grade: childData.land_grade || parent.land_grade,
+          tenure_type: parent.tenure_type,
+          parent_upin: upin,
+          status: 'ACTIVE',
+          boundary_coords: childData.boundary_coords || parent.boundary_coords,
+          boundary_north: childData.boundary_north || parent.boundary_north,
+          boundary_east: childData.boundary_east || parent.boundary_east,
+          boundary_south: childData.boundary_south || parent.boundary_south,
+          boundary_west: childData.boundary_west || parent.boundary_west,
+          created_at: new Date(),
+          updated_at: new Date()
         },
       });
 
-      const createdChildren: any[] = [];
-      const createdOwnerships: any[] = [];
-
-      // Create children and copy owners
-      for (const childData of childParcels) {
-        const child = await tx.land_parcels.create({
+      // Copy all active owners from parent
+      for (const parcelOwner of parent.owners) {
+        const newOwner = await tx.parcel_owners.create({
           data: {
-            upin: childData.upin,
-            file_number: childData.file_number,
-            sub_city_id: parent.sub_city_id,
-            tabia: parent.tabia,
-            ketena: parent.ketena,
-            block: parent.block,
-            total_area_m2: childData.total_area_m2,
-            land_use: childData.land_use || parent.land_use,
-            land_grade: childData.land_grade || parent.land_grade,
-            tenure_type: parent.tenure_type,
-            parent_upin: upin,
-            status: 'ACTIVE',
-            boundary_coords: childData.boundary_coords || parent.boundary_coords,
-            boundary_north: childData.boundary_north || parent.boundary_north,
-            boundary_east: childData.boundary_east || parent.boundary_east,
-            boundary_south: childData.boundary_south || parent.boundary_south,
-            boundary_west: childData.boundary_west || parent.boundary_west,
+            upin: child.upin,
+            owner_id: parcelOwner.owner_id,
+            acquired_at: new Date(),
+            is_active: true,
             created_at: new Date(),
             updated_at: new Date()
           },
         });
-
-        // Copy all active owners from parent
-        for (const parcelOwner of parent.owners) {
-          const newOwner = await tx.parcel_owners.create({
-            data: {
-              upin: child.upin,
-              owner_id: parcelOwner.owner_id,
-              acquired_at: new Date(),
-              is_active: true,
-              created_at: new Date(),
-              updated_at: new Date()
-            },
-          });
-          createdOwnerships.push(newOwner);
-        }
-
-        createdChildren.push(child);
+        createdOwnerships.push(newOwner);
       }
 
-      // Create ownership history for subdivision
-      await tx.ownership_history.create({
-        data: {
-          upin,
-          transfer_type: "SUBDIVISION",
-          event_snapshot: {
-            parent_parcel: {
-              upin: parent.upin,
-              area_m2: parentArea,
-              owners: parent.owners.map((po: ParcelOwnerWithOwner) => ({
-                owner_id: po.owner_id,
-                owner_name: po.owner.full_name,
-              })),
-            },
-            child_parcels: createdChildren.map((c: any) => ({
-              upin: c.upin,
-              file_number: c.file_number,
-              area_m2: c.total_area_m2,
-            })),
-          } as any,
-          reference_no: `SUBDIVISION-${Date.now()}`,
-          transfer_date: new Date(),
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'land_parcels',
-          entity_id: upin,
-          changes: {
-            action: 'subdivide_parcel',
-            parent_upin: upin,
-            parent_area: parentArea,
-            parent_status_after: 'RETIRED',
-            child_count: childParcels.length,
-            children: childParcels.map((c: any) => ({
-              upin: c.upin,
-              file_number: c.file_number,
-              area_m2: c.total_area_m2,
-            })),
-            total_child_area: totalChildArea,
-            owners_copied: parent.owners.length,
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: 'SUBDIVIDE_PARCEL',
-        parent_upin: upin,
-        parent_status: 'RETIRED',
-        child_count: createdChildren.length,
-        children: createdChildren.map((c: any) => ({
-          upin: c.upin,
-          file_number: c.file_number,
-          total_area_m2: Number(c.total_area_m2)
-        }))
-      };
-    } catch (error) {
-      console.error('Execute subdivide parcel error:', error);
-      throw error;
+      createdChildren.push(child);
     }
-  }
 
+    // Create ownership history for subdivision
+    const historyEntry = await tx.ownership_history.create({
+      data: {
+        upin,
+        transfer_type: "SUBDIVISION",
+        event_snapshot: {
+          parent_parcel: {
+            upin: parent.upin,
+            area_m2: parentArea,
+            owners: parent.owners.map((po: ParcelOwnerWithOwner) => ({
+              owner_id: po.owner_id,
+              owner_name: po.owner.full_name,
+            })),
+          },
+          child_parcels: createdChildren.map((c: any) => ({
+            upin: c.upin,
+            file_number: c.file_number,
+            area_m2: Number(c.total_area_m2),
+          })),
+        } as any,
+        reference_no: `SUBDIVISION-${Date.now()}`,
+        transfer_date: new Date(),
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+    });
+
+    // Process documents - now per parcel using parcel_documents structure
+    let processedDocs: any[] = [];
+    let documentCount = 0;
+
+    if (data.request_data?.parcel_documents && data.approval_request_id) {
+      const parcelDocuments = data.request_data.parcel_documents;
+      
+      // Process documents for each parcel
+      for (const [parcelUpin, docs] of Object.entries(parcelDocuments)) {
+        if (Array.isArray(docs) && docs.length > 0) {
+          if (parcelUpin === upin) {
+            // Parent parcel - link to history
+            await this.approvalDocService.moveToPermanent(
+              data.approval_request_id,
+              'HISTORY',
+              historyEntry.history_id,
+              docs,
+              approverId,
+              tx
+            );
+            processedDocs.push(...docs);
+            documentCount += docs.length;
+          } else {
+            // Child parcel - link directly to parcel
+            const child = createdChildren.find(c => c.upin === parcelUpin);
+            if (child) {
+              await this.approvalDocService.moveToPermanent(
+                data.approval_request_id,
+                'LAND_PARCELS',
+                child.upin,
+                docs,
+                approverId,
+                tx
+              );
+              processedDocs.push(...docs);
+              documentCount += docs.length;
+            }
+          }
+        }
+      }
+    }
+
+    // Also check for legacy documents array (backward compatibility)
+    if (data.request_data?.documents && Array.isArray(data.request_data.documents &&  data.approval_request_id) && 
+        (!data.request_data?.parcel_documents || Object.keys(data.request_data.parcel_documents).length === 0)) {
+      
+      const documents = data.request_data.documents;
+      
+      // For parent parcel
+      await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        'HISTORY',
+        historyEntry.history_id,
+        documents,
+        approverId,
+        tx
+      );
+
+      // For each child parcel (duplicate documents to each child)
+      for (const child of createdChildren) {
+        await this.approvalDocService.moveToPermanent(
+          data.approval_request_id,
+          'LAND_PARCELS',
+          child.upin,
+          documents,
+          approverId,
+          tx
+        );
+      }
+
+      processedDocs = documents;
+      documentCount = documents.length * (createdChildren.length + 1);
+    }
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'land_parcels',
+        entity_id: upin,
+        changes: {
+          action: 'subdivide_parcel',
+          parent_upin: upin,
+          parent_area: parentArea,
+          parent_status_after: 'RETIRED',
+          child_count: createdChildren.length,
+          children: createdChildren.map((c: any) => ({
+            upin: c.upin,
+            file_number: c.file_number,
+            area_m2: Number(c.total_area_m2),
+          })),
+          total_child_area: totalChildArea,
+          owners_copied: parent.owners.length,
+          history_id: historyEntry.history_id,
+          documents_processed: documentCount,
+          documents_per_parcel: data.request_data?.parcel_documents 
+            ? Object.keys(data.request_data.parcel_documents).length 
+            : 'legacy_mode',
+          from_approval_request: data.approval_request_id,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: 'SUBDIVIDE_PARCEL',
+      parent_upin: upin,
+      parent_status: 'RETIRED',
+      child_count: createdChildren.length,
+      history_id: historyEntry.history_id,
+      documents_processed: processedDocs.length,
+      document_count_total: documentCount,
+      children: createdChildren.map((c: any) => ({
+        upin: c.upin,
+        file_number: c.file_number,
+        total_area_m2: Number(c.total_area_m2)
+      }))
+    };
+  } catch (error) {
+    console.error('Execute subdivide parcel error:', error);
+    throw error;
+  }
+}
  // ========== OWNER ACTIONS ==========
 
-async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
+
+// Updated executeCreateOwner function with transaction support
+async executeCreateOwner(
+  tx: any, 
+  data: CreateOwnerData & { 
+    approval_request_id?: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
   try {
+    // Extract owner details from request_data if available
+    const ownerData = data.request_data?.owner_details || data;
+    
     // Check if owner already exists
     const existingOwner = await tx.owners.findFirst({
       where: { 
-        national_id: data.national_id,
+        national_id: ownerData.national_id,
         is_deleted: false
       }
     });
@@ -1507,10 +1672,10 @@ async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
     }
 
     // Check TIN uniqueness if provided
-    if (data.tin_number) {
+    if (ownerData.tin_number) {
       const existingTINOwner = await tx.owners.findFirst({
         where: { 
-          tin_number: data.tin_number,
+          tin_number: ownerData.tin_number,
           is_deleted: false
         }
       });
@@ -1523,17 +1688,52 @@ async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
     // Create owner
     const owner = await tx.owners.create({
       data: {
-        full_name: data.full_name,
-        national_id: data.national_id,
-        tin_number: data.tin_number,
-        phone_number: data.phone_number,
-        sub_city_id: data.sub_city_id,
+        full_name: ownerData.full_name,
+        national_id: ownerData.national_id,
+        tin_number: ownerData.tin_number,
+        phone_number: ownerData.phone_number,
+        sub_city_id: ownerData.sub_city_id,
         created_at: new Date(),
         updated_at: new Date(),
       }
     });
 
-    // Create audit log
+    // Process documents with transaction support
+    let processedDocs = [];
+    if (data.request_data?.documents && Array.isArray(data.request_data.documents) && data.approval_request_id) {
+      // Use the transaction-aware version of moveToPermanent
+      processedDocs = await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        EntityType.OWNERS,
+        owner.owner_id,
+        data.request_data.documents,
+        approverId,
+        tx // Pass the transaction
+      );
+
+      // Create audit log for documents
+      if (processedDocs.length > 0) {
+        await tx.audit_logs.create({
+          data: {
+            user_id: approverId,
+            action_type: AuditAction.CREATE,
+            entity_type: 'documents',
+            entity_id: `batch_${owner.owner_id}`,
+            changes: {
+              action: 'process_approval_documents',
+              owner_id: owner.owner_id,
+              document_count: processedDocs.length,
+              from_approval_request: data.approval_request_id,
+              timestamp: new Date().toISOString()
+            },
+            timestamp: new Date(),
+            ip_address: 'SYSTEM'
+          }
+        });
+      }
+    }
+
+    // Create audit log for owner creation
     await tx.audit_logs.create({
       data: {
         user_id: approverId,
@@ -1546,6 +1746,8 @@ async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
           full_name: owner.full_name,
           national_id: owner.national_id,
           sub_city_id: owner.sub_city_id,
+          documents_processed: processedDocs.length,
+          from_approval_request: data.approval_request_id,
           actor_id: approverId,
           actor_role: 'APPROVER',
           timestamp: new Date().toISOString(),
@@ -1562,7 +1764,8 @@ async executeCreateOwner(tx: any, data: CreateOwnerData, approverId: string) {
       full_name: owner.full_name,
       national_id: owner.national_id,
       sub_city_id: owner.sub_city_id,
-      created_at: owner.created_at
+      created_at: owner.created_at,
+      documents_processed: processedDocs.length
     };
   } catch (error) {
     console.error('Execute create owner error:', error);
@@ -1751,111 +1954,137 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
 }
   // ========== LEASE ACTIONS ==========
 
-  async executeCreateLease(tx: any, data: CreateLeaseData, approverId: string) {
-    try {
-      // Validate parcel exists and is LEASE tenure
-      const landParcel = await tx.land_parcels.findUnique({
-        where: { upin: data.upin, is_deleted: false }
-      });
+async executeCreateLease(
+  tx: any, 
+  data: CreateLeaseData & { 
+    approval_request_id?: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
+  try {
+    // Extract lease data from request_data if available
+    const leaseData = data.request_data?.lease_details || data;
+    
+    // Validate parcel exists and is LEASE tenure
+    const landParcel = await tx.land_parcels.findUnique({
+      where: { upin: leaseData.upin, is_deleted: false }
+    });
 
-      if (!landParcel) {
-        throw new Error('Land parcel not found');
-      }
-
-      if (landParcel.tenure_type !== "LEASE") {
-        throw new Error('Land tenure type must be LEASE to register lease agreement');
-      }
-
-      // Check if lease already exists for this parcel
-      const existingLease = await tx.lease_agreements.findFirst({
-        where: { upin: data.upin, is_deleted: false }
-      });
-
-      if (existingLease) {
-        throw new Error('Lease already exists for this parcel');
-      }
-
-      // Calculate expiry date
-      const startDate = new Date(data.start_date);
-      const expiryDate = new Date(startDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + data.lease_period_years);
-
-      // Calculate payment details
-      const totalLeaseAmountNum = Number(data.total_lease_amount ?? 0);
-      const downPaymentNum = Number(data.down_payment_amount ?? 0);
-      
-      const { principal, annualInstallment } = calculateLeasePaymentDetails(
-        totalLeaseAmountNum,
-        downPaymentNum,
-        data.payment_term_years
-      );
-
-      // Create lease
-      const lease = await tx.lease_agreements.create({
-        data: {
-          upin: data.upin,
-          total_lease_amount: data.total_lease_amount,
-          contract_date: new Date(data.contract_date),
-          down_payment_amount: data.down_payment_amount,
-          other_payment: data.other_payment || 0,
-          lease_period_years: data.lease_period_years,
-          legal_framework: data.legal_framework || '',
-          payment_term_years: data.payment_term_years,
-          price_per_m2: data.price_per_m2 || 0,
-          start_date: startDate,
-          expiry_date: expiryDate,
-          annual_installment: annualInstallment,
-          status: 'ACTIVE',
-          created_at: new Date(),
-          updated_at: new Date(),
-        }
-      });
-
-      // Generate bills
-      const bills = await generateLeaseBillsInTx(tx, {
-        ...lease,
-        annualMainPayment: annualInstallment,
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.CREATE,
-          entity_type: 'lease_agreements',
-          entity_id: lease.lease_id,
-          changes: {
-            action: 'create_lease',
-            upin: lease.upin,
-            total_lease_amount: lease.total_lease_amount,
-            down_payment_amount: lease.down_payment_amount,
-            lease_period_years: lease.lease_period_years,
-            payment_term_years: lease.payment_term_years,
-            start_date: lease.start_date,
-            expiry_date: lease.expiry_date,
-            annual_installment: lease.annual_installment,
-            bills_created: bills.length,
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: 'LEASE_CREATE',
-        lease_id: lease.lease_id,
-        upin: lease.upin,
-        bills_created: bills.length
-      };
-    } catch (error) {
-      console.error('Execute create lease error:', error);
-      throw error;
+    if (!landParcel) {
+      throw new Error('Land parcel not found');
     }
+
+    if (landParcel.tenure_type !== "LEASE") {
+      throw new Error('Land tenure type must be LEASE to register lease agreement');
+    }
+
+    // Check if lease already exists for this parcel
+    const existingLease = await tx.lease_agreements.findFirst({
+      where: { upin: leaseData.upin, is_deleted: false }
+    });
+
+    if (existingLease) {
+      throw new Error('Lease already exists for this parcel');
+    }
+
+    // Calculate expiry date
+    const startDate = new Date(leaseData.start_date);
+    const expiryDate = new Date(startDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + leaseData.lease_period_years);
+
+    // Calculate payment details
+    const totalLeaseAmountNum = Number(leaseData.total_lease_amount ?? 0);
+    const downPaymentNum = Number(leaseData.down_payment_amount ?? 0);
+    
+    const { principal, annualInstallment } = calculateLeasePaymentDetails(
+      totalLeaseAmountNum,
+      downPaymentNum,
+      leaseData.payment_term_years
+    );
+
+    // Create lease
+    const lease = await tx.lease_agreements.create({
+      data: {
+        upin: leaseData.upin,
+        total_lease_amount: leaseData.total_lease_amount,
+        contract_date: new Date(leaseData.contract_date),
+        down_payment_amount: leaseData.down_payment_amount,
+        other_payment: leaseData.other_payment || 0,
+        lease_period_years: leaseData.lease_period_years,
+        legal_framework: leaseData.legal_framework || '',
+        payment_term_years: leaseData.payment_term_years,
+        price_per_m2: leaseData.price_per_m2 || 0,
+        start_date: startDate,
+        expiry_date: expiryDate,
+        annual_installment: annualInstallment,
+        status: 'ACTIVE',
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+    });
+
+    // Generate bills
+    const bills = await generateLeaseBillsInTx(tx, {
+      ...lease,
+      annualMainPayment: annualInstallment,
+    });
+
+    // Process documents if they exist in request_data
+    let processedDocs = [];
+    if (data.request_data?.documents && Array.isArray(data.request_data.documents) && data.approval_request_id) {
+      processedDocs = await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        EntityType.LEASE_AGREEMENTS, // Make sure this enum value exists
+        lease.lease_id,
+        data.request_data.documents,
+        approverId,
+        tx  // Add transaction parameter
+      );
+    }
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.CREATE,
+        entity_type: 'lease_agreements',
+        entity_id: lease.lease_id,
+        changes: {
+          action: 'create_lease',
+          upin: lease.upin,
+          total_lease_amount: lease.total_lease_amount,
+          down_payment_amount: lease.down_payment_amount,
+          lease_period_years: lease.lease_period_years,
+          payment_term_years: lease.payment_term_years,
+          start_date: lease.start_date,
+          expiry_date: lease.expiry_date,
+          annual_installment: lease.annual_installment,
+          bills_created: bills.length,
+          documents_processed: processedDocs.length,
+          from_approval_request: data.approval_request_id,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: 'LEASE_CREATE',
+      lease_id: lease.lease_id,
+      upin: lease.upin,
+      bills_created: bills.length,
+      documents_processed: processedDocs.length
+    };
+  } catch (error) {
+    console.error('Execute create lease error:', error);
+    throw error;
   }
+}
 
   async executeUpdateLease(tx: any, lease_id: string, data: UpdateLeaseData, approverId: string) {
     try {
@@ -2125,76 +2354,109 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
 
   // ========== ENCUMBRANCE ACTIONS ==========
 
-  async executeCreateEncumbrance(tx: any, data: CreateEncumbranceData, approverId: string) {
-    try {
-      // Validate parcel exists
-      const parcel = await tx.land_parcels.findFirst({
-        where: { upin: data.upin, is_deleted: false },
-      });
+async executeCreateEncumbrance(
+  tx: any, 
+  data: CreateEncumbranceData & { 
+    approval_request_id?: string; 
+    request_data?: any 
+  }, 
+  approverId: string
+) {
+  try {
+    // Extract encumbrance data from request_data if available
+    const encumbranceData = data.request_data?.encumbrance_details || data;
+    const { upin, type, issuing_entity, reference_number, status, registration_date } = encumbranceData;
 
-      if (!parcel) {
-        throw new Error('Parcel not found');
-      }
+    // Validate parcel exists
+    const parcel = await tx.land_parcels.findFirst({
+      where: { upin, is_deleted: false },
+    });
 
-      // Check reference number uniqueness
-      if (data.reference_number) {
-        const existingRef = await tx.encumbrances.findFirst({
-          where: { reference_number: data.reference_number, is_deleted: false },
-        });
-        if (existingRef) {
-          throw new Error('Reference number already exists');
-        }
-      }
-
-      const encumbrance = await tx.encumbrances.create({
-        data: {
-          upin: data.upin,
-          type: data.type,
-          issuing_entity: data.issuing_entity,
-          reference_number: data.reference_number,
-          status: data.status || EncumbranceStatus.ACTIVE,
-          registration_date: data.registration_date ? new Date(data.registration_date) : new Date(),
-          created_at: new Date(),
-          updated_at: new Date(),
-          
-        }
-      });
-
-      // Create audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: approverId,
-          action_type: AuditAction.CREATE,
-          entity_type: 'encumbrances',
-          entity_id: encumbrance.encumbrance_id,
-          changes: {
-            action: 'create_encumbrance',
-            upin: encumbrance.upin,
-            type: encumbrance.type,
-            issuing_entity: encumbrance.issuing_entity,
-            reference_number: encumbrance.reference_number,
-            status: encumbrance.status,
-            actor_id: approverId,
-            actor_role: 'APPROVER',
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: 'SYSTEM'
-        }
-      });
-
-      return {
-        success: true,
-        action: 'ENCUMBRANCE_CREATE',
-        encumbrance_id: encumbrance.encumbrance_id,
-        upin: encumbrance.upin,
-        type: encumbrance.type
-      };
-    } catch (error) {
-      console.error('Execute create encumbrance error:', error);
-      throw error;
+    if (!parcel) {
+      throw new Error('Parcel not found');
     }
+
+    // Check reference number uniqueness
+    if (reference_number) {
+      const existingRef = await tx.encumbrances.findFirst({
+        where: { reference_number, is_deleted: false },
+      });
+      if (existingRef) {
+        throw new Error('Reference number already exists');
+      }
+    }
+
+    const encumbrance = await tx.encumbrances.create({
+      data: {
+        upin,
+        type,
+        issuing_entity,
+        reference_number,
+        status: status || EncumbranceStatus.ACTIVE,
+        registration_date: registration_date ? new Date(registration_date) : new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+    });
+
+    // Process documents if they exist in request_data
+    let processedDocs = [];
+    console.log("data",data)
+    console.log("data request data",data.request_data)
+    console.log("from exucte crate encumbrance service data.request_data.documents",data.request_data.documents)
+     console.log("from exucte crate encumbrance service data.approval_request_id ",data.approval_request_id)
+      console.log("from exucte crate encumbrance service Array.isArray(data.request_data.documents)",Array.isArray(data.request_data.documents))
+
+    if (data.request_data?.documents && Array.isArray(data.request_data?.documents) && data.approval_request_id) {
+      console.log("here you go i am in ")
+      processedDocs = await this.approvalDocService.moveToPermanent(
+        data.approval_request_id,
+        EntityType.ENCUMBRANCES,
+        encumbrance.encumbrance_id,
+        data.request_data.documents,
+        approverId,
+        tx  // Add transaction parameter
+      );
+    }
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.CREATE,
+        entity_type: 'encumbrances',
+        entity_id: encumbrance.encumbrance_id,
+        changes: {
+          action: 'create_encumbrance',
+          upin: encumbrance.upin,
+          type: encumbrance.type,
+          issuing_entity: encumbrance.issuing_entity,
+          reference_number: encumbrance.reference_number,
+          status: encumbrance.status,
+          documents_processed: processedDocs.length,
+          from_approval_request: data.approval_request_id,
+          actor_id: approverId,
+          actor_role: 'APPROVER',
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: 'SYSTEM'
+      }
+    });
+
+    return {
+      success: true,
+      action: 'ENCUMBRANCE_CREATE',
+      encumbrance_id: encumbrance.encumbrance_id,
+      upin: encumbrance.upin,
+      type: encumbrance.type,
+      documents_processed: processedDocs.length
+    };
+  } catch (error) {
+    console.error('Execute create encumbrance error:', error);
+    throw error;
   }
+}
 
   async executeUpdateEncumbrance(tx: any, encumbrance_id: string, data: UpdateEncumbranceData, approverId: string) {
     try {
@@ -2360,9 +2622,17 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
     actionType: string,
     entityId: string,
     requestData: any,
+    approvalRequestId:string,
     approverId: string
   ) {
     return await prisma.$transaction(async (tx) => {
+     console.log("approverid",approverId)
+         const executionParams = {
+      ...requestData,
+      approval_request_id: approvalRequestId,
+      request_data: requestData
+    };
+
       switch (entityType) {
         case 'WIZARD_SESSION':
           // For wizard, actionType is always 'CREATE' (execution)
@@ -2380,11 +2650,11 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
             case 'DELETE':
               return await this.executeDeleteParcel(tx, entityId, requestData, approverId);
             case 'TRANSFER':
-              return await this.executeTransferOwnership(tx, entityId, requestData, approverId);
+              return await this.executeTransferOwnership(tx, entityId, executionParams, approverId);
             case 'ADD_OWNER':
-              return await this.executeAddParcelOwner(tx, entityId, requestData, approverId);
+              return await this.executeAddParcelOwner(tx, entityId, executionParams, approverId);
             case 'SUBDIVIDE':
-              return await this.executeSubdivideParcel(tx, entityId, requestData, approverId);
+              return await this.executeSubdivideParcel(tx, entityId, executionParams, approverId);
             default:
               throw new Error(`Unsupported action for LAND_PARCELS: ${actionType}`);
           }
@@ -2392,7 +2662,7 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
         case 'OWNERS':
           switch (actionType) {
             case 'CREATE':
-              return await this.executeCreateOwner(tx, requestData, approverId);
+              return await this.executeCreateOwner(tx, executionParams, approverId);
             case 'UPDATE':
               return await this.executeUpdateOwner(tx, entityId, requestData, approverId);
             case 'DELETE':
@@ -2404,7 +2674,7 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
         case 'LEASE_AGREEMENTS':
           switch (actionType) {
             case 'CREATE':
-              return await this.executeCreateLease(tx, requestData, approverId);
+              return await this.executeCreateLease(tx, executionParams, approverId);
             case 'UPDATE':
               return await this.executeUpdateLease(tx, entityId, requestData, approverId);
             case 'DELETE':
@@ -2416,7 +2686,7 @@ async executeDeleteOwner(tx: any, owner_id: string, data: DeleteOwnerData, appro
         case 'ENCUMBRANCES':
           switch (actionType) {
             case 'CREATE':
-              return await this.executeCreateEncumbrance(tx, requestData, approverId);
+              return await this.executeCreateEncumbrance(tx, executionParams, approverId);
             case 'UPDATE':
               return await this.executeUpdateEncumbrance(tx, entityId, requestData, approverId);
             case 'DELETE':

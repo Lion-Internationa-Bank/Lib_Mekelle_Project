@@ -8,6 +8,7 @@ import type {
   EncumbranceFormData,
 } from "../validation/schemas";
 import apiFetch from './api';
+import { toast } from 'sonner';
 
 // ------------ Shared DTOs from backend ------------
 
@@ -275,30 +276,60 @@ export const updateLeaseApi = async (
 
 // ------------ Encumbrance create/update (uses EncumbranceFormData) ------------
 
+export interface CreateEncumbranceResponse {
+  success: boolean;
+  message: string;
+  data: {
+    approval_request_id?: string;
+    entity_type: string;
+    action_type: string;
+    status: string;
+    approver_role: string;
+    estimated_processing: string;
+    upin: string;
+    type: string;
+    issuing_entity: string;
+    document_upload?: {
+      allowed: boolean;
+      endpoint: string;
+      allowed_types: string[];
+      max_files: number;
+      max_size_mb: number;
+      current_count: number;
+    };
+    maker_info?: {
+      user_id: string;
+      role: string;
+    };
+  };
+}
+
 export const createEncumbranceApi = async (
-  data: EncumbranceFormData & { upin: string }
-) => {
+  data: any
+): Promise<CreateEncumbranceResponse> => {
   const apiRes = await apiFetch<any>(`/parcels/encumbrances`, {
     method: "POST",
-    body: JSON.stringify({
-      upin: data.upin,
-      type: data.type,
-      issuing_entity: data.issuing_entity,
-      reference_number: data.reference_number || undefined,
-      registration_date:
-        data.registration_date && data.registration_date !== ""
-          ? data.registration_date
-          : undefined,
-      status: "ACTIVE",
-    }),
+    body: JSON.stringify(data),
   });
+  
   if (!apiRes.success) {
     throw new Error(apiRes.error || "Failed to create encumbrance");
   }
+  
   const json = apiRes.data;
   if (!json.success) {
     throw new Error(json.message || "Failed to create encumbrance");
   }
+  
+  // Handle different success responses
+  if (json.data.approval_request_id) {
+    // Approval required
+    toast.info(json.message || 'Encumbrance creation request submitted for approval');
+  } else {
+    // Immediate execution
+    toast.success(json.message || 'Encumbrance created successfully');
+  }
+  
   return json;
 };
 
@@ -347,37 +378,102 @@ export const searchOwnersLiteApi = async (search: string) => {
 
 // ------------ Ownership transfer (uses TransferOwnershipFormData) ------------
 
+export interface TransferOwnershipResponse {
+  success: boolean;
+  message: string;
+  data: {
+    approval_request_id?: string;
+    entity_type: string;
+    action_type: string;
+    status: string;
+    approver_role: string;
+    estimated_processing: string;
+    parcel_upin?: string;
+    transfer_type?: string;
+    from_owner_id?: string;
+    to_owner_id?: string;
+    document_upload?: {
+      allowed: boolean;
+      endpoint: string;
+      allowed_types: string[];
+      max_files: number;
+      max_size_mb: number;
+      current_count: number;
+    };
+    maker_info?: {
+      user_id: string;
+      role: string;
+    };
+  };
+}
+
 export const transferOwnershipApi = async (
   upin: string,
-  body: TransferOwnershipFormData
-) => {
+  body: any
+): Promise<TransferOwnershipResponse> => {
   const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/transfer`, {
     method: "POST",
     body: JSON.stringify(body),
   });
+  
   if (!apiRes.success) {
     throw new Error(apiRes.error || "Failed to transfer ownership");
   }
+  
   const json = apiRes.data;
   if (!json.success) {
     throw new Error(json.message || "Failed to transfer ownership");
   }
-  return json.data as {
-    history: { history_id: string };
-    newOwnership: any;
-    transfer_type: string;
-    message:any;
-  };
+  
+  // Handle different success responses
+  if (json.data.approval_request_id) {
+    // Approval required
+    toast.info(json.message || 'Transfer request submitted for approval');
+  } else {
+    // Immediate execution (for self-approval)
+    toast.success(json.message || 'Transfer completed successfully');
+  }
+  
+  return json;
 };
 
 
 
 
+
+export interface AddParcelOwnerResponse {
+  success: boolean;
+  message: string;
+  data: {
+    approval_request_id?: string;
+    entity_type: string;
+    action_type: string;
+    status: string;
+    approver_role: string;
+    estimated_processing: string;
+    parcel_upin: string;
+    owner_id: string;
+    is_first_owner: boolean;
+    document_upload?: {
+      allowed: boolean;
+      endpoint: string;
+      allowed_types: string[];
+      max_files: number;
+      max_size_mb: number;
+      current_count: number;
+    };
+    maker_info?: {
+      user_id: string;
+      role: string;
+    };
+  };
+}
+
 export const addOwnerToParcel = async (
   upin: string,
   owner_id: string,
   acquired_at?: string
-) => {
+): Promise<AddParcelOwnerResponse> => {
   const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/owners`, {
     method: "POST",
     body: JSON.stringify({
@@ -386,11 +482,55 @@ export const addOwnerToParcel = async (
     }),
   });
   
-  return apiRes;
+  if (!apiRes.success) {
+    throw new Error(apiRes.error || "Failed to add owner to parcel");
+  }
+  
+  const json = apiRes.data;
+  if (!json.success) {
+    throw new Error(json.message || "Failed to add owner to parcel");
+  }
+  
+  // Handle different success responses
+  if (json.data.approval_request_id) {
+    // Approval required
+    toast.info(json.message || 'Owner addition request submitted for approval');
+  } else {
+    // Immediate execution
+    toast.success(json.message || 'Owner added successfully');
+  }
+  
+  return json;
 };
 
 
-// src/services/parcelDetailApi.ts
+export interface SubdivideParcelResponse {
+  success: boolean;
+  message: string;
+  data: {
+    approval_request_id?: string;
+    entity_type: string;
+    action_type: string;
+    status: string;
+    approver_role: string;
+    estimated_processing: string;
+    parent_upin: string;
+    child_count: number;
+    document_upload?: {
+      allowed: boolean;
+      endpoint: string;
+      allowed_types: string[];
+      max_files: number;
+      max_size_mb: number;
+      current_count: number;
+    };
+    maker_info?: {
+      user_id: string;
+      role: string;
+    };
+  };
+}
+
 export const subdivideParcel = async (
   upin: string,
   childParcels: Array<{
@@ -403,18 +543,39 @@ export const subdivideParcel = async (
     boundary_south?: string;
     boundary_west?: string;
   }>
-) => {
+): Promise<SubdivideParcelResponse> => {
   const apiRes = await apiFetch<any>(`/parcels/${encodeURIComponent(upin)}/subdivide`, {
     method: "POST",
-    body: JSON.stringify({ childParcels}),
+    body: JSON.stringify({ childParcels }),
   });
+  
   if (!apiRes.success) {
     throw new Error(apiRes.error || "Failed to subdivide parcel");
   }
+  
   const json = apiRes.data;
   if (!json.success) {
     throw new Error(json.message || "Failed to subdivide parcel");
   }
-
-  return json.apiRes;
+  
+  // Handle different success responses
+  if (json.data.approval_request_id) {
+    // Approval required
+    toast.info(json.message || 'Subdivision request submitted for approval');
+  } else {
+    // Immediate execution
+    toast.success(json.message || 'Parcel subdivided successfully');
+  }
+  
+  return json;
 };
+
+
+
+
+
+
+
+
+
+

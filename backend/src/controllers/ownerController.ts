@@ -846,6 +846,7 @@ export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
 
     // If user doesn't have a subcity assigned, return empty
     if (!subcityId) {
+      console.log("subcity not founded")
       return res.status(200).json({
         success: true,
         data: {
@@ -858,16 +859,7 @@ export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
     const ownersInSubCity = await prisma.owners.findMany({
       where: {
         is_deleted: false,
-        parcels: {
-          some: {
-            is_active: true,
-            is_deleted: false,
-            parcel: {
-              is_deleted: false,
-              sub_city_id: subcityId,
-            },
-          },
-        },
+       
         // Add search filter directly here to avoid second query
         ...(search && {
           OR: [

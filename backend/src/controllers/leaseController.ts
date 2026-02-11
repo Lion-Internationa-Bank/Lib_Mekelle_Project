@@ -13,23 +13,35 @@ const makerCheckerService = new MakerCheckerService(auditService);
 
 // ---- CREATE LEASE ----
 
-export const createLease = async (req: Request, res: Response) => {
-  const {
-    upin,
-    total_lease_amount,
-    contract_date,
-    down_payment_amount,
-    lease_period_years,
-    legal_framework,
-    payment_term_years,
-    price_per_m2,
-    start_date,
-    other_payment,
-  } = req.body;
-
+export const createLease = async (
+  req: Request<{}, CreateLeaseBody>,
+  res: Response
+) => {
   const actor = (req as any).user;
 
   try {
+    const {
+      upin,
+      total_lease_amount,
+      contract_date,
+      down_payment_amount,
+      lease_period_years,
+      legal_framework,
+      payment_term_years,
+      price_per_m2,
+      start_date,
+      other_payment,
+      documents
+    } = req.body;
+
+    // Validate required fields
+    if (!upin || !total_lease_amount || !contract_date || !lease_period_years || !payment_term_years || !start_date) {
+      return res.status(400).json({
+        success: false,
+        message: 'upin, total_lease_amount, contract_date, lease_period_years, payment_term_years, and start_date are required',
+      });
+    }
+
     // 1. Check if land parcel exists
     const landParcel = await prisma.land_parcels.findUnique({
       where: { upin, is_deleted: false },
@@ -65,7 +77,7 @@ export const createLease = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Calculate expiry date for validation
+    // 3. Calculate dates and values for validation
     const startDate = new Date(start_date);
     const expiryDate = new Date(startDate);
     expiryDate.setFullYear(expiryDate.getFullYear() + lease_period_years);
@@ -73,8 +85,7 @@ export const createLease = async (req: Request, res: Response) => {
     // 4. Calculate principal for validation
     const totalLeaseAmountNum = Number(total_lease_amount ?? 0);
     const downPaymentNum = Number(down_payment_amount ?? 0);
-    const otherPaymentNum = Number(other_payment ?? 0);
-    const principal = totalLeaseAmountNum - (downPaymentNum + otherPaymentNum);
+    const principal = totalLeaseAmountNum - (downPaymentNum );
 
     if (principal <= 0) {
       return res.status(400).json({
@@ -83,25 +94,36 @@ export const createLease = async (req: Request, res: Response) => {
       });
     }
 
-    // 5. Create approval request instead of executing immediately
+    // Calculate annual installment
+    const annualInstallment = payment_term_years > 0 ? principal / payment_term_years : 0;
+
+    // Generate entity ID for the request (will be used after approval)
+    const entityId = `${upin}_LEASE_${Date.now()}`;
+
+    // 5. Create approval request with documents
     const approvalRequest = await makerCheckerService.createApprovalRequest({
       entityType: 'LEASE_AGREEMENTS',
-      entityId: 'NEW', // Will be generated after approval
+      entityId, // Temporary ID, will be replaced with actual lease_id after approval
       actionType: 'CREATE',
       requestData: {
-        upin,
-        total_lease_amount,
-        contract_date,
-        down_payment_amount,
-        other_payment,
-        lease_period_years,
-        legal_framework,
-        payment_term_years,
-        price_per_m2,
-        start_date,
-        expiry_date: expiryDate,
-        principal, // Include for validation
-        annual_installment: payment_term_years > 0 ? principal / payment_term_years : 0
+        lease_details: {
+          upin,
+          total_lease_amount,
+          contract_date,
+          down_payment_amount,
+          other_payment,
+          lease_period_years,
+          legal_framework,
+          payment_term_years,
+          price_per_m2,
+          start_date,
+          expiry_date: expiryDate,
+          principal,
+          annual_installment:annualInstallment
+        },
+        documents: documents || [], // Include documents in request_data
+        parcel_file_number: landParcel.file_number,
+        parcel_sub_city_id: landParcel.sub_city_id
       },
       makerId: actor.user_id,
       makerRole: actor.role,
@@ -124,8 +146,10 @@ export const createLease = async (req: Request, res: Response) => {
           other_payment,
           lease_period_years,
           payment_term_years,
-          start_date: startDate,
-          expiry_date: expiryDate,
+          start_date: startDate.toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          annual_installment: annualInstallment,
+          documents_count: documents?.length || 0,
           request_status: 'PENDING',
           approver_role: approvalRequest.approvalRequest.approver_role,
           actor_id: actor.user_id,
@@ -146,6 +170,7 @@ export const createLease = async (req: Request, res: Response) => {
         parcel_upin: upin,
         status: 'PENDING',
         approver_role: approvalRequest.approvalRequest.approver_role,
+        documents_submitted: documents?.length || 0,
         estimated_processing: 'Within 24-48 hours'
       }
     });
@@ -173,6 +198,21 @@ export const createLease = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Add type definition for CreateLeaseBody
+interface CreateLeaseBody {
+  upin: string;
+  total_lease_amount: number;
+  contract_date: string | Date;
+  down_payment_amount?: number;
+  other_payment?: number;
+  lease_period_years: number;
+  legal_framework?: string;
+  payment_term_years: number;
+  price_per_m2?: number;
+  start_date: string | Date;
+  comments?: string;
+}
 
 // ---- UPDATE LEASE ----
 

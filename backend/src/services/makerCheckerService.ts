@@ -33,7 +33,7 @@ export class MakerCheckerService {
     this.actionExecutionService = new ActionExecutionService();
   }
 
-  async createApprovalRequest(params: CreateApprovalRequestParams): Promise<ApprovalResult> {
+   async createApprovalRequest(params: CreateApprovalRequestParams): Promise<ApprovalResult> {
     return await this.prisma.$transaction(async (tx) => {
       // Determine approver role based on entity type
       const approverRole = this.getApproverRole(params.entityType, params.makerRole);
@@ -63,19 +63,35 @@ export class MakerCheckerService {
         throw new Error('A pending approval request already exists for this entity');
       }
 
+      // Prepare request data with documents array
+      const requestDataWithDocs = {
+        ...params.requestData,
+        documents: [], // Initialize empty documents array
+        metadata: {
+          created_by: params.makerId,
+          created_by_role: params.makerRole,
+          sub_city_id: params.subCityId,
+          created_at: new Date().toISOString(),
+          requires_approval: true,
+          approver_role: approverRole
+        }
+      };
+
       // Create approval request
       const approvalRequest = await tx.approval_requests.create({
         data: {
-          entity_type: params.entityType ,
+          entity_type: params.entityType,
           entity_id: params.entityId,
           action_type: params.actionType,
-          request_data: params.requestData,
+          request_data: requestDataWithDocs,
           status: 'PENDING',
           maker_id: params.makerId,
           maker_role: params.makerRole,
           approver_role: approverRole,
           sub_city_id: params.subCityId,
-          created_at: new Date()
+          comments: params.comments,
+          created_at: new Date(),
+          updated_at: new Date()
         }
       });
 
@@ -88,6 +104,7 @@ export class MakerCheckerService {
           performed_by_role: params.makerRole,
           previous_status: null,
           new_status: 'PENDING',
+          comments: params.comments,
           created_at: new Date()
         }
       });
@@ -104,7 +121,8 @@ export class MakerCheckerService {
           action_type: params.actionType,
           maker_id: params.makerId,
           maker_role: params.makerRole,
-          approver_role: approverRole
+          approver_role: approverRole,
+          has_documents: false // Initially no documents
         },
         ipAddress: 'SYSTEM'
       });
@@ -116,6 +134,79 @@ export class MakerCheckerService {
       };
     });
   }
+
+   private async executeImmediately(params: CreateApprovalRequestParams, tx: any): Promise<any> {
+    // Prepare data for immediate execution
+    const executionData = {
+      ...params.requestData,
+      approval_request_id: null, // No approval request ID for immediate execution
+      request_data: {
+        ...params.requestData,
+        metadata: {
+          created_by: params.makerId,
+          created_by_role: params.makerRole,
+          sub_city_id: params.subCityId,
+          created_at: new Date().toISOString(),
+          requires_approval: false,
+          executed_immediately: true
+        }
+      }
+    };
+
+    // Execute based on entity type
+    switch (params.entityType) {
+      case EntityType.OWNERS:
+        if (params.actionType === ActionType.CREATE) {
+          return await this.actionExecutionService.executeCreateOwner(
+            tx, 
+            executionData, 
+            params.makerId
+          );
+        }
+        break;
+      
+      case EntityType.LAND_PARCELS:
+        switch (params.actionType) {
+          case ActionType.TRANSFER:
+            return await this.actionExecutionService.executeTransferOwnership(
+              tx,
+              params.entityId,
+              executionData,
+              params.makerId
+            );
+          
+          case ActionType.ADD_OWNER:
+            return await this.actionExecutionService.executeAddParcelOwner(
+              tx,
+              params.entityId,
+              executionData,
+              params.makerId
+            );
+          
+          case ActionType.SUBDIVIDE:
+            return await this.actionExecutionService.executeSubdivideParcel(
+              tx,
+              params.entityId,
+              executionData,
+              params.makerId
+            );
+        }
+        break;
+      
+      case EntityType.ENCUMBRANCES:
+        if (params.actionType === ActionType.CREATE) {
+          return await this.actionExecutionService.executeCreateEncumbrance(
+            tx,
+            executionData,
+            params.makerId
+          );
+        }
+        break;
+    }
+
+    throw new Error(`Immediate execution not supported for ${params.entityType} ${params.actionType}`);
+  }
+
 
   private getApproverRole(entityType: string, makerRole: UserRole): UserRole {
     // Define approval hierarchy
@@ -139,10 +230,37 @@ export class MakerCheckerService {
     return (approvalRules as any)[entityType]?.[makerRole] || 'SUBCITY_ADMIN';
   }
 
-  private async executeImmediately(params: CreateApprovalRequestParams, tx: any) {
-    // This would execute the action immediately (for self-approving users)
-    // Implementation depends on your specific needs
-    return { message: 'Executed immediately' };
+
+ async updateApprovalRequestDocuments(requestId: string, documents: any[]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const approvalRequest = await tx.approval_requests.findUnique({
+        where: { request_id: requestId }
+      });
+
+      if (!approvalRequest) {
+        throw new Error('Approval request not found');
+      }
+
+      if (approvalRequest.status !== RequestStatus.PENDING) {
+        throw new Error('Cannot update documents for a processed request');
+      }
+
+      // Update request_data with new documents
+      const requestData = approvalRequest.request_data as any;
+      const updatedRequestData = {
+        ...requestData,
+        documents: documents,
+        last_document_update: new Date().toISOString()
+      };
+
+      await tx.approval_requests.update({
+        where: { request_id: requestId },
+        data: {
+          request_data: updatedRequestData,
+          updated_at: new Date()
+        }
+      });
+    });
   }
 
 async approveRequest(requestId: string, approverId: string, userRole: UserRole, comments?: string) {
@@ -189,7 +307,9 @@ async approveRequest(requestId: string, approverId: string, userRole: UserRole, 
           approvalRequest.action_type,
           approvalRequest.entity_id,
           enhancedData,
-          approverId
+          approvalRequest.request_id,
+          approverId,
+        
         );
         
         await this.actionExecutionService.updateWizardSessionAfterExecution(
@@ -205,6 +325,7 @@ async approveRequest(requestId: string, approverId: string, userRole: UserRole, 
           approvalRequest.action_type,
           approvalRequest.entity_id,
           requestData,
+          approvalRequest.request_id,
           approverId
         );
       }
