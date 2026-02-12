@@ -1,6 +1,6 @@
 // components/DocumentList.tsx
 import type { ParcelDocument } from "../../services/parcelDetailApi";
-const API_BASE = import.meta.env.VITE_API_URL;
+const VITE_API_PDF_URL = import.meta.env.VITE_API_PDF_URL;
 
 interface DocumentListProps {
   documents: ParcelDocument[];
@@ -9,7 +9,7 @@ interface DocumentListProps {
 
 const DocumentList = ({ documents, title = "Documents" }: DocumentListProps) => {
   const openDocument = (doc: ParcelDocument) => {
-    const url = `http://10.1.22.25:5000${doc.file_url}`;
+    const url = `${VITE_API_PDF_URL}${doc.file_url}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 

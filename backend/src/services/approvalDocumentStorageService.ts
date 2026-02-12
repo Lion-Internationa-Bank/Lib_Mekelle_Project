@@ -32,39 +32,47 @@ export class ApprovalDocumentStorageService {
   }
 
   // Store document temporarily for approval request
-  async storeTemporary(
-    file: Express.Multer.File,
-    approvalRequestId: string,
-    documentType: string,
-    metadata?: any
-  ): Promise<ApprovalStoredDocument> {
-    const requestDir = path.join(this.tempDir, approvalRequestId);
-    console.log("doc type from approval service fof store temporary",documentType)
-    // Ensure request directory exists
-    if (!fs.existsSync(requestDir)) {
-      fs.mkdirSync(requestDir, { recursive: true });
-    }
-
-    // Generate unique filename
-    const fileId = randomBytes(16).toString('hex');
-    const fileExtension = path.extname(file.originalname);
-    const fileName = `${fileId}${fileExtension}`;
-    const filePath = path.join(requestDir, fileName);
-    const publicUrl = `/temp/approval-docs/${approvalRequestId}/${fileName}`;
-
-    // Save file
-    await fs.promises.writeFile(filePath, file.buffer);
-
-    return {
-      id: fileId,
-      file_url: publicUrl,
-      file_name: file.originalname,
-      file_size: file.size,
-      mime_type: file.mimetype,
-      document_type: documentType,
-      metadata: metadata || {}
-    };
+ async storeTemporary(
+  file: Express.Multer.File,
+  approvalRequestId: string,
+  documentType: string,
+  metadata?: any
+): Promise<ApprovalStoredDocument> {
+  // Store under uploads/temp/approval-docs/{approvalRequestId}/
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const tempDir = path.join(uploadsDir, 'temp', 'approval-docs', approvalRequestId);
+  
+  console.log("doc type from approval service for store temporary", documentType);
+  console.log("Saving to directory:", tempDir);
+  
+  // Ensure directory exists
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
   }
+
+  // Generate unique filename
+  const fileId = randomBytes(16).toString('hex');
+  const fileExtension = path.extname(file.originalname);
+  const fileName = `${fileId}${fileExtension}`;
+  const filePath = path.join(tempDir, fileName);
+  
+  // Public URL that matches the express static route
+  // This will be served from: /uploads/temp/approval-docs/{approvalRequestId}/{fileName}
+  const publicUrl = `/uploads/temp/approval-docs/${approvalRequestId}/${fileName}`;
+
+  // Save file
+  await fs.promises.writeFile(filePath, file.buffer);
+
+  return {
+    id: fileId,
+    file_url: publicUrl,  // Now starts with /uploads
+    file_name: file.originalname,
+    file_size: file.size,
+    mime_type: file.mimetype,
+    document_type: documentType,
+    metadata: metadata || {}
+  };
+}
 
   // Get temporary file for approval request
   async getTemporaryFile(approvalRequestId: string, fileName: string): Promise<string> {
@@ -93,12 +101,16 @@ async moveToPermanent(
     // Use transaction if provided, otherwise use default prisma client
     const db = tx || prisma;
 
+    // Define uploadsDir at the function level so it's accessible everywhere
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+
     for (const doc of documents) {
       // Extract filename from URL
+      // New URL format: /uploads/temp/approval-docs/{approvalRequestId}/{fileName}
       const urlParts = doc.file_url.split('/');
       const tempFileName = urlParts[urlParts.length - 1] as string;
       
-      // Generate permanent path
+      // Generate permanent path under uploads/approved directory
       const permanentPath = this.generatePermanentPath(
         entityType,
         entityId,
@@ -106,8 +118,18 @@ async moveToPermanent(
         doc.document_type
       );
 
-      // Move file
-      const tempFilePath = path.join(this.tempDir, approvalRequestId, tempFileName);
+      // New temp file path under uploads/temp/approval-docs/{approvalRequestId}/
+      const tempFilePath = path.join(
+        uploadsDir, 
+        'temp', 
+        'approval-docs', 
+        approvalRequestId, 
+        tempFileName
+      );
+
+      console.log('Moving file from:', tempFilePath);
+      console.log('Moving file to:', permanentPath.path);
+
       if (fs.existsSync(tempFilePath)) {
         // Ensure permanent directory exists
         const permanentDir = path.dirname(permanentPath.path);
@@ -121,21 +143,20 @@ async moveToPermanent(
           permanentPath: permanentPath.path
         });
 
-        // Move file - this is a filesystem operation, so we need to handle it carefully
-        // We'll copy first, then delete the original only after successful DB operation
+        // Move file - copy first, then delete original after successful DB operation
         await fs.promises.copyFile(tempFilePath, permanentPath.path);
 
         // Create document record in database
         // Filter metadata to only include valid Prisma fields or store as JSON in a valid field
         const documentData = {
-          file_url: permanentPath.url,
+          file_url: permanentPath.url, // This will be /uploads/approved/{entityType}/{entityId}/{fileName}
           file_name: doc.file_name,
           doc_type: doc.document_type,
           is_verified: true,
           upload_date: new Date(),
-          user:{
-            connect:{
-              user_id:approverId
+          user: {
+            connect: {
+              user_id: approverId
             }
           },
           ...this.getEntityForeignKeys(entityType, entityId),
@@ -151,6 +172,9 @@ async moveToPermanent(
           original_document_id: doc.id,
           metadata: doc.metadata // Keep original metadata separate
         });
+      } else {
+        console.error(`Temp file not found: ${tempFilePath}`);
+        throw new Error(`Temporary file not found: ${tempFileName}`);
       }
     }
 
@@ -158,21 +182,24 @@ async moveToPermanent(
     for (const file of movedFiles) {
       if (fs.existsSync(file.tempPath)) {
         await fs.promises.unlink(file.tempPath);
+        console.log('Deleted temp file:', file.tempPath);
       }
     }
 
     // Clean up empty temporary directory
-    const requestDir = path.join(this.tempDir, approvalRequestId);
+    const requestDir = path.join(uploadsDir, 'temp', 'approval-docs', approvalRequestId);
     await this.cleanupDirectoryIfEmpty(requestDir);
 
     return permanentDocs;
 
   } catch (error) {
     // Rollback: Delete any files that were moved to permanent storage
+    console.error('Error during move to permanent, rolling back:', error);
     for (const file of movedFiles) {
       if (fs.existsSync(file.permanentPath)) {
         try {
           await fs.promises.unlink(file.permanentPath);
+          console.log('Rollback - deleted permanent file:', file.permanentPath);
         } catch (unlinkError) {
           console.error('Error rolling back file move:', unlinkError);
         }
@@ -406,36 +433,34 @@ async listDocuments(approvalRequestId: string): Promise<ApprovalStoredDocument[]
     }
   }
 
-  private generatePermanentPath(
-    entityType: string,
-    entityId: string,
-    originalFilename: string,
-    docType: string
-  ): { path: string; url: string } {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
 
-    // Create organized directory structure
-    const baseDir = path.join(
-      this.permanentDir,
-      entityType.toLowerCase(),
-      String(year),
-      month,
-      day
-    );
 
-    // Generate unique filename
-    const fileId = randomBytes(8).toString('hex');
-    const fileExtension = path.extname(originalFilename);
-    const newFilename = `${entityId}_${docType}_${fileId}${fileExtension}`;
-    
-    const filePath = path.join(baseDir, newFilename);
-    const publicUrl = `/uploads/approved/${entityType.toLowerCase()}/${year}/${month}/${day}/${newFilename}`;
 
-    return { path: filePath, url: publicUrl };
-  }
+
+private generatePermanentPath(
+  entityType: string,
+  entityId: string,
+  fileName: string,
+  documentType: string
+): { path: string; url: string } {
+  // Generate unique filename to avoid collisions
+  const fileId = randomBytes(16).toString('hex');
+  const fileExtension = path.extname(fileName);
+  const uniqueFileName = `${fileId}${fileExtension}`;
+  
+  // Store under uploads/approved/{entityType}/{entityId}/
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const permanentDir = path.join(uploadsDir, 'approved', entityType, entityId);
+  const permanentFilePath = path.join(permanentDir, uniqueFileName);
+  
+  // Public URL that matches the express static route
+  const publicUrl = `/uploads/approved/${entityType}/${entityId}/${uniqueFileName}`;
+  
+  return {
+    path: permanentFilePath,
+    url: publicUrl
+  };
+}
 
   private getEntityForeignKeys(entityType: string, entityId: string): any {
     switch (entityType) {
@@ -482,16 +507,23 @@ async listDocuments(approvalRequestId: string): Promise<ApprovalStoredDocument[]
     }
   }
 
-  private async cleanupDirectoryIfEmpty(dirPath: string): Promise<void> {
-    if (!fs.existsSync(dirPath)) return;
-    
-    try {
-      const items = await fs.promises.readdir(dirPath);
-      if (items.length === 0) {
-        await fs.promises.rmdir(dirPath);
+private async cleanupDirectoryIfEmpty(dirPath: string): Promise<void> {
+  if (fs.existsSync(dirPath)) {
+    const files = await fs.promises.readdir(dirPath);
+    if (files.length === 0) {
+      await fs.promises.rmdir(dirPath);
+      console.log('Removed empty directory:', dirPath);
+      
+      // Also try to clean up parent directories if they're empty
+      const parentDir = path.dirname(dirPath);
+      if (parentDir.includes('temp')) {
+        const parentFiles = await fs.promises.readdir(parentDir);
+        if (parentFiles.length === 0) {
+          await fs.promises.rmdir(parentDir);
+          console.log('Removed empty parent directory:', parentDir);
+        }
       }
-    } catch (error) {
-      console.error('Error checking directory:', error);
     }
   }
+}
 }

@@ -78,6 +78,7 @@ export const uploadApprovalDocument = async (
   }
 };
 
+
 // Upload multiple documents to approval request
 export const uploadMultipleApprovalDocuments = async (
   approvalRequestId: string,
@@ -113,6 +114,7 @@ export const uploadMultipleApprovalDocuments = async (
     throw error;
   }
 };
+
 
 // Get documents for approval request
 // In approvalRequestApi.ts, update the getApprovalRequestDocuments function:
