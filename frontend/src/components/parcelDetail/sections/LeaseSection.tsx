@@ -4,8 +4,10 @@ import LeaseCard from "../cards/LeaseCard";
 import EditLeaseModal from "../modals/EditLeaseModal";
 import CreateLeaseModal from "../modals/CreateLeaseModal";
 import GenericDocsUpload from "../../GenericDocsUpload";
+import ApprovalRequestDocsModal from "../../ApprovalRequestDocsModal";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
-import { useAuth } from "../../../contexts/AuthContext"; 
+import { useAuth } from "../../../contexts/AuthContext";
+import { toast } from "sonner";
 
 type Props = {
   parcel: ParcelDetail;
@@ -15,19 +17,48 @@ type Props = {
 
 const LeaseSection = ({ parcel, lease, onReload }: Props) => {
   const [editing, setEditing] = useState(false);
-  const {user} = useAuth();
+  const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const [showCreateLease, setShowCreateLease] = useState(false);
+  
+  // State for immediate execution document upload
   const [showLeaseDocsUpload, setShowLeaseDocsUpload] = useState(false);
   const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
+  
+  // State for approval request document upload
+  const [showApprovalDocsModal, setShowApprovalDocsModal] = useState(false);
+  const [currentApprovalRequest, setCurrentApprovalRequest] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    resultData?: any;
+  } | null>(null);
 
   const handleCreateLeaseClick = () => {
     setShowCreateLease(true);
   };
 
-  const handleLeaseCreated = async (leaseId: string) => {
-    setCreatedLeaseId(leaseId);
-    setShowLeaseDocsUpload(true);
+  const handleLeaseCreated = async (result: any) => {
+    console.log("Lease created result:", result);
+    
+    // Check if approval is required
+    if (result?.approval_request_id) {
+      setCurrentApprovalRequest({
+        id: result.approval_request_id,
+        title: "Upload Lease Documents",
+        description: `Upload supporting documents for lease agreement on parcel ${parcel.upin}`,
+        resultData: result
+      });
+      setShowApprovalDocsModal(true);
+      toast.success(result.message || "Lease creation request submitted for approval");
+    } 
+    // If immediate execution (self-approval or no approval needed)
+    else if (result?.lease_id) {
+      setCreatedLeaseId(result.lease_id);
+      setShowLeaseDocsUpload(true);
+      toast.success(result.message || "Lease agreement created successfully");
+    }
+    
     await onReload();
   };
 
@@ -35,6 +66,30 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
     setShowLeaseDocsUpload(false);
     setCreatedLeaseId(null);
     await onReload();
+  };
+
+  const handleSkipUpload = async () => {
+    setShowLeaseDocsUpload(false);
+    setCreatedLeaseId(null);
+    await onReload();
+  };
+
+  const handleApprovalDocsModalClose = () => {
+    setShowApprovalDocsModal(false);
+    setCurrentApprovalRequest(null);
+    onReload();
+  };
+
+  const handleApprovalDocsComplete = () => {
+    setShowApprovalDocsModal(false);
+    setCurrentApprovalRequest(null);
+    onReload();
+  };
+
+  const handleEditSuccess = async () => {
+    await onReload();
+    setEditing(false);
+    toast.success("Lease agreement updated successfully");
   };
 
   return (
@@ -56,16 +111,16 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
 
         {lease ? (
           <LeaseCard lease={lease} />
-        ) : isSubcityNormal && 
-        (
-          (
+        ) : isSubcityNormal ? (
           <div className="text-center py-12 bg-gray-50 rounded-xl">
             <p className="text-gray-500 mb-2">
               No lease agreement recorded for this parcel yet
             </p>
             <p className="text-sm text-gray-400 mb-6">
-              Create the lease agreement and then upload the contract and related
-              documents.
+              Create a lease agreement and submit for approval.
+              {user?.role === "SUBCITY_NORMAL" && (
+                " Your request will be reviewed by a higher authority."
+              )}
             </p>
             <button
               onClick={handleCreateLeaseClick}
@@ -74,8 +129,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
               + Create Lease Agreement
             </button>
           </div>
-        
-        ))}
+        ) : null}
       </div>
 
       {/* Edit existing lease */}
@@ -84,24 +138,22 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
           lease={lease}
           open={editing}
           onClose={() => setEditing(false)}
-          onSuccess={onReload}
+          onSuccess={handleEditSuccess}
         />
       )}
 
       {/* Create lease modal */}
       {isSubcityNormal && (
         <CreateLeaseModal
-        parcel={parcel}
-        open={showCreateLease}
-        onClose={() => setShowCreateLease(false)}
-        onCreated={handleLeaseCreated}
-      />
-      )
+          parcel={parcel}
+          open={showCreateLease}
+          onClose={() => setShowCreateLease(false)}
+          onCreated={handleLeaseCreated}
+        />
+      )}
 
-      }
-
-      {/* Lease docs upload after creating lease */}
-      {isSubcityNormal &&  showLeaseDocsUpload && createdLeaseId && (
+      {/* Lease docs upload after immediate execution (no approval needed) */}
+      {isSubcityNormal && showLeaseDocsUpload && createdLeaseId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
             <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
@@ -118,7 +170,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
                   </p>
                 </div>
                 <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-emerald-100 text-emerald-800 rounded-full whitespace-nowrap">
-                  Step 2 of 2
+                  Optional Step
                 </span>
               </div>
             </div>
@@ -139,12 +191,13 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
                   },
                   { value: "OTHER", label: "Other Lease Document" },
                 ]}
+                onUploadSuccess={handleLeaseDocsDone}
               />
             </div>
 
             <div className="p-6 md:p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
               <button
-                onClick={handleLeaseDocsDone}
+                onClick={handleSkipUpload}
                 className="text-sm text-gray-600 hover:text-gray-900 underline transition"
               >
                 Skip for now
@@ -160,6 +213,20 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Approval Request Document Upload Modal */}
+      {isSubcityNormal && showApprovalDocsModal && currentApprovalRequest && (
+        <ApprovalRequestDocsModal
+          isOpen={showApprovalDocsModal}
+          onClose={handleApprovalDocsModalClose}
+          onComplete={handleApprovalDocsComplete}
+          approvalRequestId={currentApprovalRequest.id}
+          title={currentApprovalRequest.title}
+          description={currentApprovalRequest.description}
+          entityType="LEASE_AGREEMENTS"
+          actionType="CREATE"
+        />
       )}
     </>
   );

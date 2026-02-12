@@ -7,9 +7,17 @@ import {
   AuditAction, 
   ConfigCategory, 
   PaymentStatus, 
-  EncumbranceStatus 
+  EncumbranceStatus,
+  EntityType,
+  ActionType
 } from '../generated/prisma/enums.ts';
 import {type AuthRequest } from '../middlewares/authMiddleware.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.ts';
+import { AuditService } from '../services/auditService.ts';
+
+// Initialize services
+const auditService = new AuditService();
+const makerCheckerService = new MakerCheckerService(auditService);
 
 // Define interfaces for request bodies and queries
 interface GetParcelsQuery {
@@ -67,31 +75,99 @@ interface UpdateEncumbranceBody {
   registration_date?: string;
 }
 
-// Helper function to validate config values
-const validateConfigValue = async (category: ConfigCategory, value: string): Promise<boolean> => {
-  try {
-    const config = await prisma.configurations.findFirst({
-      where: {
-        category,
-        is_active: true,
-        is_deleted: false,
-        key: value,
-      },
-    });
-    return !!config;
-  } catch (error) {
-    return false;
-  }
-};
+
+// Define interfaces
+interface CreateParcelBody {
+  upin: string;           
+  file_number: string;
+  tabia: string;
+  ketena: string;
+  block: string;
+  total_area_m2: number;
+  land_use?: string;
+  land_grade: number;
+  tenure_type?: string;  
+  boundary_coords?: any;
+  boundary_north?: any;
+  boundary_south?: any;
+  boundary_west?: any;
+  boundary_east?: any;
+}
+
+interface UpdateParcelBody {
+  file_number?: string;
+  sub_city_id?: string;
+  tabia?: string;
+  ketena?: string;
+  block?: string;
+  total_area_m2?: number;
+  land_use?: string;
+  land_grade?: number;
+  tenure_type?: string;
+  boundary_coords?: any;
+  boundary_north?: any;
+  boundary_south?: any;
+  boundary_west?: any;
+  boundary_east?: any;
+  status?: string;
+}
+
+interface TransferOwnershipBody {
+  from_owner_id?: string;
+  to_owner_id: string;
+  to_share_ratio: number;
+  transfer_type: string;
+  transfer_price?: number;
+  reference_no?: string;
+  document_id?: string;
+}
+
+interface AddParcelOwnerBody {
+  owner_id: string;
+  acquired_at?: string;
+}
+
+interface SubdivideParcelBody {
+  childParcels: Array<{
+    upin: string;
+    file_number: string;
+    total_area_m2: number;
+    land_use?: string;
+    land_grade?: number;
+    boundary_coords?: any;
+    boundary_north?: string;
+    boundary_south?: string;
+    boundary_west?: string;
+    boundary_east?: string;
+  }>;
+}
+
+interface CreateEncumbranceBody {
+  upin: string;
+  type: string;
+  issuing_entity: string;
+  reference_number?: string;
+  status?: EncumbranceStatus;
+  registration_date?: string;
+}
+
+interface UpdateEncumbranceBody {
+  type?: string;
+  issuing_entity?: string;
+  reference_number?: string;
+  status?: EncumbranceStatus;
+  registration_date?: string;
+}
+
+interface DeleteParcelBody {
+  reason?: string;
+}
+
+
+// ---- CREATE PARCEL (Approval Request) ----
 
 export const createParcel = async (req: AuthRequest, res: Response) => {
-  const user = req.user!; 
-  // if(!user){
-  //   return res.status(404).json({
-  //     success:false,
-  //     message:"Anauthorized access"
-  //   })
-  // }
+  const user = req.user!;
   
   try {
     const {
@@ -112,25 +188,26 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!upin || !file_number  || !tabia || !ketena || !block || !total_area_m2 || land_grade === undefined) {
+    if (!upin || !file_number || !tabia || !ketena || !block || !total_area_m2 || land_grade === undefined) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
       });
     }
+
     const subcityId = user.sub_city_id;
     
-    if(!subcityId){
-        return res.status(404).json({
-          success:false,
-          message: "Sub city id not found",
-        })
-      }
+    if (!subcityId) {
+      return res.status(400).json({
+        success: false,
+        message: "User must be assigned to a sub-city",
+      });
+    }
 
-       // Check if sub_city exists
+    // Check if sub_city exists
     const subCity = await prisma.sub_cities.findFirst({
       where: {
-        sub_city_id:subcityId,
+        sub_city_id: subcityId,
         is_deleted: false,
       },
     });
@@ -161,11 +238,15 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const parcel = await prisma.land_parcels.create({
-      data: {
+    // Create approval request instead of executing immediately
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LAND_PARCELS',
+      entityId: upin,
+      actionType: 'CREATE',
+      requestData: {
         upin,
         file_number,
-        sub_city_id:subcityId,
+        sub_city_id: subcityId,
         tabia,
         ketena,
         block,
@@ -177,37 +258,33 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
         boundary_north,
         boundary_south,
         boundary_west,
-        boundary_east,
+        boundary_east
       },
+      makerId: user.user_id,
+      makerRole: user.role,
+      subCityId: subcityId,
+      comments: req.body.comments || `Request to create parcel ${upin}`
     });
 
-    // Create audit log for parcel creation
+    // Create audit log for request creation
     await prisma.audit_logs.create({
       data: {
-        user_id: user?.user_id ,
+        user_id: user.user_id,
         action_type: AuditAction.CREATE,
-        entity_type: 'land_parcels',
-        entity_id: parcel.upin,
+        entity_type: 'APPROVAL_REQUEST',
         changes: {
-          action: 'create_parcel',
-          upin: parcel.upin,
-          file_number: parcel.file_number,
-          sub_city_id: parcel.sub_city_id,
-          tabia: parcel.tabia,
-          ketena: parcel.ketena,
-          block: parcel.block,
-          total_area_m2: parcel.total_area_m2,
-          land_use: parcel.land_use,
-          land_grade: parcel.land_grade,
-          tenure_type: parcel.tenure_type,
-          has_boundary_coords: !!parcel.boundary_coords,
-          has_boundary_north: !!parcel.boundary_north,
-          has_boundary_south: !!parcel.boundary_south,
-          has_boundary_west: !!parcel.boundary_west,
-          has_boundary_east: !!parcel.boundary_east,
-          actor_id: user?.user_id,
-          actor_role: user?.role,
-          // actor_username: user?.username,
+          action: 'create_parcel_request',
+          upin,
+          file_number,
+          sub_city_id: subcityId,
+          tabia,
+          ketena,
+          block,
+          total_area_m2,
+          request_status: 'PENDING',
+          approver_role: user.role,
+          actor_id: user.user_id,
+          actor_role: user.role,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -215,39 +292,452 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    return res.status(201).json({
+    return res.status(202).json({
       success: true,
+      message: 'Parcel creation request submitted for approval',
       data: {
-        upin: parcel.upin,
-        sub_city_id: parcel.sub_city_id,
-        file_number: parcel.file_number,
-        tabia: parcel.tabia,
-        ketena: parcel.ketena,
-        block: parcel.block,
-        total_area_m2: parcel.total_area_m2,
-        created_at: parcel.created_at,
-      },
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        upin,
+        file_number,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
     });
   } catch (error: any) {
-    console.error('Create parcel error:', error);
+    console.error('Create parcel request error:', error);
     
     if (error.code === 'P2002') {
       return res.status(409).json({
         success: false,
-        message: 'UPIN or file_number already exists',
-      });
-    }
-    
-    if (error.code === 'P2003') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid sub_city_id reference',
+        message: 'A pending approval request already exists for this parcel',
       });
     }
     
     return res.status(500).json({
       success: false,
-      message: 'Failed to create parcel',
+      message: 'Failed to create parcel approval request',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+// ---- UPDATE PARCEL (Approval Request) ----
+
+export const updateParcel = async (req: AuthRequest, res: Response) => {
+  const upin = req.params.upin as string;
+  const data = req.body as UpdateParcelBody;
+  const actor = req.user!;
+
+  try {
+    // Get ALL current parcel data
+    const currentParcel = await prisma.land_parcels.findFirst({
+      where: { 
+        upin: upin, 
+        is_deleted: false 
+      },
+      select: {
+        upin: true,
+        file_number: true,
+        sub_city_id: true,
+        tabia: true,
+        ketena: true,
+        block: true,
+        total_area_m2: true,
+        land_use: true,
+        land_grade: true,
+        tenure_type: true,
+        boundary_coords: true,
+        boundary_north: true,
+        boundary_south: true,
+        boundary_west: true,
+        boundary_east: true,
+        status: true,
+        parent_upin: true,
+        created_at: true,
+        updated_at: true,
+        sub_city: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!currentParcel) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
+    }
+
+    // Validate allowed updates
+    const allowedUpdates = {
+      file_number: true,
+      sub_city_id: true,
+      tabia: true,
+      ketena: true,
+      block: true,
+      total_area_m2: true,
+      land_use: true,
+      land_grade: true,
+      tenure_type: true,
+      boundary_coords: true,
+      boundary_north: true,
+      boundary_south: true,
+      boundary_west: true,
+      boundary_east: true,
+      status: true,
+    };
+
+    const updates: any = {};
+    const changesForAudit: any = {};
+    const changesForRequest: any = {};
+
+    // Process and validate update fields
+    for (const key in data) {
+      if (allowedUpdates[key as keyof typeof allowedUpdates]) {
+        const newValue = data[key as keyof UpdateParcelBody];
+        const currentValue = currentParcel[key as keyof typeof currentParcel];
+        
+        // Skip if value is the same
+        if (JSON.stringify(currentValue) === JSON.stringify(newValue)) {
+          continue;
+        }
+        
+        // Validation for specific fields
+        if (key === 'sub_city_id' && newValue) {
+          const subCityExists = await prisma.sub_cities.findFirst({
+            where: {
+              sub_city_id: newValue,
+              is_deleted: false,
+            },
+          });
+          
+          if (!subCityExists) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid sub_city_id',
+            });
+          }
+        }
+        
+        if (key === 'file_number' && newValue && newValue !== currentParcel.file_number) {
+          const existingFileNumber = await prisma.land_parcels.findFirst({
+            where: {
+              file_number: newValue,
+              is_deleted: false,
+              NOT: { upin }
+            },
+          });
+          
+          if (existingFileNumber) {
+            return res.status(409).json({
+              success: false,
+              message: 'File number already exists',
+            });
+          }
+        }
+        
+        updates[key] = newValue;
+        changesForAudit[key] = {
+          from: currentValue,
+          to: newValue
+        };
+        changesForRequest[key] = newValue;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No changes detected. The requested values are the same as current values.',
+        data: {
+          current_data: currentParcel,
+          requested_changes: data
+        }
+      });
+    }
+
+    // Prepare complete original data for frontend
+    const originalDataForRequest = {
+      upin: currentParcel.upin,
+      file_number: currentParcel.file_number,
+      sub_city_id: currentParcel.sub_city_id,
+      sub_city_name: currentParcel.sub_city?.name,
+      tabia: currentParcel.tabia,
+      ketena: currentParcel.ketena,
+      block: currentParcel.block,
+      total_area_m2: currentParcel.total_area_m2,
+      land_use: currentParcel.land_use,
+      land_grade: currentParcel.land_grade,
+      tenure_type: currentParcel.tenure_type,
+      boundary_coords: currentParcel.boundary_coords,
+      boundary_north: currentParcel.boundary_north,
+      boundary_south: currentParcel.boundary_south,
+      boundary_west: currentParcel.boundary_west,
+      boundary_east: currentParcel.boundary_east,
+      status: currentParcel.status,
+      parent_upin: currentParcel.parent_upin,
+      created_at: currentParcel.created_at,
+      updated_at: currentParcel.updated_at
+    };
+
+    // Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LAND_PARCELS',
+      entityId: upin,
+      actionType: 'UPDATE',
+      requestData: {
+        // Only the changed fields
+        changes: changesForRequest,
+        // Complete original data
+        current_data: originalDataForRequest
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id || undefined,
+      comments: req.body.comments || `Request to update parcel ${upin}`
+    });
+
+    // Create audit log for update request
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest!.request_id,
+        changes: {
+          action: 'update_parcel_request',
+          upin,
+          changed_fields: Object.keys(changesForAudit),
+          changes_detail: changesForAudit,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest!.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: req.ip || req.socket.remoteAddress,
+      },
+    });
+
+    return res.status(202).json({
+      success: true,
+      message: 'Parcel update request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest!.request_id,
+        upin,
+        changes_requested: Object.keys(changesForAudit),
+        original_data_summary: {
+          file_number: currentParcel.file_number,
+          sub_city: currentParcel.sub_city?.name,
+          total_area_m2: currentParcel.total_area_m2,
+          status: currentParcel.status
+        },
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest!.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
+    });
+  } catch (error: any) {
+    console.error('Update parcel request error:', error);
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
+    }
+
+    if (error.message?.includes("pending approval request already exists")) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create parcel update request',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+;
+
+// ---- DELETE PARCEL (Approval Request) ----
+
+export const deleteParcel = async (req: AuthRequest, res: Response) => {
+  const  upin  = req.params as string ;
+  const data = req.body as DeleteParcelBody;
+  const actor = (req as any).user;
+
+  try {
+    // Get current parcel data for validation
+    const currentParcel = await prisma.land_parcels.findFirst({
+      where: { 
+        upin,
+        is_deleted: false 
+      },
+    });
+
+    if (!currentParcel) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
+    }
+
+    // Validate deletion constraints (for information purposes)
+    const validationChecks = await Promise.all([
+      // Check if parcel has active owners
+      prisma.parcel_owners.count({
+        where: { 
+          upin, 
+          is_active: true,
+          is_deleted: false,
+        },
+      }),
+      // Check if parcel has active billing records
+      prisma.billing_records.count({
+        where: { 
+          upin, 
+          is_deleted: false,
+          payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.OVERDUE] }
+        },
+      }),
+      // Check if parcel has child parcels
+      prisma.land_parcels.count({
+        where: { 
+          parent_upin: upin,
+          is_deleted: false
+        }
+      }),
+      // Check if parcel has active lease
+      prisma.lease_agreements.count({
+        where: { 
+          upin,
+          is_deleted: false,
+          status: 'ACTIVE'
+        }
+      }),
+      // Check if parcel has active encumbrances
+      prisma.encumbrances.count({
+        where: { 
+          upin,
+          is_deleted: false,
+          status: 'ACTIVE'
+        }
+      })
+    ]);
+
+    const [activeOwners, activeBilling, childParcels, activeLease, activeEncumbrances] = validationChecks;
+
+    // Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LAND_PARCELS',
+      entityId: upin,
+      actionType: 'DELETE',
+      requestData: {
+        reason: data.reason,
+        parcel_details: {
+          file_number: currentParcel.file_number,
+          sub_city_id: currentParcel.sub_city_id,
+          total_area_m2: currentParcel.total_area_m2,
+          status: currentParcel.status
+        },
+        validation_checks: {
+          active_owners: activeOwners,
+          active_billing: activeBilling,
+          child_parcels: childParcels,
+          active_lease: activeLease,
+          active_encumbrances: activeEncumbrances,
+          can_delete: (
+            activeOwners === 0 &&
+            activeBilling === 0 &&
+            childParcels === 0 &&
+            activeLease === 0 &&
+            activeEncumbrances === 0
+          )
+        }
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: data.reason || `Request to delete parcel ${upin}`
+    });
+
+    // Create audit log for delete request
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.DELETE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
+        changes: {
+          action: 'delete_parcel_request',
+          upin,
+          original_file_number: currentParcel.file_number,
+          reason: data.reason,
+          validation_checks: {
+            active_owners: activeOwners,
+            active_billing: activeBilling,
+            child_parcels: childParcels,
+            active_lease: activeLease,
+            active_encumbrances: activeEncumbrances
+          },
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: (req as any).ip || req.socket.remoteAddress,
+      },
+    });
+
+    return res.status(202).json({
+      success: true,
+      message: 'Parcel deletion request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        upin,
+        original_file_number: currentParcel.file_number,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours',
+        validation_warnings: {
+          has_active_owners: activeOwners > 0,
+          has_unpaid_bills: activeBilling > 0,
+          has_child_parcels: childParcels > 0,
+          has_active_lease: activeLease > 0,
+          has_active_encumbrances: activeEncumbrances > 0
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Delete parcel request error:', error);
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Parcel not found' 
+      });
+    }
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'A pending approval request already exists for this parcel deletion'
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create parcel deletion request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -402,11 +892,11 @@ export const getParcels = async (req: AuthRequest, res: Response) => {
 };
 
 export const getParcelByUpin = async (
-  req: Request<{ upin: string }>,
+  req: AuthRequest,
   res: Response
 ) => {
   try {
-    const { upin } = req.params;
+    const  upin  = req.params.upin as string;
 
     const parcel = await prisma.land_parcels.findUnique({
       where: { upin, is_deleted: false },
@@ -644,375 +1134,25 @@ export const getParcelByUpin = async (
   }
 };
 
-export const updateParcel = async (req: Request<{ upin: string }>, res: Response) => {
-  const { upin } = req.params;
-  const data = req.body;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
 
-  try {
-    // Get current parcel data for audit log
-    const currentParcel = await prisma.land_parcels.findFirst({
-      where: { 
-        upin,
-        is_deleted: false 
-      },
-    });
 
-    if (!currentParcel) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Parcel not found' 
-      });
-    }
-
-    // Validate allowed updates
-    const allowedUpdates = {
-      file_number: true,
-      sub_city_id: true,
-      tabia: true,
-      ketena: true,
-      block: true,
-      total_area_m2: true,
-      land_use: true,
-      land_grade: true,
-      tenure_type: true,
-      boundary_coords: true,
-      boundary_north: true,
-      boundary_south: true,
-      boundary_west: true,
-      boundary_east: true,
-      status: true,
-    };
-
-    const updates: any = {};
-    const changesForAudit: any = {};
-
-    for (const key in data) {
-      if (allowedUpdates[key as keyof typeof allowedUpdates]) {
-        // Check if sub_city_id exists when updating
-        if (key === 'sub_city_id' && data[key]) {
-          const subCityExists = await prisma.sub_cities.findFirst({
-            where: {
-              sub_city_id: data[key],
-              is_deleted: false,
-            },
-          });
-          
-          if (!subCityExists) {
-            return res.status(400).json({
-              success: false,
-              message: 'Invalid sub_city_id',
-            });
-          }
-        }
-        
-        // Check if new file_number doesn't conflict with existing parcels
-        if (key === 'file_number' && data[key] && data[key] !== currentParcel.file_number) {
-          const existingFileNumber = await prisma.land_parcels.findFirst({
-            where: {
-              file_number: data[key],
-              is_deleted: false,
-              NOT: { upin }
-            },
-          });
-          
-          if (existingFileNumber) {
-            return res.status(409).json({
-              success: false,
-              message: 'File number already exists',
-            });
-          }
-        }
-        
-        updates[key] = data[key];
-        
-        // Only store in audit log if value has changed
-        const currentValue = currentParcel[key as keyof typeof currentParcel];
-        if (JSON.stringify(currentValue) !== JSON.stringify(data[key])) {
-          changesForAudit[key] = {
-            from: currentValue,
-            to: data[key]
-          };
-        }
-      }
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No valid fields to update',
-      });
-    }
-
-    const parcel = await prisma.land_parcels.update({
-      where: { upin },
-      data: {
-        ...updates,
-        updated_at: new Date(),
-      },
-    });
-
-    // Create audit log only if there were actual changes
-    if (Object.keys(changesForAudit).length > 0) {
-      await prisma.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'land_parcels',
-          entity_id: upin,
-          changes: {
-            action: 'update_parcel',
-            changed_fields: changesForAudit,
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Parcel updated successfully',
-      data: {
-        upin: parcel.upin,
-        file_number: parcel.file_number,
-        sub_city_id: parcel.sub_city_id,
-        tabia: parcel.tabia,
-        ketena: parcel.ketena,
-        block: parcel.block,
-        updated_at: parcel.updated_at,
-      },
-    });
-  } catch (error: any) {
-    console.error('Update parcel error:', error);
-    
-    if (error.code === 'P2025') {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Parcel not found' 
-      });
-    }
-    
-    if (error.code === 'P2002') {
-      return res.status(409).json({ 
-        success: false, 
-        message: 'File number already exists' 
-      });
-    }
-    
-    if (error.code === 'P2003') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid sub_city_id reference' 
-      });
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update parcel',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
-
-export const deleteParcel = async (req: Request<{ upin: string }>, res: Response) => {
-  const { upin } = req.params;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
-
-  try {
-    // Get current parcel data for audit log
-    const currentParcel = await prisma.land_parcels.findFirst({
-      where: { 
-        upin,
-        is_deleted: false 
-      },
-    });
-
-    if (!currentParcel) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Parcel not found' 
-      });
-    }
-
-    // Check if parcel has active owners
-    const activeOwners = await prisma.parcel_owners.count({
-      where: { 
-        upin, 
-        is_active: true,
-        is_deleted: false,
-      },
-    });
-
-    if (activeOwners > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete parcel with active owners',
-        data: { active_owners: activeOwners }
-      });
-    }
-
-    // Check if parcel has active billing records
-    const activeBilling = await prisma.billing_records.count({
-      where: { 
-        upin, 
-        is_deleted: false,
-        payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.OVERDUE] }
-      },
-    });
-
-    if (activeBilling > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete parcel with unpaid bills',
-        data: { unpaid_bills: activeBilling }
-      });
-    }
-
-    // Check if parcel has child parcels
-    const childParcels = await prisma.land_parcels.count({
-      where: { 
-        parent_upin: upin,
-        is_deleted: false
-      }
-    });
-
-    if (childParcels > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete parcel with child parcels',
-        data: { child_parcels: childParcels }
-      });
-    }
-
-    // Check if parcel has active lease
-    const activeLease = await prisma.lease_agreements.count({
-      where: { 
-        upin,
-        is_deleted: false,
-        status: 'ACTIVE'
-      }
-    });
-
-    if (activeLease > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete parcel with active lease',
-        data: { active_leases: activeLease }
-      });
-    }
-
-    // Check if parcel has active encumbrances
-    const activeEncumbrances = await prisma.encumbrances.count({
-      where: { 
-        upin,
-        is_deleted: false,
-        status: 'ACTIVE'
-      }
-    });
-
-    if (activeEncumbrances > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete parcel with active encumbrances',
-        data: { active_encumbrances: activeEncumbrances }
-      });
-    }
-
-    // Soft delete
-    const deletedParcel = await prisma.land_parcels.update({
-      where: { upin },
-      data: { 
-        is_deleted: true,
-        deleted_at: new Date(),
-        updated_at: new Date(),
-        status: 'RETIRED', // Update status to RETIRED
-        file_number: `${currentParcel.file_number}_deleted_${Date.now()}`, // Modify file_number to allow reuse
-      },
-    });
-
-    // Create audit log for parcel deletion
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor?.user_id || null,
-        action_type: AuditAction.DELETE,
-        entity_type: 'land_parcels',
-        entity_id: upin,
-        changes: {
-          action: 'soft_delete_parcel',
-          original_file_number: currentParcel.file_number,
-          new_file_number: deletedParcel.file_number,
-          sub_city_id: currentParcel.sub_city_id,
-          tabia: currentParcel.tabia,
-          ketena: currentParcel.ketena,
-          block: currentParcel.block,
-          total_area_m2: currentParcel.total_area_m2,
-          active_owners_at_deletion: activeOwners,
-          unpaid_bills_at_deletion: activeBilling,
-          child_parcels_at_deletion: childParcels,
-          active_leases_at_deletion: activeLease,
-          active_encumbrances_at_deletion: activeEncumbrances,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
-          deleted_at: deletedParcel.deleted_at,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: (req as any).ip || req.socket.remoteAddress,
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Parcel soft deleted successfully',
-      data: { 
-        upin,
-        original_file_number: currentParcel.file_number,
-        new_file_number: deletedParcel.file_number,
-        deleted_at: deletedParcel.deleted_at,
-        is_deleted: deletedParcel.is_deleted,
-        status: deletedParcel.status,
-      },
-    });
-  } catch (error: any) {
-    console.error('Delete parcel error:', error);
-    
-    if (error.code === 'P2025') {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Parcel not found' 
-      });
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to delete parcel',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+// ---- TRANSFER OWNERSHIP (Approval Request) ----
 
 export const transferOwnership = async (
-  req: Request<{ upin: string }, {}, TransferOwnershipBody>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
-  
-  try {
-    const { upin } = req.params;
-    const {
-      from_owner_id,
-      to_owner_id,
-      transfer_type,
-      transfer_price,
-      reference_no,
-    } = req.body;
+  const actor = (req as any).user;
+  const { upin } = req.params; 
+  const {
+    from_owner_id,
+    to_owner_id,
+    transfer_type,
+    transfer_price,
+    reference_no,
+  } = req.body;
 
+  try {
     // === Basic validations ===
     if (!to_owner_id || !transfer_type) {
       return res.status(400).json({
@@ -1028,267 +1168,9 @@ export const transferOwnership = async (
       });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Get current active owners
-      const activeOwners = await tx.parcel_owners.findMany({
-        where: {
-          upin,
-          is_active: true,
-          is_deleted: false,
-        },
-        include: {
-          owner: {
-            select: { owner_id: true, full_name: true },
-          },
-        },
-      });
-
-      if (activeOwners.length === 0) {
-        throw new Error("NO_ACTIVE_OWNERS");
-      }
-
-      // 2. Validate FROM owner (if specified)
-      let fromOwnerRecord = null;
-
-      if (from_owner_id) {
-        fromOwnerRecord = activeOwners.find((po) => po.owner_id === from_owner_id);
-        if (!fromOwnerRecord) {
-          throw new Error("FROM_OWNER_NOT_ACTIVE");
-        }
-      }
-
-      // 3. Check if TO owner exists
-      const existingToOwnerRecord = activeOwners.find((po) => po.owner_id === to_owner_id);
-
-      // 4. Create event snapshot
-      const snapshot = {
-        timestamp: new Date().toISOString(),
-        owners_before: activeOwners.map((po) => ({
-          id: po.owner_id,
-          name: po.owner.full_name,
-        })),
-        transfer_type,
-        transfer_price,
-        reference_no,
-      };
-
-      // 5. Perform updates
-      const updates: Promise<any>[] = [];
-
-      // Update tenure to LEASE unless it's heredity
-      if (transfer_type !== "HEREDITY") {
-        const leaseTenure = await tx.configurations.findFirst({
-          where: {
-            category: ConfigCategory.LAND_TENURE,
-            key: "LEASE",
-            is_active: true,
-            is_deleted: false,
-          },
-        });
-
-        if (leaseTenure) {
-          updates.push(
-            tx.land_parcels.update({
-              where: { upin },
-              data: { 
-                tenure_type: "LEASE",
-                updated_at: new Date()
-              },
-            })
-          );
-        }
-      }
-
-      // Handle FROM owner
-      if (from_owner_id && fromOwnerRecord) {
-        // Full transfer → retire the owner
-        updates.push(
-          tx.parcel_owners.update({
-            where: { parcel_owner_id: fromOwnerRecord.parcel_owner_id },
-            data: {
-              is_active: false,
-              retired_at: new Date(),
-              updated_at: new Date(),
-            },
-          })
-        );
-      }
-
-      // Handle TO owner
-      if (existingToOwnerRecord) {
-        // For existing owner, update acquired_at
-        updates.push(
-          tx.parcel_owners.update({
-            where: { parcel_owner_id: existingToOwnerRecord.parcel_owner_id },
-            data: {
-              acquired_at: new Date(),
-              updated_at: new Date(),
-            },
-          })
-        );
-      } else {
-        // Verify to_owner exists
-        const toOwner = await tx.owners.findUnique({
-          where: { owner_id: to_owner_id, is_deleted: false },
-        });
-
-        if (!toOwner) {
-          throw new Error("TO_OWNER_NOT_FOUND");
-        }
-
-        // Create new ownership record
-        updates.push(
-          tx.parcel_owners.create({
-            data: {
-              upin,
-              owner_id: to_owner_id,
-              acquired_at: new Date(),
-              is_active: true,
-            },
-          })
-        );
-      }
-
-      await Promise.all(updates);
-
-      // 6. Record transfer in history
-      const historyEntry = await tx.ownership_history.create({
-        data: {
-          upin,
-          transfer_type,
-          transfer_date: new Date(),
-          transfer_price: transfer_price ? Number(transfer_price) : null,
-          reference_no: reference_no || null,
-          from_owner_id: from_owner_id || null,
-          to_owner_id: to_owner_id,
-          event_snapshot: snapshot as any,
-        },
-        include: {
-          from_owner: { select: { full_name: true } },
-          to_owner: { select: { full_name: true } },
-        },
-      });
-
-      // Create audit log for ownership transfer
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'parcel_owners',
-          entity_id: `${upin}_${to_owner_id}`,
-          changes: {
-            action: 'transfer_ownership',
-            upin,
-            from_owner_id,
-            from_owner_name: historyEntry.from_owner?.full_name || null,
-            to_owner_id,
-            to_owner_name: historyEntry.to_owner?.full_name,
-            transfer_type,
-            transfer_price: historyEntry.transfer_price,
-            reference_no: historyEntry.reference_no,
-            parcel_tenure_updated: transfer_type !== "HEREDITY",
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-
-      // Also audit the parcel update
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'land_parcels',
-          entity_id: upin,
-          changes: {
-            action: 'parcel_ownership_updated',
-            ownership_transfer: true,
-            new_owner: to_owner_id,
-            transfer_type,
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-
-      // Get final active owners for response
-      const finalOwners = await tx.parcel_owners.findMany({
-        where: { upin, is_active: true, is_deleted: false },
-        include: { owner: true }
-      });
-
-      return {
-        history: historyEntry,
-        action: existingToOwnerRecord ? "UPDATED_EXISTING_OWNER" : "NEW_OWNER_CREATED",
-        transfer_kind: fromOwnerRecord ? "FULL" : "ADDITIONAL",
-        final_active_owners: finalOwners.map(po => ({
-          owner_id: po.owner_id,
-          full_name: po.owner.full_name,
-          acquired_at: po.acquired_at,
-        }))
-      };
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Ownership transferred successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    console.error("Transfer failed:", error);
-
-    const errorMessages: Record<string, string> = {
-      FROM_OWNER_NOT_ACTIVE: "The specified seller is not currently an active owner.",
-      TO_OWNER_NOT_FOUND: "The specified buyer does not exist.",
-      NO_ACTIVE_OWNERS: "This parcel has no active owners.",
-    };
-
-    const message = errorMessages[error.message] || "Transfer failed due to an unexpected error.";
-
-    return res.status(errorMessages[error.message] ? 400 : 500).json({
-      success: false,
-      message,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
-
-export const addParcelOwner = async (req: Request, res: Response) => {
-  const { upin } = req.params as { upin: string };
-  const { owner_id, acquired_at } = req.body as { 
-    owner_id: string; 
-    acquired_at?: string;
-    [key: string]: any 
-  };
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
-
-  try {
-    // 1. Required field validation
-    if (!upin?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "UPIN is required",
-      });
-    }
-
-    if (!owner_id?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "owner_id is required",
-      });
-    }
-
-    // 2. Check if parcel exists
-    const parcel = await prisma.land_parcels.findUnique({
-      where: { upin },
+    // Check if parcel exists
+    const parcel = await prisma.land_parcels.findFirst({
+      where: { upin, is_deleted: false },
     });
 
     if (!parcel) {
@@ -1298,232 +1180,359 @@ export const addParcelOwner = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Check if parcel is active
-    if (parcel.status !== 'ACTIVE' || parcel.is_deleted) {
-      return res.status(400).json({
-        success: false,
-        message: "Parcel is not active",
-      });
-    }
-
-    // 4. Check if owner exists
-    const existingOwner = await prisma.owners.findUnique({
-      where: { 
-        owner_id,
-        is_deleted: false 
-      },
+    // Check if TO owner exists
+    const toOwner = await prisma.owners.findUnique({
+      where: { owner_id: to_owner_id, is_deleted: false },
     });
 
-    if (!existingOwner) {
+    if (!toOwner) {
       return res.status(404).json({
         success: false,
-        message: "Owner not found or is deleted",
+        message: "Buyer not found",
       });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 5. Check if there are any existing owners for this parcel
-      const existingParcelOwners = await tx.parcel_owners.findMany({
+    // Check if FROM owner exists and is active (if specified)
+    let fromOwner = null;
+    if (from_owner_id) {
+      fromOwner = await prisma.owners.findUnique({
+        where: { owner_id: from_owner_id, is_deleted: false },
+      });
+
+      if (!fromOwner) {
+        return res.status(404).json({
+          success: false,
+          message: "Seller not found",
+        });
+      }
+
+      // Check if FROM owner is currently an owner of the parcel
+      const isCurrentOwner = await prisma.parcel_owners.findFirst({
         where: {
-          upin,
+          upin:upin,
+          owner_id: from_owner_id,
+          is_active: true,
           is_deleted: false,
-          is_active: true,
-          retired_at: null,
         },
       });
 
-      // Determine if this is the first owner or a co-owner
-      const isFirstOwner = existingParcelOwners.length === 0;
-      const transferType = isFirstOwner ? "FIRST_OWNER" : "CO_OWNER_ADDITION";
-      const actionType = isFirstOwner ? "first_owner_added" : "parcel_co_owner_added";
-
-      // // 6. Check for existing active links for this specific owner
-      // const existingOwnerLinks = existingParcelOwners.filter(link => 
-      //   link.owner_id === owner_id
-      // );
-
-      // const activeLink = existingOwnerLinks.find(link => 
-      //   link.is_active && !link.retired_at
-      // );
-
-      // if (activeLink) {
-      //   throw new Error("ACTIVE_OWNER_EXISTS");
-      // }
-
-      // Determine acquired_at date
-      const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
-      
-      // Validate acquired date is not in the future
-      if (acquiredDate > new Date()) {
-        throw new Error("FUTURE_ACQUISITION_DATE");
+      if (!isCurrentOwner) {
+        return res.status(400).json({
+          success: false,
+          message: "Seller is not currently an active owner of this parcel",
+        });
       }
+    }
 
-      // 7. If this is the first owner, ensure acquired date is reasonable
-      if (isFirstOwner && acquiredDate < new Date('1900-01-01')) {
-        throw new Error("INVALID_ACQUISITION_DATE");
-      }
-
-      // 8. Create the parcel-owner link
-      const parcelOwner = await tx.parcel_owners.create({
-        data: {
-          upin,
-          owner_id,
-          acquired_at: acquiredDate,
-          is_active: true,
-          retired_at: null,
+    // Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.LAND_PARCELS,
+      entityId: upin as string,
+      actionType: ActionType.TRANSFER,
+      requestData: {
+        from_owner_id,
+        to_owner_id,
+        transfer_type,
+        transfer_price,
+        reference_no,
+        parcel_details: {
+          upin: parcel.upin,
+          file_number: parcel.file_number,
+          current_tenure_type: parcel.tenure_type
         },
-      });
-
-      // 10. Create audit log for owner addition
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.CREATE,
-          entity_type: 'parcel_owners',
-          entity_id: parcelOwner.parcel_owner_id,
-          changes: {
-            action: isFirstOwner ? 'add_first_owner' : 'add_co_owner',
-            upin,
-            owner_id,
-            owner_name: existingOwner.full_name,
-            owner_national_id: existingOwner.national_id,
-            acquired_at: parcelOwner.acquired_at,
-            is_first_owner: isFirstOwner,
-            existing_owners_count: existingParcelOwners.length,
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-
-      // 11. Also audit the parcel update
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'land_parcels',
-          entity_id: upin,
-          changes: {
-            action: actionType,
-            added_owner_id: owner_id,
-            added_owner_name: existingOwner.full_name,
-            is_first_owner: isFirstOwner,
-            total_active_owners: existingParcelOwners.length + 1,
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-
-      // 12. Create ownership history record
-      const historyEntry = await tx.ownership_history.create({
-        data: {
-          upin,
-          from_owner_id: isFirstOwner ? null : undefined, // First owner has no "from"
-          to_owner_id: owner_id,
-          transfer_type: transferType,
-          event_snapshot: {
-            parcel: parcel.upin,
-            owner: existingOwner.full_name,
-            owner_id: owner_id,
-            acquired_at: acquiredDate,
-            is_first_owner: isFirstOwner,
-            existing_owners_before: existingParcelOwners.map(po => ({
-              owner_id: po.owner_id,
-            })),
-            added_by: actor?.user_id,
-            added_by_username: actor?.username,
-          } as any,
-          reference_no: `${transferType}-${Date.now()}`,
-          transfer_date: new Date(),
-        },
-      });
-
-      return { parcelOwner, historyEntry, isFirstOwner };
+        owner_details: {
+          from_owner_name: fromOwner?.full_name,
+          to_owner_name: toOwner.full_name
+        }
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: `Request to transfer ownership of parcel ${upin}`
     });
 
-    return res.status(201).json({
-      success: true,
-      message: result.isFirstOwner 
-        ? "First owner added successfully" 
-        : "Co-owner added successfully",
+    // Create audit log for transfer request
+    await prisma.audit_logs.create({
       data: {
-        parcel_owner_id: result.parcelOwner.parcel_owner_id,
-        upin: result.parcelOwner.upin,
-        owner_id: result.parcelOwner.owner_id,
-        owner_name: existingOwner.full_name,
-        acquired_at: result.parcelOwner.acquired_at,
-        is_first_owner: result.isFirstOwner,
-        history_id: result.historyEntry.history_id,
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
+        changes: {
+          action: 'transfer_ownership_request',
+          upin,
+          from_owner_id,
+          from_owner_name: fromOwner?.full_name,
+          to_owner_id,
+          to_owner_name: toOwner.full_name,
+          transfer_type,
+          transfer_price,
+          reference_no,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: (req as any).ip || req.socket.remoteAddress,
       },
     });
-  } catch (error: any) {
-    console.error("Add parcel owner error:", error);
 
-    const errorMessages: Record<string, string> = {
-      ACTIVE_OWNER_EXISTS: "This owner is already an active owner of the parcel",
-      FUTURE_ACQUISITION_DATE: "Acquisition date cannot be in the future",
-      INVALID_ACQUISITION_DATE: "First owner acquisition date appears to be invalid",
-      DUPLICATE_ACQUISITION_DATE: "Owner already linked to this parcel with the same acquisition date",
-    };
-
-    let message = errorMessages[error.message];
-
-    if (!message) {
-      if (error.code === 'P2002') {
-        const constraint = error.meta?.target;
-        if (constraint?.includes('parcel_owners_upin_owner_id_acquired_at_key')) {
-          message = "Owner already linked to this parcel with the same acquisition date";
-        } else {
-          message = "Duplicate entry detected";
-        }
-      } else if (error.code === 'P2003') {
-        message = "Foreign key constraint failed - parcel or owner not found";
-      } else if (error.code === 'P2025') {
-        message = "Related record not found";
-      } else {
-        message = "Failed to add owner";
+    return res.status(202).json({
+      success: true,
+      message: 'Ownership transfer request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        upin,
+        transfer_type,
+        from_owner_id,
+        from_owner_name: fromOwner?.full_name,
+        to_owner_id,
+        to_owner_name: toOwner.full_name,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours',
+        notes: transfer_type !== "HEREDITY" ? 'Will update parcel tenure to LEASE' : 'Heredity transfer - tenure unchanged'
       }
+    });
+  } catch (error: any) {
+    console.error("Transfer ownership request error:", error);
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "A pending approval request already exists for this ownership transfer"
+      });
     }
 
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message,
+      message: "Failed to create ownership transfer request",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// ---- ADD PARCEL OWNER (Approval Request) ----
+
+export const addParcelOwner = async (req: Request, res: Response) => {
+  const { upin } = req.params as { upin: string };
+  const { owner_id, acquired_at } = req.body as AddParcelOwnerBody;
+  const actor = (req as any).user;
+
+  try {
+    // 1. Required field validation
+    if (!owner_id?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "owner_id is required",
+      });
+    }
+
+    // 2. Get complete parcel information
+    const parcel = await prisma.land_parcels.findUnique({
+      where: { upin, is_deleted: false },
+      select: {
+        upin: true,
+        file_number: true,
+        tabia: true,
+        ketena: true,
+        block: true,
+        total_area_m2: true,
+        land_use: true,
+        land_grade: true,
+        tenure_type: true,
+        status: true,
+        sub_city: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!parcel) {
+      return res.status(404).json({
+        success: false,
+        message: "Parcel not found",
+      });
+    }
+
+    // 3. Get complete owner information
+    const owner = await prisma.owners.findUnique({
+      where: { owner_id, is_deleted: false },
+      select: {
+        owner_id: true,
+        full_name: true,
+        national_id: true,
+        tin_number: true,
+        phone_number: true,
+        sub_city: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!owner) {
+      return res.status(404).json({
+        success: false,
+        message: "Owner not found",
+      });
+    }
+
+    // 4. Check existing active owners with their details
+    const existingParcelOwners = await prisma.parcel_owners.findMany({
+      where: {
+        upin,
+        is_deleted: false,
+        is_active: true,
+        retired_at: null,
+      },
+      select: {
+        owner: {
+          select: {
+            full_name: true,
+            national_id: true
+          }
+        },
+        acquired_at: true
+      }
+    });
+
+    const isFirstOwner = existingParcelOwners.length === 0;
+
+    // 5. Determine acquired_at date
+    const acquiredDate = acquired_at ? new Date(acquired_at) : new Date();
+    
+    if (acquiredDate > new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Acquisition date cannot be in the future',
+      });
+    }
+
+    if (isFirstOwner && acquiredDate < new Date('1900-01-01')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid acquisition date for first owner',
+      });
+    }
+
+    // 6. Create approval request with complete data
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.LAND_PARCELS,
+      entityId: upin,
+      actionType: ActionType.ADD_OWNER,
+      requestData: {
+        owner_id,
+        acquired_at: acquiredDate.toISOString(),
+        is_first_owner: isFirstOwner,
+        parcel_details: {
+          upin: parcel.upin,
+          file_number: parcel.file_number,
+          tabia: parcel.tabia,
+          ketena: parcel.ketena,
+          block: parcel.block,
+          total_area_m2: parcel.total_area_m2,
+          land_use: parcel.land_use,
+          land_grade: parcel.land_grade,
+          tenure_type: parcel.tenure_type,
+          status: parcel.status,
+          sub_city_name: parcel.sub_city?.name
+        },
+        owner_details: {
+          full_name: owner.full_name,
+          national_id: owner.national_id,
+          tin_number: owner.tin_number,
+          phone_number: owner.phone_number,
+          owner_sub_city: owner.sub_city?.name
+        },
+        existing_owners: existingParcelOwners.map(po => ({
+          full_name: po.owner.full_name,
+          national_id: po.owner.national_id,
+          acquired_at: po.acquired_at
+        }))
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: req.body.comments || `Request to add owner ${owner.full_name} to parcel ${upin}`
+    });
+
+    // Create audit log for add owner request
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.CREATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
+        changes: {
+          action: 'add_parcel_owner_request',
+          upin,
+          owner_id,
+          owner_name: owner.full_name,
+          is_first_owner: isFirstOwner,
+          acquired_at: acquiredDate.toISOString(),
+          existing_owners_count: existingParcelOwners.length,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: (req as any).ip || req.socket.remoteAddress,
+      },
+    });
+
+    return res.status(202).json({
+      success: true,
+      message: isFirstOwner 
+        ? 'First owner addition request submitted for approval' 
+        : 'Co-owner addition request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        upin,
+        owner_id,
+        owner_name: owner.full_name,
+        is_first_owner: isFirstOwner,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
+    });
+  } catch (error: any) {
+    console.error("Add parcel owner request error:", error);
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "A pending approval request already exists for this owner addition"
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create add owner request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
 
+// ---- SUBDIVIDE PARCEL (Approval Request) ----
+
 export const subdivideParcel = async (req: AuthRequest, res: Response) => {
   const { upin } = req.params as { upin: string };
- const actor = (req as any).user;
-  
-  interface SubdivisionChild {
-    upin: string;
-    file_number: string;
-    total_area_m2: number;
-    land_use?: string;
-    land_grade?: number;
-    boundary_coords?: any;
-    boundary_north?: string;
-    boundary_south?: string;
-    boundary_west?: string;
-    boundary_east?: string;
-  }
-  
-  const { childParcels } = req.body as { 
-    childParcels: SubdivisionChild[] 
-  };
+  const actor = (req as any).user;
+  const { childParcels } = req.body as SubdivideParcelBody;
 
   try {
+    // Validate child parcels
     if (!Array.isArray(childParcels) || childParcels.length < 2) {
       return res.status(400).json({
         success: false,
@@ -1531,276 +1540,186 @@ export const subdivideParcel = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Get parent with its active owners
-      const parent = await tx.land_parcels.findUnique({
-        where: { upin },
-        include: {
-          owners: {
-            where: { 
-              is_active: true, 
-              is_deleted: false 
-            },
-            include: { 
-              owner: true 
-            },
+    // Get parent parcel for validation
+    const parent = await prisma.land_parcels.findUnique({
+      where: { upin, is_deleted: false },
+      include: {
+        owners: {
+          where: { 
+            is_active: true, 
+            is_deleted: false 
+          },
+          include: { 
+            owner: true 
           },
         },
-      });
-
-      if (!parent) throw new Error('PARENT_NOT_FOUND');
-      if (parent.status !== 'ACTIVE') throw new Error('PARENT_NOT_ACTIVE');
-
-      // 2. Validate child parcels
-      for (const childData of childParcels) {
-        if (!childData.upin?.trim()) {
-          throw new Error('CHILD_UPIN_REQUIRED');
-        }
-        if (!childData.file_number?.trim()) {
-          throw new Error('CHILD_FILE_NUMBER_REQUIRED');
-        }
-        if (!childData.total_area_m2 || Number(childData.total_area_m2) <= 0) {
-          throw new Error('INVALID_CHILD_AREA');
-        }
-        
-        // Check for duplicate UPIN
-        const existingParcel = await tx.land_parcels.findUnique({
-          where: { upin: childData.upin },
-        });
-        
-        if (existingParcel) {
-          throw new Error(`DUPLICATE_UPIN: ${childData.upin}`);
-        }
-      }
-
-      // 3. Area validation (with small tolerance)
-      const totalChildArea = childParcels.reduce(
-        (sum: number, c: SubdivisionChild) => sum + Number(c.total_area_m2), 
-        0
-      );
-      const parentArea = Number(parent.total_area_m2);
-      
-      if (Math.abs(totalChildArea - parentArea) > 0.1) {
-        throw new Error('CHILD_AREAS_MUST_MATCH_PARENT');
-      }
-
-      // 4. Retire parent
-      const retiredParent = await tx.land_parcels.update({
-        where: { upin },
-        data: { 
-          status: 'RETIRED',
-          updated_at: new Date(),
-        },
-      });
-
-      const createdChildren = [];
-      const createdOwnerships = [];
-
-      // 5. Create children + copy active owners
-      for (const childData of childParcels) {
-        const child = await tx.land_parcels.create({
-          data: {
-            upin: childData.upin,
-            file_number: childData.file_number,
-            sub_city_id: parent.sub_city_id,
-            tabia: parent.tabia,
-            ketena: parent.ketena,
-            block: parent.block,
-            total_area_m2: childData.total_area_m2,
-            land_use: childData.land_use || parent.land_use,
-            land_grade: childData.land_grade || parent.land_grade,
-            tenure_type: parent.tenure_type,
-            parent_upin: upin,
-            status: 'ACTIVE',
-            boundary_coords: childData.boundary_coords || parent.boundary_coords,
-            boundary_north: childData.boundary_north || parent.boundary_north,
-            boundary_east: childData.boundary_east || parent.boundary_east,
-            boundary_south: childData.boundary_south || parent.boundary_south,
-            boundary_west: childData.boundary_west || parent.boundary_west,
-          },
-        });
-
-        // Copy all active owners from parent to this child
-        for (const parcelOwner of parent.owners) {
-          const newOwner = await tx.parcel_owners.create({
-            data: {
-              upin: child.upin,
-              owner_id: parcelOwner.owner_id,
-              acquired_at: new Date(),
-              is_active: true,
-            },
-          });
-          createdOwnerships.push({
-            child_upin: child.upin,
-            owner_id: parcelOwner.owner_id,
-            owner_name: parcelOwner.owner.full_name,
-            parcel_owner_id: newOwner.parcel_owner_id,
-          });
-        }
-
-        createdChildren.push(child);
-      }
-
-      // 6. Create comprehensive audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor.user_id,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'land_parcels',
-          entity_id: upin,
-          changes: {
-            action: 'subdivide_parcel',
-            parent_upin: upin,
-            parent_area: parentArea,
-            parent_status_after: 'RETIRED',
-            child_count: childParcels.length,
-            children: childParcels.map(c => ({
-              upin: c.upin,
-              file_number: c.file_number,
-              area_m2: c.total_area_m2,
-              land_use: c.land_use,
-              land_grade: c.land_grade,
-            })),
-            total_child_area: totalChildArea,
-            owners_copied: parent.owners.map(po => ({
-              owner_id: po.owner_id,
-              owner_name: po.owner.full_name,
-            })),
-            ownerships_created: createdOwnerships.length,
-            actor_id: actor.user_id,
-            actor_role: actor.role,
-            actor_username: actor.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: req.ip || req.socket.remoteAddress,
-        },
-      });
-
-      // 7. Create audit logs for each child parcel creation
-      for (const child of createdChildren) {
-        await tx.audit_logs.create({
-          data: {
-            user_id: actor.user_id,
-            action_type: AuditAction.CREATE,
-            entity_type: 'land_parcels',
-            entity_id: child.upin,
-            changes: {
-              action: 'create_child_parcel_from_subdivision',
-              parent_upin: upin,
-              upin: child.upin,
-              file_number: child.file_number,
-              area_m2: child.total_area_m2,
-              land_use: child.land_use,
-              land_grade: child.land_grade,
-              sub_city_id: child.sub_city_id,
-              tabia: child.tabia,
-              ketena: child.ketena,
-              block: child.block,
-              actor_id: actor.user_id,
-              actor_role: actor.role,
-              actor_username: actor.username,
-              timestamp: new Date().toISOString(),
-            },
-            timestamp: new Date(),
-            ip_address: req.ip || req.socket.remoteAddress,
-          },
-        });
-      }
-
-      // 8. Create ownership history for the subdivision
-      await tx.ownership_history.create({
-        data: {
-          upin,
-          transfer_type: "SUBDIVISION",
-          event_snapshot: {
-            parent_parcel: {
-              upin: parent.upin,
-              area_m2: parentArea,
-              owners: parent.owners.map(po => ({
-                owner_id: po.owner_id,
-                owner_name: po.owner.full_name,
-              })),
-            },
-            child_parcels: createdChildren.map(c => ({
-              upin: c.upin,
-              file_number: c.file_number,
-              area_m2: c.total_area_m2,
-            })),
-            performed_by: {
-              user_id: actor.user_id,
-              username: actor.username,
-              role: actor.role,
-            },
-            timestamp: new Date().toISOString(),
-          } as any,
-          reference_no: `SUBDIVISION-${Date.now()}`,
-          transfer_date: new Date(),
-        },
-      });
-
-      return { 
-        parent: retiredParent, 
-        children: createdChildren,
-        ownerships: createdOwnerships 
-      };
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Parcel subdivided successfully. Parent retired, children created with copied owners.",
-      data: {
-        parent_upin: upin,
-        parent_status: 'RETIRED',
-        child_count: result.children.length,
-        child_parcels: result.children.map(c => ({
-          upin: c.upin,
-          file_number: c.file_number,
-          total_area_m2: Number(c.total_area_m2),
-          land_use: c.land_use,
-          land_grade: Number(c.land_grade),
-        })),
-        owners_copied: result.ownerships.length,
       },
     });
-  } catch (error: any) {
-    console.error("Subdivision error:", error);
 
-    const messages: Record<string, string> = {
-      PARENT_NOT_FOUND: "Parent parcel not found",
-      PARENT_NOT_ACTIVE: "Only active parcels can be subdivided",
-      CHILD_AREAS_MUST_MATCH_PARENT: "Total child areas must match parent area (within 0.1 m² tolerance)",
-      CHILD_UPIN_REQUIRED: "Child UPIN is required",
-      CHILD_FILE_NUMBER_REQUIRED: "Child file number is required",
-      INVALID_CHILD_AREA: "Child area must be greater than 0",
-    };
+    if (!parent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Parent parcel not found',
+      });
+    }
 
-    let message = messages[error.message] || "Failed to subdivide parcel";
+    if (parent.status !== 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only active parcels can be subdivided',
+      });
+    }
+
+    // Validate child parcels
+    for (const childData of childParcels) {
+      if (!childData.upin?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Child UPIN is required',
+        });
+      }
+      if (!childData.file_number?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Child file number is required',
+        });
+      }
+      if (!childData.total_area_m2 || Number(childData.total_area_m2) <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Child area must be greater than 0',
+        });
+      }
+      
+      // Check for duplicate UPIN
+      const existingParcel = await prisma.land_parcels.findUnique({
+        where: { upin: childData.upin },
+      });
+      
+      if (existingParcel) {
+        return res.status(409).json({
+          success: false,
+          message: `UPIN already exists: ${childData.upin}`,
+        });
+      }
+    }
+
+    // Area validation
+    const totalChildArea = childParcels.reduce(
+      (sum: number, c) => sum + Number(c.total_area_m2), 
+      0
+    );
+    const parentArea = Number(parent.total_area_m2);
     
-    // Handle duplicate UPIN error
-    if (error.message?.startsWith('DUPLICATE_UPIN:')) {
-      const duplicateUpin = error.message.split(': ')[1];
-      message = `UPIN already exists: ${duplicateUpin}`;
+    if (Math.abs(totalChildArea - parentArea) > 0.1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total child areas must match parent area (within 0.1 m² tolerance)',
+      });
     }
 
-    // Handle Prisma errors
+    // Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LAND_PARCELS',
+      entityId: upin,
+      actionType: 'SUBDIVIDE',
+      requestData: {
+        childParcels: childParcels.map(p => ({
+          ...p,
+          // Add placeholder for documents
+          documents: [] // Will be populated by document uploads
+        })),
+        parent_details: {
+          upin: parent.upin,
+          file_number: parent.file_number,
+          total_area_m2: parent.total_area_m2,
+          owners_count: parent.owners.length,
+          tenure_type: parent.tenure_type
+        },
+        validation: {
+          parent_area: parentArea,
+          total_child_area: totalChildArea,
+          area_match: Math.abs(totalChildArea - parentArea) <= 0.1
+        },
+        // Store list of all parcels for document association
+        parcels: [
+          { upin: parent.upin, type: 'PARENT', file_number: parent.file_number },
+          ...childParcels.map(p => ({ 
+            upin: p.upin, 
+            type: 'CHILD', 
+            file_number: p.file_number 
+          }))
+        ]
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: req.body.comments || `Request to subdivide parcel ${upin} into ${childParcels.length} parcels`
+    });
+
+    // Create audit log for subdivision request
+    await prisma.audit_logs.create({
+      data: {
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
+        changes: {
+          action: 'subdivide_parcel_request',
+          parent_upin: upin,
+          parent_area: parentArea,
+          child_count: childParcels.length,
+          total_child_area: totalChildArea,
+          owners_to_copy: parent.owners.length,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: req.ip || req.socket.remoteAddress,
+      },
+    });
+
+    return res.status(202).json({
+      success: true,
+      message: 'Parcel subdivision request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        parent_upin: upin,
+        child_count: childParcels.length,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours',
+        notes: 'Parent will be retired, children will be created with copied owners'
+      }
+    });
+  } catch (error: any) {
+    console.error("Subdivision request error:", error);
+
     if (error.code === 'P2002') {
-      message = "Duplicate UPIN or file number detected";
+      return res.status(409).json({
+        success: false,
+        message: "A pending approval request already exists for this subdivision"
+      });
     }
 
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message,
+      message: "Failed to create subdivision request",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
 
+
 export const createEncumbrance = async (
   req: Request<{}, {}, CreateEncumbranceBody>,
   res: Response
 ) => {
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+  const actor = (req as any).user;
 
   try {
     const { upin, type, issuing_entity, reference_number, status, registration_date } = req.body;
@@ -1838,37 +1757,48 @@ export const createEncumbrance = async (
       }
     }
 
-    const encumbrance = await prisma.encumbrances.create({
-      data: {
+    // Create approval request instead of executing immediately
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'ENCUMBRANCES',
+      entityId: `${upin}_${type}_${issuing_entity}`, // Unique identifier for the request
+      actionType: 'CREATE',
+      requestData: {
         upin,
         type,
         issuing_entity,
         reference_number,
         status: status || EncumbranceStatus.ACTIVE,
         registration_date: registration_date ? new Date(registration_date) : new Date(),
+        parcel_file_number: parcel.file_number,
+        parcel_sub_city_id: parcel.sub_city_id
       },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: `Request to create ${type} encumbrance for parcel ${upin}`
     });
 
-    // Create audit log for encumbrance creation
+    // Create audit log for request creation
     await prisma.audit_logs.create({
       data: {
-        user_id: actor?.user_id || null,
+        user_id: actor.user_id,
         action_type: AuditAction.CREATE,
-        entity_type: 'encumbrances',
-        entity_id: encumbrance.encumbrance_id,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
         changes: {
-          action: 'create_encumbrance',
+          action: 'create_encumbrance_request',
           upin,
           type,
           issuing_entity,
           reference_number,
-          status: encumbrance.status,
-          registration_date: encumbrance.registration_date,
+          status: status || EncumbranceStatus.ACTIVE,
+          registration_date: registration_date ? new Date(registration_date).toISOString() : new Date().toISOString(),
           parcel_file_number: parcel.file_number,
-          parcel_sub_city_id: parcel.sub_city_id,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -1876,78 +1806,48 @@ export const createEncumbrance = async (
       },
     });
 
-    // Also audit the parcel encumbrance addition
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor?.user_id || null,
-        action_type: AuditAction.UPDATE,
-        entity_type: 'land_parcels',
-        entity_id: upin,
-        changes: {
-          action: 'add_encumbrance_to_parcel',
-          encumbrance_id: encumbrance.encumbrance_id,
-          encumbrance_type: type,
-          issuing_entity,
-          status: encumbrance.status,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: (req as any).ip || req.socket.remoteAddress,
-      },
-    });
-
-    return res.status(201).json({
+    return res.status(202).json({
       success: true,
-      message: 'Encumbrance created successfully',
+      message: 'Encumbrance creation request submitted for approval',
       data: {
-        encumbrance_id: encumbrance.encumbrance_id,
-        upin: encumbrance.upin,
-        type: encumbrance.type,
-        issuing_entity: encumbrance.issuing_entity,
-        reference_number: encumbrance.reference_number,
-        status: encumbrance.status,
-        registration_date: encumbrance.registration_date,
-        created_at: encumbrance.created_at,
-      },
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        upin,
+        type,
+        issuing_entity,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
     });
   } catch (error: any) {
-    console.error('Create encumbrance error:', error);
+    console.error('Create encumbrance request error:', error);
     
     if (error.code === 'P2002') {
       return res.status(409).json({
         success: false,
-        message: 'Reference number already exists',
-      });
-    }
-    
-    if (error.code === 'P2003') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid parcel reference',
+        message: 'A pending approval request already exists for this encumbrance',
       });
     }
     
     return res.status(500).json({
       success: false,
-      message: 'Failed to create encumbrance',
+      message: 'Failed to create encumbrance approval request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
+
 export const updateEncumbrance = async (
-  req: Request<{ encumbrance_id: string }, {}, UpdateEncumbranceBody>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const { encumbrance_id } = req.params;
+  const encumbrance_id = req.params.encumbrance_id as string;
   const { type, issuing_entity, reference_number, status, registration_date } = req.body;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+  const actor = req.user!;
 
   try {
-    // Validate at least one field
+    // Validate at least one field is provided
     if (!type && !issuing_entity && !reference_number && !status && !registration_date) {
       return res.status(400).json({
         success: false,
@@ -1955,17 +1855,31 @@ export const updateEncumbrance = async (
       });
     }
 
-    // Get current encumbrance data for audit log
+    // Get ALL current encumbrance data
     const currentEncumbrance = await prisma.encumbrances.findUnique({
       where: { 
         encumbrance_id,
         is_deleted: false 
       },
-      include: {
+      select: {
+        encumbrance_id: true,
+        upin: true,
+        type: true,
+        issuing_entity: true,
+        reference_number: true,
+        status: true,
+        registration_date: true,
+        created_at: true,
+        updated_at: true,
         land_parcel: {
           select: {
             upin: true,
             file_number: true,
+            sub_city: {
+              select: {
+                name: true
+              }
+            }
           }
         }
       }
@@ -1978,8 +1892,13 @@ export const updateEncumbrance = async (
       });
     }
 
+    // Prepare updates and track changes
+    const updates: any = {};
+    const changesForAudit: any = {};
+    const changesForRequest: any = {};
+
     // Check reference number uniqueness if changing
-    if (reference_number && reference_number !== currentEncumbrance.reference_number) {
+    if (reference_number !== undefined && reference_number !== currentEncumbrance.reference_number) {
       const existingEncumbrance = await prisma.encumbrances.findFirst({
         where: { 
           reference_number, 
@@ -1993,18 +1912,21 @@ export const updateEncumbrance = async (
           message: 'Reference number already exists on another encumbrance',
         });
       }
+      updates.reference_number = reference_number;
+      changesForAudit.reference_number = {
+        from: currentEncumbrance.reference_number,
+        to: reference_number
+      };
+      changesForRequest.reference_number = reference_number;
     }
 
-    const updates: any = {};
-    const changesForAudit: any = {};
-
-    // Track changes for audit log
     if (type && type !== currentEncumbrance.type) {
       updates.type = type;
       changesForAudit.type = {
         from: currentEncumbrance.type,
         to: type
       };
+      changesForRequest.type = type;
     }
 
     if (issuing_entity && issuing_entity !== currentEncumbrance.issuing_entity) {
@@ -2013,14 +1935,7 @@ export const updateEncumbrance = async (
         from: currentEncumbrance.issuing_entity,
         to: issuing_entity
       };
-    }
-
-    if (reference_number !== undefined && reference_number !== currentEncumbrance.reference_number) {
-      updates.reference_number = reference_number;
-      changesForAudit.reference_number = {
-        from: currentEncumbrance.reference_number,
-        to: reference_number
-      };
+      changesForRequest.issuing_entity = issuing_entity;
     }
 
     if (status && status !== currentEncumbrance.status) {
@@ -2029,6 +1944,7 @@ export const updateEncumbrance = async (
         from: currentEncumbrance.status,
         to: status
       };
+      changesForRequest.status = status;
     }
 
     if (registration_date) {
@@ -2039,89 +1955,97 @@ export const updateEncumbrance = async (
           from: currentEncumbrance.registration_date,
           to: newDate
         };
+        changesForRequest.registration_date = newDate.toISOString();
       }
     }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No changes detected. Provide different values to update.',
+        message: 'No changes detected. The requested values are the same as current values.',
+        data: {
+          current_data: currentEncumbrance,
+          requested_changes: req.body
+        }
       });
     }
 
-    const encumbrance = await prisma.encumbrances.update({
-      where: { encumbrance_id },
+    // Prepare complete original data for frontend
+    const originalDataForRequest = {
+      encumbrance_id: currentEncumbrance.encumbrance_id,
+      upin: currentEncumbrance.upin,
+      type: currentEncumbrance.type,
+      issuing_entity: currentEncumbrance.issuing_entity,
+      reference_number: currentEncumbrance.reference_number,
+      status: currentEncumbrance.status,
+      registration_date: currentEncumbrance.registration_date.toISOString(),
+      created_at: currentEncumbrance.created_at,
+      updated_at: currentEncumbrance.updated_at,
+      parcel_file_number:currentEncumbrance.land_parcel.file_number,
+      parcle_sub_city_name:currentEncumbrance.land_parcel.sub_city.name,
+    };
+
+    // Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'ENCUMBRANCES',
+      entityId: encumbrance_id,
+      actionType: 'UPDATE',
+      requestData: {
+        // Only the changed fields
+        changes: changesForRequest,
+        // Complete original data
+        current_data: originalDataForRequest
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id || undefined,
+      comments: req.body.comments || `Request to update encumbrance ${encumbrance_id}`
+    });
+
+    // Create audit log for update request
+    await prisma.audit_logs.create({
       data: {
-        ...updates,
-        updated_at: new Date(),
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest!.request_id,
+        changes: {
+          action: 'update_encumbrance_request',
+          encumbrance_id,
+          upin: currentEncumbrance.upin,
+          changed_fields: Object.keys(changesForAudit),
+          changes_detail: changesForAudit,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest!.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+        ip_address: req.ip || req.socket.remoteAddress,
       },
     });
 
-    // Create audit log only if there were actual changes
-    if (Object.keys(changesForAudit).length > 0) {
-      await prisma.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'encumbrances',
-          entity_id: encumbrance_id,
-          changes: {
-            action: 'update_encumbrance',
-            upin: currentEncumbrance.upin,
-            parcel_file_number: currentEncumbrance.land_parcel?.file_number,
-            changed_fields: changesForAudit,
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-
-      // Also audit the parcel if encumbrance status changed
-      if (changesForAudit.status) {
-        await prisma.audit_logs.create({
-          data: {
-            user_id: actor?.user_id || null,
-            action_type: AuditAction.UPDATE,
-            entity_type: 'land_parcels',
-            entity_id: currentEncumbrance.upin,
-            changes: {
-              action: 'update_parcel_encumbrance_status',
-              encumbrance_id,
-              encumbrance_type: currentEncumbrance.type,
-              previous_status: changesForAudit.status.from,
-              new_status: changesForAudit.status.to,
-              actor_id: actor?.user_id,
-              actor_role: actor?.role,
-              actor_username: actor?.username,
-              timestamp: new Date().toISOString(),
-            },
-            timestamp: new Date(),
-            ip_address: (req as any).ip || req.socket.remoteAddress,
-          },
-        });
-      }
-    }
-
-    return res.status(200).json({
+    return res.status(202).json({
       success: true,
-      message: 'Encumbrance updated successfully',
+      message: 'Encumbrance update request submitted for approval',
       data: {
-        encumbrance_id: encumbrance.encumbrance_id,
-        upin: encumbrance.upin,
-        type: encumbrance.type,
-        issuing_entity: encumbrance.issuing_entity,
-        reference_number: encumbrance.reference_number,
-        status: encumbrance.status,
-        registration_date: encumbrance.registration_date,
-        updated_at: encumbrance.updated_at,
-      },
+        approval_request_id: approvalRequest.approvalRequest!.request_id,
+        encumbrance_id,
+        upin: currentEncumbrance.upin,
+        changes_requested: Object.keys(changesForAudit),
+        original_data_summary: {
+          type: currentEncumbrance.type,
+          issuing_entity: currentEncumbrance.issuing_entity,
+          status: currentEncumbrance.status
+        },
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest!.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
     });
   } catch (error: any) {
-    console.error('Update encumbrance error:', error);
+    console.error('Update encumbrance request error:', error);
     
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -2129,25 +2053,26 @@ export const updateEncumbrance = async (
         message: 'Encumbrance not found',
       });
     }
-    
-    if (error.code === 'P2002') {
+
+    if (error.message?.includes("pending approval request already exists")) {
       return res.status(409).json({
         success: false,
-        message: 'Reference number conflict',
+        message: error.message,
       });
     }
     
     return res.status(500).json({
       success: false,
-      message: 'Failed to update encumbrance',
+      message: 'Failed to create encumbrance update request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>, res: Response) => {
-  const { encumbrance_id } = req.params;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+export const deleteEncumbrance = async (req: AuthRequest, res: Response) => {
+  const  encumbrance_id  = req.params as string;
+  const { reason } = req.body;
+  const actor = (req as any).user;
 
   try {
     const existingEncumbrance = await prisma.encumbrances.findUnique({
@@ -2176,67 +2101,53 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
       });
     }
 
-    // Check if encumbrance is active and warn about deletion
-    if (existingEncumbrance.status === 'ACTIVE') {
-      // Optionally return a warning or require confirmation
-      // For now, we'll proceed but note it in the audit log
-    }
-
-    const deletedEncumbrance = await prisma.encumbrances.update({
-      where: { encumbrance_id },
-      data: {
-        is_deleted: true,
-        deleted_at: new Date(),
-        updated_at: new Date(),
-        status: 'RELEASED', // Update status when deleted
-      },
-    });
-
-    // Create audit log for encumbrance deletion
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor?.user_id || null,
-        action_type: AuditAction.DELETE,
-        entity_type: 'encumbrances',
-        entity_id: encumbrance_id,
-        changes: {
-          action: 'soft_delete_encumbrance',
+    // Create approval request for deletion
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'ENCUMBRANCES',
+      entityId: encumbrance_id,
+      actionType: 'DELETE',
+      requestData: {
+        encumbrance_details: {
           upin: existingEncumbrance.upin,
-          parcel_file_number: existingEncumbrance.land_parcel?.file_number,
           type: existingEncumbrance.type,
           issuing_entity: existingEncumbrance.issuing_entity,
           reference_number: existingEncumbrance.reference_number,
-          previous_status: existingEncumbrance.status,
-          new_status: deletedEncumbrance.status,
-          was_active_at_deletion: existingEncumbrance.status === 'ACTIVE',
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
-          deleted_at: deletedEncumbrance.deleted_at,
-          timestamp: new Date().toISOString(),
+          status: existingEncumbrance.status,
+          registration_date: existingEncumbrance.registration_date,
+          parcel_file_number: existingEncumbrance.land_parcel?.file_number
         },
-        timestamp: new Date(),
-        ip_address: (req as any).ip || req.socket.remoteAddress,
+        reason: reason || 'No reason provided',
+        new_status: 'RELEASED'
       },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: reason || `Request to delete encumbrance ${encumbrance_id}`
     });
 
-    // Also audit the parcel encumbrance removal
+    // Create audit log for deletion request
     await prisma.audit_logs.create({
       data: {
-        user_id: actor?.user_id || null,
-        action_type: AuditAction.UPDATE,
-        entity_type: 'land_parcels',
-        entity_id: existingEncumbrance.upin,
+        user_id: actor.user_id,
+        action_type: AuditAction.DELETE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
         changes: {
-          action: 'remove_encumbrance_from_parcel',
+          action: 'delete_encumbrance_request',
           encumbrance_id,
-          encumbrance_type: existingEncumbrance.type,
+          upin: existingEncumbrance.upin,
+          type: existingEncumbrance.type,
           issuing_entity: existingEncumbrance.issuing_entity,
-          previous_status: existingEncumbrance.status,
-          new_status: deletedEncumbrance.status,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
+          reference_number: existingEncumbrance.reference_number,
+          current_status: existingEncumbrance.status,
+          proposed_status: 'RELEASED',
+          is_active_at_request: existingEncumbrance.status === 'ACTIVE',
+          reason: reason || 'No reason provided',
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -2244,20 +2155,24 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
       },
     });
 
-    return res.status(200).json({
+    return res.status(202).json({
       success: true,
-      message: 'Encumbrance deleted successfully',
+      message: 'Encumbrance deletion request submitted for approval',
       data: {
-        encumbrance_id: deletedEncumbrance.encumbrance_id,
-        upin: deletedEncumbrance.upin,
-        type: deletedEncumbrance.type,
-        status: deletedEncumbrance.status,
-        deleted_at: deletedEncumbrance.deleted_at,
-        is_deleted: deletedEncumbrance.is_deleted,
-      },
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        encumbrance_id,
+        upin: existingEncumbrance.upin,
+        type: existingEncumbrance.type,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        warning: existingEncumbrance.status === 'ACTIVE' 
+          ? 'This encumbrance is currently ACTIVE. Deletion will mark it as RELEASED.'
+          : undefined,
+        estimated_processing: 'Within 24-48 hours'
+      }
     });
   } catch (error: any) {
-    console.error('Delete encumbrance error:', error);
+    console.error('Delete encumbrance request error:', error);
     
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -2265,18 +2180,25 @@ export const deleteEncumbrance = async (req: Request<{ encumbrance_id: string }>
         message: 'Encumbrance not found',
       });
     }
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'A pending approval request already exists for this encumbrance deletion'
+      });
+    }
     
     return res.status(500).json({
       success: false,
-      message: 'Failed to delete encumbrance',
+      message: 'Failed to create encumbrance deletion request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, res: Response) => {
+export const getEncumbrancesByParcel = async (req: AuthRequest, res: Response) => {
   try {
-    const { upin } = req.params;
+    const upin  = req.params as string;
 
     const encumbrances = await prisma.encumbrances.findMany({
       where: {
@@ -2311,3 +2233,6 @@ export const getEncumbrancesByParcel = async (req: Request<{ upin: string }>, re
     });
   }
 };
+
+
+

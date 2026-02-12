@@ -9,6 +9,169 @@ datasource db {
   provider = "postgresql"
 }
 
+// Add to your existing schema
+model wizard_sessions {
+  session_id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String        @db.Uuid
+  user_role          UserRole
+  sub_city_id        String?       @db.Uuid
+  status             SessionStatus @default(DRAFT)
+  
+  // Wizard data
+  parcel_data        Json?
+  parcel_docs        Json?
+  owner_data         Json?
+  owner_docs         Json?
+  lease_data         Json?
+  lease_docs         Json?
+  
+  // Approval workflow
+  approval_request_id String?      @db.Uuid
+  current_step       String        @default("parcel")
+  
+  // Timestamps
+  completed_at       DateTime?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime      @updatedAt @db.Timestamptz(6)
+  submitted_at       DateTime?
+  expires_at         DateTime      @default(dbgenerated("(now() + '24 hours'::interval)")) @db.Timestamptz(6)
+  
+  // Relationships
+  user               users         @relation(fields: [user_id], references: [user_id])
+
+  sub_city           sub_cities?   @relation(fields: [sub_city_id], references: [sub_city_id])
+  approval_request   approval_requests? @relation(fields: [approval_request_id], references: [request_id])
+  wizard_documents_temps  wizard_documents_temp[]
+  @@unique([approval_request_id])
+  @@index([user_id, status])
+  @@index([sub_city_id, status])
+  @@index([expires_at])
+  @@index([approval_request_id])
+}
+
+model wizard_documents_temp {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id         String        @db.Uuid
+  step               String        // parcel-docs, owner-docs, lease-docs
+  document_type      String
+  file_name          String
+  file_url           String        // Temporary URL
+  file_size          Int
+  mime_type          String
+  metadata           Json?
+  expires_at         DateTime
+  created_at         DateTime      @default(now())
+  
+  session            wizard_sessions @relation(fields: [session_id], references: [session_id])
+  
+  @@index([session_id])
+  @@index([expires_at])
+}
+
+model approval_requests {
+  request_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entity_type       EntityType
+  entity_id         String         @db.VarChar(255)
+  action_type       ActionType      
+  request_data      Json
+  status            RequestStatus  @default(PENDING)
+  maker_id          String         @db.Uuid
+  maker_role        UserRole
+  approver_role     UserRole
+  sub_city_id       String?        @db.Uuid
+  rejection_reason  String?
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @updatedAt @db.Timestamptz(6)
+  approved_at       DateTime?
+  comments          String?
+  rejected_at       DateTime?
+  deleted_at        DateTime?
+  is_deleted        Boolean        @default(false)
+  
+  maker             users          @relation(fields: [maker_id], references: [user_id])
+  sub_city          sub_cities?    @relation(fields: [sub_city_id], references: [sub_city_id])
+  approval_logs     approval_logs[]
+  wizard_session    wizard_sessions?
+
+  @@index([maker_id])
+  @@index([status])
+  @@index([entity_type, entity_id])
+  @@index([sub_city_id, status])
+  @@index([approver_role, status])
+}
+
+model approval_logs {
+  log_id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id        String           @db.Uuid
+  action            ApprovalAction
+  performed_by      String           @db.Uuid
+  performed_by_role UserRole
+  comments          String?
+  previous_status   RequestStatus?
+  new_status        RequestStatus?
+  created_at        DateTime         @default(now()) @db.Timestamptz(6)
+  
+  request           approval_requests @relation(fields: [request_id], references: [request_id])
+  user              users             @relation(fields: [performed_by], references: [user_id])
+  
+  @@index([request_id])
+  @@index([performed_by])
+}
+
+
+
+// Add these enums
+enum SessionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  EXPIRED
+  MERGED
+  FAILED
+}
+
+enum EntityType{
+  WIZARD_SESSION
+  LAND_PARCELS
+  OWNERS
+  LEASE_AGREEMENTS
+  ENCUMBRANCES
+  APPROVAL_REQUEST
+}
+
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  TRANSFER
+  SUBDIVIDE
+  MERGE
+  TERMINATE
+  EXTEND
+  ADD_OWNER
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RETURNED
+  CANCELLED
+  FAILED
+}
+
+
+enum ApprovalAction {
+  CREATE
+  APPROVE
+  REJECT
+  RETURN
+  COMMENT
+}
+
+
 model rate_configurations {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   rate_type       RateType
@@ -36,6 +199,9 @@ model sub_cities {
   is_deleted   Boolean        @default(false)
   land_parcels land_parcels[]
   users        users[]
+  owners       owners[]
+  wizard_sessions wizard_sessions[]
+  approval_requests approval_requests[]
 }
 
 model users {
@@ -53,6 +219,10 @@ model users {
   deleted_at    DateTime?
   is_deleted    Boolean      @default(false)
   audit_logs    audit_logs[]
+  approval_logs approval_logs[]
+  wizard_sessions wizard_sessions[]
+  approval_requests approval_requests[]
+  documents         documents[]
   sub_city      sub_cities?  @relation(fields: [sub_city_id], references: [sub_city_id])
 }
 
@@ -74,7 +244,7 @@ model audit_logs {
   user_id     String      @db.Uuid
   action_type AuditAction
   entity_type String
-  entity_id   String
+  entity_id   String?
   changes     Json?
   timestamp   DateTime    @default(now())
   ip_address  String?
@@ -132,6 +302,7 @@ model owners {
   full_name        String
   national_id      String              @unique @db.VarChar(50)
   tin_number       String?             @unique @db.VarChar(50)
+  sub_city_id      String              @db.Uuid
   phone_number     String
   created_at       DateTime?           @default(now())
   updated_at       DateTime?           @updatedAt
@@ -141,6 +312,7 @@ model owners {
   transferred_from ownership_history[] @relation("OwnershipHistoryFrom")
   transferred_to   ownership_history[] @relation("OwnershipHistoryTo")
   parcels          parcel_owners[]
+  sub_city         sub_cities   @relation(fields:[sub_city_id],references:[sub_city_id])
 }
 
 model parcel_owners {
@@ -329,10 +501,12 @@ model documents {
   deleted_at     DateTime?
   is_deleted     Boolean            @default(false)
   doc_type       String
+  verified_by    String?            @db.Uuid
   encumbrance    encumbrances?      @relation(fields: [encumbrance_id], references: [encumbrance_id], onDelete: Cascade)
   history        ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
   lease          lease_agreements?  @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
   owner          owners?            @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
+  user           users?             @relation(fields: [verified_by], references: [user_id], onDelete: Cascade)
   parcel         land_parcels?      @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 

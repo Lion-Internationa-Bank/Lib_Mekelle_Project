@@ -1,136 +1,50 @@
-// src/controllers/leaseController.ts
+// src/controllers/leaseController.ts - Updated for Maker-Checker System
 import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
-import { AuditAction, } from '../generated/prisma/enums.ts'; 
+import { AuditAction } from '../generated/prisma/enums.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.ts';
+import { AuditService } from '../services/auditService.ts';
+import { type AuthRequest } from '../middlewares/authMiddleware.ts';
 
 
-// Use Prisma namespace types
-type PrismaClientType = typeof prisma;
-type PrismaTransactionType = Parameters<Parameters<PrismaClientType['$transaction']>[0]>[0];
-
-// ---- Bill generators ----
-
-// For create (global client)
-const generateLeaseBills = async (lease: any) => {
-  return generateLeaseBillsCore(prisma, lease);
-};
-
-// For update (inside $transaction)
-const generateLeaseBillsInTx = async (
-  tx: PrismaTransactionType,
-  lease: any
-) => {
-  return generateLeaseBillsCore(tx, lease);
-};
-
-// Core implementation reused by both
-const generateLeaseBillsCore = async (
-  client: PrismaTransactionType | PrismaClientType,
-  lease: any
-) => {
-  // Cast to any to avoid type errors with transaction client
-  const prismaClient = client as any;
-
-  const rateConfig = await prismaClient.rate_configurations.findFirst({
-    where: {
-      rate_type: "LEASE_INTEREST_RATE",
-      is_active: true,
-      effective_from: { lte: new Date() },
-      OR: [
-        { effective_until: { gte: new Date() } },
-        { effective_until: null },
-      ],
-    },
-    orderBy: { effective_from: "desc" },
-  });
-
-  if (!rateConfig) {
-    throw new Error("No active lease interest rate configuration found");
-  }
-
-  const interestRate = parseFloat(rateConfig.value.toString());
-
-  const downPayment = parseFloat(lease.down_payment_amount.toString());
-  const otherPayment = parseFloat(lease.other_payment.toString());
-  const totalLeaseAmount = parseFloat(lease.total_lease_amount.toString());
-  const paymentTermYears = lease.payment_term_years;
-  const annualMainPayment = Number(
-    lease.annualMainPayment ?? lease.annual_installment ?? 0
-  );
-
-  let remainingAmount = totalLeaseAmount - (downPayment + otherPayment) ;
-  if (remainingAmount <= 0) {
-    throw new Error("Down payment must be less than total lease amount");
-  }
-
-  const bills: any[] = [];
-  const startDate = new Date(lease.start_date);
-
-  for (let year = 1; year <= paymentTermYears; year++) {
-    const dueDate = new Date(startDate);
-    dueDate.setFullYear(dueDate.getFullYear() + year);
-
-    const interest = parseFloat(
-      (remainingAmount * interestRate).toFixed(2)
-    );
-    const totalAnnualPayment = parseFloat(
-      (annualMainPayment + interest).toFixed(2)
-    );
-
-    const bill = await prismaClient.billing_records.create({
-      data: {
-        upin: lease.upin,
-        lease_id: lease.lease_id,
-        fiscal_year: dueDate.getFullYear(),
-        bill_type: "LEASE",
-        amount_due: totalAnnualPayment,
-        amount_paid: 0,
-        penalty_amount: 0,
-        interest_amount: interest,
-        base_payment: annualMainPayment,
-        payment_status: "UNPAID",
-        due_date: dueDate,
-        interest_rate_used: interestRate,
-        penalty_rate_used: 0,
-        sync_status: "PENDING",
-        installment_number: year,
-        remaining_amount: remainingAmount,
-      },
-    });
-
-    bills.push(bill);
-
-    remainingAmount = parseFloat(
-      (remainingAmount - annualMainPayment).toFixed(2)
-    );
-    if (remainingAmount < 0) remainingAmount = 0;
-  }
-
-  return bills;
-};
+// Initialize services
+const auditService = new AuditService();
+const makerCheckerService = new MakerCheckerService(auditService);
 
 // ---- CREATE LEASE ----
 
-export const createLease = async (req: Request, res: Response) => {
-  const {
-    upin,
-    total_lease_amount,
-    contract_date,
-    down_payment_amount,
-    lease_period_years,
-    legal_framework,
-    payment_term_years,
-    price_per_m2,
-    start_date,
-    other_payment,
-  } = req.body;
-
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+export const createLease = async (
+  req: Request<{}, CreateLeaseBody>,
+  res: Response
+) => {
+  const actor = (req as any).user;
 
   try {
+    const {
+      upin,
+      total_lease_amount,
+      contract_date,
+      down_payment_amount,
+      lease_period_years,
+      legal_framework,
+      payment_term_years,
+      price_per_m2,
+      start_date,
+      other_payment,
+      documents
+    } = req.body;
+
+    // Validate required fields
+    if (!upin || !total_lease_amount || !contract_date || !lease_period_years || !payment_term_years || !start_date) {
+      return res.status(400).json({
+        success: false,
+        message: 'upin, total_lease_amount, contract_date, lease_period_years, payment_term_years, and start_date are required',
+      });
+    }
+
     // 1. Check if land parcel exists
     const landParcel = await prisma.land_parcels.findUnique({
-      where: { upin },
+      where: { upin, is_deleted: false },
     });
 
     if (!landParcel) {
@@ -139,29 +53,39 @@ export const createLease = async (req: Request, res: Response) => {
         message: "Land parcel not found",
       });
     }
-    else{
-      if(landParcel.tenure_type !== "LEASE"){
-        return res.status(403).json({
-          success: false,
-          message: "Land Tenure Type Must Be LEASE to Register Lease Agreement"
-        })
-      }
+
+    if (landParcel.tenure_type !== "LEASE") {
+      return res.status(403).json({
+        success: false,
+        message: "Land Tenure Type Must Be LEASE to Register Lease Agreement"
+      });
     }
-     
-    
 
-    
+    // 2. Check if lease already exists for this parcel
+    const existingLease = await prisma.lease_agreements.findFirst({
+      where: {
+        upin,
+        is_deleted: false,
+        status: 'ACTIVE'
+      }
+    });
 
-    // 2. Expiry date from start_date + lease_period_years
+    if (existingLease) {
+      return res.status(409).json({
+        success: false,
+        message: "Active lease already exists for this land parcel"
+      });
+    }
+
+    // 3. Calculate dates and values for validation
     const startDate = new Date(start_date);
     const expiryDate = new Date(startDate);
     expiryDate.setFullYear(expiryDate.getFullYear() + lease_period_years);
 
-    // 3. Calculate principal and annual main payment
+    // 4. Calculate principal for validation
     const totalLeaseAmountNum = Number(total_lease_amount ?? 0);
     const downPaymentNum = Number(down_payment_amount ?? 0);
-    const otherPaymentNum = Number(other_payment ?? 0)
-    const principal = totalLeaseAmountNum - (downPaymentNum + otherPaymentNum);
+    const principal = totalLeaseAmountNum - (downPaymentNum );
 
     if (principal <= 0) {
       return res.status(400).json({
@@ -170,58 +94,67 @@ export const createLease = async (req: Request, res: Response) => {
       });
     }
 
+    // Calculate annual installment
+    const annualInstallment = payment_term_years > 0 ? principal / payment_term_years : 0;
 
-    const annualMainPayment =
-      payment_term_years > 0 ? principal / payment_term_years : 0;
+    // Generate entity ID for the request (will be used after approval)
+    const entityId = `${upin}_LEASE_${Date.now()}`;
 
-    // 4. Create lease
-    const lease = await prisma.lease_agreements.create({
-      data: {
-        upin,
-        total_lease_amount,
-        contract_date: new Date(contract_date),
-        down_payment_amount,
-        other_payment,
-        lease_period_years,
-        legal_framework,
-        payment_term_years,
-        price_per_m2,
-        start_date: startDate,
-        expiry_date: expiryDate,
-        annual_installment: annualMainPayment,
+    // 5. Create approval request with documents
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LEASE_AGREEMENTS',
+      entityId, // Temporary ID, will be replaced with actual lease_id after approval
+      actionType: 'CREATE',
+      requestData: {
+        lease_details: {
+          upin,
+          total_lease_amount,
+          contract_date,
+          down_payment_amount,
+          other_payment,
+          lease_period_years,
+          legal_framework,
+          payment_term_years,
+          price_per_m2,
+          start_date,
+          expiry_date: expiryDate,
+          principal,
+          annual_installment:annualInstallment
+        },
+        documents: documents || [], // Include documents in request_data
+        parcel_file_number: landParcel.file_number,
+        parcel_sub_city_id: landParcel.sub_city_id
       },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: req.body.comments || `Request to create lease agreement for parcel ${upin}`
     });
 
-    // 5. Generate bills using shared generator
-    const bills = await generateLeaseBills({
-      ...lease,
-      annualMainPayment,
-    });
-
-    // Create audit log
+    // 6. Create initial audit log for request creation
     await prisma.audit_logs.create({
       data: {
-        user_id: actor?.user_id || null,
+        user_id: actor.user_id,
         action_type: AuditAction.CREATE,
-        entity_type: 'lease_agreements',
-        entity_id: lease.lease_id,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
         changes: {
-          action: 'create_lease',
+          action: 'create_lease_request',
           upin,
-          total_lease_amount: lease.total_lease_amount,
-          down_payment_amount: lease.down_payment_amount,
-          other_payment: lease.other_payment,
-          lease_period_years: lease.lease_period_years,
-          payment_term_years: lease.payment_term_years,
-          price_per_m2: lease.price_per_m2,
-          start_date: lease.start_date,
-          expiry_date: lease.expiry_date,
-          contract_date: lease.contract_date,
-          annual_installment: lease.annual_installment,
-          bills_created: bills.length,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
+          total_lease_amount,
+          down_payment_amount,
+          other_payment,
+          lease_period_years,
+          payment_term_years,
+          start_date: startDate.toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          annual_installment: annualInstallment,
+          documents_count: documents?.length || 0,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -229,25 +162,25 @@ export const createLease = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(201).json({
+    return res.status(202).json({
       success: true,
+      message: 'Lease creation request submitted for approval',
       data: {
-        lease_id: lease.lease_id,
-        lease: {
-          ...lease,
-          expiry_date: expiryDate,
-        },
-        bills_created: bills.length,
-        bills,
-      },
+        approval_request_id: approvalRequest.approvalRequest.request_id,
+        parcel_upin: upin,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        documents_submitted: documents?.length || 0,
+        estimated_processing: 'Within 24-48 hours'
+      }
     });
   } catch (error: any) {
-    console.error("Create lease error:", error);
+    console.error("Create lease request error:", error);
     
     if (error.code === 'P2002') {
       return res.status(409).json({
         success: false,
-        message: "Lease for this land parcel already exists"
+        message: "A pending approval request already exists for this lease"
       });
     }
     
@@ -260,27 +193,77 @@ export const createLease = async (req: Request, res: Response) => {
     
     return res.status(500).json({
       success: false,
-      message: "Failed to create lease agreement",
+      message: "Failed to create lease approval request",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
+// Add type definition for CreateLeaseBody
+interface CreateLeaseBody {
+  upin: string;
+  total_lease_amount: number;
+  contract_date: string | Date;
+  down_payment_amount?: number;
+  other_payment?: number;
+  lease_period_years: number;
+  legal_framework?: string;
+  payment_term_years: number;
+  price_per_m2?: number;
+  start_date: string | Date;
+  comments?: string;
+}
+
 // ---- UPDATE LEASE ----
 
 export const updateLease = async (
-  req: Request<{ lease_id: string }>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const { lease_id } = req.params;
+  const lease_id = req.params.lease_id as string;
   const data = req.body;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+  const actor = req.user!;
 
   try {
-    console.log("Lease update started");
+    console.log("Lease update request started");
 
+    // 1. Get ALL existing lease data for complete comparison
     const existingLease = await prisma.lease_agreements.findUnique({
-      where: { lease_id },
+      where: { lease_id, is_deleted: false },
+      select: {
+        // Include ALL fields from the lease_agreements model
+        lease_id: true,
+        upin: true,
+        annual_lease_fee: true,
+        total_lease_amount: true,
+        contract_date: true,
+        down_payment_amount: true,
+        other_payment: true,
+        lease_period_years: true,
+        legal_framework: true,
+        payment_term_years: true,
+        price_per_m2: true,
+        start_date: true,
+        expiry_date: true,
+        annual_installment: true,
+        interest_rate: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        // Include related data if needed
+        land_parcel: {
+          select: {
+            upin: true,
+            file_number: true,
+            tenure_type: true,
+            sub_city: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!existingLease) {
@@ -290,11 +273,12 @@ export const updateLease = async (
       });
     }
 
+    // 2. Define allowed updates
     const allowedUpdates = {
       annual_lease_fee: true,
       total_lease_amount: true,
       down_payment_amount: true,
-      other_payment:true,
+      other_payment: true,
       annual_installment: true,
       price_per_m2: true,
       lease_period_years: true,
@@ -303,176 +287,210 @@ export const updateLease = async (
       start_date: true,
       expiry_date: true,
       contract_date: true,
+      interest_rate: true,
+      status: true,
     } as const;
 
     const updates: any = {};
     const changesForAudit: any = {};
+    const changesForRequest: any = {};
 
+    // 3. Process and validate update fields
     Object.keys(data).forEach((key) => {
       if (allowedUpdates[key as keyof typeof allowedUpdates]) {
         let value = data[key];
 
-        if (["start_date", "expiry_date", "contract_date"].includes(key)) {
-          if (typeof value === "string") {
-            const parsedDate = new Date(value);
-            if (isNaN(parsedDate.getTime())) {
-              throw new Error(`Invalid date format for ${key}: ${value}`);
-            }
-            value = parsedDate;
-          } else if (!(value instanceof Date)) {
-            throw new Error(`Invalid date type for ${key}`);
-          }
-        }
-
-        if (
-          [
-            "annual_lease_fee",
-            "total_lease_amount",
-            "down_payment_amount",
-            "other_payment",
-            "annual_installment",
-            "price_per_m2",
-            "lease_period_years",
-            "payment_term_years",
-          ].includes(key) &&
-          typeof value === "string"
-        ) {
-          const num = parseFloat(value);
-          if (isNaN(num)) {
-            throw new Error(`Invalid number for ${key}: ${value}`);
-          }
-          value = num;
-        }
-
-        updates[key] = value;
-        
-        // Only store in audit log if value has changed
+        // Skip if value is same as existing
         const existingValue = existingLease[key as keyof typeof existingLease];
-        if (JSON.stringify(existingValue) !== JSON.stringify(value)) {
+        
+        // Handle date comparisons
+        if (["start_date", "expiry_date", "contract_date"].includes(key)) {
+          if (value) {
+            if (typeof value === "string") {
+              const parsedDate = new Date(value);
+              if (isNaN(parsedDate.getTime())) {
+                throw new Error(`Invalid date format for ${key}: ${value}`);
+              }
+              value = parsedDate;
+              
+              // Compare dates
+              const existingDate = existingValue ? new Date(existingValue as string) : null;
+              const newDate = parsedDate;
+              
+              if (!existingDate || existingDate.getTime() !== newDate.getTime()) {
+                updates[key] = value;
+                changesForAudit[key] = {
+                  from: existingValue,
+                  to: value
+                };
+                changesForRequest[key] = value;
+              }
+            }
+          }
+        }
+        // Handle number comparisons
+        else if (typeof value === "string" && !isNaN(parseFloat(value))) {
+          const numValue = parseFloat(value);
+          const existingNum = existingValue ? Number(existingValue) : null;
+          
+          if (existingNum !== numValue) {
+            updates[key] = numValue;
+            changesForAudit[key] = {
+              from: existingValue,
+              to: numValue
+            };
+            changesForRequest[key] = numValue;
+          }
+        }
+        // Handle other comparisons
+        else if (JSON.stringify(existingValue) !== JSON.stringify(value)) {
+          updates[key] = value;
           changesForAudit[key] = {
             from: existingValue,
             to: value
           };
+          changesForRequest[key] = value;
         }
       }
     });
 
+    // 4. Validate if there are actual changes
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
         success: false,
-        message: "No valid fields provided for update",
+        message: "No changes detected or no valid fields provided for update",
+        data: {
+          existing_data: existingLease,
+          requested_changes: data
+        }
       });
     }
 
-    const totalLeaseAmount =
-      updates.total_lease_amount ?? existingLease.total_lease_amount;
-    const downPaymentAmount =
-      updates.down_payment_amount ?? existingLease.down_payment_amount;
-    const otherPaymentAmount = 
-      updates.other_payment ?? existingLease.other_payment; 
-    const paymentTermYears =
-      updates.payment_term_years ?? existingLease.payment_term_years;
-    const leasePeriodYears =
-      updates.lease_period_years ?? existingLease.lease_period_years;
-    const startDateVal =
-      updates.start_date ?? existingLease.start_date;
-
-    if (updates.start_date || updates.lease_period_years) {
-      const startDate = new Date(startDateVal);
-      const expiryDate = new Date(startDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + leasePeriodYears);
-      updates.expiry_date = expiryDate;
+    // 5. Validate financial calculations if relevant fields are being updated
+    if (updates.total_lease_amount || updates.down_payment_amount || updates.other_payment) {
+      const totalLeaseAmount = updates.total_lease_amount ?? existingLease.total_lease_amount;
+      const downPaymentAmount = updates.down_payment_amount ?? existingLease.down_payment_amount;
+      const otherPaymentAmount = updates.other_payment ?? existingLease.other_payment;
       
-      // Add expiry_date to audit if it changed
-      if (existingLease.expiry_date?.getTime() !== expiryDate.getTime()) {
-        changesForAudit.expiry_date = {
-          from: existingLease.expiry_date,
-          to: expiryDate
-        };
+      const principal = Number(totalLeaseAmount) - Number(downPaymentAmount) ;
+      if (principal <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Down payment must be less than total lease amount",
+        });
       }
     }
 
-    const principal =
-      Number(totalLeaseAmount ?? 0) - (Number(downPaymentAmount ?? 0) + Number(otherPaymentAmount ?? 0 ));
-    if (principal <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Down payment plus Other payment must be less than total lease amount",
-      });
-    }
+    // 6. Prepare the original data object (clean version for the frontend)
+    const originalDataForRequest = {
+      // Basic lease info
+      lease_id: existingLease.lease_id,
+      upin: existingLease.upin,
+      
+      // Financial fields
+      annual_lease_fee: existingLease.annual_lease_fee,
+      total_lease_amount: existingLease.total_lease_amount,
+      down_payment_amount: existingLease.down_payment_amount,
+      other_payment: existingLease.other_payment,
+      annual_installment: existingLease.annual_installment,
+      price_per_m2: existingLease.price_per_m2,
+      interest_rate: existingLease.interest_rate,
+      
+      // Term fields
+      lease_period_years: existingLease.lease_period_years,
+      payment_term_years: existingLease.payment_term_years,
+      legal_framework: existingLease.legal_framework,
+      
+      // Date fields (format them for display)
+      start_date: existingLease.start_date ? new Date(existingLease.start_date).toISOString().split('T')[0] : null,
+      expiry_date: existingLease.expiry_date ? new Date(existingLease.expiry_date).toISOString().split('T')[0] : null,
+      contract_date: existingLease.contract_date ? new Date(existingLease.contract_date).toISOString().split('T')[0] : null,
+      
+      // Status
+      status: existingLease.status,
+      
+      // Parcel info
+      parcel_file_number: existingLease.land_parcel?.file_number,
+      parcel_sub_city: existingLease.land_parcel?.sub_city?.name,
+    };
 
-    const annualMainPayment =
-      paymentTermYears > 0 ? principal / paymentTermYears : 0;
-    updates.annual_installment = annualMainPayment;
-    
-    // Add annual_installment to audit if it changed
-    if (Number(existingLease.annual_installment) !== annualMainPayment) {
-      changesForAudit.annual_installment = {
-        from: existingLease.annual_installment,
-        to: annualMainPayment
-      };
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      const updatedLease = await tx.lease_agreements.update({
-        where: { lease_id },
-        data: updates,
-      });
-
-      // Delete existing bills
-      const deletedBills = await tx.billing_records.deleteMany({
-        where: { lease_id },
-      });
-
-      // Generate new bills
-      const newBills = await generateLeaseBillsInTx(tx, {
-        ...updatedLease,
-        annualMainPayment,
-      });
-
-      return { updatedLease, deletedBills, newBills };
+    // 7. Create approval request with FULL original data and only changes
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LEASE_AGREEMENTS',
+      entityId: lease_id,
+      actionType: 'UPDATE',
+      requestData: {
+        // ONLY the changed fields
+        changes: changesForRequest,
+        // COMPLETE original data
+        current_data: originalDataForRequest,
+        // Calculated values if needed
+        calculated_values: {
+          principal: updates.total_lease_amount || updates.down_payment_amount || updates.other_payment 
+            ? Number(updates.total_lease_amount ?? existingLease.total_lease_amount) - 
+              (Number(updates.down_payment_amount ?? existingLease.down_payment_amount) + 
+               Number(updates.other_payment ?? existingLease.other_payment))
+            : null,
+          annual_installment: updates.payment_term_years 
+            ? (Number(updates.total_lease_amount ?? existingLease.total_lease_amount) - 
+               (Number(updates.down_payment_amount ?? existingLease.down_payment_amount) + 
+                Number(updates.other_payment ?? existingLease.other_payment))) / 
+              (updates.payment_term_years ?? existingLease.payment_term_years)
+            : null
+        }
+      },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id || undefined,
+      comments: req.body.comments || `Request to update lease agreement ${lease_id}`
     });
 
-    // Create audit log only if there were actual changes
-    if (Object.keys(changesForAudit).length > 0) {
-      await prisma.audit_logs.create({
-        data: {
-          user_id: actor?.user_id || null,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'lease_agreements',
-          entity_id: lease_id,
-          changes: {
-            action: 'update_lease',
-            changed_fields: changesForAudit,
-            bills: {
-              deleted_count: result.deletedBills.count,
-              created_count: result.newBills.length
-            },
-            actor_id: actor?.user_id,
-            actor_role: actor?.role,
-            actor_username: actor?.username,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: (req as any).ip || req.socket.remoteAddress,
-        },
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Lease agreement updated successfully",
+    // 8. Create audit log for update request
+    await prisma.audit_logs.create({
       data: {
-        lease: result.updatedLease,
-        bills: {
-          deleted: result.deletedBills.count,
-          created: result.newBills.length,
-          new_bills: result.newBills,
+        user_id: actor.user_id,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest!.request_id,
+        changes: {
+          action: 'update_lease_request',
+          lease_id,
+          parcel_upin: existingLease.upin,
+          changed_fields: Object.keys(changesForAudit),
+          changes_detail: changesForAudit,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest!.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          timestamp: new Date().toISOString(),
         },
+        timestamp: new Date(),
+        ip_address: req.ip || req.socket.remoteAddress,
       },
     });
+
+    return res.status(202).json({
+      success: true,
+      message: 'Lease update request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest!.request_id,
+        lease_id,
+        parcel_upin: existingLease.upin,
+        changes_requested: Object.keys(changesForAudit),
+        original_data_summary: {
+          total_lease_amount: existingLease.total_lease_amount,
+          down_payment_amount: existingLease.down_payment_amount,
+          lease_period_years: existingLease.lease_period_years,
+          start_date: existingLease.start_date,
+          status: existingLease.status
+        },
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest!.approver_role,
+        estimated_processing: 'Within 24-48 hours'
+      }
+    });
   } catch (error: any) {
-    console.error("Error updating lease:", error);
+    console.error("Update lease request error:", error);
 
     if (error.code === "P2025") {
       return res.status(404).json({
@@ -481,11 +499,15 @@ export const updateLease = async (
       });
     }
 
-    if (
-      error.message?.includes("Invalid date") ||
-      error.message?.includes("Invalid number")
-    ) {
+    if (error.message?.includes("Invalid date") || error.message?.includes("Invalid number")) {
       return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    if (error.message?.includes("pending approval request already exists")) {
+      return res.status(409).json({
         success: false,
         message: error.message,
       });
@@ -493,24 +515,32 @@ export const updateLease = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to update lease agreement",
+      message: "Failed to create lease update request",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
+// ---- DELETE LEASE ----
 
-export const deleteLease = async (req: Request<{ lease_id: string }>, res: Response) => {
-  const { lease_id } = req.params;
-  const actor = (req as any).user; // Assuming AuthRequest extends Request
+export const deleteLease = async (req: AuthRequest, res: Response) => {
+  const lease_id  = req.params.lease_id as string;
+  const actor = (req as any).user;
 
   try {
-    // Get current lease data for audit log
+    // 1. Get current lease data for validation
     const existingLease = await prisma.lease_agreements.findUnique({
       where: { 
         lease_id,
         is_deleted: false 
       },
+      include: {
+        land_parcel: {
+          select: {
+            upin: true
+          }
+        }
+      }
     });
 
     if (!existingLease) {
@@ -520,7 +550,7 @@ export const deleteLease = async (req: Request<{ lease_id: string }>, res: Respo
       });
     }
 
-    // Check if there are active bills
+    // 2. Check if there are active bills (for validation purposes)
     const activeBills = await prisma.billing_records.count({
       where: {
         lease_id,
@@ -538,32 +568,52 @@ export const deleteLease = async (req: Request<{ lease_id: string }>, res: Respo
       });
     }
 
-    const deletedLease = await prisma.lease_agreements.update({
-      where: { lease_id },
-      data: { 
-        is_deleted: true,
-        deleted_at: new Date(),
-        updated_at: new Date(),
-        status: 'EXPIRED' // Optionally update status
+    // 3. Create approval request
+    const approvalRequest = await makerCheckerService.createApprovalRequest({
+      entityType: 'LEASE_AGREEMENTS',
+      entityId: lease_id,
+      actionType: 'DELETE',
+      requestData: {
+        reason: req.body.reason,
+        lease_details: {
+          upin: existingLease.upin,
+          total_lease_amount: existingLease.total_lease_amount,
+          lease_period_years: existingLease.lease_period_years,
+          start_date: existingLease.start_date,
+          expiry_date: existingLease.expiry_date,
+          status: existingLease.status
+        },
+        validation: {
+          active_bills: activeBills,
+          can_delete: activeBills === 0
+        }
       },
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: actor.sub_city_id,
+      comments: req.body.comments || `Request to delete lease agreement ${lease_id}`
     });
 
-    // Create audit log
+    // 4. Create audit log for delete request
     await prisma.audit_logs.create({
       data: {
-        user_id: actor?.user_id || null,
+        user_id: actor.user_id,
         action_type: AuditAction.DELETE,
-        entity_type: 'lease_agreements',
-        entity_id: lease_id,
+        entity_type: 'APPROVAL_REQUEST',
+        entity_id: approvalRequest.approvalRequest.request_id,
         changes: {
-          action: 'soft_delete_lease',
-          upin: existingLease.upin,
-          lease_period_years: existingLease.lease_period_years,
+          action: 'delete_lease_request',
+          lease_id,
+          parcel_upin: existingLease.upin,
           total_lease_amount: existingLease.total_lease_amount,
-          active_bills_at_deletion: activeBills,
-          actor_id: actor?.user_id,
-          actor_role: actor?.role,
-          actor_username: actor?.username,
+          lease_period_years: existingLease.lease_period_years,
+          active_bills_at_request: activeBills,
+          reason: req.body.reason,
+          request_status: 'PENDING',
+          approver_role: approvalRequest.approvalRequest.approver_role,
+          actor_id: actor.user_id,
+          actor_role: actor.role,
+          actor_username: actor.username,
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),
@@ -571,18 +621,21 @@ export const deleteLease = async (req: Request<{ lease_id: string }>, res: Respo
       },
     });
 
-    return res.status(200).json({
+    return res.status(202).json({
       success: true,
-      message: 'Lease agreement soft deleted successfully',
-      data: { 
+      message: 'Lease deletion request submitted for approval',
+      data: {
+        approval_request_id: approvalRequest.approvalRequest.request_id,
         lease_id,
-        deleted_at: deletedLease.deleted_at,
-        is_deleted: deletedLease.is_deleted,
-        status: deletedLease.status
-      },
+        parcel_upin: existingLease.upin,
+        status: 'PENDING',
+        approver_role: approvalRequest.approvalRequest.approver_role,
+        estimated_processing: 'Within 24-48 hours',
+        notes: activeBills === 0 ? 'No active bills found' : 'Requires bill resolution before deletion'
+      }
     });
   } catch (error: any) {
-    console.error('Delete lease error:', error);
+    console.error('Delete lease request error:', error);
     
     if (error.code === 'P2025') {
       return res.status(404).json({ 
@@ -590,40 +643,206 @@ export const deleteLease = async (req: Request<{ lease_id: string }>, res: Respo
         message: 'Lease not found' 
       });
     }
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "A pending approval request already exists for this lease deletion"
+      });
+    }
     
     return res.status(500).json({ 
       success: false, 
-      message: 'Failed to delete lease',
+      message: 'Failed to create lease deletion request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
+// ---- GET LEASE DETAILS (No approval needed) ----
 
+export const getLeaseDetails = async (req: Request<{ lease_id: string }>, res: Response) => {
+  const { lease_id } = req.params;
 
+  try {
+    const lease = await prisma.lease_agreements.findUnique({
+      where: { lease_id, is_deleted: false },
+      include: {
+        land_parcel: {
+          select: {
+            upin: true,
+            file_number: true,
+            total_area_m2: true,
+            tenure_type: true,
+            sub_city: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        billing_records: {
+          where: { is_deleted: false },
+          orderBy: { due_date: 'asc' },
+          select: {
+            bill_id: true,
+            fiscal_year: true,
+            amount_due: true,
+            amount_paid: true,
+            payment_status: true,
+            due_date: true,
+            installment_number: true
+          }
+        },
+        documents: {
+          where: { is_deleted: false },
+          select: {
+            doc_id: true,
+            file_name: true,
+            doc_type: true,
+            is_verified: true,
+            upload_date: true
+          }
+        }
+      }
+    });
 
+    if (!lease) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lease not found'
+      });
+    }
 
+    return res.json({
+      success: true,
+      data: lease
+    });
+  } catch (error: any) {
+    console.error('Get lease details error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch lease details',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
+// ---- GET LEASES BY PARCEL (No approval needed) ----
 
+export const getLeasesByParcel = async (req: Request, res: Response) => {
+  const  upin  = req.params.upin  as string;
 
+  try {
+    const leases = await prisma.lease_agreements.findMany({
+      where: {
+        upin,
+        is_deleted: false
+      },
+      include: {
+        billing_records: {
+          where: { is_deleted: false },
+          select: {
+            bill_id: true,
+            fiscal_year: true,
+            amount_due: true,
+            amount_paid: true,
+            payment_status: true,
+            due_date: true
+          }
+        }
+      },
+      orderBy: { start_date: 'desc' }
+    });
 
+    return res.json({
+      success: true,
+      data: leases
+    });
+  } catch (error: any) {
+    console.error('Get leases by parcel error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch leases',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
+// ---- GET LEASE STATUS (No approval needed) ----
 
+export const getLeaseStatus = async (req: Request<{ lease_id: string }>, res: Response) => {
+  const { lease_id } = req.params;
 
+  try {
+    const lease = await prisma.lease_agreements.findUnique({
+      where: { lease_id, is_deleted: false },
+      select: {
+        lease_id: true,
+        upin: true,
+        status: true,
+        total_lease_amount: true,
+        down_payment_amount: true,
+        other_payment: true,
+        start_date: true,
+        expiry_date: true,
+        lease_period_years: true,
+        payment_term_years: true,
+        annual_installment: true,
+        billing_records: {
+          where: { is_deleted: false },
+          select: {
+            payment_status: true,
+            amount_due: true,
+            amount_paid: true,
+            due_date: true
+          }
+        }
+      }
+    });
 
+    if (!lease) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lease not found'
+      });
+    }
 
+    // Calculate summary statistics
+    const bills = lease.billing_records;
+    const totalDue = bills.reduce((sum, bill) => sum + Number(bill.amount_due), 0);
+    const totalPaid = bills.reduce((sum, bill) => sum + Number(bill.amount_paid), 0);
+    const outstanding = totalDue - totalPaid;
+    const paidBills = bills.filter(bill => bill.payment_status === 'PAID').length;
+    const unpaidBills = bills.filter(bill => bill.payment_status === 'UNPAID').length;
+    const overdueBills = bills.filter(bill => bill.payment_status === 'OVERDUE').length;
 
+    const status = {
+      ...lease,
+      financial_summary: {
+        total_due: totalDue,
+        total_paid: totalPaid,
+        outstanding: outstanding,
+        payment_progress: totalDue > 0 ? (totalPaid / totalDue) * 100 : 0
+      },
+      bill_summary: {
+        total_bills: bills.length,
+        paid: paidBills,
+        unpaid: unpaidBills,
+        overdue: overdueBills
+      }
+    };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return res.json({
+      success: true,
+      data: status
+    });
+  } catch (error: any) {
+    console.error('Get lease status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch lease status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

@@ -1,7 +1,8 @@
 import GenericDocsUpload from "../../components/GenericDocsUpload";
 import type { OwnerWithParcels } from "../../services/ownersApi";
-import { toast } from "sonner";
 
+
+// Updated CreateOwnerModal to handle approval requests
 export const CreateOwnerModal = ({
   saving,
   form,
@@ -67,6 +68,17 @@ export const CreateOwnerModal = ({
           />
         </div>
       </div>
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+        <div className="flex items-start gap-2">
+          <div className="text-blue-600 mt-0.5">
+            <Info size={16} />
+          </div>
+          <div className="text-sm text-blue-800">
+            <p className="font-medium">Note:</p>
+            <p>Owner creation may require approval. You can upload supporting documents after submission.</p>
+          </div>
+        </div>
+      </div>
       <div className="mt-6 flex justify-end gap-3">
         <button
           onClick={onClose}
@@ -79,82 +91,105 @@ export const CreateOwnerModal = ({
           disabled={saving}
           className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Submitting..." : "Submit"}
         </button>
       </div>
     </div>
   </div>
 );
+
+import { Info,X } from 'lucide-react';
 
 export const OwnerDocsUploadModal = ({
   ownerId,
+  approvalRequestId,
   onClose,
   onRefresh,
 }: {
-  ownerId: string;
+  ownerId?: string;
+  approvalRequestId?: string;
   onClose: () => void;
   onRefresh: () => void;
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Owner Created ✓
-            </h2>
-            <p className="text-gray-600">
-              Upload supporting documents for the new owner
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="inline-block px-4 py-2 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-full">
-              Optional Step
-            </span>
+}) => {
+  const isApprovalRequest = !!approvalRequestId;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-8 border-b border-gray-200 bg-linear-to-r from-emerald-50 to-green-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                {isApprovalRequest ? 'Owner Creation Request Submitted ✓' : 'Owner Created ✓'}
+              </h2>
+              <p className="text-gray-600">
+                {isApprovalRequest 
+                  ? 'Upload supporting documents for the owner creation request'
+                  : 'Upload supporting documents for the new owner'}
+              </p>
+              {isApprovalRequest && (
+                <div className="mt-2 text-sm text-gray-500">
+                  <p>Documents will be reviewed by the approver along with your request.</p>
+                </div>
+              )}
+            </div>
+            <div className="text-right">
+              <span className="inline-block px-4 py-2 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-full">
+                Optional Step
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="p-8">
-        <GenericDocsUpload
-          title="Owner supporting documents"
-          upin=""
-          subCity=""
-          ownerId={ownerId}
-          hideTitle={true}
-          allowedDocTypes={[
-            { value: "ID_COPY", label: "National ID Copy" },
-            { value: "PASSPORT_PHOTO", label: "Passport-size Photo" },
-            { value: "TIN_CERT", label: "TIN Certificate" },
-            { value: "POWER_OF_ATTORNEY", label: "Power of Attorney" },
-            { value: "OTHER", label: "Other Document" },
-          ]}
-          onUploadSuccess={onRefresh}
-        />
-      </div>
+        <div className="p-8">
+          <GenericDocsUpload
+            title="Owner supporting documents"
+            upin=""
+            subCity=""
+            ownerId={ownerId}
+            approvalRequestId={approvalRequestId}
+            isApprovalRequest={isApprovalRequest}
+            hideTitle={true}
+            allowedDocTypes={[
+              { value: "ID_COPY", label: "National ID Copy" },
+              { value: "PASSPORT_PHOTO", label: "Passport-size Photo" },
+              { value: "TIN_CERT", label: "TIN Certificate" },
+              { value: "POWER_OF_ATTORNEY", label: "Power of Attorney" },
+              { value: "OTHER", label: "Other Document" },
+            ]}
+            allowDelete={isApprovalRequest}
+            showExisting={true}
+            maxFiles={5}
+            onUploadSuccess={onRefresh}
+          />
+        </div>
 
-      <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
-        <button
-          onClick={onClose}
-          className="text-sm text-gray-600 hover:text-gray-900 underline transition"
-        >
-          Skip for now
-        </button>
+        <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+          <button
+            onClick={onClose}
+            className="text-sm text-gray-600 hover:text-gray-900 underline transition flex items-center gap-2"
+          >
+            <X size={16} />
+            Skip for now
+          </button>
 
-        <button
-          onClick={() => {
-            onClose();
-            onRefresh();
-          }}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-        >
-          Done – Close
-          <span className="text-lg">→</span>
-        </button>
+          <button
+            onClick={() => {
+              onClose();
+              onRefresh();
+            }}
+            className="px-8 py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
+            Done – Close
+            <span className="text-lg">→</span>
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+
 
 export const EditOwnerModal = ({
   saving,
