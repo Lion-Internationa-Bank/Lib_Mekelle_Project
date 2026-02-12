@@ -67,14 +67,14 @@ export class MakerCheckerService {
       const requestDataWithDocs = {
         ...params.requestData,
         documents: [], // Initialize empty documents array
-        metadata: {
-          created_by: params.makerId,
-          created_by_role: params.makerRole,
-          sub_city_id: params.subCityId,
-          created_at: new Date().toISOString(),
-          requires_approval: true,
-          approver_role: approverRole
-        }
+        // metadata: {
+        //   created_by: params.makerId,
+        //   created_by_role: params.makerRole,
+        //   sub_city_id: params.subCityId,
+        //   created_at: new Date().toISOString(),
+        //   requires_approval: true,
+        //   approver_role: approverRole
+        // }
       };
 
       // Create approval request

@@ -14,10 +14,76 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
   actionType, 
   entityId 
 }) => {
-  const renderCreate = () => {
-    return (
-      <div>
-        <h3>New Owner Registration</h3>
+const renderCreate = () => {
+  // Helper function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Separate regular fields from document fields
+  const documentKeys = ['documents', 'attachments', 'identification_docs', 'supporting_documents'];
+  
+  const regularEntries = Object.entries(data).filter(
+    ([key]) => !documentKeys.includes(key) && !key.toLowerCase().includes('document')
+  );
+  
+  const documentEntries = Object.entries(data).filter(
+    ([key]) => documentKeys.includes(key) || key.toLowerCase().includes('document')
+  );
+
+  const renderValue = (value: any): string => {
+    if (value === null || value === undefined) return 'N/A';
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        if (value.length === 0) return 'No items';
+        // For non-document arrays, show count
+        return `${value.length} item(s)`;
+      }
+      if (Object.keys(value).length === 0) return 'Empty object';
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
+  // Document type display names
+  const getDocumentTypeDisplay = (docType: string): string => {
+    const types: Record<string, string> = {
+      'ID_COPY': 'ID Copy',
+      'SUPPORTING_DOCUMENT': 'Supporting Document',
+      'PASSPORT': 'Passport',
+      'DRIVERS_LICENSE': "Driver's License",
+      'BIRTH_CERTIFICATE': 'Birth Certificate',
+      'MARRIAGE_CERTIFICATE': 'Marriage Certificate',
+      'TITLE_DEED': 'Title Deed',
+      'SURVEY_PLAN': 'Survey Plan',
+      'POWER_OF_ATTORNEY': 'Power of Attorney',
+      'CONTRACT': 'Contract',
+      'INVOICE': 'Invoice',
+      'RECEIPT': 'Receipt',
+      'OTHER': 'Other'
+    };
+    return types[docType] || docType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  return (
+    <div>
+      <h3>New Owner Registration</h3>
+      
+      {/* Regular fields grid */}
+      {regularEntries.length > 0 && (
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
@@ -25,9 +91,10 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
           padding: '1.5rem',
           backgroundColor: '#f8f9fa',
           borderRadius: '4px',
-          border: '1px solid #e9ecef'
+          border: '1px solid #e9ecef',
+          marginBottom: '1.5rem'
         }}>
-          {Object.entries(data).map(([key, value]) => (
+          {regularEntries.map(([key, value]) => (
             <div key={key} style={{ 
               padding: '1rem',
               backgroundColor: 'white',
@@ -48,14 +115,191 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
                 fontWeight: '600',
                 wordBreak: 'break-word'
               }}>
-                {String(value || 'N/A')}
+                {renderValue(value)}
               </div>
             </div>
           ))}
         </div>
-      </div>
-    );
-  };
+      )}
+
+      {/* Documents section */}
+      {documentEntries.map(([key, value]) => {
+        const documents = Array.isArray(value) ? value : (value ? [value] : []);
+        
+        if (documents.length === 0) return null;
+
+        return (
+          <div key={key} style={{ marginTop: '1rem' }}>
+            <h4 style={{ 
+              marginBottom: '1rem',
+              color: '#495057',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span>{key.replace(/_/g, ' ')
+                  .replace(/\b\w/g, l => l.toUpperCase())}</span>
+              <span style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '12px',
+                fontSize: '0.85rem',
+                fontWeight: 'normal'
+              }}>
+                {documents.length} file(s)
+              </span>
+            </h4>
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '1rem'
+            }}>
+              {documents.map((doc, index) => (
+                <div key={doc.id || index} style={{
+                  padding: '1.25rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px',
+                  border: '1px solid #dee2e6',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  {/* Document header with type badge */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    borderBottom: '1px solid #dee2e6',
+                    paddingBottom: '0.75rem'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{
+                        fontSize: '1.25rem'
+                      }}>📄</span>
+                      <div>
+                        <div style={{
+                          fontWeight: '600',
+                          color: '#212529'
+                        }}>
+                          {doc.file_name || 'Unnamed Document'}
+                        </div>
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: '#6c757d'
+                        }}>
+                          {doc.document_type && getDocumentTypeDisplay(doc.document_type)}
+                        </div>
+                      </div>
+                    </div>
+                    {doc.document_type && (
+                      <span style={{
+                        backgroundColor: doc.document_type === 'ID_COPY' ? '#e3f2fd' : '#f3e5f5',
+                        color: doc.document_type === 'ID_COPY' ? '#0d47a1' : '#4a148c',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '16px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>
+                        {doc.document_type === 'ID_COPY' ? 'ID' : 'DOC'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Document details */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    {doc.file_size && (
+                      <>
+                        <span style={{ color: '#6c757d' }}>Size:</span>
+                        <span style={{ fontWeight: '500' }}>{formatFileSize(doc.file_size)}</span>
+                      </>
+                    )}
+                    {doc.mime_type && (
+                      <>
+                        <span style={{ color: '#6c757d' }}>Type:</span>
+                        <span style={{ fontWeight: '500' }}>{doc.mime_type.split('/').pop()?.toUpperCase()}</span>
+                      </>
+                    )}
+                    {doc.metadata?.uploaded_at && (
+                      <>
+                        <span style={{ color: '#6c757d' }}>Uploaded:</span>
+                        <span style={{ fontWeight: '500' }}>{formatDate(doc.metadata.uploaded_at)}</span>
+                      </>
+                    )}
+                    {doc.metadata?.uploaded_by_role && (
+                      <>
+                        <span style={{ color: '#6c757d' }}>Uploaded by:</span>
+                        <span style={{ fontWeight: '500' }}>{doc.metadata.uploaded_by_role.replace(/_/g, ' ')}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Document ID */}
+                  {doc.id && (
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#adb5bd',
+                      borderTop: '1px solid #dee2e6',
+                      marginTop: '0.5rem',
+                      paddingTop: '0.5rem',
+                      wordBreak: 'break-all'
+                    }}>
+                      ID: {doc.id}
+                    </div>
+                  )}
+
+                  {/* File URL - only show truncated version */}
+                  {doc.file_url && (
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#6c757d',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span>🔗</span>
+                      <span style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {doc.file_url.split('/').pop()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Show message if no documents */}
+      {documentEntries.length === 0 && (
+        <div style={{
+          padding: '1rem',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '4px',
+          color: '#6c757d',
+          textAlign: 'center',
+          marginTop: '1rem'
+        }}>
+          No documents attached
+        </div>
+      )}
+    </div>
+  );
+};
 
   const renderUpdate = () => {
     const { changes, current_data } = data;
