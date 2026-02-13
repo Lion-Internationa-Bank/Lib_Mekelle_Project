@@ -15,11 +15,48 @@ export interface CreateApprovalRequestParams {
   comments?: string;
 }
 
+interface ApproverPaginationOptions {
+  page: number;
+  limit: number;
+  status?: string;
+  entity_type?: string;
+  action_type?: string;
+  maker_id?: string;
+  from_date?: string;
+  to_date?: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
 export interface ApprovalResult {
   success: boolean;
   requiresApproval: boolean;
   immediateResult?: any;
   approvalRequest?: any;
+}
+
+
+
+// Add this interface for pagination options
+interface PaginationOptions {
+  page: number;
+  limit: number;
+  status?: string;
+  entity_type?: string;
+  action_type?: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
+// Add this interface for paginated result
+interface PaginatedResult<T> {
+  requests: T[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export class MakerCheckerService {
@@ -504,11 +541,42 @@ async rejectRequest(requestId: string, approverId: string, userRole: UserRole, r
   });
 }
 
-  async getPendingRequests(user: any) {
+// src/services/makerCheckerService.ts
+
+// Add/update the interface for approver pagination options
+
+
+// Update the getPendingRequests method in the service
+async getPendingRequests(
+  user: any,
+  options: ApproverPaginationOptions
+): Promise<PaginatedResult<any>> {
+  try {
+    const { 
+      page, 
+      limit, 
+      status, 
+      entity_type, 
+      action_type, 
+      maker_id,
+      from_date,
+      to_date,
+      sortBy, 
+      sortOrder 
+    } = options;
+
+    // Calculate offset for pagination
+    const skip = (page - 1) * limit;
+
+    // Build the where clause
     const where: any = {
-      status: 'PENDING',
       is_deleted: false
     };
+
+    // Apply status filter (default to PENDING)
+    if (status) {
+      where.status = status;
+    }
 
     // Filter by subcity for subcity admins
     if (user.role === 'SUBCITY_ADMIN' && user.sub_city_id) {
@@ -520,17 +588,82 @@ async rejectRequest(requestId: string, approverId: string, userRole: UserRole, r
       where.entity_type = 'REVENUE';
     }
 
+    // Apply entity type filter if provided
+    if (entity_type) {
+      where.entity_type = entity_type;
+    }
+
+    // Apply action type filter if provided
+    if (action_type) {
+      where.action_type = action_type;
+    }
+
+    // Filter by maker if provided
+    if (maker_id) {
+      where.maker_id = maker_id;
+    }
+
+    // Apply date range filter
+    if (from_date || to_date) {
+      where.created_at = {};
+      
+      if (from_date) {
+        where.created_at.gte = new Date(from_date);
+      }
+      
+      if (to_date) {
+        // Set to end of the day
+        const toDateObj = new Date(to_date);
+        toDateObj.setHours(23, 59, 59, 999);
+        where.created_at.lte = toDateObj;
+      }
+    }
+
     // Check if user is an approver for any entity type
     const userCanApprove = ['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN'].includes(user.role);
     
     if (!userCanApprove) {
-      return [];
+      return {
+        requests: [],
+        page,
+        limit,
+        totalCount: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
     }
 
+    // Get total count for pagination
+    const totalCount = await this.prisma.approval_requests.count({ where });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Validate sortBy field
+    const validSortFields = [
+      'created_at', 
+      'updated_at', 
+      'status', 
+      'entity_type', 
+      'action_type',
+      'submitted_at',
+      'approved_at',
+      'rejected_at'
+    ];
+    
+    const orderByField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const orderDirection = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    // Fetch requests with pagination
     const requests = await this.prisma.approval_requests.findMany({
       where,
-      orderBy: { created_at: 'desc' },
-      select:{
+      skip,
+      take: limit,
+      orderBy: {
+        [orderByField]: orderDirection
+      },
+       select:{
         request_id:true,
         entity_type: true,
         action_type: true,
@@ -545,11 +678,134 @@ async rejectRequest(requestId: string, approverId: string, userRole: UserRole, r
           }
         }
       },
-    
     });
 
-    return requests;
+    return {
+      requests,
+      page,
+      limit,
+      totalCount,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
+  } catch (error) {
+    console.error('Error fetching pending requests:', error);
+    throw new Error('Failed to fetch pending requests');
   }
+}
+
+  // src/services/makerCheckerService.ts
+
+
+// Add this method to the MakerCheckerService class
+async getMakerPendingRequests(
+  makerId: string,
+  options: PaginationOptions,
+  requestingUser: any
+): Promise<PaginatedResult<any>> {
+  try {
+    const { 
+      page, 
+      limit, 
+      status, 
+      entity_type, 
+      action_type, 
+      sortBy, 
+      sortOrder 
+    } = options;
+
+    // Calculate offset for pagination
+    const skip = (page - 1) * limit;
+
+    // Build the where clause
+    const where: any = {
+      maker_id: makerId,
+      is_deleted: false
+    };
+
+    // Apply status filter (default to PENDING if not specified)
+    if (status) {
+      where.status = status;
+    }
+
+    // Apply entity type filter if provided
+    if (entity_type) {
+      where.entity_type = entity_type;
+    }
+
+    // Apply action type filter if provided
+    if (action_type) {
+      where.action_type = action_type;
+    }
+
+    // Apply role-based filtering for non-admin requesters
+    if (requestingUser.role === 'SUBCITY_ADMIN' && requestingUser.sub_city_id) {
+      where.sub_city_id = requestingUser.sub_city_id;
+    }
+
+    if (requestingUser.role === 'REVENUE_ADMIN') {
+      where.entity_type = 'REVENUE';
+    }
+
+    // Get total count for pagination
+    const totalCount = await this.prisma.approval_requests.count({ where });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Validate sortBy field to prevent SQL injection
+    const validSortFields = [
+      'created_at', 
+      'updated_at', 
+      'status', 
+      'entity_type', 
+      'action_type',
+      'submitted_at'
+    ];
+    
+    const orderByField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const orderDirection = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    // Fetch requests with pagination
+    const requests = await this.prisma.approval_requests.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        [orderByField]: orderDirection
+      },
+     select:{
+        request_id:true,
+        entity_type: true,
+        action_type: true,
+        status: true,
+        created_at: true,
+        maker:{
+          select :{
+            user_id: true,
+            username: true,
+            full_name: true,
+            role: true
+          }
+        }
+      },
+    });
+
+    return {
+      requests,
+      page,
+      limit,
+      totalCount,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
+  } catch (error) {
+    console.error('Error fetching maker pending requests:', error);
+    throw new Error('Failed to fetch maker pending requests');
+  }
+}
 
   async getRequestDetails(requestId: string) {
     return await this.prisma.approval_requests.findUnique({
@@ -573,8 +829,19 @@ async rejectRequest(requestId: string, approverId: string, userRole: UserRole, r
     });
   }
 
+  // src/services/makerCheckerService.ts
+
+
+
+
+
+
+
 
 }
+
+
+
 
 
 

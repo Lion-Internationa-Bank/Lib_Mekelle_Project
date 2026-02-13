@@ -52,9 +52,65 @@ export interface RejectionResponse {
   };
 }
 
-// Get pending requests
-export const getPendingRequests = async (): Promise<ApiResponse<PendingRequest[]>> => {
-  return apiFetch<PendingRequest[]>('/maker-checker/requests', {
+// src/services/makerCheckerService.ts - Updated API functions
+
+// Get pending requests for approvers (with pagination and filters)
+export const getPendingRequests = async (
+  page: number = 1,
+  limit: number = 10,
+  filters?: {
+    status?: string;
+    entity_type?: string;
+    action_type?: string;
+    maker_id?: string;
+    from_date?: string;
+    to_date?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }
+): Promise<ApiResponse<PendingRequest[]>> => {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(filters?.status && { status: filters.status }),
+    ...(filters?.entity_type && { entity_type: filters.entity_type }),
+    ...(filters?.action_type && { action_type: filters.action_type }),
+    ...(filters?.maker_id && { maker_id: filters.maker_id }),
+    ...(filters?.from_date && { from_date: filters.from_date }),
+    ...(filters?.to_date && { to_date: filters.to_date }),
+    ...(filters?.sortBy && { sortBy: filters.sortBy }),
+    ...(filters?.sortOrder && { sortOrder: filters.sortOrder })
+  });
+
+  return apiFetch<PendingRequest[]>(`/maker-checker/requests?${queryParams}`, {
+    method: 'GET',
+  });
+};
+
+// Get maker's own pending requests (with pagination and filters)
+export const getMakerPendingRequests = async (
+  makerId: string,
+  page: number = 1,
+  limit: number = 10,
+  filters?: {
+    status?: string;
+    entity_type?: string;
+    action_type?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }
+): Promise<ApiResponse<PendingRequest[]>> => {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(filters?.status && { status: filters.status }),
+    ...(filters?.entity_type && { entity_type: filters.entity_type }),
+    ...(filters?.action_type && { action_type: filters.action_type }),
+    ...(filters?.sortBy && { sortBy: filters.sortBy }),
+    ...(filters?.sortOrder && { sortOrder: filters.sortOrder })
+  });
+
+  return apiFetch<PendingRequest[]>(`/maker-checker/makers/${makerId}/pending-requests?${queryParams}`, {
     method: 'GET',
   });
 };
@@ -65,6 +121,7 @@ export const getRequestDetails = async (requestId: string): Promise<ApiResponse<
     method: 'GET',
   });
   if (!response.success) throw new Error(response.error || "Failed to fetch parcels");
+  console.log("Response from get request details",response)
   return response;
 };
 

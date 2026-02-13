@@ -22,17 +22,26 @@ export interface AuthRequest<
     upin?:string;
     encumbrance_id?:string;
     owner_id?:string;
+    maker_id?:string;
   },
   ResBody = any,
   ReqBody = any,
   ReqQuery = {
     page?: string;
     limit?: string;
+    sortOrder?:string;
+    sortBy?:string;
+    action_type?:string;
+    entity_type?:string;
     search?: string;
     sub_city_id?: string;
     tenure_type?: string;
     ketena?: string;
     land_use?: string;
+    status?: string ;
+    maker_id?:string;
+    from_date?:string;
+    to_date?:string;
     
   }
 > extends Request<P, ResBody, ReqBody, ReqQuery> {

@@ -11,73 +11,70 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  // { id: 'dashboard', label: 'Dashboard', icon: '🏠', href: '/parcels' },
-  {
+
+ {
     id: 'parcels',
     label: 'Land Parcels',
-    icon: '📍',
+    icon: '🏞️', // National park - land parcels
     href: '/home',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
-  },
-   {
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
+},
+{
     id: 'sessions',
     label: 'Sessions',
-    icon: '📍',
+    icon: '🖥️', // Desktop computer - active sessions
     href: '/sessions',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','SUBCITY_ADMIN','REVENUE_USER'],
-  },
-     {
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
+},
+{
     id: 'pending-requests',
     label: 'Pending Requests',
-    icon: '📍',
+    icon: '⏳', // Hourglass - pending approval
     href: '/pending-requests',
-    allowedRoles: ['SUBCITY_ADMIN','REVENUE_ADMIN'],
-  },
-  {
+    allowedRoles: ['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_NORMAL'],
+},
+{
     id: 'ownership',
     label: 'Ownership',
-    icon: '👥',
+    icon: '📋', // Clipboard - ownership records
     href: '/ownership',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR','REVENUE_USER'],
-  },
-       {
-  id: 'users',
-  label: 'User Management',
-  icon: '👤',
-  href: '/users',
-  allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
+    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'REVENUE_USER'],
 },
-  {
+{
+    id: 'users',
+    label: 'User Management',
+    icon: '👥', // Multiple users - user management
+    href: '/users',
+    allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
+},
+{
     id: 'subcities',
     label: 'Sub-cities',
-    icon: '🏙️',
+    icon: '🏛️', // Classical building - government administration
     href: '/sub-cities',
     allowedRoles: ['CITY_ADMIN'],
-  },
-   {
+},
+{
     id: 'rateconfigs',
     label: 'Rate Configs',
-    icon: '💱',
+    icon: '💰', // Money bag - financial rates
     href: '/rateConfigs',
-    allowedRoles: [ 'REVENUE_ADMIN'],
-  
-  },
-  {
+    allowedRoles: ['REVENUE_ADMIN'],
+},
+{
     id: 'configs',
     label: 'Configurations',
-    icon: '⚙️',
+    icon: '⚙️', // Gear - system configuration
     href: '/configs',
     allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
-  
-  },
-
-  // {
-  //   id: 'reports',
-  //   label: 'Reports',
-  //   icon: '📊',
-  //   href: '/reports',
-  //   allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'],
-  // },
+},
+{
+    id: 'reports',
+    label: 'Reports',
+    icon: '📊', // Bar chart - reports and analytics
+    href: '/reports',
+    allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'],
+},
 ];
 
 const Sidebar = () => {

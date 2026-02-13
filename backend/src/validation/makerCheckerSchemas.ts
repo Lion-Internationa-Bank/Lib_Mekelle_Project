@@ -59,3 +59,22 @@ export const submitWizardSchema = z.object({
   }),
   body: z.object({})
 });
+
+
+
+
+// Add this validation schema for maker pending requests query parameters
+export const validateMakerPendingRequestsQuery = z.object({
+  query: z.object({
+    page: z.string().optional().transform(val => val ? parseInt(val) : 1)
+      .refine(val => val > 0, 'Page must be greater than 0'),
+    limit: z.string().optional().transform(val => val ? parseInt(val) : 10)
+      .refine(val => val > 0 && val <= 100, 'Limit must be between 1 and 100'),
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional().default('PENDING'),
+    entity_type: z.enum(['PROPERTY', 'REVENUE', 'CUSTOMER', 'TAX', 'PERMIT']).optional(),
+    action_type: z.enum(['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE']).optional(),
+    sortBy: z.enum(['created_at', 'updated_at', 'status', 'entity_type', 'action_type', 'submitted_at'])
+      .optional().default('created_at'),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+  })
+});
