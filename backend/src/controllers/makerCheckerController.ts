@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { WizardSessionService } from '../services/wizardSessionService.ts';
 import type { AuthRequest } from '../middlewares/authMiddleware.ts';
+  type Sort = "asc"| "desc";
 // import { validateMakerCheckerRequest } from '../validation/makerCheckerSchemas.ts';
 
 export class MakerCheckerController {
@@ -18,27 +19,124 @@ export class MakerCheckerController {
   }
 
   // Get pending requests for approver
-  async getPendingRequests(req: AuthRequest, res: Response) {
-    try {
-      const user = req.user!;
-      const requests = await this.makerCheckerService.getPendingRequests(user);
+async getPendingRequests(req: AuthRequest, res: Response) {
+  try {
+    const user = req.user!;
+    
+    // Extract query parameters with defaults
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string ;
+    const entity_type = req.query.entity_type as string;
+    const action_type = req.query.action_type as string;
+    const maker_id = req.query.maker_id as string;
+    const from_date = req.query.from_date as string;
+    const to_date = req.query.to_date as string;
+    const sortBy = req.query.sortBy as string || 'created_at';
+    const sortOrder = req.query.sortOrder as Sort || 'desc';
 
-      return res.status(200).json({
-        success: true,
-        data: requests
-      });
-    } catch (error) {
-      console.error('Get pending requests error:', error);
-      return res.status(500).json({
+    const result = await this.makerCheckerService.getPendingRequests(
+      user,
+      {
+        page,
+        limit,
+        status,
+        entity_type,
+        action_type,
+        maker_id,
+        from_date,
+        to_date,
+        sortBy,
+        sortOrder
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.requests,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage
+      }
+    });
+  } catch (error) {
+    console.error('Get pending requests error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch pending requests'
+    });
+  }
+}
+  // src/controllers/makerCheckerController.ts
+
+async getMakerPendingRequests(req: AuthRequest, res: Response) {
+  try {
+   
+       const { maker_id } = req.params;
+    const user = req.user!;
+    
+    // Authorization: Only allow makers to view their own requests,
+    // or admins to view any maker's requests
+    if (user.user_id !== maker_id && !['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'].includes(user.role)) {
+      return res.status(403).json({
         success: false,
-        message: 'Failed to fetch pending requests'
+        message: 'You do not have permission to view these requests'
       });
     }
+
+    // Extract query parameters with defaults
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string ;
+    const entity_type = req.query.entity_type as string;
+    const action_type = req.query.action_type as string;
+    const sortBy = req.query.sortBy as string || 'created_at';
+    const sortOrder = req.query.sortOrder as Sort|| 'desc';
+
+    const result = await this.makerCheckerService.getMakerPendingRequests(
+      user.user_id,
+      {
+        page,
+        limit,
+        status,
+        entity_type,
+        action_type,
+        sortBy,
+        sortOrder
+      },
+      user
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.requests,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage
+      }
+    });
+  } catch (error) {
+    console.error('Get maker pending requests error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch maker pending requests'
+    });
   }
+}
 
   // Get request details
   async getRequestDetails(req: AuthRequest, res: Response) {
     try {
+
+      console.log("get Request Details ,get request detail hitted")
       const request_id  = req.params.request_id as string;
       const user = req.user!;
 
@@ -50,9 +148,11 @@ export class MakerCheckerController {
           message: 'Approval request not found'
         });
       }
-
+console.log("user id",user.user_id)
+console.log("maker id",request.maker_id)
+console.log("request id ",request.request_id)
       // Check permissions
-      if (!this.canViewRequest(user, request)) {
+      if (!this.canViewRequest(user, request) ) {
         return res.status(403).json({
           success: false,
           message: 'Insufficient permissions to view this request'

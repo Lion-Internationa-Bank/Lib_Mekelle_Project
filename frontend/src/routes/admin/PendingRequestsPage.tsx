@@ -1,371 +1,667 @@
-// src/pages/PendingRequestsPage.tsx - Updated with Cards
-import React, { useEffect, useState } from 'react';
+// src/pages/PendingRequestsPage.tsx - Updated with Tailwind CSS and fixed map error
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPendingRequests } from '../../services/makerCheckerService';
-import { type ApprovalRequest } from '../../types/makerChecker';
+import { getPendingRequests, getMakerPendingRequests } from '../../services/makerCheckerService';
+import { useAuth } from '../../contexts/AuthContext';
+import { 
+  type PendingRequestData,
+  type ApiResponse,
+  type EntityType,
+  type ActionType,
+  type RequestStatus,
+  type UserRole,
+  ENTITY_TYPES,
+  ACTION_TYPES,
+  REQUEST_STATUSES,
+  APPROVER_ROLES,
+  getStatusDisplayName,
+  getEntityDisplayName,
+  getActionDisplayName,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  DEFAULT_SORT_FIELD,
+  DEFAULT_SORT_ORDER
+} from '../../types/makerChecker';
 import { toast } from 'sonner';
 
+// Pagination constants
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 12;
+const MAX_VISIBLE_PAGES = 5;
+
 const PendingRequestsPage: React.FC = () => {
-  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
+  const [requests, setRequests] = useState<PendingRequestData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filter, setFilter] = useState<string>('all');
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(DEFAULT_PAGE);
+  const [limit, setLimit] = useState<number>(DEFAULT_LIMIT);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState<boolean>(false);
+  
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<RequestStatus | ''>('');
+  const [entityTypeFilter, setEntityTypeFilter] = useState<EntityType | ''>('');
+  const [actionTypeFilter, setActionTypeFilter] = useState<ActionType | ''>('');
+  const [sortBy, setSortBy] = useState<string>(DEFAULT_SORT_FIELD);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(DEFAULT_SORT_ORDER);
+  
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Determine if user is approver or maker
+  const isApprover = user?.role ? APPROVER_ROLES.includes(user.role as UserRole) : false;
+
+  // Fetch requests with pagination and filters
+  const fetchRequests = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let response: ApiResponse<PendingRequestData[]>;
+      
+      if (isApprover) {
+        response = await getPendingRequests(currentPage, limit, {
+          status: statusFilter || undefined,
+          entity_type: entityTypeFilter || undefined,
+          action_type: actionTypeFilter || undefined,
+          sortBy,
+          sortOrder
+        });
+      } else {
+        response = await getMakerPendingRequests(
+          user?.user_id || '',
+          currentPage,
+          limit,
+          {
+            status: statusFilter || undefined,
+            entity_type: entityTypeFilter || undefined,
+            action_type: actionTypeFilter || undefined,
+            sortBy,
+            sortOrder
+          }
+        );
+      }
+
+      if (response.success && response.data) {
+        // Ensure response.data is an array
+      console.log("response from pending request",response)
+        console.log("response data  from pending request",response.data)
+        if (Array.isArray(response.data.data)) {
+          setRequests(response.data.data);
+        } else {
+          console.error('Response data is not an array:', response.data);
+          setRequests([]);
+          toast.error('Invalid response format');
+        }
+        
+        // Update pagination info
+        if (response.data.pagination) {
+          setTotalPages(response.data.pagination.totalPages);
+          setTotalCount(response.data.pagination.totalCount);
+          setHasNextPage(response.data.pagination.hasNextPage);
+          setHasPreviousPage(response.data.pagination.hasPreviousPage);
+        }
+      } else {
+        setError(response.error || 'Failed to fetch pending requests');
+        toast.error(response.error || 'Failed to fetch pending requests');
+        setRequests([]);
+      }
+    } catch (err) {
+      const errorMessage = 'An unexpected error occurred';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error('Fetch error:', err);
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, limit, statusFilter, entityTypeFilter, actionTypeFilter, sortBy, sortOrder, isApprover, user?.user_id]);
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await getPendingRequests();
-        if (response.success && response.data) {
-          setRequests(response.data.data)
-        } else {
-          toast.error(response.error || 'Failed to fetch pending requests');
-        }
-      } catch (err) {
-        toast.error('An unexpected error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
-  const getEntityIcon = (entityType: string) => {
-    switch (entityType) {
-      case 'WIZARD_SESSION':
-        return '🪄';
-      case 'LAND_PARCELS':
-        return '🏞️';
-      case 'OWNERS':
-        return '👤';
-      case 'LEASE_AGREEMENTS':
-        return '📄';
-      case 'ENCUMBRANCES':
-        return '🔒';
-      default:
-        return '📋';
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(DEFAULT_PAGE);
+  };
+
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return { bg: '#fff3cd', text: '#856404' };
-      case 'APPROVED':
-        return { bg: '#d1e7dd', text: '#0f5132' };
-      case 'REJECTED':
-        return { bg: '#f8d7da', text: '#721c24' };
-      default:
-        return { bg: '#e9ecef', text: '#495057' };
+  const handlePreviousPage = () => {
+    if (hasPreviousPage) {
+      setCurrentPage(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const getActionColor = (actionType: string) => {
-    switch (actionType) {
-      case 'CREATE':
-        return { bg: '#d1e7dd', text: '#0f5132' };
-      case 'UPDATE':
-        return { bg: '#cce5ff', text: '#004085' };
-      case 'DELETE':
-        return { bg: '#f8d7da', text: '#721c24' };
-      case 'TRANSFER':
-        return { bg: '#d4edda', text: '#155724' };
-      default:
-        return { bg: '#e2e3e5', text: '#383d41' };
-    }
+  const handleFirstPage = () => {
+    setCurrentPage(DEFAULT_PAGE);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filteredRequests = filter === 'all' 
-    ? requests 
-    : requests.filter(req => req.entity_type === filter);
+  const handleLastPage = () => {
+    setCurrentPage(totalPages);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  const entityTypes = Array.from(new Set(requests.map(req => req.entity_type)));
+  // Filter handlers
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status as RequestStatus);
+    setCurrentPage(DEFAULT_PAGE);
+  };
 
-  if (loading) {
+  const handleEntityTypeFilterChange = (entityType: string) => {
+    setEntityTypeFilter(entityType as EntityType);
+    setCurrentPage(DEFAULT_PAGE);
+  };
+
+  const handleActionTypeFilterChange = (actionType: string) => {
+    setActionTypeFilter(actionType as ActionType);
+    setCurrentPage(DEFAULT_PAGE);
+  };
+
+  const handleSortChange = (field: string, order: 'asc' | 'desc') => {
+    setSortBy(field);
+    setSortOrder(order);
+    setCurrentPage(DEFAULT_PAGE);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('');
+    setEntityTypeFilter('');
+    setActionTypeFilter('');
+    setCurrentPage(DEFAULT_PAGE);
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    
+    if (totalPages <= MAX_VISIBLE_PAGES) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, currentPage - Math.floor(MAX_VISIBLE_PAGES / 2));
+      let endPage = Math.min(totalPages, startPage + MAX_VISIBLE_PAGES - 1);
+      
+      if (endPage - startPage + 1 < MAX_VISIBLE_PAGES) {
+        startPage = Math.max(1, endPage - MAX_VISIBLE_PAGES + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  // UI Helper functions
+  const getEntityIcon = (entityType: EntityType): string => {
+    const icons: Record<EntityType, string> = {
+      'WIZARD_SESSION': '🪄',
+      'LAND_PARCELS': '🏞️',
+      'OWNERS': '👤',
+      'LEASE_AGREEMENTS': '📄',
+      'ENCUMBRANCES': '🔒',
+      'APPROVAL_REQUEST': '✅'
+    };
+    return icons[entityType] || '📋';
+  };
+
+  const getStatusColor = (status: RequestStatus): string => {
+    const colors: Record<RequestStatus, string> = {
+      'PENDING': 'bg-yellow-100 text-yellow-800',
+      'APPROVED': 'bg-green-100 text-green-800',
+      'REJECTED': 'bg-red-100 text-red-800',
+      'RETURNED': 'bg-blue-100 text-blue-800',
+      'CANCELLED': 'bg-gray-100 text-gray-800',
+      'FAILED': 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getActionColor = (actionType: ActionType): string => {
+    const colors: Record<ActionType, string> = {
+      'CREATE': 'bg-green-100 text-green-800',
+      'UPDATE': 'bg-blue-100 text-blue-800',
+      'DELETE': 'bg-red-100 text-red-800',
+      'TRANSFER': 'bg-green-100 text-green-800',
+      'SUBDIVIDE': 'bg-gray-100 text-gray-800',
+      'MERGE': 'bg-gray-100 text-gray-800',
+      'TERMINATE': 'bg-red-100 text-red-800',
+      'EXTEND': 'bg-green-100 text-green-800',
+      'ADD_OWNER': 'bg-green-100 text-green-800'
+    };
+    return colors[actionType] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Loading state
+  if (loading && requests.length === 0) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <div>Loading pending requests...</div>
+      <div className="flex justify-center items-center h-[70vh]">
+        <div className="text-center">
+          <div className="text-5xl mb-4">⏳</div>
+          <div className="text-xl text-gray-700">Loading requests...</div>
+          <div className="text-sm text-gray-500 mt-2">
+            Please wait while we fetch your requests
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
+    <div className="p-8 max-w-[1400px] mx-auto">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
-          <h1 style={{ margin: 0 }}>Pending Approval Requests</h1>
-          <p style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-            {requests.length} request{requests.length !== 1 ? 's' : ''} pending approval
-          </p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '0.5rem', 
-        marginBottom: '2rem',
-        flexWrap: 'wrap'
-      }}>
-        <button
-          onClick={() => setFilter('all')}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: filter === 'all' ? '#007bff' : '#e9ecef',
-            color: filter === 'all' ? 'white' : '#495057',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          All ({requests.length})
-        </button>
-        {entityTypes.map(type => (
-          <button
-            key={type}
-            onClick={() => setFilter(type)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: filter === type ? '#007bff' : '#e9ecef',
-              color: filter === type ? 'white' : '#495057',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            {getEntityIcon(type)} {type.replace('_', ' ')} ({requests.filter(r => r.entity_type === type).length})
-          </button>
-        ))}
-      </div>
-
-      {filteredRequests.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '4rem', 
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
-          <h3 style={{ marginBottom: '0.5rem' }}>No pending requests found</h3>
-          <p style={{ color: '#6c757d' }}>
-            {filter === 'all' 
-              ? 'There are no pending approval requests at the moment.'
-              : `No ${filter.replace('_', ' ')} requests pending.`}
-          </p>
-        </div>
-      ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
-          gap: '1.5rem'
-        }}>
-          {filteredRequests.map((req) => {
-            const statusColor = getStatusColor(req.status);
-            const actionColor = getActionColor(req.action_type);
-            
-            return (
-              <div
-                key={req.request_id}
-                onClick={() => navigate(`/pending-requests/${req.request_id}`)}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  padding: '1.5rem',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  border: '1px solid #e9ecef',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                }}
+          <h1 className="text-3xl font-bold text-gray-900 m-0">
+            {isApprover ? 'Pending Approval Requests' : 'My Requests'}
+          </h1>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-gray-600 m-0">
+              {totalCount.toLocaleString()} request{totalCount !== 1 ? 's' : ''} found
+            </p>
+            {(statusFilter || entityTypeFilter || actionTypeFilter) && (
+              <button
+                onClick={clearFilters}
+                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm text-gray-700 flex items-center gap-1 transition-colors"
               >
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{
-                    fontSize: '1.5rem',
-                    backgroundColor: '#e9ecef',
-                    width: '48px',
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px'
-                  }}>
-                    {getEntityIcon(req.entity_type)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      marginBottom: '0.25rem'
-                    }}>
-                      {req.entity_type.replace('_', ' ')}
-                    </div>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        backgroundColor: statusColor.bg,
-                        color: statusColor.text,
-                        fontWeight: '500'
-                      }}>
-                        {req.status}
-                      </span>
-                      <span style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        backgroundColor: actionColor.bg,
-                        color: actionColor.text,
-                        fontWeight: '500'
-                      }}>
-                        {req.action_type}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                ✕ Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Role indicator */}
+        <div className={`
+          px-5 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-sm
+          ${isApprover ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}
+        `}>
+          <span className="text-lg">{isApprover ? '👤' : '✍️'}</span>
+          <span>{isApprover ? 'Approver View' : 'Maker View'}</span>
+        </div>
+      </div>
 
-                {/* Maker Info */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.75rem',
-                  padding: '0.75rem',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '4px'
-                }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
-                  }}>
-                    {req.maker.full_name.charAt(0)}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '500', fontSize: '0.9rem' }}>
-                      {req.maker.full_name}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
-                      {req.maker.role} • {req.maker.username}
-                    </div>
-                  </div>
-                </div>
+      {/* Filters Section */}
+      <div className="bg-white p-6 rounded-xl mb-8 shadow-md">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {/* Status Filter */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Statuses</option>
+              {REQUEST_STATUSES.map(status => (
+                <option key={status} value={status}>
+                  {getStatusDisplayName(status)}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                {/* Timestamp */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.85rem',
-                  color: '#6c757d'
-                }}>
-                  <span>Created {new Date(req.created_at).toLocaleDateString()}</span>
-                  <span>{new Date(req.created_at).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}</span>
-                </div>
+          {/* Entity Type Filter */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">
+              Entity Type
+            </label>
+            <select
+              value={entityTypeFilter}
+              onChange={(e) => handleEntityTypeFilterChange(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Entities</option>
+              {ENTITY_TYPES.map(type => (
+                <option key={type} value={type}>
+                  {getEntityIcon(type)} {getEntityDisplayName(type)}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                {/* Click Indicator */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  fontSize: '0.8rem',
-                  color: '#007bff'
-                }}>
-                  <span>Click to review →</span>
-                </div>
-              </div>
-            );
-          })}
+          {/* Action Type Filter */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">
+              Action Type
+            </label>
+            <select
+              value={actionTypeFilter}
+              onChange={(e) => handleActionTypeFilterChange(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Actions</option>
+              {ACTION_TYPES.map(type => (
+                <option key={type} value={type}>
+                  {getActionDisplayName(type)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Options */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">
+              Sort By
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value, sortOrder)}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                <option value="created_at">Created Date</option>
+                <option value="updated_at">Updated Date</option>
+                <option value="submitted_at">Submitted Date</option>
+              </select>
+              <button
+                onClick={() => handleSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-4 py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
+                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(statusFilter || entityTypeFilter || actionTypeFilter) && (
+          <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
+            <span className="text-sm text-gray-600">Active filters:</span>
+            {statusFilter && (
+              <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(statusFilter as RequestStatus)}`}>
+                Status: {getStatusDisplayName(statusFilter as RequestStatus)}
+                <button 
+                  className="ml-1 hover:opacity-70"
+                  onClick={() => handleStatusFilterChange('')}
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {entityTypeFilter && (
+              <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 flex items-center gap-1">
+                {getEntityIcon(entityTypeFilter as EntityType)} {getEntityDisplayName(entityTypeFilter as EntityType)}
+                <button 
+                  className="ml-1 hover:opacity-70"
+                  onClick={() => handleEntityTypeFilterChange('')}
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {actionTypeFilter && (
+              <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${getActionColor(actionTypeFilter as ActionType)}`}>
+                Action: {getActionDisplayName(actionTypeFilter as ActionType)}
+                <button 
+                  className="ml-1 hover:opacity-70"
+                  onClick={() => handleActionTypeFilterChange('')}
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="p-4 mb-8 bg-red-100 text-red-800 rounded-lg flex items-center gap-2">
+          <span className="text-xl">⚠️</span>
+          <span>{error}</span>
+          <button
+            onClick={() => fetchRequests()}
+            className="ml-auto px-3 py-1 bg-transparent border border-red-800 rounded text-red-800 hover:bg-red-50 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {/* Stats */}
-      {requests.length > 0 && (
-        <div style={{ 
-          marginTop: '3rem',
-          padding: '1.5rem',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ marginBottom: '1rem' }}>Request Statistics</h3>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '1rem'
-          }}>
-            {entityTypes.map(type => {
-              const count = requests.filter(r => r.entity_type === type).length;
-              const percentage = (count / requests.length * 100).toFixed(1);
+      {/* Requests Grid */}
+      {(!requests || requests.length === 0) && !loading ? (
+        <div className="text-center py-16 bg-gray-50 rounded-xl">
+          <div className="text-6xl mb-4">📭</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No requests found</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            {statusFilter || entityTypeFilter || actionTypeFilter
+              ? 'No requests match your current filters. Try clearing some filters.'
+              : isApprover 
+                ? 'There are no pending approval requests at the moment.'
+                : 'You have not submitted any requests yet.'}
+          </p>
+          {(statusFilter || entityTypeFilter || actionTypeFilter) && (
+            <button
+              onClick={clearFilters}
+              className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Results Summary */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-sm text-gray-600">
+              Showing <strong>{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> to{' '}
+              <strong>{Math.min(currentPage * limit, totalCount)}</strong> of{' '}
+              <strong>{totalCount.toLocaleString()}</strong> requests
+            </div>
+            
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                {DEFAULT_PAGE_SIZE_OPTIONS.map(size => (
+                  <option key={size} value={size}>{size} per page</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Request Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {requests && requests.map((req) => {
+              if (!req) return null;
               
               return (
-                <div key={type} style={{
-                  padding: '1rem',
-                  backgroundColor: 'white',
-                  borderRadius: '4px',
-                  borderLeft: '4px solid #007bff'
-                }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span>{getEntityIcon(type)}</span>
-                    <span style={{ fontWeight: '500' }}>
-                      {type.replace('_', ' ')}
+                <div
+                  key={req.request_id}
+                  onClick={() => navigate(`/pending-requests/${req.request_id}`)}
+                  className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 cursor-pointer flex flex-col gap-4 hover:-translate-y-1"
+                >
+                  {/* Header with Icon and Status */}
+                  <div className="flex items-start gap-4">
+                    <div className="text-3xl bg-gray-50 w-14 h-14 flex items-center justify-center rounded-xl border border-gray-200">
+                      {getEntityIcon(req.entity_type)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-lg text-gray-900 mb-2">
+                        {getEntityDisplayName(req.entity_type)}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(req.status)}`}>
+                          {getStatusDisplayName(req.status)}
+                        </span>
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getActionColor(req.action_type)}`}>
+                          {getActionDisplayName(req.action_type)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Maker/Requester Info */}
+                  {req.maker && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-9 h-9 bg-gray-600 text-white rounded-full flex items-center justify-center text-base font-semibold uppercase">
+                        {req.maker.full_name?.charAt(0) || 'U'}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-gray-900">
+                          {req.maker.full_name || 'Unknown User'}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {req.maker.role?.replace('_', ' ')} • {req.maker.username}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-city Info */}
+                  {req.sub_city && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                      <span>📍</span>
+                      <span>{req.sub_city.name}</span>
+                    </div>
+                  )}
+
+                  {/* Footer with ID and Date */}
+                  <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-100 pt-3 mt-1">
+                    <span className="font-mono">
+                      ID: {req.request_id?.slice(0, 8)}...
                     </span>
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '600' }}>
-                    {count}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#6c757d' }}>
-                    {percentage}% of total
+                    <span>
+                      {new Date(req.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
+              {/* Pagination Info */}
+              <div className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </div>
+
+              {/* Pagination Buttons */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {/* First Page */}
+                <button
+                  onClick={handleFirstPage}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
+                    ${currentPage === 1 
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  ⏮️ First
+                </button>
+
+                {/* Previous Page */}
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={!hasPreviousPage}
+                  className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
+                    ${!hasPreviousPage 
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  ◀️ Previous
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex gap-1">
+                  {getPageNumbers().map(pageNum => (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`min-w-[40px] px-3 py-2 rounded-lg border text-sm font-medium transition-colors
+                        ${currentPage === pageNum 
+                          ? 'bg-blue-600 text-white border-blue-600' 
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Page */}
+                <button
+                  onClick={handleNextPage}
+                  disabled={!hasNextPage}
+                  className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
+                    ${!hasNextPage 
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  Next ▶️
+                </button>
+
+                {/* Last Page */}
+                <button
+                  onClick={handleLastPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
+                    ${currentPage === totalPages 
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  Last ⏭️
+                </button>
+              </div>
+
+              {/* Jump to Page */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-gray-600">Jump to page:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => {
+                    const page = parseInt(e.target.value);
+                    if (page >= 1 && page <= totalPages) {
+                      handlePageChange(page);
+                    }
+                  }}
+                  className="w-16 px-3 py-2 rounded-lg border border-gray-300 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                <span className="text-sm text-gray-600">of {totalPages}</span>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

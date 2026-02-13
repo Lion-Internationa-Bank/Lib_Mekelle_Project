@@ -1,4 +1,4 @@
-// src/pages/RequestDetailPage.tsx - Updated with Dialog Boxes
+// src/pages/RequestDetailPage.tsx - Updated with safe null checks
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -6,15 +6,26 @@ import {
   approveRequest, 
   rejectRequest 
 } from '../../services/makerCheckerService';
-import { type ApprovalRequest } from '../../types/makerChecker';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { 
+  type UserRole, 
+  APPROVER_ROLES,
+  type ApprovalRequestData,
+  getStatusDisplayName,
+  getEntityDisplayName,
+  getActionDisplayName,
+  getEntityIcon,
+  getStatusColor,
+  getActionColor
+} from '../../types/makerChecker';
 import WizardRequestDetail from '../../components/request-details/WizardRequestDetail';
 import ParcelRequestDetail from '../../components/request-details/ParcelRequestDetail';
 import OwnerRequestDetail from '../../components/request-details/OwnerRequestDetail';
 import LeaseRequestDetail from '../../components/request-details/LeaseRequestDetail';
 import EncumbranceRequestDetail from '../../components/request-details/EncumbranceRequestDetail';
 
-// Dialog Component
+// Dialog Component with Tailwind CSS
 const ActionDialog: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -45,97 +56,44 @@ const ActionDialog: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '2rem',
-        maxWidth: '500px',
-        width: '90%',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      }}>
-        <h2 style={{ marginBottom: '1.5rem' }}>{title}</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-8 max-w-lg w-[90%] shadow-xl animate-fade-in">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">{title}</h2>
         
         {type === 'reject' && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Reason for Rejection *
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reason for Rejection <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              style={{ 
-                width: '100%', 
-                minHeight: '100px',
-                padding: '0.75rem',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '0.9rem',
-                resize: 'vertical'
-              }}
+              className="w-full min-h-[120px] px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
               placeholder="Please provide a detailed reason for rejection..."
               required
             />
           </div>
         )}
 
-       { type === 'approve' && (
-         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Comments {type === 'approve' ? '(Optional)' : '(Optional)'}
           </label>
           <textarea
             value={comments}
             onChange={(e) => setComments(e.target.value)}
-            style={{ 
-              width: '100%', 
-              minHeight: '80px',
-              padding: '0.75rem',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '0.9rem',
-              resize: 'vertical'
-            }}
+            className="w-full min-h-[100px] px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
             placeholder={type === 'approve' 
               ? "Add any comments for this approval..." 
               : "Add any additional comments..."}
           />
         </div>
-       )
 
-       }
-
-        <div style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          justifyContent: 'flex-end',
-          marginTop: '2rem'
-        }}>
+        <div className="flex gap-4 justify-end mt-8">
           <button
             onClick={handleClose}
             disabled={isSubmitting}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500',
-              opacity: isSubmitting ? 0.6 : 1,
-            }}
+            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -143,17 +101,14 @@ const ActionDialog: React.FC<{
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || (type === 'reject' && !reason.trim())}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: type === 'approve' ? '#28a745' : '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500',
-              opacity: (isSubmitting || (type === 'reject' && !reason.trim())) ? 0.6 : 1,
-            }}
+            className={`
+              px-6 py-3 text-white rounded-lg font-medium transition-colors
+              ${type === 'approve' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-red-600 hover:bg-red-700'
+              }
+              disabled:opacity-60 disabled:cursor-not-allowed
+            `}
           >
             {isSubmitting 
               ? type === 'approve' ? 'Approving...' : 'Rejecting...' 
@@ -168,13 +123,18 @@ const ActionDialog: React.FC<{
 const RequestDetailPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
-  const [request, setRequest] = useState<ApprovalRequest | null>(null);
+  const [request, setRequest] = useState<ApprovalRequestData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   
   // Dialog states
   const [approveDialogOpen, setApproveDialogOpen] = useState<boolean>(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const { user } = useAuth();
+
+  // Determine if user is approver
+  const isApprover = user?.role ? APPROVER_ROLES.includes(user.role as UserRole) : false;
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -186,7 +146,8 @@ const RequestDetailPage: React.FC = () => {
         }
 
         const response = await getRequestDetails(requestId);
-        if (response.success && response.data) {
+        console.log("response",response)
+        if (response.success && response.data.data) {
           setRequest(response.data.data);
         } else {
           toast.error(response.error || 'Failed to fetch request details');
@@ -251,111 +212,98 @@ const RequestDetailPage: React.FC = () => {
   const renderEntityDetail = () => {
     if (!request) return null;
 
-    const { entity_type, action_type, request_data } = request;
+    const { entity_type, action_type, request_data, entity_id } = request;
+
+    if (!entity_type) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <p className="text-yellow-800">Entity type not specified</p>
+        </div>
+      );
+    }
 
     switch (entity_type) {
       case 'WIZARD_SESSION':
         return (
           <WizardRequestDetail 
-            data={request_data}
+            data={request_data || {}}
             actionType={action_type}
           />
         );
       case 'LAND_PARCELS':
         return (
           <ParcelRequestDetail 
-            data={request_data}
+            data={request_data || {}}
             actionType={action_type}
-            entityId={request.entity_id}
+            entityId={entity_id}
           />
         );
       case 'OWNERS':
         return (
           <OwnerRequestDetail 
-            data={request_data}
+            data={request_data || {}}
             actionType={action_type}
-            entityId={request.entity_id}
+            entityId={entity_id}
           />
         );
       case 'LEASE_AGREEMENTS':
         return (
           <LeaseRequestDetail 
-            data={request_data}
+            data={request_data || {}}
             actionType={action_type}
-            entityId={request.entity_id}
+            entityId={entity_id}
           />
         );
       case 'ENCUMBRANCES':
         return (
           <EncumbranceRequestDetail 
-            data={request_data}
+            data={request_data || {}}
             actionType={action_type}
-            entityId={request.entity_id}
+            entityId={entity_id}
           />
         );
       default:
         return (
-          <div>
-            <h3>Request Data</h3>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '1rem', 
-              borderRadius: '4px',
-              overflow: 'auto',
-              maxHeight: '400px'
-            }}>
-              {JSON.stringify(request_data, null, 2)}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Request Data</h3>
+            <pre className="bg-gray-50 p-6 rounded-lg overflow-auto max-h-[500px] text-sm font-mono border border-gray-200">
+              {JSON.stringify(request_data || {}, null, 2)}
             </pre>
           </div>
         );
     }
   };
 
-  const getEntityIcon = (entityType: string) => {
-    switch (entityType) {
-      case 'WIZARD_SESSION':
-        return '🪄';
-      case 'LAND_PARCELS':
-        return '🏞️';
-      case 'OWNERS':
-        return '👤';
-      case 'LEASE_AGREEMENTS':
-        return '📄';
-      case 'ENCUMBRANCES':
-        return '🔒';
-      default:
-        return '📋';
-    }
-  };
-
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
-      }}>
-        <div>Loading request details...</div>
+      <div className="flex justify-center items-center h-[70vh]">
+        <div className="text-center">
+          <div className="text-5xl mb-4">⏳</div>
+          <div className="text-xl text-gray-700">Loading request details...</div>
+        </div>
       </div>
     );
   }
 
   if (!request) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
-      }}>
-        <div>Request not found</div>
+      <div className="flex justify-center items-center h-[70vh]">
+        <div className="text-center">
+          <div className="text-5xl mb-4">❓</div>
+          <div className="text-xl text-gray-700">Request not found</div>
+          <button
+            onClick={() => navigate('/pending-requests')}
+            className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Pending Requests
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="p-8 max-w-7xl mx-auto">
       {/* Action Dialogs */}
       <ActionDialog
         isOpen={approveDialogOpen}
@@ -375,208 +323,142 @@ const RequestDetailPage: React.FC = () => {
         isSubmitting={isSubmitting}
       />
 
+      {/* Back Button */}
       <button 
         onClick={() => navigate('/pending-requests')}
-        style={{ 
-          marginBottom: '1.5rem', 
-          padding: '0.5rem 1rem',
-          backgroundColor: '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
+        className="mb-6 px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center gap-2 transition-colors"
       >
-        ← Back to Pending Requests
+        <span>←</span> Back to Pending Requests
       </button>
 
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
-        padding: '2rem', 
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)' 
-      }}>
+      {/* Main Content Card */}
+      <div className="bg-white rounded-xl p-8 shadow-lg">
         {/* Request Header */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '1rem',
-          marginBottom: '2rem',
-          paddingBottom: '1.5rem',
-          borderBottom: '1px solid #dee2e6'
-        }}>
-          <div style={{
-            fontSize: '2rem',
-            backgroundColor: '#e9ecef',
-            width: '60px',
-            height: '60px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '8px'
-          }}>
+        <div className="flex items-start gap-5 mb-8 pb-6 border-b border-gray-200">
+          <div className="text-4xl bg-gray-100 w-20 h-20 flex items-center justify-center rounded-xl border border-gray-200">
             {getEntityIcon(request.entity_type)}
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.75rem' }}>
-              {request.entity_type} - {request.action_type}
-            </h1>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '1rem',
-              marginTop: '0.5rem',
-              fontSize: '0.9rem',
-              color: '#6c757d'
-            }}>
-              <span style={{ 
-                padding: '0.25rem 0.75rem', 
-                borderRadius: '4px',
-                backgroundColor: request.status === 'PENDING' ? '#fff3cd' : 
-                               request.status === 'APPROVED' ? '#d1e7dd' : 
-                               '#f8d7da',
-                color: request.status === 'PENDING' ? '#856404' : 
-                      request.status === 'APPROVED' ? '#0f5132' : 
-                      '#721c24',
-                fontWeight: '600'
-              }}>
-                {request.status}
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {getEntityDisplayName(request.entity_type)} - {getActionDisplayName(request.action_type)}
+              </h1>
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(request.status)}`}>
+                {getStatusDisplayName(request.status)}
               </span>
-              <span>•</span>
-              <span>Created: {new Date(request.created_at).toLocaleString()}</span>
-              <span>•</span>
-              <span>By: {request.maker?.full_name} ({request.maker?.role})</span>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3 mt-4 text-sm text-gray-600">
+              <span>📅 Created: {request.created_at ? new Date(request.created_at).toLocaleString() : 'N/A'}</span>
+              <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+              <span>👤 By: {request.maker?.full_name || 'Unknown'} ({request.maker?.role?.replace('_', ' ') || 'Unknown'})</span>
               {request.sub_city && (
                 <>
-                  <span>•</span>
-                  <span>Sub-city: {request.sub_city.name}</span>
+                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                  <span>📍 Sub-city: {request.sub_city.name}</span>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Request ID (hidden by default, can be revealed) */}
-        <details style={{ marginBottom: '1.5rem' }}>
-          <summary style={{ 
-            cursor: 'pointer', 
-            color: '#6c757d',
-            fontSize: '0.9rem'
-          }}>
+        {/* Request ID Accordion */}
+        <details className="mb-6 group">
+          <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 transition-colors list-none flex items-center gap-2">
+            <span className="transform group-open:rotate-90 transition-transform">▶</span>
             Show Request ID
           </summary>
-          <code style={{ 
-            display: 'block', 
-            marginTop: '0.5rem',
-            padding: '0.5rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '4px',
-            fontSize: '0.85em',
-            wordBreak: 'break-all'
-          }}>
-            {request.request_id}
+          <code className="block mt-3 p-4 bg-gray-50 rounded-lg text-xs font-mono border border-gray-200 break-all">
+            {request.request_id || 'N/A'}
           </code>
         </details>
 
         {/* Entity Specific Details */}
-        <div style={{ marginBottom: '2rem' }}>
+        <div className="mb-8">
           {renderEntityDetail()}
         </div>
 
-        {/* Action Buttons (only if pending) */}
-        {request.status === 'PENDING' && (
-          <div style={{ 
-            borderTop: '1px solid #dee2e6', 
-            paddingTop: '2rem',
-            marginTop: '2rem'
-          }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Take Action</h3>
+        {/* Action Buttons - Only for Approvers and PENDING status */}
+        {isApprover && request.status === 'PENDING' && (
+          <div className="border-t border-gray-200 pt-8 mt-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Take Action</h3>
             
-            <div style={{ 
-              display: 'flex', 
-              gap: '1rem', 
-              flexWrap: 'wrap'
-            }}>
+            <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => setApproveDialogOpen(true)}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#218838'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
+                className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-3 transition-colors shadow-md hover:shadow-lg"
               >
-                <span>✓</span> Approve Request
+                <span className="text-xl">✓</span> Approve Request
               </button>
               
               <button
                 onClick={() => setRejectDialogOpen(true)}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#c82333'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc3545'}
+                className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold flex items-center gap-3 transition-colors shadow-md hover:shadow-lg"
               >
-                <span>✗</span> Reject Request
+                <span className="text-xl">✗</span> Reject Request
               </button>
             </div>
           </div>
         )}
 
-        {/* Show rejection reason if already rejected */}
-        {request.status === 'REJECTED' && request.rejection_reason && (
-          <div style={{ 
-            marginTop: '2rem',
-            padding: '1rem',
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
-            borderRadius: '4px',
-            border: '1px solid #f5c6cb'
-          }}>
-            <strong>Rejection Reason:</strong><br />
-            {request.rejection_reason}
-            <div style={{ marginTop: '0.5rem', fontSize: '0.9em' }}>
-              Rejected on: {request.rejected_at ? new Date(request.rejected_at).toLocaleString() : 'N/A'}
+        {/* Not Authorized Message - Show for non-approvers when request is PENDING */}
+        {!isApprover && request.status === 'PENDING' && (
+          <div className="border-t border-gray-200 pt-8 mt-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <span className="text-3xl mb-3 block">👁️</span>
+              <h4 className="text-lg font-semibold text-blue-800 mb-2">View Only Mode</h4>
+              <p className="text-blue-600">
+                You are viewing this request in read-only mode. Only approvers can take action on this request.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Show approval info if already approved */}
+        {/* Rejection Reason */}
+        {request.status === 'REJECTED' && request.rejection_reason && (
+          <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">❌</span>
+              <div>
+                <h4 className="font-semibold text-red-800 mb-2">Rejection Reason</h4>
+                <p className="text-red-700">{request.rejection_reason}</p>
+                {request.rejected_at && (
+                  <p className="text-sm text-red-600 mt-2">
+                    Rejected on: {new Date(request.rejected_at).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Approval Info */}
         {request.status === 'APPROVED' && request.approved_at && (
-          <div style={{ 
-            marginTop: '2rem',
-            padding: '1rem',
-            backgroundColor: '#d1e7dd',
-            color: '#0f5132',
-            borderRadius: '4px',
-            border: '1px solid #badbcc'
-          }}>
-            <strong>Approved:</strong><br />
-            {new Date(request.approved_at).toLocaleString()}
+          <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">✅</span>
+              <div>
+                <h4 className="font-semibold text-green-800 mb-2">Approved</h4>
+                <p className="text-green-700">
+                  {new Date(request.approved_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Returned Info */}
+        {request.status === 'RETURNED' && (
+          <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">↩️</span>
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-2">Returned for Revision</h4>
+                <p className="text-blue-700">
+                  This request has been returned for modifications.
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

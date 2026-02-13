@@ -8,7 +8,9 @@ import { validateRequest } from '../middlewares/validateRequest.ts';
 import {
   approveRequestSchema,
   rejectRequestSchema,
+  validateMakerPendingRequestsQuery
 } from '../validation/makerCheckerSchemas.ts';
+
 
 // Initialize services
 
@@ -32,6 +34,11 @@ const router = express.Router();
 router.use(authenticate);
 
 // === Approval Routes ===
+router.get('/makers/:maker_id/pending-requests',
+  authenticate,
+  validateRequest(validateMakerPendingRequestsQuery),
+  (req, res) => makerCheckerController.getMakerPendingRequests(req, res)
+);
 
 // Get pending requests (for approvers)
 router.get('/requests', 
@@ -41,7 +48,7 @@ router.get('/requests',
 
 // Get request details
 router.get('/requests/:request_id',
-  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN']),
+  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN','SUBCITY_NORMAL']),
   (req, res) => makerCheckerController.getRequestDetails(req, res)
 );
 
