@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
+import { openDocument } from "../../../utils/documentViewer";
 
 interface Document {
   id: string;
@@ -29,6 +30,7 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   useEffect(() => {
     if (currentSession?.owner_docs) {
       setDocuments(currentSession.owner_docs);
+      
     }
   }, [currentSession?.owner_docs]);
 
@@ -102,9 +104,10 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     }
   };
 
-  const openDocument = (url: string) => {
-    window.open(url, '_blank');
-  };
+// In your component, add this temporary debug function
+const handleViewDocument = (file_url: string) => {
+  openDocument(file_url);
+};
 
   // Show warning if no owner data
   if (!currentSession?.owner_data) {
@@ -163,13 +166,13 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openDocument(doc.file_url)}
+            {   doc.file_url &&(    <button
+                  onClick={() => handleViewDocument(doc.file_url)}
                   className="p-2 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-colors"
                   title="View document"
                 >
                   👁️ View
-                </button>
+                </button>)}
                 <button
                   onClick={() => handleDeleteDocument(doc.id)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"

@@ -69,8 +69,8 @@ router.get('/sessions',
 );
 
 // Serve temporary document (for preview)
-router.get('/documents/:session_id/:step/:filename',
-  (req, res) => wizardController.serveDocument(req, res)
-);
+// router.get('/documents/:session_id/:step/:filename',
+//   (req, res) => wizardController.serveDocument(req, res)
+// );
 
 export default router;

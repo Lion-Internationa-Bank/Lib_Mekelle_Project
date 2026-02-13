@@ -70,11 +70,41 @@ export const validateMakerPendingRequestsQuery = z.object({
       .refine(val => val > 0, 'Page must be greater than 0'),
     limit: z.string().optional().transform(val => val ? parseInt(val) : 10)
       .refine(val => val > 0 && val <= 100, 'Limit must be between 1 and 100'),
-    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional().default('PENDING'),
-    entity_type: z.enum(['PROPERTY', 'REVENUE', 'CUSTOMER', 'TAX', 'PERMIT']).optional(),
-    action_type: z.enum(['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE']).optional(),
-    sortBy: z.enum(['created_at', 'updated_at', 'status', 'entity_type', 'action_type', 'submitted_at'])
+   status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED','RETURNED','FAILED']).optional().default('PENDING'),
+    entity_type: z.enum(['WIZARD_SESSION', 'LAND_PARCELS', 'OWNERS', 'LEASE_AGREEMENTS', 'ENCUMBRANCES','APPROVAL_REQUEST']).optional(),
+     action_type: z.enum(['CREATE', 'UPDATE', 'DELETE', 'TRANSFER', 'SUBDIVIDE','MERGE','TERMINATE','EXTEND','ADD_OWNER']).optional(),
+    sortBy: z.enum(['created_at', 'updated_at', 'status', 'entity_type', 'action_type', ])
       .optional().default('created_at'),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
   })
 });
+
+// src/validation/makerCheckerSchemas.ts
+
+// Add/update this validation schema for approver pending requests
+export const validateApproverPendingRequestsQuery = z.object({
+  query: z.object({
+    page: z.string().optional().transform(val => val ? parseInt(val) : 1)
+      .refine(val => val > 0, 'Page must be greater than 0'),
+    limit: z.string().optional().transform(val => val ? parseInt(val) : 10)
+      .refine(val => val > 0 && val <= 100, 'Limit must be between 1 and 100'),
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED','RETURNED','FAILED']).optional().default('PENDING'),
+    entity_type: z.enum(['WIZARD_SESSION', 'LAND_PARCELS', 'OWNERS', 'LEASE_AGREEMENTS', 'ENCUMBRANCES','APPROVAL_REQUEST']).optional(),
+    action_type: z.enum(['CREATE', 'UPDATE', 'DELETE', 'TRANSFER', 'SUBDIVIDE','MERGE','TERMINATE','EXTEND','ADD_OWNER']).optional(),
+    maker_id: z.string().uuid().optional(),
+    from_date: z.string().datetime().optional(),
+    to_date: z.string().datetime().optional(),
+    sortBy: z.enum([
+      'created_at', 
+      'updated_at', 
+      'status', 
+      'entity_type', 
+      'action_type', 
+      'approved_at',
+      'rejected_at'
+    ]).optional().default('created_at'),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+  })
+});
+
+

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
-
+import { openDocument } from "../../../utils/documentViewer";
 interface Document {
   id: string;
   document_type: string;
@@ -103,14 +103,17 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     }
   };
 
-  const openDocument = (url: string) => {
-    window.open(url, '_blank');
-  };
+
 
   const handleSkipLease = () => {
     setSkipLease(true);
     toast.info('Lease step skipped. Proceeding to validation.');
     nextStep();
+  };
+
+
+  const handleViewDocument = (file_url: string) => {
+    openDocument(file_url);
   };
 
   // Show different content based on whether lease exists
@@ -177,7 +180,7 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => openDocument(doc.file_url)}
+                  onClick={() => handleViewDocument(doc.file_url)}
                   className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl transition-colors"
                   title="View document"
                 >

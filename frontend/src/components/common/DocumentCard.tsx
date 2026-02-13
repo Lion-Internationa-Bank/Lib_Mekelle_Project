@@ -1,7 +1,7 @@
 import React from 'react';
 import { type Document, formatFileSize, formatDate } from '../../utils/documentHelpers';
+import { openDocument } from '../../utils/documentViewer';
 
-const VITE_API_PDF_URL = import.meta.env.VITE_API_PDF_URL || import.meta.env.VITE_API_URL || '';
 
 interface DocumentCardProps {
   document: Document;
@@ -23,13 +23,18 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
     metadata
   } = document;
 
-  const openDocument = () => {
-    if (!file_url) return;
-    const baseUrl = VITE_API_PDF_URL.endsWith('/') ? VITE_API_PDF_URL.slice(0, -1) : VITE_API_PDF_URL;
-    const urlPath = file_url.startsWith('/') ? file_url : `/${file_url}`;
-    const url = `${baseUrl}${urlPath}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+  // const openDocument = () => {
+  //   if (!file_url) return;
+  //   const baseUrl = VITE_API_PDF_URL.endsWith('/') ? VITE_API_PDF_URL.slice(0, -1) : VITE_API_PDF_URL;
+  //   const urlPath = file_url.startsWith('/') ? file_url : `/${file_url}`;
+  //   const url = `${baseUrl}${urlPath}`;
+  //   window.open(url, '_blank', 'noopener,noreferrer');
+  // };
+  const handleOpenDocument = (file_url:string) => {
+    console.log("hanlde open document hitted ")
+  openDocument(file_url);
+};
+
 
   // Compact variant - list item style
   if (variant === 'compact') {
@@ -46,12 +51,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
             {showUploadInfo && metadata?.uploaded_at && ` • ${formatDate(metadata.uploaded_at)}`}
           </div>
         </div>
-        <button
-          onClick={openDocument}
+       {file_url &&( <button
+          onClick={()=>handleOpenDocument(file_url)}
           className="ml-3 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
         >
           View
-        </button>
+        </button>)}
       </li>
     );
   }
@@ -107,12 +112,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
           </div>
         </div>
         
-        <button
-          onClick={openDocument}
+        {file_url &&(<button
+          onClick={handleOpenDocument(file_url)}
           className="ml-3 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
         >
           View Document
-        </button>
+        </button>)}
       </div>
     </div>
   );

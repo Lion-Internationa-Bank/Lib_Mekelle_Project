@@ -373,7 +373,7 @@ const PendingRequestsPage: React.FC = () => {
               >
                 <option value="created_at">Created Date</option>
                 <option value="updated_at">Updated Date</option>
-                <option value="submitted_at">Submitted Date</option>
+              
               </select>
               <button
                 onClick={() => handleSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}

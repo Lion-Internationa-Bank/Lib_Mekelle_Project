@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
+import { openDocument } from "../../../utils/documentViewer";
 
 interface Document {
   id: string;
@@ -31,6 +32,13 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       setDocuments(currentSession.parcel_docs);
     }
   }, [currentSession?.parcel_docs]);
+
+
+  // In your component, add this temporary debug function
+const handleViewDocument = (file_url: string) => {
+  openDocument(file_url);
+};
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
     const file = e.target.files?.[0];
@@ -103,10 +111,6 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     }
   };
 
-  const openDocument = (url: string) => {
-    window.open(url, '_blank');
-  };
-
   return (
     <>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Parcel Documents</h2>
@@ -143,7 +147,7 @@ const ParcelDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => openDocument(doc.file_url)}
+                  onClick={() => handleViewDocument(doc.file_url)}
                   className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-xl transition-colors"
                   title="View document"
                 >

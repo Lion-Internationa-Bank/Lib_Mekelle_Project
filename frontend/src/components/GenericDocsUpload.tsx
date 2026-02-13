@@ -5,6 +5,7 @@ import {
   deleteApprovalDocument 
 } from "../services/approvalRequestApi"; 
 import { toast } from "sonner";
+import { openDocument } from "../utils/documentViewer";
 
 export type GenericDocType = string;
 
@@ -93,9 +94,11 @@ const GenericDocsUpload = ({
   }, [documents]);
 
   const loadExistingDocuments = async () => {
+    if (!approvalRequestId) return;
+    
     try {
       setLoading(true);
-      const response = await getApprovalRequestDocuments(approvalRequestId!);
+      const response = await getApprovalRequestDocuments(approvalRequestId);
       
       if (response.documents && Array.isArray(response.documents)) {
         const existingDocs: UploadedDocument[] = response.documents.map((doc: any) => ({
@@ -128,12 +131,14 @@ const GenericDocsUpload = ({
     // Check file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File size must be less than 10MB");
+      e.target.value = "";
       return;
     }
 
     // Check maximum files
     if (maxFiles && documents.length >= maxFiles) {
       toast.error(`Maximum ${maxFiles} files allowed`);
+      e.target.value = "";
       return;
     }
 
@@ -170,6 +175,9 @@ const GenericDocsUpload = ({
         
         // After successful upload, refresh the document list from server
         await loadExistingDocuments();
+        
+        // Remove the temporary document
+        setDocuments((prev) => prev.filter((doc) => doc.id !== tempId));
         
         toast.success("Document uploaded successfully");
       } else {
@@ -273,40 +281,17 @@ const GenericDocsUpload = ({
     }
   };
 
-  const handleDownload = async (document: UploadedDocument) => {
-    if (!document.file_url) {
-      toast.error("No download URL available");
+  const handleOpenDocument = (file_url: string | undefined) => {
+    if (!file_url) {
+      toast.error("Document URL is not available");
       return;
     }
-
-    try {
-      // For temporary files in approval requests
-      if (isApprovalRequest && approvalRequestId) {
-        // Extract filename from URL or use document.file_name
-        const filename = document.file_url.split('/').pop() || document.file_name;
-        
-        // Use the serveApprovalDocument function from your API
-        const { serveApprovalDocument } = await import("../services/approvalRequestApi");
-        const blobUrl = await serveApprovalDocument(approvalRequestId, filename);
-        
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = document.file_name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Revoke the blob URL after some time
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-      } else {
-        // For permanent files - open in new tab
-        window.open(document.file_url, '_blank');
-      }
-    } catch (error: any) {
-      console.error("Download error:", error);
-      toast.error(error.message || "Failed to download document");
-    }
+    
+    console.log("handle open document clicked");
+    openDocument(file_url);
   };
+
+ 
 
   const hasErrors = documents.some((d) => d.status === "error");
   const hasUploads = documents.length > 0;
@@ -433,18 +418,20 @@ const GenericDocsUpload = ({
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">
-                {(doc.status === "success" || doc.status === "existing") && doc.file_url && (
+                {(doc.status === "success" || doc.status === "existing") && (
                   <button
-                    onClick={() => handleDownload(doc)}
+                    onClick={() => handleOpenDocument(doc.file_url)}
                     className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center gap-1"
-                    title="Download document"
+                    title="View document"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                     View
                   </button>
                 )}
+              
                 {allowDelete && doc.status === "existing" && isApprovalRequest && (
                   <button
                     onClick={() => handleDeleteDocument(doc.id)}
@@ -465,9 +452,9 @@ const GenericDocsUpload = ({
 
       {/* Upload Grid (only show if not at max files) */}
       {(!maxFiles || documents.length < maxFiles) && (
-        <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-linear-to-br from-blue-50/50 to-indigo-50/50">
+        <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-4 bg-linear-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
               📄
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Documents</h3>
@@ -553,7 +540,7 @@ const GenericDocsUpload = ({
           <button
             onClick={onAllUploaded}
             disabled={!!uploadingDoc}
-            className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
           >
             Continue →
             {uploadingDoc && (

@@ -8,7 +8,8 @@ import { validateRequest } from '../middlewares/validateRequest.ts';
 import {
   approveRequestSchema,
   rejectRequestSchema,
-  validateMakerPendingRequestsQuery
+  validateMakerPendingRequestsQuery,
+  validateApproverPendingRequestsQuery
 } from '../validation/makerCheckerSchemas.ts';
 
 
@@ -43,6 +44,7 @@ router.get('/makers/:maker_id/pending-requests',
 // Get pending requests (for approvers)
 router.get('/requests', 
   authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN']),
+  validateRequest(validateApproverPendingRequestsQuery),
   (req, res) => makerCheckerController.getPendingRequests(req, res)
 );
 
