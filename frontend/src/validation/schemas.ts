@@ -1,5 +1,5 @@
 // src/validation/schemas.ts
-import { z } from "zod";
+import { optional, z } from "zod";
 
 const UPIN_REGEX = /^[A-Za-z0-9\-_]+$/;
 
@@ -73,7 +73,15 @@ export type ParcelFormData = z.infer<typeof ParcelFormSchema>;
 // ========================
 // OWNER FORM VALIDATION
 // ========================
+
 export const OwnerFormSchema = z.object({
+  // For existing owners, we need to track if this is from search
+  owner_id: z
+    .string()
+    .optional()
+    .nullable(),
+
+  // These fields are required for new owners, but can be present from existing owners
   full_name: z
     .string()
     .min(1, { message: "Full name is required" })
@@ -82,7 +90,7 @@ export const OwnerFormSchema = z.object({
   national_id: z
     .string()
     .min(1, { message: "National ID is required" })
-    .regex(/^\d+$/, { message: "National ID must contain only digits" }),
+    .regex(/^[\d\s]+$/, { message: "National ID must contain only digits" }),
 
   phone_number: z
     .string()
@@ -94,14 +102,10 @@ export const OwnerFormSchema = z.object({
   tin_number: z
     .string()
     .optional()
-    .refine((val) => !val || /^\d+$/.test(val), {
+    .nullable()
+    .refine((val) => !val || /^[\d\s]+$/.test(val), {
       message: "TIN must contain only digits",
     }),
-
-  share_ratio: z.coerce
-    .number()
-    .min(0.01, { message: "Share ratio must be at least 0.01" })
-    .max(1, { message: "Share ratio cannot exceed 1.0" }),
 
   acquired_at: z
     .string()
@@ -109,7 +113,22 @@ export const OwnerFormSchema = z.object({
     .refine((date) => new Date(date) <= new Date(), {
       message: "Acquisition date cannot be in the future",
     }),
-});
+}).refine(
+  (data) => {
+    // If there's an owner_id, we're using an existing owner
+    // In this case, we don't need to validate the other fields as strictly
+    // since they come from the database
+    if (data.owner_id) {
+      return true;
+    }
+    // For new owners, all fields must be present and valid
+    // This is already handled by the individual field validations
+    return true;
+  },
+  {
+    message: "Invalid owner data",
+  }
+);
 
 export type OwnerFormData = z.infer<typeof OwnerFormSchema>;
 
@@ -171,15 +190,19 @@ export type LeaseFormData = z.infer<typeof LeaseFormSchema>;
 
 
 export const OwnerStepFormSchema = z.object({
+  owner_id: z
+    .string()
+    .trim()
+    .min(1, { message: "Full name is required and cannot be empty" }).optional,
   full_name: z
     .string()
     .trim()
-    .min(1, { message: "Full name is required and cannot be empty" }),
+    .min(1, { message: "Full name is required and cannot be empty" }).optional,
 
   national_id: z
     .string()
     .trim()
-    .min(1, { message: "National ID is required and cannot be empty" }),
+    .min(1, { message: "National ID is required and cannot be empty" }).optional,
 
   tin_number: z.string().trim().optional(),
 
@@ -204,7 +227,7 @@ phone_number: z
     }
     // Fallback (should not happen due to regex)
     return val;
-  }),
+  }).optional,
 
   // keep as string for date input, but validate similar to backend
   acquired_at: z
@@ -213,7 +236,7 @@ phone_number: z
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid acquisition date format",
     }),
-});
+}).optional;
 
 export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
 

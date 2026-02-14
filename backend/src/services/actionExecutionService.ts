@@ -198,7 +198,7 @@ export class ActionExecutionService {
   }
 
   // Add this method to handle wizard execution
-  async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
+ async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
     const results: any = {};
 
     try {
@@ -249,40 +249,77 @@ export class ActionExecutionService {
         }
       });
 
-      // 2. Create owners
+      // 2. Create owners - HANDLE EXISTING OWNER LOGIC
       const ownersData = Array.isArray(data.owners) ? data.owners : [data.owners];
       results.owners = [];
 
       for (const ownerData of ownersData) {
-        // Validate owner data
-        if (!ownerData.full_name || !ownerData.national_id || !ownerData.phone_number) {
-          throw new Error('Missing required owner fields: full_name, national_id, or phone_number');
-        }
+        let owner;
 
-        // Check if owner exists by national_id
-        let owner = await tx.owners.findFirst({
-          where: { 
-            national_id: ownerData.national_id,
-            is_deleted: false
-          }
-        });
-
-        if (!owner) {
-          // Create new owner
-          owner = await tx.owners.create({
-            data: {
-              full_name: ownerData.full_name,
-              national_id: ownerData.national_id,
-              tin_number: ownerData.tin_number,
-              phone_number: ownerData.phone_number,
-              sub_city_id: data.sub_city_id,
-              created_at: new Date(),
-              updated_at: new Date(),
+        // CASE 1: Using existing owner (owner_id is provided)
+        if (ownerData.owner_id) {
+          console.log(`Linking existing owner with ID: ${ownerData.owner_id}`);
+          
+          // Fetch existing owner
+          owner = await tx.owners.findFirst({
+            where: { 
+              owner_id: ownerData.owner_id,
+              is_deleted: false
             }
           });
+
+          if (!owner) {
+            throw new Error(`Owner with ID ${ownerData.owner_id} not found`);
+          }
+
+          // Validate that the provided owner details match (optional, for data consistency)
+          if (owner.full_name !== ownerData.full_name) {
+            console.warn(`Owner name mismatch: DB="${owner.full_name}", Provided="${ownerData.full_name}"`);
+          }
+          
+        } else {
+          // CASE 2: Creating new owner
+          console.log('Creating new owner');
+          
+          // Validate required fields for new owner
+          if (!ownerData.full_name || !ownerData.national_id || !ownerData.phone_number) {
+            throw new Error('Missing required owner fields: full_name, national_id, or phone_number');
+          }
+
+          // Check if owner exists by national_id (duplicate check)
+          let existingOwner = await tx.owners.findFirst({
+            where: { 
+              national_id: ownerData.national_id,
+              is_deleted: false
+            }
+          });
+
+          if (existingOwner) {
+            // Owner with this national_id already exists
+            console.log(`Found existing owner with national_id: ${ownerData.national_id}`);
+            
+            // Option 1: Throw error
+            // throw new Error(`Owner with national ID ${ownerData.national_id} already exists. Please use search to link existing owner.`);
+            
+            // Option 2: Automatically use the existing owner
+            owner = existingOwner;
+          } else {
+            // Create brand new owner
+            owner = await tx.owners.create({
+              data: {
+                full_name: ownerData.full_name,
+                national_id: ownerData.national_id,
+                tin_number: ownerData.tin_number,
+                phone_number: ownerData.phone_number,
+                sub_city_id: data.sub_city_id,
+                created_at: new Date(),
+                updated_at: new Date(),
+              }
+            });
+          }
         }
 
-        // Link owner to parcel
+        // Link owner to parcel (this happens for BOTH existing and new owners)
         const parcelOwner = await tx.parcel_owners.create({
           data: {
             upin: results.parcel.upin,
@@ -298,11 +335,12 @@ export class ActionExecutionService {
           owner_id: owner.owner_id,
           full_name: owner.full_name,
           national_id: owner.national_id,
+          is_existing_owner: !!ownerData.owner_id, // Flag to indicate if this was an existing owner
           parcel_owner_id: parcelOwner.parcel_owner_id
         });
       }
 
-      // 3. Create lease if exists
+      // 3. Create lease if exists (only for LEASE tenure)
       if (data.lease) {
         const leaseData = data.lease;
         
@@ -374,7 +412,7 @@ export class ActionExecutionService {
         });
       }
 
-      // 4. Create permanent documents
+      // 4. Create permanent documents (skip owner docs for existing owners?)
       results.documents = await this.createPermanentDocuments(tx, data, results, approverId);
 
       // 5. Create audit logs
@@ -386,6 +424,8 @@ export class ActionExecutionService {
         session_id: data.session_id,
         parcel_upin: results.parcel.upin,
         owners_created: results.owners.length,
+        existing_owners_linked: results.owners.filter((o: any) => o.is_existing_owner).length,
+        new_owners_created: results.owners.filter((o: any) => !o.is_existing_owner).length,
         lease_created: !!results.lease,
         bills_created: results.bills?.length || 0,
         documents_created: results.documents.length
@@ -405,11 +445,11 @@ export class ActionExecutionService {
       throw error;
     }
   }
-
-  private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData, results: any, approverId: string) {
+  
+private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData, results: any, approverId: string) {
   const permanentDocs = [];
 
-  // Process parcel documents
+  // Process parcel documents (always required)
   if (wizardData.parcel_docs && Array.isArray(wizardData.parcel_docs)) {
     for (const doc of wizardData.parcel_docs) {
       const permanentDoc = await tx.documents.create({
@@ -422,16 +462,19 @@ export class ActionExecutionService {
           upload_date: new Date(),
           created_at: new Date(),
           updated_at: new Date(),
-          // created_by is not in your schema, remove it
-          // created_by: approverId
         }
       });
       permanentDocs.push(permanentDoc);
     }
   }
 
-  // Process owner documents
-  if (wizardData.owner_docs && Array.isArray(wizardData.owner_docs)) {
+  // Check if we have existing owners
+  const ownersData = Array.isArray(wizardData.owners) ? wizardData.owners : [wizardData.owners];
+  const firstOwner = ownersData[0];
+  const isExistingOwner = firstOwner?.owner_id ? true : false;
+
+  // Process owner documents - ONLY for new owners
+  if (!isExistingOwner && wizardData.owner_docs && Array.isArray(wizardData.owner_docs)) {
     for (let i = 0; i < wizardData.owner_docs.length; i++) {
       const doc = wizardData.owner_docs[i];
       const owner = results.owners[i];
@@ -447,17 +490,26 @@ export class ActionExecutionService {
             upload_date: new Date(),
             created_at: new Date(),
             updated_at: new Date(),
-            // created_by is not in your schema, remove it
-            // created_by: approverId
           }
         });
         permanentDocs.push(permanentDoc);
       }
     }
+  } else if (isExistingOwner && wizardData.owner_docs?.length > 0) {
+    console.log('Skipping owner document creation for existing owner. Owner ID:', firstOwner.owner_id);
+    // Optionally, you could log this for auditing
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action: 'WIZARD_EXECUTION',
+        details: `Skipped document creation for existing owner ${firstOwner.owner_id}`,
+        created_at: new Date()
+      }
+    });
   }
 
-  // Process lease documents
-  if (wizardData.lease_docs && Array.isArray(wizardData.lease_docs) && results.lease) {
+  // Process lease documents - only if lease exists and tenure is LEASE
+  if (results.lease && wizardData.lease_docs && Array.isArray(wizardData.lease_docs)) {
     for (const doc of wizardData.lease_docs) {
       const permanentDoc = await tx.documents.create({
         data: {
@@ -469,12 +521,12 @@ export class ActionExecutionService {
           upload_date: new Date(),
           created_at: new Date(),
           updated_at: new Date(),
-          // created_by is not in your schema, remove it
-          // created_by: approverId
         }
       });
       permanentDocs.push(permanentDoc);
     }
+  } else if (results.lease && wizardData.lease_docs?.length === 0) {
+    console.warn('Lease created but no lease documents uploaded');
   }
 
   return permanentDocs;

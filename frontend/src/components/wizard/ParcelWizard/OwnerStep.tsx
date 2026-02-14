@@ -1,61 +1,231 @@
 // src/components/wizard/ParcelWizard/OwnerStep.tsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useWizard } from "../../../contexts/WizardContext";
 import type { OwnerStepProps } from "../../../types/wizard";
 import {
-  OwnerStepFormSchema,
-  type OwnerStepFormData,
+  OwnerFormSchema,
+  type OwnerFormData,
 } from "../../../validation/schemas";
 import { toast } from 'sonner';
+import { searchOwnersLiteApi } from "../../../services/parcelDetailApi";
+import { Search, X, Check, UserCheck, UserPlus } from "lucide-react";
 
 const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
   const { currentSession, saveStep, isLoading } = useWizard();
   const today = new Date().toISOString().split("T")[0];
+  
+  // State for owner search
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState<any | null>(null);
+  const [acquisitionDate, setAcquisitionDate] = useState(today);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<OwnerStepFormData>({
-    resolver: zodResolver(OwnerStepFormSchema),
+    setValue,
+    watch,
+    trigger,
+  } = useForm<OwnerFormData>({
+    resolver: zodResolver(OwnerFormSchema),
     defaultValues: {
       full_name: "",
       national_id: "",
       tin_number: "",
       phone_number: "",
       acquired_at: today,
+      owner_id: undefined,
     },
+    mode: "onChange", // Add this to validate on change
   });
+
+  const acquired_at = watch("acquired_at");
+  const owner_id = watch("owner_id");
 
   // Load existing data if available
   useEffect(() => {
     if (currentSession?.owner_data) {
-      // Handle both single owner and array of owners
       const ownerData = Array.isArray(currentSession.owner_data) 
         ? currentSession.owner_data[0] 
         : currentSession.owner_data;
       
-      reset({
-        ...ownerData,
-        acquired_at: ownerData.acquired_at || today
-      });
+      // Check if this is an existing owner (has owner_id)
+      if (ownerData.owner_id) {
+        setSelectedOwner({
+          owner_id: ownerData.owner_id,
+          full_name: ownerData.full_name,
+          national_id: ownerData.national_id,
+          tin_number: ownerData.tin_number,
+          phone_number: ownerData.phone_number,
+        });
+        setIsCreatingNew(false);
+        
+        // Set all form values with the owner data including owner_id
+        reset({
+          full_name: ownerData.full_name,
+          national_id: ownerData.national_id,
+          tin_number: ownerData.tin_number || "",
+          phone_number: ownerData.phone_number,
+          acquired_at: ownerData.acquired_at || today,
+          owner_id: ownerData.owner_id, // Make sure to set this
+        });
+      } else {
+        // This is a new owner being created
+        reset({
+          full_name: ownerData.full_name || "",
+          national_id: ownerData.national_id || "",
+          tin_number: ownerData.tin_number || "",
+          phone_number: ownerData.phone_number || "",
+          acquired_at: ownerData.acquired_at || today,
+          owner_id: undefined,
+        });
+        setIsCreatingNew(true);
+      }
     }
   }, [currentSession?.owner_data, reset, today]);
 
-  const onSubmit = async (data: OwnerStepFormData) => {
+  // Debounced search for existing owners
+  useEffect(() => {
+    if (!showSearch || searchTerm.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const owners = await searchOwnersLiteApi(searchTerm);
+        setSearchResults(owners);
+      } catch (err) {
+        console.error("Search failed:", err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, showSearch]);
+
+  const handleSelectOwner = (owner: any) => {
+    // Store complete owner details including all fields
+    setSelectedOwner({
+      owner_id: owner.owner_id,
+      full_name: owner.full_name,
+      national_id: owner.national_id,
+      tin_number: owner.tin_number,
+      phone_number: owner.phone_number,
+    });
+    setIsCreatingNew(false);
+    
+    // Set all the form values with the owner data including owner_id
+    setValue("owner_id", owner.owner_id);
+    setValue("full_name", owner.full_name);
+    setValue("national_id", owner.national_id);
+    setValue("tin_number", owner.tin_number || "");
+    setValue("phone_number", owner.phone_number);
+    setValue("acquired_at", acquisitionDate);
+    
+    // Trigger validation to update form state
+    trigger();
+    
+    // Close search modal
+    setShowSearch(false);
+    setSearchTerm("");
+    setSearchResults([]);
+    
+    toast.success(`Selected existing owner: ${owner.full_name}`);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedOwner(null);
+    setIsCreatingNew(true);
+    setShowSearch(false);
+    setSearchTerm("");
+    setSearchResults([]);
+    
+    // Reset form for new owner
+    reset({
+      full_name: "",
+      national_id: "",
+      tin_number: "",
+      phone_number: "",
+      acquired_at: today,
+      owner_id: undefined,
+    });
+  };
+
+  const handleClearSelected = () => {
+    setSelectedOwner(null);
+    setIsCreatingNew(true);
+    reset({
+      full_name: "",
+      national_id: "",
+      tin_number: "",
+      phone_number: "",
+      acquired_at: today,
+      owner_id: undefined,
+    });
+  };
+
+  const onSubmit = async (data: OwnerFormData) => {
     try {
-      // Convert single owner to array (backend expects array)
-      await saveStep('owner', [data]);
-      toast.success('Owner information saved');
+      console.log("submit started ", data);
+      console.log("selectedOwner state: ", selectedOwner);
+      
+      let ownerData;
+
+      if (data.owner_id) {
+        // Case 1: Using existing owner - send owner_id AND all owner details
+        ownerData = [{
+          owner_id: data.owner_id,
+          full_name: data.full_name,
+          national_id: data.national_id,
+          tin_number: data.tin_number,
+          phone_number: data.phone_number,
+          acquired_at: data.acquired_at || today,
+        }];
+        console.log("existing owner", ownerData);
+      } else {
+        // Case 2: Creating new owner - send all fields
+        ownerData = [{
+          full_name: data.full_name,
+          national_id: data.national_id,
+          tin_number: data.tin_number || null,
+          phone_number: data.phone_number,
+          acquired_at: data.acquired_at || today,
+        }];
+        console.log("creating new user", ownerData);
+      }
+
+      // Save to backend
+      await saveStep('owner', ownerData);
+      
+      toast.success(data.owner_id 
+        ? 'Existing owner linked successfully' 
+        : 'New owner information saved'
+      );
+      
       nextStep();
     } catch (err: any) {
       toast.error(err.message || 'Failed to save owner information');
       console.error("Save error:", err);
     }
   };
+
+  // Debug: Log form errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form errors:", errors);
+    }
+  }, [errors]);
 
   // Show warning if no parcel data
   if (!currentSession?.parcel_data) {
@@ -79,85 +249,264 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">Register Owner</h2>
-      <p className="text-gray-600 mb-8">
-        Register the owner information for the parcel
-      </p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Register Owner</h2>
+          <p className="text-gray-600 mt-1">
+            {selectedOwner 
+              ? `Using existing owner: ${selectedOwner.full_name}` 
+              : "Register a new owner or search for an existing one"}
+          </p>
+        </div>
+        
+        {!selectedOwner && !showSearch && !isCreatingNew && (
+          <button
+            type="button"
+            onClick={() => setShowSearch(true)}
+            className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2"
+          >
+            <Search size={18} />
+            Search Existing Owner
+          </button>
+        )}
+      </div>
+
+      {/* Owner Search Modal */}
+      {showSearch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Select Existing Owner</h2>
+              <button
+                onClick={() => setShowSearch(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Search input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  Search by name, national ID, phone or TIN
+                </label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Type at least 2 characters..."
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+
+              {/* Search results */}
+              {isSearching ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  <p className="mt-2">Searching...</p>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="max-h-60 overflow-y-auto border rounded-lg divide-y">
+                  {searchResults.map((owner) => (
+                    <div
+                      key={owner.owner_id}
+                      onClick={() => handleSelectOwner(owner)}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="font-medium">{owner.full_name}</div>
+                        <div className="text-sm text-gray-500">
+                          {owner.national_id && `ID: ${owner.national_id}`}
+                          {owner.phone_number && ` • ${owner.phone_number}`}
+                          {owner.tin_number && ` • TIN: ${owner.tin_number}`}
+                        </div>
+                      </div>
+                      <Check size={18} className="text-gray-400" />
+                    </div>
+                  ))}
+                </div>
+              ) : searchTerm.length >= 2 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No matching owners found
+                </div>
+              ) : null}
+
+              <div className="mt-6 pt-4 border-t">
+                <button
+                  onClick={handleCreateNew}
+                  className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <UserPlus size={18} />
+                  Create New Owner Instead
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Owner Banner */}
+      {selectedOwner && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <UserCheck size={20} className="text-blue-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-blue-900">Using Existing Owner</h3>
+                <p className="text-blue-800 mt-1">
+                  <span className="font-medium">{selectedOwner.full_name}</span>
+                  {selectedOwner.national_id && ` (ID: ${selectedOwner.national_id})`}
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Owner ID: {selectedOwner.owner_id}
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  You can modify the acquisition date below. Owner details cannot be changed.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleClearSelected}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Change
+            </button>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
-        {/* Full Name */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Full Name *
-          </label>
-          <input
-            {...register("full_name")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="e.g. John Doe"
-          />
-          {errors.full_name && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.full_name.message}
-            </p>
-          )}
-        </div>
+        {/* Hidden owner_id field */}
+        <input type="hidden" {...register("owner_id")} />
 
-        {/* National ID */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            National ID *
-          </label>
-          <input
-            {...register("national_id")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="1234567890"
-          />
-          {errors.national_id && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.national_id.message}
-            </p>
-          )}
-        </div>
+        {/* Conditionally render fields based on whether we're using existing owner */}
+        {!selectedOwner ? (
+          <>
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Full Name *
+              </label>
+              <input
+                {...register("full_name")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="e.g. John Doe"
+              />
+              {errors.full_name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.full_name.message}
+                </p>
+              )}
+            </div>
 
-        {/* Phone Number */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Phone Number *
-          </label>
-          <input
-            {...register("phone_number")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="+251911223344"
-          />
-          {errors.phone_number && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.phone_number.message}
-            </p>
-          )}
-        </div>
+            {/* National ID */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                National ID *
+              </label>
+              <input
+                {...register("national_id")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="1234567890"
+              />
+              {errors.national_id && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.national_id.message}
+                </p>
+              )}
+            </div>
 
-        {/* TIN Number */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            TIN Number
-          </label>
-          <input
-            {...register("tin_number")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="Optional"
-          />
-          {errors.tin_number && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.tin_number.message}
-            </p>
-          )}
-        </div>
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone Number *
+              </label>
+              <input
+                {...register("phone_number")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="+251911223344"
+              />
+              {errors.phone_number && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.phone_number.message}
+                </p>
+              )}
+            </div>
 
-        {/* Acquisition Date */}
-        <div className="md:col-span-2">
+            {/* TIN Number */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                TIN Number
+              </label>
+              <input
+                {...register("tin_number")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="Optional"
+              />
+              {errors.tin_number && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.tin_number.message}
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Show read-only summary of owner data when existing owner is selected */
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={selectedOwner.full_name}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                National ID
+              </label>
+              <input
+                type="text"
+                value={selectedOwner.national_id}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                value={selectedOwner.phone_number}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                TIN Number
+              </label>
+              <input
+                type="text"
+                value={selectedOwner.tin_number || "Not provided"}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Acquisition Date - Always shown */}
+        <div className={selectedOwner ? "md:col-span-2" : "md:col-span-2"}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Acquisition Date *
           </label>
@@ -170,6 +519,11 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           {errors.acquired_at && (
             <p className="mt-1 text-sm text-red-600">
               {errors.acquired_at.message}
+            </p>
+          )}
+          {selectedOwner && (
+            <p className="mt-1 text-sm text-gray-500">
+              Date when this owner acquired the parcel
             </p>
           )}
         </div>
@@ -189,7 +543,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             disabled={isSubmitting || isLoading}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
-            {isSubmitting ? "Saving..." : "Save Owner & Continue →"}
+            {isSubmitting ? "Saving..." : selectedOwner ? "Link Owner & Continue →" : "Save Owner & Continue →"}
           </button>
         </div>
       </form>
@@ -198,9 +552,10 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
         <h4 className="font-medium text-blue-800 mb-1">Note:</h4>
         <ul className="text-sm text-blue-700 space-y-1">
+          <li>• You can either create a new owner or link an existing one</li>
+          <li>• When linking an existing owner, their details are shown but cannot be edited</li>
           <li>• Only one owner can be registered per wizard session</li>
           <li>• For multiple owners, submit this session first then add additional owners later</li>
-          <li>• <span className="font-medium">Acquisition Date:</span> When the owner acquired this parcel</li>
         </ul>
       </div>
     </>

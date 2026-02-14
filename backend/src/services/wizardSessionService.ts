@@ -165,37 +165,69 @@ export class WizardSessionService {
     return updated;
   }
 
-  async validateSession(sessionId: string): Promise<WizardValidationResult> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      throw new Error('Session not found');
-    }
+ async validateSession(sessionId: string): Promise<WizardValidationResult> {
+  const session = await this.getSession(sessionId);
+  if (!session) {
+    throw new Error('Session not found');
+  }
 
-    const missing: string[] = [];
+  const missing: string[] = [];
 
-    // Check required steps
-    if (!session.parcel_data) missing.push('Parcel Information');
-    
-    // Check parcel documents (at least one required)
-    if (!session.parcel_docs || 
-        (Array.isArray(session.parcel_docs) && session.parcel_docs.length === 0)) {
-      missing.push('Parcel Documents');
-    }
-    
-    if (!session.owner_data) missing.push('Owner Information');
-    
-    // Check owner documents (at least one required)
+  // Check required steps
+  if (!session.parcel_data) missing.push('Parcel Information');
+  
+  // Check parcel documents (at least one required)
+  if (!session.parcel_docs || 
+      (Array.isArray(session.parcel_docs) && session.parcel_docs.length === 0)) {
+    missing.push('Parcel Documents');
+  }
+  
+  if (!session.owner_data) missing.push('Owner Information');
+  
+  // Check owner documents - conditional based on whether it's an existing owner
+  const ownerData = Array.isArray(session.owner_data) 
+    ? session.owner_data[0] 
+    : session.owner_data;
+  
+  const isExistingOwner = ownerData?.owner_id  ? true : false;
+  
+  if (!isExistingOwner) {
+    // Only require owner documents for NEW owners
     if (!session.owner_docs || 
         (Array.isArray(session.owner_docs) && session.owner_docs.length === 0)) {
       missing.push('Owner Documents');
     }
-    // Lease is optional
-
-    return {
-      valid: missing.length === 0,
-      missing
-    };
   }
+  // For existing owners, owner documents are NOT required
+
+  // Check lease steps - conditional based on tenure type
+  const parcelData = Array.isArray(session.parcel_data) 
+    ? session.parcel_data[0] 
+    : session.parcel_data;
+  
+  const isLeaseTenure = parcelData?.tenure_type === "LEASE" || 
+                        parcelData?.tenure_type === "lease" ||
+                        parcelData?.tenure_type === "Lease";
+  
+  if (isLeaseTenure) {
+    // For LEASE tenure, lease information is required
+    if (!session.lease_data) {
+      missing.push('Lease Information');
+    }
+    
+    // Check lease documents (at least one required for LEASE tenure)
+    if (!session.lease_docs || 
+        (Array.isArray(session.lease_docs) && session.lease_docs.length === 0)) {
+      missing.push('Lease Documents');
+    }
+  }
+  // For non-LEASE tenure, lease steps are NOT required
+
+  return {
+    valid: missing.length === 0,
+    missing
+  };
+}
 
 async submitForApproval(sessionId: string): Promise<SubmitResult> {
   return await this.prisma.$transaction(async (tx) => {
