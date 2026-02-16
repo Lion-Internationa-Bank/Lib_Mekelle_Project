@@ -93,7 +93,8 @@ const renderCreate = () => {
          key.toLowerCase().includes('price') ||
          key.toLowerCase().includes('installment') ||
          key.toLowerCase().includes('deposit') ||
-         key.toLowerCase().includes('principal'))) {
+         key.toLowerCase().includes('principal') ||
+         key.toLowerCase().includes('fee'))) {  // Added 'fee' for new fee fields
       return formatCurrency(value);
     }
     
@@ -197,6 +198,57 @@ const renderCreate = () => {
             </div>
           </div>
 
+          {/* Additional Fees Section - NEW */}
+          {(leaseDetails.demarcation_fee || leaseDetails.engineering_service_fee || leaseDetails.contract_registration_fee) && (
+            <div className="mb-6">
+              <h5 className="text-xs font-semibold text-purple-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                <span className="text-purple-600">💰</span>
+                Additional Fees
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {leaseDetails.demarcation_fee !== undefined && leaseDetails.demarcation_fee !== null && (
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
+                      Demarcation Fee
+                    </div>
+                    <div className="text-xl font-bold text-purple-700">
+                      {formatCurrency(Number(leaseDetails.demarcation_fee))}
+                    </div>
+                  </div>
+                )}
+                
+                {leaseDetails.engineering_service_fee !== undefined && leaseDetails.engineering_service_fee !== null && (
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
+                      Engineering Fee
+                    </div>
+                    <div className="text-xl font-bold text-purple-700">
+                      {formatCurrency(Number(leaseDetails.engineering_service_fee))}
+                    </div>
+                  </div>
+                )}
+                
+                {leaseDetails.contract_registration_fee !== undefined && leaseDetails.contract_registration_fee !== null && (
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
+                      Registration Fee
+                    </div>
+                    <div className="text-xl font-bold text-purple-700">
+                      {typeof leaseDetails.contract_registration_fee === 'string' 
+                        ? leaseDetails.contract_registration_fee 
+                        : formatCurrency(Number(leaseDetails.contract_registration_fee))}
+                    </div>
+                    {typeof leaseDetails.contract_registration_fee === 'string' && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Reference/Receipt
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Lease Dates */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {leaseDetails.contract_date && (
@@ -290,7 +342,8 @@ const renderCreate = () => {
               !['upin', 'principal', 'start_date', 'expiry_date', 'price_per_m2', 
                 'contract_date', 'other_payment', 'legal_framework', 'annual_installment',
                 'lease_period_years', 'payment_term_years', 'total_lease_amount', 
-                'down_payment_amount'].includes(key)
+                'down_payment_amount', 'demarcation_fee', 'engineering_service_fee', 
+                'contract_registration_fee'].includes(key)
             ).map(([key, value]) => (
               <div key={key} className="bg-gray-50 p-3 rounded-md border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
@@ -336,21 +389,13 @@ const renderCreate = () => {
     const { changes, current_data } = data;
     
     return (
-      <div>
-        <h3>Update Lease Agreement</h3>
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-900">Update Lease Agreement</h3>
         
         {/* Current Data Summary */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h4>Current Lease Details</h4>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '1rem',
-            padding: '1rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '4px',
-            border: '1px solid #e9ecef'
-          }}>
+        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Current Lease Details</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(current_data).map(([key, value]) => {
               let displayValue = value;
               if (key.includes('date') && value) {
@@ -358,16 +403,12 @@ const renderCreate = () => {
               }
               
               return (
-                <div key={key}>
-                  <div style={{ 
-                    fontSize: '0.85rem',
-                    color: '#6c757d',
-                    marginBottom: '0.25rem'
-                  }}>
+                <div key={key} className="bg-white p-3 rounded-md border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
                     {key.replace(/_/g, ' ')
                         .replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
-                  <div style={{ wordBreak: 'break-word' }}>
+                  <div className="text-sm font-medium text-gray-900 break-words">
                     {String(displayValue)}
                   </div>
                 </div>
@@ -387,38 +428,34 @@ const renderCreate = () => {
   };
 
   const renderDelete = () => (
-    <div>
-      <h3>Delete Lease Agreement</h3>
-      <div style={{ 
-        padding: '1.5rem',
-        backgroundColor: '#f8d7da',
-        borderRadius: '4px',
-        color: '#721c24',
-        border: '1px solid #f5c6cb'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <strong>Lease ID:</strong> {entityId}
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Delete Lease Agreement</h3>
+      <div className="p-6 bg-red-50 rounded-lg border border-red-200">
+        <div className="mb-4">
+          <span className="text-sm font-medium text-gray-700">Lease ID:</span>
+          <span className="ml-2 font-mono text-red-700">{entityId}</span>
         </div>
         {data.reason && (
           <div>
-            <strong>Reason for Deletion:</strong> {data.reason}
+            <span className="text-sm font-medium text-gray-700">Reason for Deletion:</span>
+            <p className="mt-1 text-red-700 bg-white p-3 rounded-md border border-red-100">
+              {data.reason}
+            </p>
           </div>
         )}
         {data.current_data && (
-          <div style={{ 
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: 'rgba(255,255,255,0.3)',
-            borderRadius: '4px'
-          }}>
-            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-              Lease Information:
+          <div className="mt-4 p-4 bg-white rounded-lg border border-red-100">
+            <h5 className="text-sm font-semibold text-gray-700 mb-3">Lease Information:</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(data.current_data)
+                .filter(([key]) => ['total_lease_amount', 'lease_period_years', 'upin'].includes(key))
+                .map(([key, value]) => (
+                  <div key={key}>
+                    <div className="text-xs text-gray-500">{key.replace(/_/g, ' ')}</div>
+                    <div className="text-sm font-medium text-gray-900">{String(value)}</div>
+                  </div>
+                ))}
             </div>
-            {Object.entries(data.current_data).slice(0, 3).map(([key, value]) => (
-              <div key={key} style={{ fontSize: '0.9rem' }}>
-                {key.replace(/_/g, ' ')}: {String(value)}
-              </div>
-            ))}
           </div>
         )}
       </div>
@@ -440,12 +477,7 @@ const renderCreate = () => {
       return renderDelete();
     default:
       return (
-        <div style={{ 
-          padding: '1rem',
-          backgroundColor: '#fff3cd',
-          borderRadius: '4px',
-          color: '#856404'
-        }}>
+        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-700">
           Unsupported action type: {actionType}
         </div>
       );

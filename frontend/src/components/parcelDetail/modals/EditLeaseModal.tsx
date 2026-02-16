@@ -10,7 +10,7 @@ import {
 } from "../../../validation/schemas";
 import { z } from "zod";
 import UniversalDateInput from "../../UniversalDateInput";
-import { Calendar, DollarSign, Clock, FileText } from "lucide-react";
+import { Calendar, DollarSign, Clock, FileText, Receipt, Ruler } from "lucide-react";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import { toast } from "sonner";
 
@@ -38,62 +38,64 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState<Partial<EditLeaseFormWithDates>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-useEffect(()=>{
-  console.log("lease",lease)
-   console.log("form",form)
-   console.log("not open",!open)
-})
-// In EditLeaseModal.tsx, update the useEffect and add debugging:
 
-useEffect(() => {
-  if (!open || !lease) return;
-  
-  console.log("Lease data from backend:");
-  console.log("contract_date:", lease.contract_date, "type:", typeof lease.contract_date);
-  console.log("start_date:", lease.start_date, "type:", typeof lease.start_date);
-  console.log("expiry_date:", lease.expiry_date, "type:", typeof lease.expiry_date);
-  
-  const contractDate = lease.contract_date ? new Date(lease.contract_date) : undefined;
-  const startDate = lease.start_date ? new Date(lease.start_date) : undefined;
-  const expiryDate = lease.expiry_date ? new Date(lease.expiry_date) : undefined;
-  
-  console.log("Parsed dates:");
-  console.log("contract_date parsed:", contractDate, "isValid:", contractDate && !isNaN(contractDate.getTime()));
-  console.log("start_date parsed:", startDate, "isValid:", startDate && !isNaN(startDate.getTime()));
-  console.log("expiry_date parsed:", expiryDate, "isValid:", expiryDate && !isNaN(expiryDate.getTime()));
+  useEffect(() => {
+    if (!open || !lease) return;
+    
+    console.log("Lease data from backend:");
+    console.log("contract_date:", lease.contract_date, "type:", typeof lease.contract_date);
+    console.log("start_date:", lease.start_date, "type:", typeof lease.start_date);
+    console.log("expiry_date:", lease.expiry_date, "type:", typeof lease.expiry_date);
+    
+    const contractDate = lease.contract_date ? new Date(lease.contract_date) : undefined;
+    const startDate = lease.start_date ? new Date(lease.start_date) : undefined;
+    const expiryDate = lease.expiry_date ? new Date(lease.expiry_date) : undefined;
+    
+    console.log("Parsed dates:");
+    console.log("contract_date parsed:", contractDate, "isValid:", contractDate && !isNaN(contractDate.getTime()));
+    console.log("start_date parsed:", startDate, "isValid:", startDate && !isNaN(startDate.getTime()));
+    console.log("expiry_date parsed:", expiryDate, "isValid:", expiryDate && !isNaN(expiryDate.getTime()));
 
-  setForm({
-    total_lease_amount: lease.total_lease_amount
-      ? Number(lease.total_lease_amount)
-      : undefined,
-    down_payment_amount: lease.down_payment_amount
-      ? Number(lease.down_payment_amount)
-      : undefined,
-    other_payment: lease.other_payment
-      ? Number(lease.other_payment)
-      : undefined,
-    price_per_m2: lease.price_per_m2
-      ? Number(lease.price_per_m2)
-      : undefined,
-    lease_period_years: lease.lease_period_years
-      ? Number(lease.lease_period_years)
-      : undefined,
-    payment_term_years: lease.payment_term_years
-      ? Number(lease.payment_term_years)
-      : undefined,
-    // assume backend sends ISO YYYY-MM-DD
-    contract_date: contractDate,
-    start_date: startDate,
-    legal_framework: lease.legal_framework || undefined,
-  });
-  
-  console.log("Form set with dates:", {
-    contract_date: contractDate,
-    start_date: startDate,
-  });
-  
-  setError(null);
-}, [open, lease]);
+    setForm({
+      total_lease_amount: lease.total_lease_amount
+        ? Number(lease.total_lease_amount)
+        : undefined,
+      down_payment_amount: lease.down_payment_amount
+        ? Number(lease.down_payment_amount)
+        : undefined,
+      other_payment: lease.other_payment
+        ? Number(lease.other_payment)
+        : undefined,
+      // New fee fields
+      demarcation_fee: lease.demarcation_fee
+        ? Number(lease.demarcation_fee)
+        : undefined,
+      contract_registration_fee: lease.contract_registration_fee || undefined,
+      engineering_service_fee: lease.engineering_service_fee
+        ? Number(lease.engineering_service_fee)
+        : undefined,
+      price_per_m2: lease.price_per_m2
+        ? Number(lease.price_per_m2)
+        : undefined,
+      lease_period_years: lease.lease_period_years
+        ? Number(lease.lease_period_years)
+        : undefined,
+      payment_term_years: lease.payment_term_years
+        ? Number(lease.payment_term_years)
+        : undefined,
+      // assume backend sends ISO YYYY-MM-DD
+      contract_date: contractDate,
+      start_date: startDate,
+      legal_framework: lease.legal_framework || undefined,
+    });
+    
+    console.log("Form set with dates:", {
+      contract_date: contractDate,
+      start_date: startDate,
+    });
+    
+    setError(null);
+  }, [open, lease]);
 
   const toLocalDateString = (d: Date) => {
     const y = d.getFullYear();
@@ -128,18 +130,18 @@ useEffect(() => {
         filteredData
       ) as EditLeaseFormData;
 
-     const res =  await updateLeaseApi(lease.lease_id, parsed);
+      const res = await updateLeaseApi(lease.lease_id, parsed);
       await onSuccess();
-    toast.success(res.message  || "Lease data successfully updated." )
+      toast.success(res.message || "Lease data successfully updated.");
       onClose();
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         setError(err.issues[0]?.message || "Validation failed");
       } else if (err instanceof Error) {
-        toast.error(err.message || "Failed to update lease")
+        toast.error(err.message || "Failed to update lease");
         setError(err.message || "Failed to update lease");
       } else {
-        toast.error("An unexpected error occurred")
+        toast.error("An unexpected error occurred");
       }
     } finally {
       setSaving(false);
@@ -190,7 +192,6 @@ useEffect(() => {
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
               {/* Total Lease Amount */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -236,7 +237,8 @@ useEffect(() => {
                   placeholder="0.00"
                 />
               </div>
-                 {/* Other Payment Amount */}
+
+              {/* Other Payment Amount */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Other Payment Amount (ETB)
@@ -259,7 +261,6 @@ useEffect(() => {
                 />
               </div>
 
-
               {/* Price per m² */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -281,6 +282,109 @@ useEffect(() => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="0.00"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Fees Section - NEW */}
+          <div className="bg-gray-50 p-6 rounded-xl border-l-4 border-purple-400">
+            <div className="flex items-center gap-2 mb-4">
+              <Receipt className="w-5 h-5 text-purple-600" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Additional Fees
+              </h3>
+              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                Optional
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Demarcation Fee */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Demarcation Fee (ETB)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Ruler className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.demarcation_fee ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        demarcation_fee: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Land demarcation/survey fee
+                </p>
+              </div>
+
+              {/* Engineering Service Fee */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Engineering Service Fee (ETB)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.engineering_service_fee ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        engineering_service_fee: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Engineering/consultancy fees
+                </p>
+              </div>
+
+              {/* Contract Registration Fee (String) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contract Registration Fee
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Receipt className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                   type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.contract_registration_fee ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        contract_registration_fee: e.target.value || undefined,
+                      }))
+                    }
+                     placeholder="0.00"
+                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                 
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -384,7 +488,6 @@ useEffect(() => {
                 <UniversalDateInput
                   value={form.start_date ?? null}
                   onChange={(date) =>
-                    
                     setForm((f) => ({
                       ...f,
                       start_date: date ?? undefined,
@@ -394,7 +497,6 @@ useEffect(() => {
                   size="sm"
                 />
               </div>
-
             </div>
           </div>
 

@@ -117,6 +117,10 @@ interface CreateLeaseData {
   payment_term_years: number;
   price_per_m2?: number;
   start_date: string | Date;
+  // New optional fee fields
+  demarcation_fee?: number;
+  contract_registration_fee?: string; // String type as per schema
+  engineering_service_fee?: number;
 }
 
 interface UpdateLeaseData {
@@ -133,6 +137,10 @@ interface UpdateLeaseData {
     start_date?: string | Date;
     expiry_date?: string | Date;
     contract_date?: string | Date;
+    // New optional fee fields for updates
+    demarcation_fee?: number;
+    contract_registration_fee?: string; // String type as per schema
+    engineering_service_fee?: number;
   };
 }
 
@@ -198,11 +206,11 @@ export class ActionExecutionService {
   }
 
   // Add this method to handle wizard execution
- async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
+async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
     const results: any = {};
 
     try {
-      // 1. Create parcel
+      // 1. Create parcel (unchanged)
       const parcelData = data.parcel;
       
       // Check for duplicate UPIN or file_number
@@ -249,7 +257,7 @@ export class ActionExecutionService {
         }
       });
 
-      // 2. Create owners - HANDLE EXISTING OWNER LOGIC
+      // 2. Create owners (unchanged)
       const ownersData = Array.isArray(data.owners) ? data.owners : [data.owners];
       results.owners = [];
 
@@ -298,9 +306,6 @@ export class ActionExecutionService {
             // Owner with this national_id already exists
             console.log(`Found existing owner with national_id: ${ownerData.national_id}`);
             
-            // Option 1: Throw error
-            // throw new Error(`Owner with national ID ${ownerData.national_id} already exists. Please use search to link existing owner.`);
-            
             // Option 2: Automatically use the existing owner
             owner = existingOwner;
           } else {
@@ -340,7 +345,7 @@ export class ActionExecutionService {
         });
       }
 
-      // 3. Create lease if exists (only for LEASE tenure)
+      // 3. Create lease if exists (only for LEASE tenure) - UPDATED with new fields
       if (data.lease) {
         const leaseData = data.lease;
         
@@ -378,7 +383,7 @@ export class ActionExecutionService {
           leaseData.payment_term_years
         );
 
-        // Create lease
+        // Create lease with all fields including the new ones
         results.lease = await tx.lease_agreements.create({
           data: {
             upin: results.parcel.upin,
@@ -393,18 +398,23 @@ export class ActionExecutionService {
             start_date: startDate,
             expiry_date: expiryDate,
             annual_installment: annualInstallment,
+            
+            // New fields added here - stored but not affecting calculations
+            demarcation_fee: leaseData.demarcation_fee || null,
+            contract_registration_fee: leaseData.contract_registration_fee || null,
+            engineering_service_fee: leaseData.engineering_service_fee || null,
+            
             created_at: new Date(),
             updated_at: new Date(),
           }
         });
 
-        // Generate lease bills using service function
+        // Generate lease bills using service function (these calculations remain unchanged)
         results.bills = await generateLeaseBillsInTx(tx, {
           lease_id: results.lease.lease_id,
           upin: results.parcel.upin,
           total_lease_amount: leaseData.total_lease_amount,
           down_payment_amount: leaseData.down_payment_amount || 0,
-          other_payment: leaseData.other_payment || 0,
           payment_term_years: leaseData.payment_term_years,
           start_date: startDate,
           annualMainPayment: annualInstallment,
@@ -412,10 +422,10 @@ export class ActionExecutionService {
         });
       }
 
-      // 4. Create permanent documents (skip owner docs for existing owners?)
+      // 4. Create permanent documents (unchanged)
       results.documents = await this.createPermanentDocuments(tx, data, results, approverId);
 
-      // 5. Create audit logs
+      // 5. Create audit logs (unchanged)
       await this.createWizardAuditLogs(tx, data, results, approverId);
 
       return {
@@ -428,7 +438,14 @@ export class ActionExecutionService {
         new_owners_created: results.owners.filter((o: any) => !o.is_existing_owner).length,
         lease_created: !!results.lease,
         bills_created: results.bills?.length || 0,
-        documents_created: results.documents.length
+        documents_created: results.documents.length,
+        
+        // Optional: Include fee information in the response
+        fees_recorded: results.lease ? {
+          demarcation_fee: results.lease.demarcation_fee,
+          contract_registration_fee: results.lease.contract_registration_fee,
+          engineering_service_fee: results.lease.engineering_service_fee
+        } : null
       };
     } catch (error) {
       console.error('Execute wizard error:', error);
@@ -2055,7 +2072,7 @@ async executeCreateLease(
       leaseData.payment_term_years
     );
 
-    // Create lease
+    // Create lease with all fields including new fees
     const lease = await tx.lease_agreements.create({
       data: {
         upin: leaseData.upin,
@@ -2070,13 +2087,19 @@ async executeCreateLease(
         start_date: startDate,
         expiry_date: expiryDate,
         annual_installment: annualInstallment,
+        
+        // New fee fields - stored but not affecting calculations
+        demarcation_fee: leaseData.demarcation_fee || null,
+        contract_registration_fee: leaseData.contract_registration_fee || null,
+        engineering_service_fee: leaseData.engineering_service_fee || null,
+        
         status: 'ACTIVE',
         created_at: new Date(),
         updated_at: new Date(),
       }
     });
 
-    // Generate bills
+    // Generate bills (unaffected by new fees)
     const bills = await generateLeaseBillsInTx(tx, {
       ...lease,
       annualMainPayment: annualInstallment,
@@ -2112,6 +2135,12 @@ async executeCreateLease(
           start_date: lease.start_date,
           expiry_date: lease.expiry_date,
           annual_installment: lease.annual_installment,
+          
+          // Include fees in audit log
+          demarcation_fee: lease.demarcation_fee,
+          contract_registration_fee: lease.contract_registration_fee,
+          engineering_service_fee: lease.engineering_service_fee,
+          
           bills_created: bills.length,
           documents_processed: processedDocs.length,
           from_approval_request: data.approval_request_id,
@@ -2130,7 +2159,14 @@ async executeCreateLease(
       lease_id: lease.lease_id,
       upin: lease.upin,
       bills_created: bills.length,
-      documents_processed: processedDocs.length
+      documents_processed: processedDocs.length,
+      
+      // Optional: include fees in response
+      fees_recorded: {
+        demarcation_fee: lease.demarcation_fee,
+        contract_registration_fee: lease.contract_registration_fee,
+        engineering_service_fee: lease.engineering_service_fee
+      }
     };
   } catch (error) {
     console.error('Execute create lease error:', error);
@@ -2138,198 +2174,214 @@ async executeCreateLease(
   }
 }
 
-  async executeUpdateLease(tx: any, lease_id: string, data: UpdateLeaseData, approverId: string) {
-    try {
-      // Get current lease for audit
-      const existingLease = await tx.lease_agreements.findUnique({
-        where: { lease_id, is_deleted: false }
-      });
+async executeUpdateLease(tx: any, lease_id: string, data: UpdateLeaseData, approverId: string) {
+  try {
+    // Get current lease for audit
+    const existingLease = await tx.lease_agreements.findUnique({
+      where: { lease_id, is_deleted: false }
+    });
 
-      if (!existingLease) {
-        throw new Error('Lease not found');
-      }
+    if (!existingLease) {
+      throw new Error('Lease not found');
+    }
 
-      const allowedUpdates = {
-        annual_lease_fee: true,
-        total_lease_amount: true,
-        down_payment_amount: true,
-        other_payment: true,
-        annual_installment: true,
-        price_per_m2: true,
-        lease_period_years: true,
-        payment_term_years: true,
-        legal_framework: true,
-        start_date: true,
-        expiry_date: true,
-        contract_date: true,
-      } as const;
+    const allowedUpdates = {
+      annual_lease_fee: true,
+      total_lease_amount: true,
+      down_payment_amount: true,
+      other_payment: true,
+      annual_installment: true,
+      price_per_m2: true,
+      lease_period_years: true,
+      payment_term_years: true,
+      legal_framework: true,
+      start_date: true,
+      expiry_date: true,
+      contract_date: true,
+      
+      // New fee fields for updates
+      demarcation_fee: true,
+      contract_registration_fee: true,
+      engineering_service_fee: true,
+    } as const;
 
-      const updates: any = {};
-      const changesForAudit: any = {};
+    const updates: any = {};
+    const changesForAudit: any = {};
 
-      // Process updates
-      Object.keys(data.changes).forEach((key) => {
-        if (allowedUpdates[key as keyof typeof allowedUpdates]) {
-          let value = data.changes[key as keyof typeof data.changes];
+    // Process updates
+    Object.keys(data.changes).forEach((key) => {
+      if (allowedUpdates[key as keyof typeof allowedUpdates]) {
+        let value = data.changes[key as keyof typeof data.changes];
 
-          // Handle date conversions
-          if (["start_date", "expiry_date", "contract_date"].includes(key)) {
-            if (typeof value === "string") {
-              const parsedDate = new Date(value);
-              if (isNaN(parsedDate.getTime())) {
-                throw new Error(`Invalid date format for ${key}`);
-              }
-              value = parsedDate;
+        // Handle date conversions
+        if (["start_date", "expiry_date", "contract_date"].includes(key)) {
+          if (typeof value === "string") {
+            const parsedDate = new Date(value);
+            if (isNaN(parsedDate.getTime())) {
+              throw new Error(`Invalid date format for ${key}`);
             }
-          }
-
-          // Handle number conversions
-          if (
-            [
-              "annual_lease_fee",
-              "total_lease_amount",
-              "down_payment_amount",
-              "other_payment",
-              "annual_installment",
-              "price_per_m2",
-              "lease_period_years",
-              "payment_term_years",
-            ].includes(key) &&
-            typeof value === "string"
-          ) {
-            const num = parseFloat(value);
-            if (isNaN(num)) {
-              throw new Error(`Invalid number for ${key}`);
-            }
-            value = num;
-          }
-
-          updates[key] = value;
-          
-          // Track changes for audit
-          const existingValue = existingLease[key as keyof typeof existingLease];
-          if (JSON.stringify(existingValue) !== JSON.stringify(value)) {
-            changesForAudit[key] = {
-              from: existingValue,
-              to: value
-            };
+            value = parsedDate;
           }
         }
-      });
 
-      if (Object.keys(updates).length === 0) {
-        throw new Error('No valid fields provided for update');
-      }
+        // Handle number conversions (including new numeric fee fields)
+        if (
+          [
+            "annual_lease_fee",
+            "total_lease_amount",
+            "down_payment_amount",
+            "other_payment",
+            "annual_installment",
+            "price_per_m2",
+            "lease_period_years",
+            "payment_term_years",
+            "demarcation_fee",           // New numeric fee
+            "engineering_service_fee",    // New numeric fee
+          ].includes(key) &&
+          typeof value === "string"
+        ) {
+          const num = parseFloat(value);
+          if (isNaN(num)) {
+            throw new Error(`Invalid number for ${key}`);
+          }
+          value = num;
+        }
 
-      // Handle lease term updates that require bill regeneration
-      const requiresBillRegeneration = 
-        updates.total_lease_amount !== undefined ||
-        updates.down_payment_amount !== undefined ||
-        updates.other_payment !== undefined ||
-        updates.payment_term_years !== undefined ||
-        updates.start_date !== undefined;
+        // contract_registration_fee remains as string, no conversion needed
 
-      // Calculate derived values
-      const totalLeaseAmount = updates.total_lease_amount ?? existingLease.total_lease_amount;
-      const downPaymentAmount = updates.down_payment_amount ?? existingLease.down_payment_amount;
-      const otherPaymentAmount = updates.other_payment ?? existingLease.other_payment;
-      const paymentTermYears = updates.payment_term_years ?? existingLease.payment_term_years;
-      const leasePeriodYears = updates.lease_period_years ?? existingLease.lease_period_years;
-      const startDateVal = updates.start_date ?? existingLease.start_date;
-
-      // Update expiry date if start date or lease period changed
-      if (updates.start_date || updates.lease_period_years) {
-        const startDate = new Date(startDateVal);
-        const expiryDate = new Date(startDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + leasePeriodYears);
-        updates.expiry_date = expiryDate;
+        updates[key] = value;
         
-        if (existingLease.expiry_date?.getTime() !== expiryDate.getTime()) {
-          changesForAudit.expiry_date = {
-            from: existingLease.expiry_date,
-            to: expiryDate
+        // Track changes for audit
+        const existingValue = existingLease[key as keyof typeof existingLease];
+        if (JSON.stringify(existingValue) !== JSON.stringify(value)) {
+          changesForAudit[key] = {
+            from: existingValue,
+            to: value
           };
         }
       }
+    });
 
-      // Calculate new annual installment if needed
-      const principal = Number(totalLeaseAmount ?? 0) - Number(downPaymentAmount ?? 0);
-      if (principal <= 0) {
-        throw new Error('Down payment must be less than total lease amount');
-      }
+    if (Object.keys(updates).length === 0) {
+      throw new Error('No valid fields provided for update');
+    }
 
-      const annualMainPayment = paymentTermYears > 0 ? principal / paymentTermYears : 0;
-      updates.annual_installment = annualMainPayment;
+    // Determine if bill regeneration is needed (fees don't trigger bill regeneration)
+    const requiresBillRegeneration = 
+      updates.total_lease_amount !== undefined ||
+      updates.down_payment_amount !== undefined ||
+      updates.other_payment !== undefined ||
+      updates.payment_term_years !== undefined ||
+      updates.start_date !== undefined;
+
+    // Calculate derived values (fees don't affect these calculations)
+    const totalLeaseAmount = updates.total_lease_amount ?? existingLease.total_lease_amount;
+    const downPaymentAmount = updates.down_payment_amount ?? existingLease.down_payment_amount;
+    const otherPaymentAmount = updates.other_payment ?? existingLease.other_payment;
+    const paymentTermYears = updates.payment_term_years ?? existingLease.payment_term_years;
+    const leasePeriodYears = updates.lease_period_years ?? existingLease.lease_period_years;
+    const startDateVal = updates.start_date ?? existingLease.start_date;
+
+    // Update expiry date if start date or lease period changed
+    if (updates.start_date || updates.lease_period_years) {
+      const startDate = new Date(startDateVal);
+      const expiryDate = new Date(startDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + leasePeriodYears);
+      updates.expiry_date = expiryDate;
       
-      if (Number(existingLease.annual_installment) !== annualMainPayment) {
-        changesForAudit.annual_installment = {
-          from: existingLease.annual_installment,
-          to: annualMainPayment
+      if (existingLease.expiry_date?.getTime() !== expiryDate.getTime()) {
+        changesForAudit.expiry_date = {
+          from: existingLease.expiry_date,
+          to: expiryDate
         };
       }
+    }
 
-      // Update lease
-      const updatedLease = await tx.lease_agreements.update({
+    // Calculate new annual installment if needed (fees don't affect this)
+    const principal = Number(totalLeaseAmount ?? 0) - Number(downPaymentAmount ?? 0);
+    if (principal <= 0) {
+      throw new Error('Down payment must be less than total lease amount');
+    }
+
+    const annualMainPayment = paymentTermYears > 0 ? principal / paymentTermYears : 0;
+    updates.annual_installment = annualMainPayment;
+    
+    if (Number(existingLease.annual_installment) !== annualMainPayment) {
+      changesForAudit.annual_installment = {
+        from: existingLease.annual_installment,
+        to: annualMainPayment
+      };
+    }
+
+    // Update lease (including fee fields)
+    const updatedLease = await tx.lease_agreements.update({
+      where: { lease_id },
+      data: {
+        ...updates,
+        updated_at: new Date(),
+      },
+    });
+
+    let billRegenerationResult = null;
+    if (requiresBillRegeneration) {
+      // Delete existing bills
+      const deletedBills = await tx.billing_records.deleteMany({
         where: { lease_id },
-        data: {
-          ...updates,
-          updated_at: new Date(),
-        },
       });
 
-      let billRegenerationResult = null;
-      if (requiresBillRegeneration) {
-        // Delete existing bills
-        const deletedBills = await tx.billing_records.deleteMany({
-          where: { lease_id },
-        });
+      // Generate new bills (fees don't affect bill generation)
+      const newBills = await generateLeaseBillsInTx(tx, {
+        ...updatedLease,
+        annualMainPayment,
+      });
 
-        // Generate new bills
-        const newBills = await generateLeaseBillsInTx(tx, {
-          ...updatedLease,
-          annualMainPayment,
-        });
-
-        billRegenerationResult = {
-          bills_deleted: deletedBills.count,
-          bills_created: newBills.length
-        };
-      }
-
-      // Create audit log
-      if (Object.keys(changesForAudit).length > 0) {
-        await tx.audit_logs.create({
-          data: {
-            user_id: approverId,
-            action_type: AuditAction.UPDATE,
-            entity_type: 'lease_agreements',
-            entity_id: lease_id,
-            changes: {
-              action: 'update_lease',
-              changed_fields: changesForAudit,
-              bill_regeneration: billRegenerationResult,
-              actor_id: approverId,
-              actor_role: 'APPROVER',
-              timestamp: new Date().toISOString(),
-            },
-            timestamp: new Date(),
-            ip_address: 'SYSTEM'
-          }
-        });
-      }
-
-      return {
-        success: true,
-        action: 'LEASE_UPDATE',
-        lease_id,
-        changes_applied: Object.keys(changesForAudit),
-        bill_regeneration: billRegenerationResult
+      billRegenerationResult = {
+        bills_deleted: deletedBills.count,
+        bills_created: newBills.length
       };
-    } catch (error) {
-      console.error('Execute update lease error:', error);
-      throw error;
     }
+
+    // Create audit log
+    if (Object.keys(changesForAudit).length > 0) {
+      await tx.audit_logs.create({
+        data: {
+          user_id: approverId,
+          action_type: AuditAction.UPDATE,
+          entity_type: 'lease_agreements',
+          entity_id: lease_id,
+          changes: {
+            action: 'update_lease',
+            changed_fields: changesForAudit,
+            bill_regeneration: billRegenerationResult,
+            actor_id: approverId,
+            actor_role: 'APPROVER',
+            timestamp: new Date().toISOString(),
+          },
+          timestamp: new Date(),
+          ip_address: 'SYSTEM'
+        }
+      });
+    }
+
+    return {
+      success: true,
+      action: 'LEASE_UPDATE',
+      lease_id,
+      changes_applied: Object.keys(changesForAudit),
+      bill_regeneration: billRegenerationResult,
+      
+      // Include updated fees in response if they were changed
+      updated_fees: {
+        demarcation_fee: updatedLease.demarcation_fee,
+        contract_registration_fee: updatedLease.contract_registration_fee,
+        engineering_service_fee: updatedLease.engineering_service_fee
+      }
+    };
+  } catch (error) {
+    console.error('Execute update lease error:', error);
+    throw error;
   }
+}
 
   async executeDeleteLease(tx: any, lease_id: string, data: DeleteLeaseData, approverId: string) {
     try {

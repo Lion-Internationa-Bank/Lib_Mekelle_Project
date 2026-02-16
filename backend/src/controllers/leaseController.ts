@@ -31,7 +31,11 @@ export const createLease = async (
       price_per_m2,
       start_date,
       other_payment,
-      documents
+      documents,
+      // New fee fields
+      demarcation_fee,
+      contract_registration_fee,
+      engineering_service_fee
     } = req.body;
 
     // Validate required fields
@@ -85,12 +89,12 @@ export const createLease = async (
     // 4. Calculate principal for validation
     const totalLeaseAmountNum = Number(total_lease_amount ?? 0);
     const downPaymentNum = Number(down_payment_amount ?? 0);
-    const principal = totalLeaseAmountNum - (downPaymentNum );
+    const principal = totalLeaseAmountNum - (downPaymentNum);
 
     if (principal <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Down payment plus Other payment must be less than total lease amount",
+        message: "Down payment must be less than total lease amount",
       });
     }
 
@@ -100,7 +104,7 @@ export const createLease = async (
     // Generate entity ID for the request (will be used after approval)
     const entityId = `${upin}_LEASE_${Date.now()}`;
 
-    // 5. Create approval request with documents
+    // 5. Create approval request with documents and new fee fields
     const approvalRequest = await makerCheckerService.createApprovalRequest({
       entityType: 'LEASE_AGREEMENTS',
       entityId, // Temporary ID, will be replaced with actual lease_id after approval
@@ -119,7 +123,11 @@ export const createLease = async (
           start_date,
           expiry_date: expiryDate,
           principal,
-          annual_installment:annualInstallment
+          annual_installment: annualInstallment,
+          // New fee fields
+          demarcation_fee,
+          contract_registration_fee,
+          engineering_service_fee
         },
         documents: documents || [], // Include documents in request_data
         parcel_file_number: landParcel.file_number,
@@ -144,6 +152,10 @@ export const createLease = async (
           total_lease_amount,
           down_payment_amount,
           other_payment,
+          // New fee fields in audit log
+          demarcation_fee,
+          contract_registration_fee,
+          engineering_service_fee,
           lease_period_years,
           payment_term_years,
           start_date: startDate.toISOString(),
@@ -199,7 +211,6 @@ export const createLease = async (
   }
 };
 
-// Add type definition for CreateLeaseBody
 interface CreateLeaseBody {
   upin: string;
   total_lease_amount: number;
@@ -212,6 +223,11 @@ interface CreateLeaseBody {
   price_per_m2?: number;
   start_date: string | Date;
   comments?: string;
+  // New fee fields
+  demarcation_fee?: number;
+  contract_registration_fee?: string; // String type as per schema
+  engineering_service_fee?: number;
+  documents?: any[];
 }
 
 // ---- UPDATE LEASE ----
@@ -239,6 +255,10 @@ export const updateLease = async (
         contract_date: true,
         down_payment_amount: true,
         other_payment: true,
+        // New fee fields
+        demarcation_fee: true,
+        contract_registration_fee: true,
+        engineering_service_fee: true,
         lease_period_years: true,
         legal_framework: true,
         payment_term_years: true,
@@ -273,7 +293,7 @@ export const updateLease = async (
       });
     }
 
-    // 2. Define allowed updates
+    // 2. Define allowed updates including new fee fields
     const allowedUpdates = {
       annual_lease_fee: true,
       total_lease_amount: true,
@@ -289,6 +309,10 @@ export const updateLease = async (
       contract_date: true,
       interest_rate: true,
       status: true,
+      // New fee fields
+      demarcation_fee: true,
+      contract_registration_fee: true,
+      engineering_service_fee: true,
     } as const;
 
     const updates: any = {};
@@ -328,8 +352,9 @@ export const updateLease = async (
             }
           }
         }
-        // Handle number comparisons
-        else if (typeof value === "string" && !isNaN(parseFloat(value))) {
+        // Handle number comparisons (including numeric fee fields)
+        else if (["demarcation_fee", "engineering_service_fee", ...Object.keys(allowedUpdates)].includes(key) && 
+                 typeof value === "string" && !isNaN(parseFloat(value))) {
           const numValue = parseFloat(value);
           const existingNum = existingValue ? Number(existingValue) : null;
           
@@ -340,6 +365,17 @@ export const updateLease = async (
               to: numValue
             };
             changesForRequest[key] = numValue;
+          }
+        }
+        // Handle string comparisons (for contract_registration_fee)
+        else if (key === "contract_registration_fee") {
+          if (existingValue !== value) {
+            updates[key] = value;
+            changesForAudit[key] = {
+              from: existingValue,
+              to: value
+            };
+            changesForRequest[key] = value;
           }
         }
         // Handle other comparisons
@@ -372,7 +408,7 @@ export const updateLease = async (
       const downPaymentAmount = updates.down_payment_amount ?? existingLease.down_payment_amount;
       const otherPaymentAmount = updates.other_payment ?? existingLease.other_payment;
       
-      const principal = Number(totalLeaseAmount) - Number(downPaymentAmount) ;
+      const principal = Number(totalLeaseAmount) - Number(downPaymentAmount);
       if (principal <= 0) {
         return res.status(400).json({
           success: false,
@@ -392,6 +428,10 @@ export const updateLease = async (
       total_lease_amount: existingLease.total_lease_amount,
       down_payment_amount: existingLease.down_payment_amount,
       other_payment: existingLease.other_payment,
+      // New fee fields
+      demarcation_fee: existingLease.demarcation_fee,
+      contract_registration_fee: existingLease.contract_registration_fee,
+      engineering_service_fee: existingLease.engineering_service_fee,
       annual_installment: existingLease.annual_installment,
       price_per_m2: existingLease.price_per_m2,
       interest_rate: existingLease.interest_rate,
@@ -480,6 +520,10 @@ export const updateLease = async (
         original_data_summary: {
           total_lease_amount: existingLease.total_lease_amount,
           down_payment_amount: existingLease.down_payment_amount,
+          // New fee fields in summary
+          demarcation_fee: existingLease.demarcation_fee,
+          engineering_service_fee: existingLease.engineering_service_fee,
+          contract_registration_fee: existingLease.contract_registration_fee,
           lease_period_years: existingLease.lease_period_years,
           start_date: existingLease.start_date,
           status: existingLease.status

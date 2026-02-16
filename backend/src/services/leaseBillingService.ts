@@ -54,24 +54,24 @@ export const generateLeaseBillsInTx = async (
     const prismaClient = tx as any;
 
     // Get active lease interest rate
-    const rateConfig = await prismaClient.rate_configurations.findFirst({
-      where: {
-        rate_type: "LEASE_INTEREST_RATE",
-        is_active: true,
-        effective_from: { lte: new Date() },
-        OR: [
-          { effective_until: { gte: new Date() } },
-          { effective_until: null },
-        ],
-      },
-      orderBy: { effective_from: "desc" },
-    });
+    // const rateConfig = await prismaClient.rate_configurations.findFirst({
+    //   where: {
+    //     rate_type: "LEASE_INTEREST_RATE",
+    //     is_active: true,
+    //     effective_from: { lte: new Date() },
+    //     OR: [
+    //       { effective_until: { gte: new Date() } },
+    //       { effective_until: null },
+    //     ],
+    //   },
+    //   orderBy: { effective_from: "desc" },
+    // });
 
-    if (!rateConfig) {
-      throw new Error("No active lease interest rate configuration found");
-    }
+    // if (!rateConfig) {
+    //   throw new Error("No active lease interest rate configuration found");
+    // }
 
-    const interestRate = parseFloat(rateConfig.value.toString());
+    // const interestRate = parseFloat(rateConfig.value.toString());
     const downPayment = parseFloat(lease.down_payment_amount.toString());
     const totalLeaseAmount = parseFloat(lease.total_lease_amount.toString());
     const paymentTermYears = lease.payment_term_years;
@@ -96,11 +96,11 @@ export const generateLeaseBillsInTx = async (
       const dueDate = new Date(startDate);
       dueDate.setFullYear(dueDate.getFullYear() + year);
 
-      const interest = parseFloat(
-        (remainingAmount * interestRate).toFixed(2)
-      );
+      // const interest = parseFloat(
+      //   (remainingAmount * interestRate).toFixed(2)
+      // );
       const totalAnnualPayment = parseFloat(
-        (annualMainPayment + interest).toFixed(2)
+        (annualMainPayment).toFixed(2)
       );
 
       const bill = await prismaClient.billing_records.create({
@@ -112,11 +112,11 @@ export const generateLeaseBillsInTx = async (
           amount_due: totalAnnualPayment,
           amount_paid: 0,
           penalty_amount: 0,
-          interest_amount: interest,
+          interest_amount: 0,
           base_payment: annualMainPayment,
           payment_status: "UNPAID",
           due_date: dueDate,
-          interest_rate_used: interestRate,
+          // interest_rate_used: interestRate,
           penalty_rate_used: 0,
           sync_status: "PENDING",
           installment_number: year,

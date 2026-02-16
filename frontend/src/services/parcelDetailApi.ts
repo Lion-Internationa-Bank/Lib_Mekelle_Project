@@ -53,6 +53,12 @@ export type LeaseAgreement = {
   expiry_date: string;
   contract_date: string;
   legal_framework: string;
+  
+  // New fee fields
+  demarcation_fee?: number | null;
+  contract_registration_fee?: string | null;
+  engineering_service_fee?: number | null;
+  
   documents: ParcelDocument[];
 };
 

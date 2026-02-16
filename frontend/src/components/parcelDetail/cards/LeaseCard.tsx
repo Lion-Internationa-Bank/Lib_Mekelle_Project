@@ -105,6 +105,43 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                   {formatCurrency(lease.other_payment)} ETB
                 </div>
               </div>
+
+              {/* New Fee Fields */}
+              {lease.demarcation_fee !== null && lease.demarcation_fee !== undefined && (
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-purple-600">Demarcation Fee</span>
+                  </div>
+                  <div className="text-lg font-bold text-purple-700">
+                    {formatCurrency(Number(lease.demarcation_fee))} ETB
+                  </div>
+                </div>
+              )}
+
+              {lease.engineering_service_fee !== null && lease.engineering_service_fee !== undefined && (
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-purple-600">Engineering Fee</span>
+                  </div>
+                  <div className="text-lg font-bold text-purple-700">
+                    {formatCurrency(Number(lease.engineering_service_fee))} ETB
+                  </div>
+                </div>
+              )}
+
+              {lease.contract_registration_fee !== null && lease.contract_registration_fee !== undefined && (
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-purple-600">Registration Fee</span>
+                  </div>
+                  <div className="text-lg font-bold text-purple-700">
+                    {typeof lease.contract_registration_fee === 'string' 
+                      ? lease.contract_registration_fee 
+                      : formatCurrency(Number(lease.contract_registration_fee))} 
+                    {typeof lease.contract_registration_fee === 'string' ? '' : ' ETB'}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Additional Financial Info */}

@@ -148,6 +148,21 @@ export const LeaseFormSchema = z.object({
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
 
+  // New fee fields
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" })
+    .optional(),
+
+  contract_registration_fee: z
+    .number()
+    .min(0, { message: "Contract registration fee cannot be negative" })
+    .optional(),
+
+  engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering service fee cannot be negative" })
+    .optional(),
 
   lease_period_years: z.coerce
     .number()
@@ -187,7 +202,6 @@ export const LeaseFormSchema = z.object({
 });
 
 export type LeaseFormData = z.infer<typeof LeaseFormSchema>;
-
 
 export const OwnerStepFormSchema = z.object({
   owner_id: z
@@ -250,33 +264,57 @@ export const LeaseStepFormSchema = z.object({
   price_per_m2: z.coerce
     .number()
     .positive({ message: "Price per m² must be greater than 0" }),
+  
   total_lease_amount: z.coerce
     .number()
     .positive({ message: "Total lease amount must be greater than 0" }),
+  
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
+  
   other_payment: z.coerce
     .number()
-    .min(0, { message: "Down payment cannot be negative" }),
+    .min(0, { message: "Other payment cannot be negative" }),
+  
+  // New fee fields
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" })
+    .optional(),
+  
+  contract_registration_fee: z
+    .number()
+    .min(0, { message: "Contract registration fee  cannot be negative" })
+    .optional(),
+  
+  engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering service fee cannot be negative" })
+    .optional(),
+  
   lease_period_years: z.coerce
     .number()
     .int()
     .positive({ message: "Lease period (years) must be a positive integer" }),
+  
   payment_term_years: z.coerce
     .number()
     .int()
     .positive({ message: "Payment term (years) must be a positive integer" }),
+  
   legal_framework: z
     .string()
     .trim()
     .min(1, { message: "Legal framework is required and cannot be empty" }),
+  
   contract_date: z
     .string()
     .min(1, { message: "Contract date is required" })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid contract date format",
     }),
+  
   start_date: z
     .string()
     .min(1, { message: "Start date is required" })
@@ -287,7 +325,6 @@ export const LeaseStepFormSchema = z.object({
 });
 
 export type LeaseStepFormData = z.infer<typeof LeaseStepFormSchema>;
-
 
 
 
@@ -391,9 +428,25 @@ export const EditLeaseFormSchema = z
       .nonnegative({ message: "Down payment cannot be negative" })
       .optional(),
 
-  other_payment: z
+    other_payment: z
       .number()
       .nonnegative({ message: "Other payment cannot be negative" })
+      .optional(),
+
+    // New fee fields for edit
+    demarcation_fee: z
+      .number()
+      .nonnegative({ message: "Demarcation fee cannot be negative" })
+      .optional(),
+
+    contract_registration_fee: z
+      .string()
+      .max(100, { message: "Contract registration fee cannot be negative" })
+      .optional(),
+
+    engineering_service_fee: z
+      .number()
+      .nonnegative({ message: "Engineering service fee cannot be negative" })
       .optional(),
 
     price_per_m2: z
@@ -470,7 +523,6 @@ export const EditLeaseFormSchema = z
   );
 
 export type EditLeaseFormData = z.infer<typeof EditLeaseFormSchema>;
-
 
 // 6) Encumbrance create/update
 export const EncumbranceFormSchema = z.object({

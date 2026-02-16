@@ -236,99 +236,192 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
       )}
 
       {/* Lease Information */}
-      {lease && Object.keys(lease).length > 0 && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <span className="text-amber-600">📄</span>
-            Lease Agreement
-          </h3>
+{lease && Object.keys(lease).length > 0 && (
+  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+      <span className="text-amber-600">📄</span>
+      Lease Agreement
+    </h3>
+    
+    {/* Lease Summary Cards */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="bg-gradient-to-br from-amber-50 to-white p-4 rounded-lg border border-amber-200">
+        <div className="text-xs text-amber-700 mb-1 font-medium uppercase tracking-wider">
+          Lease Period
+        </div>
+        <div className="text-2xl font-bold text-gray-900">
+          {lease.lease_period_years || 0} Years
+        </div>
+        {lease.payment_term_years && (
+          <div className="text-xs text-gray-600 mt-2">
+            Payment term: {lease.payment_term_years} years
+          </div>
+        )}
+      </div>
+      
+      <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-lg border border-green-200">
+        <div className="text-xs text-green-700 mb-1 font-medium uppercase tracking-wider">
+          Total Amount
+        </div>
+        <div className="text-2xl font-bold text-green-600">
+          {formatCurrency(lease.total_lease_amount || 0)}
+        </div>
+        {lease.price_per_m2 && (
+          <div className="text-xs text-gray-600 mt-2">
+            Price per m²: {formatCurrency(lease.price_per_m2)}
+          </div>
+        )}
+      </div>
+      
+      <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-lg border border-blue-200">
+        <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
+          Down Payment
+        </div>
+        <div className="text-2xl font-bold text-blue-600">
+          {formatCurrency(lease.down_payment_amount || 0)}
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg border border-purple-200">
+        <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
+          Other Payment
+        </div>
+        <div className="text-2xl font-bold text-purple-600">
+          {formatCurrency(lease.other_payment || 0)}
+        </div>
+      </div>
+    </div>
+
+    {/* Additional Fees Section - NEW */}
+    {(lease.demarcation_fee || lease.contract_registration_fee || lease.engineering_service_fee) && (
+      <div className="mb-6">
+        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
+          <span className="text-purple-600">💰</span>
+          Additional Fees
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {lease.demarcation_fee !== undefined && lease.demarcation_fee !== null && (
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-purple-600 text-lg">📏</span>
+                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                  Demarcation Fee
+                </div>
+              </div>
+              <div className="text-xl font-bold text-purple-700">
+                {formatCurrency(Number(lease.demarcation_fee))}
+              </div>
+            </div>
+          )}
           
-          {/* Lease Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-amber-50 to-white p-4 rounded-lg border border-amber-200">
-              <div className="text-xs text-amber-700 mb-1 font-medium uppercase tracking-wider">
-                Lease Period
-              </div>
-              <div className="text-2xl font-bold text-gray-900">
-                {lease.lease_period_years || 0} Years
-              </div>
-              {lease.payment_term_years && (
-                <div className="text-xs text-gray-600 mt-2">
-                  Payment term: {lease.payment_term_years} years
+          {lease.engineering_service_fee !== undefined && lease.engineering_service_fee !== null && (
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-purple-600 text-lg">🔧</span>
+                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                  Engineering Service Fee
                 </div>
-              )}
-            </div>
-            
-            <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-lg border border-green-200">
-              <div className="text-xs text-green-700 mb-1 font-medium uppercase tracking-wider">
-                Total Amount
               </div>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(lease.total_lease_amount || 0)}
-              </div>
-              {lease.price_per_m2 && (
-                <div className="text-xs text-gray-600 mt-2">
-                  Price per m²: {formatCurrency(lease.price_per_m2)}
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-lg border border-blue-200">
-              <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
-                Down Payment
-              </div>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(lease.down_payment_amount || 0)}
+              <div className="text-xl font-bold text-purple-700">
+                {formatCurrency(Number(lease.engineering_service_fee))}
               </div>
             </div>
-            
-            <div className="bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg border border-purple-200">
-              <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
-                Other Payment
-              </div>
-              <div className="text-2xl font-bold text-purple-600">
-                {formatCurrency(lease.other_payment || 0)}
-              </div>
-            </div>
-          </div>
-
-          {/* Lease Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {lease.contract_date && (
-              <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
-                  Contract Date
-                </div>
-                <div className="text-base font-semibold text-gray-900">
-                  {formatDate(lease.contract_date)}
+          )}
+          
+          {lease.contract_registration_fee !== undefined && lease.contract_registration_fee !== null && (
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-purple-600 text-lg">📝</span>
+                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                  Contract Registration
                 </div>
               </div>
-            )}
-            {lease.start_date && (
-              <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
-                  Start Date
-                </div>
-                <div className="text-base font-semibold text-gray-900">
-                  {formatDate(lease.start_date)}
-                </div>
+              <div className="text-xl font-bold text-purple-700">
+                {/* Handle both string and number cases */}
+                {typeof lease.contract_registration_fee === 'string' 
+                  ? lease.contract_registration_fee 
+                  : formatCurrency(Number(lease.contract_registration_fee))}
               </div>
-            )}
-          </div>
-
-          {/* Legal Framework */}
-          {lease.legal_framework && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
-                Legal Framework
-              </div>
-              <div className="text-sm text-gray-900">
-                {lease.legal_framework}
+              <div className="text-xs text-gray-500 mt-1">
+                Reference/Receipt
               </div>
             </div>
           )}
         </div>
+      </div>
+    )}
+
+    {/* Lease Dates */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {lease.contract_date && (
+        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            Contract Date
+          </div>
+          <div className="text-base font-semibold text-gray-900">
+            {formatDate(lease.contract_date)}
+          </div>
+        </div>
       )}
+      {lease.start_date && (
+        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            Start Date
+          </div>
+          <div className="text-base font-semibold text-gray-900">
+            {formatDate(lease.start_date)}
+          </div>
+        </div>
+      )}
+      {lease.expiry_date && (
+        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            Expiry Date
+          </div>
+          <div className="text-base font-semibold text-gray-900">
+            {formatDate(lease.expiry_date)}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Legal Framework */}
+    {lease.legal_framework && (
+      <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+          Legal Framework
+        </div>
+        <div className="text-sm text-gray-900">
+          {lease.legal_framework}
+        </div>
+      </div>
+    )}
+
+    {/* Annual Installment Info (if available) */}
+    {lease.annual_installment && (
+      <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
+              Annual Installment
+            </div>
+            <div className="text-xl font-bold text-blue-700">
+              {formatCurrency(lease.annual_installment)}
+            </div>
+          </div>
+          {lease.annual_lease_fee && (
+            <div className="text-right">
+              <div className="text-xs text-gray-500 mb-1">Annual Lease Fee</div>
+              <div className="text-lg font-semibold text-gray-700">
+                {formatCurrency(lease.annual_lease_fee)}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
       {/* Documents Section */}
       <div className="space-y-6">
