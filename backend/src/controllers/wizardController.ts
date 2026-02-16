@@ -331,7 +331,7 @@ export class WizardController {
         });
       }
 
-      if (session.status !== 'DRAFT') {
+      if (session.status !== 'DRAFT' && session.status !== 'REJECTED') {
         return res.status(400).json({
           success: false,
           message: 'Cannot upload documents to a submitted session'

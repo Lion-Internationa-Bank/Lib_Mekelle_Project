@@ -61,6 +61,13 @@ class WizardApi {
     return await api.post(`/wizard/sessions/${sessionId}/submit`);
   }
 
+  // RESUBMIT a rejected session
+  async resubmitSession(sessionId: string): Promise<ApiResponse<SubmitResult>> {
+    // Rejected sessions can be resubmitted using the same submit endpoint
+    // The backend will handle it appropriately based on session status
+    return await api.post(`/wizard/sessions/${sessionId}/submit`);
+  }
+
   // Get user's wizard sessions
   async getUserSessions(): Promise<ApiResponse<SessionData[]>> {
     return await api.get('/wizard/sessions');
@@ -86,6 +93,21 @@ class WizardApi {
     return await api.post(`/maker-checker/requests/${requestId}/reject`, { rejection_reason: rejectionReason });
   }
 
+  // Get rejection reason for a session
+  async getRejectionReason(sessionId: string): Promise<ApiResponse<{ reason: string; rejected_at: string; rejected_by: string }>> {
+    return await api.get(`/wizard/sessions/${sessionId}/rejection-reason`);
+  }
+
+  // Check if session can be resubmitted
+  async canResubmitSession(sessionId: string): Promise<boolean> {
+    try {
+      const session = await this.getSession(sessionId);
+      return session.success && session.data?.status === 'REJECTED';
+    } catch (error) {
+      return false;
+    }
+  }
+
   // Serve document URL builder
   getDocumentUrl(sessionId: string, step: string, filename: string): string {
     return `${import.meta.env.VITE_API_URL}/wizard/sessions/${sessionId}/documents/${step}/${filename}`;
@@ -107,6 +129,16 @@ class WizardApi {
     }
 
     return await response.blob();
+  }
+
+  // Duplicate a session (create a new draft from an existing session)
+  async duplicateSession(sessionId: string): Promise<ApiResponse<{ session_id: string }>> {
+    return await api.post(`/wizard/sessions/${sessionId}/duplicate`);
+  }
+
+  // Delete a session (only if in DRAFT or REJECTED status)
+  async deleteSession(sessionId: string): Promise<ApiResponse<{ message: string }>> {
+    return await api.delete(`/wizard/sessions/${sessionId}`);
   }
 }
 

@@ -35,6 +35,10 @@ interface WizardSession {
     payment_term_years: number;
     down_payment_amount: number;
     legal_framework: string;
+    // New fee fields
+    demarcation_fee?: number;
+    contract_registration_fee?: string;
+    engineering_service_fee?: number;
   } | null;
   parcel_docs?: Array<{
     document_type: string;
@@ -66,7 +70,7 @@ const UserSessionsPage = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<WizardSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "draft" | "pending" | "completed">("all");
+  const [filter, setFilter] = useState<"all" | "draft" | "pending" | "completed" | "rejected">("all");
 
   useEffect(() => {
     loadSessions();
@@ -111,8 +115,10 @@ const UserSessionsPage = () => {
         return session.status === "DRAFT";
       case "pending":
         return session.status === "PENDING_APPROVAL";
+      case "rejected":
+        return session.status === "REJECTED";
       case "completed":
-        return ["APPROVED", "REJECTED", "MERGED"].includes(session.status);
+        return ["APPROVED", "MERGED"].includes(session.status);
       default:
         return true;
     }
@@ -193,7 +199,11 @@ const UserSessionsPage = () => {
 
   const formatDate = (dateString: string) => {
     try {
-      return (new Date(dateString), "MMM d, yyyy");
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
     } catch (error) {
       return "Invalid date";
     }
@@ -215,6 +225,13 @@ const UserSessionsPage = () => {
   const handleViewDetails = (sessionId: string) => {
     navigate(`/wizard?session_id=${sessionId}&step=validation`);
   };
+
+const handleResubmitSession = (sessionId: string) => {
+  console.log("session id from user sessions ",sessionId)
+  // Navigate to wizard with the existing session ID for editing
+  navigate(`/wizard/${sessionId}`);
+  toast.info("You can now update your information and resubmit for approval");
+};
 
   const handleCreateNew = () => {
     navigate("/wizard");
@@ -302,6 +319,16 @@ const UserSessionsPage = () => {
               Pending ({sessions.filter(s => s.status === "PENDING_APPROVAL").length})
             </button>
             <button
+              onClick={() => setFilter("rejected")}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === "rejected"
+                  ? "bg-red-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              Rejected ({sessions.filter(s => s.status === "REJECTED").length})
+            </button>
+            <button
               onClick={() => setFilter("completed")}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 filter === "completed"
@@ -309,7 +336,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
               }`}
             >
-              Completed ({sessions.filter(s => ["APPROVED", "REJECTED", "MERGED"].includes(s.status)).length})
+              Completed ({sessions.filter(s => ["APPROVED", "MERGED"].includes(s.status)).length})
             </button>
           </div>
 
@@ -336,6 +363,8 @@ const UserSessionsPage = () => {
             <p className="text-gray-600 mb-6">
               {filter === "all"
                 ? "You haven't started any parcel registration sessions yet."
+                : filter === "rejected"
+                ? "No rejected sessions found."
                 : `No ${filter} sessions found.`}
             </p>
             <button
@@ -573,7 +602,19 @@ const UserSessionsPage = () => {
                       </button>
                     )}
 
-                    {["PENDING_APPROVAL", "APPROVED", "REJECTED", "MERGED"].includes(session.status) && (
+                    {session.status === "REJECTED" && (
+                      <button
+                        onClick={() => handleResubmitSession(session.session_id)}
+                        className="flex-1 min-w-[140px] bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Resubmit for Approval
+                      </button>
+                    )}
+
+                    {["PENDING_APPROVAL", "APPROVED", "MERGED"].includes(session.status) && (
                       <button
                         onClick={() => handleViewDetails(session.session_id)}
                         className={`flex-1 min-w-[140px] font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2 ${
@@ -626,6 +667,25 @@ const UserSessionsPage = () => {
                     </button>
                   </div>
 
+                  {/* Rejection Message (if available) */}
+                  {session.status === "REJECTED" && session.approval_request && (
+                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <div>
+                          <div className="text-sm font-medium text-red-800 mb-1">
+                            This request was rejected
+                          </div>
+                          <p className="text-xs text-red-700">
+                            Click "Resubmit for Approval" to update your information and try again.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Expired warning */}
                   {isExpired && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
@@ -663,16 +723,16 @@ const UserSessionsPage = () => {
               <div className="text-sm text-gray-600">Pending</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-gray-200">
-              <div className="text-2xl font-bold text-green-600">
-                {sessions.filter(s => ["APPROVED", "MERGED"].includes(s.status)).length}
-              </div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="bg-white/80 rounded-xl p-4 border border-gray-200">
               <div className="text-2xl font-bold text-red-600">
                 {sessions.filter(s => s.status === "REJECTED").length}
               </div>
               <div className="text-sm text-gray-600">Rejected</div>
+            </div>
+            <div className="bg-white/80 rounded-xl p-4 border border-gray-200">
+              <div className="text-2xl font-bold text-green-600">
+                {sessions.filter(s => ["APPROVED", "MERGED"].includes(s.status)).length}
+              </div>
+              <div className="text-sm text-gray-600">Completed</div>
             </div>
           </div>
         )}

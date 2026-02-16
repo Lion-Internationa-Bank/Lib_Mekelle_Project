@@ -133,9 +133,10 @@ export class WizardSessionService {
       where: { session_id: params.sessionId }
     });
 
-    if (!session || session.status !== 'DRAFT') {
-      throw new Error('Cannot save step: Session not found or not in draft');
-    }
+ if (!session || (session.status !== 'DRAFT' && session.status !== 'REJECTED')) {
+  throw new Error('Cannot save step: Session not found or not in draft or rejected');
+}
+
 
     const updateData: any = {
       updated_at: new Date(),
@@ -240,7 +241,7 @@ async submitForApproval(sessionId: string): Promise<SubmitResult> {
       throw new Error('Session not found');
     }
 
-    if (session.status !== 'DRAFT') {
+    if (session.status !== 'DRAFT' && session.status !== 'REJECTED') {
       throw new Error(`Session already ${session.status.toLowerCase()}`);
     }
 

@@ -80,48 +80,68 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
-  const handleSubmit = async () => {
-    if (!currentSession || !validationResult?.valid) {
-      toast.error('Please fix validation errors before submitting');
-      return;
+
+  // In ValidationStep.tsx, modify the save as draft handler
+const handleSaveAsDraft = async () => {
+  try {
+    // If it's a rejected session, we're just updating it, not creating a new draft
+    if (currentSession?.status === 'REJECTED') {
+      toast.success("Changes saved. You can continue editing later.");
+    } else {
+      toast.info("Session saved as draft. You can continue later.");
     }
-    
-    if (!confirm('Are you ready to submit this parcel registration for approval?')) {
-      return;
+    onFinish();
+  } catch (error: any) {
+    toast.error(error.message || "Failed to save draft");
+  }
+};
+ // In ValidationStep.tsx, modify the submit handler
+const handleSubmit = async () => {
+  if (!currentSession || !validationResult?.valid) {
+    toast.error("Please fix validation errors before submitting");
+    return;
+  }
+
+  const isRejected = currentSession.status === 'REJECTED';
+  const confirmMessage = isRejected
+    ? "Are you sure you want to resubmit this rejected session for approval?"
+    : "Are you ready to submit this parcel registration for approval?";
+
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    let result;
+    if (isRejected) {
+      // Use resubmit endpoint for rejected sessions
+      result = await wizardApi.resubmitSession(currentSession.session_id);
+    } else {
+      result = await submitForApproval();
     }
-    
-    setIsSubmitting(true);
-    console.log("Submitting for approval...");
-    
-    try {
-      const result = await submitForApproval();
-      console.log("Submit API response:", result);
+
+    if (result.success) {
+      const message = isRejected
+        ? "Session resubmitted for approval. You will be notified when reviewed."
+        : result.data.requiresApproval
+          ? "Submitted for approval. You will be notified when reviewed."
+          : "Parcel registered successfully!";
       
-      // Handle the result based on your API structure
-      if (result && typeof result === 'object') {
-        const requiresApproval = result.requiresApproval || 
-                               (result.data && result.data.requiresApproval);
-        
-        if (requiresApproval !== undefined) {
-          if (requiresApproval) {
-            toast.success('Submitted for approval. You will be notified when reviewed.');
-            setTimeout(() => onFinish(), 2000);
-          } else {
-            toast.success('Parcel registered successfully!');
-            setTimeout(() => onFinish(), 1500);
-          }
-        } else {
-          throw new Error('Invalid submission response format');
-        }
-      } else {
-        throw new Error('Invalid submission response');
-      }
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      toast.error(error.message || 'Failed to submit for approval');
+      toast.success(message);
+
+      setTimeout(() => {
+        onFinish();
+      }, 2000);
+    } else {
+      toast.error(result.error || "Submission failed");
       setIsSubmitting(false);
     }
-  };
+  } catch (error: any) {
+    toast.error(error.message || "Failed to submit for approval");
+    setIsSubmitting(false);
+  }
+};
 
   if (!currentSession) {
     return (
