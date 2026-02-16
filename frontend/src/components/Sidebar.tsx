@@ -24,7 +24,7 @@ const menuItems: MenuItem[] = [
     label: 'Sessions',
     icon: '🖥️', // Desktop computer - active sessions
     href: '/sessions',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
+    allowedRoles: ['SUBCITY_NORMAL', 'REVENUE_USER'],
 },
 {
     id: 'pending-requests',

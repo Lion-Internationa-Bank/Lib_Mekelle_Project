@@ -9,6 +9,22 @@ import type {
   ApprovalRequest
 } from './api/wizardTypes';
 
+
+interface PaginationMetadata {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: PaginationMetadata;
+  error?: string;
+}
 class WizardApi {
   // Create new wizard session
   async createSession(): Promise<ApiResponse<{ session_id: string; existing?: boolean }>> {
@@ -19,6 +35,32 @@ class WizardApi {
   async getSession(sessionId: string): Promise<ApiResponse<SessionData>> {
     return await api.get(`/wizard/sessions/${sessionId}`);
   }
+
+
+   async getUserSessions(
+    page: number = 1, 
+    limit: number = 10, 
+    status?: string,
+    sortBy: string = 'created_at',
+    sortOrder: 'asc' | 'desc' = 'desc'
+  ): Promise<ApiResponse<{
+    data: SessionData[];
+    pagination: PaginationMetadata;
+  }>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+    
+    if (status) {
+      params.append('status', status);
+    }
+
+    return await api.get(`/wizard/sessions?${params.toString()}`);
+  }
+
 
   // Save step data
   async saveStep(sessionId: string, data: SaveStepData): Promise<ApiResponse<{ message: string }>> {
@@ -68,10 +110,6 @@ class WizardApi {
     return await api.post(`/wizard/sessions/${sessionId}/submit`);
   }
 
-  // Get user's wizard sessions
-  async getUserSessions(): Promise<ApiResponse<SessionData[]>> {
-    return await api.get('/wizard/sessions');
-  }
 
   // Get pending requests (for approvers)
   async getPendingRequests(): Promise<ApiResponse<ApprovalRequest[]>> {
@@ -131,10 +169,6 @@ class WizardApi {
     return await response.blob();
   }
 
-  // Duplicate a session (create a new draft from an existing session)
-  async duplicateSession(sessionId: string): Promise<ApiResponse<{ session_id: string }>> {
-    return await api.post(`/wizard/sessions/${sessionId}/duplicate`);
-  }
 
   // Delete a session (only if in DRAFT or REJECTED status)
   async deleteSession(sessionId: string): Promise<ApiResponse<{ message: string }>> {

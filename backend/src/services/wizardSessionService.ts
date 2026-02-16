@@ -11,6 +11,26 @@ import {
   type LeaseWithDetails
 } from '../services/leaseBillingService.ts';
 
+
+interface PaginationOptions {
+  page: number;
+  limit: number;
+  status?: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
+// Add interface for paginated result
+interface PaginatedResult<T> {
+  sessions: T[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface SaveStepParams {
   sessionId: string;
   step: string;
@@ -327,21 +347,58 @@ async submitForApproval(sessionId: string): Promise<SubmitResult> {
   });
 }
 
-  async getUserSessions(userId: string) {
-    console.log("user id",userId)
-    return await this.prisma.wizard_sessions.findMany({
-      where: {
-        user_id: userId,
-        OR: [
-          { status: 'PENDING_APPROVAL' },
-          { status: 'APPROVED' },
-          { status: 'REJECTED' },
-          { status: 'MERGED' },
-       
-        ]
-      },
-      orderBy: { created_at: 'desc' },
-      take: 20,
+ async getUserSessions(
+    userId: string, 
+    options: PaginationOptions
+  ): Promise<PaginatedResult<any>> {
+    console.log("user id", userId);
+    console.log("pagination options", options);
+
+    const { page, limit, status, sortBy, sortOrder } = options;
+    const skip = (page - 1) * limit;
+
+   
+        const where: any = {
+      user_id:userId,
+
+    };
+
+    // Add status filter if provided
+    if (status) {
+      if (status === 'COMPLETED') {
+        // COMPLETED is a meta-status that includes APPROVED and MERGED
+        where.status = {
+          in: ['APPROVED', 'MERGED']
+        };
+      } else if (status === 'ALL') {
+        // Include all statuses except maybe some exclusions
+        where.status = {
+          in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'MERGED']
+        };
+      } else {
+        // Single status filter
+        where.status = status as any;
+      }
+    } else {
+      // Default: exclude nothing, but you might want to exclude something
+      where.status = {
+        in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'MERGED']
+      };
+    }
+
+    // Build orderBy
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
+
+    // Get total count for pagination
+    const totalCount = await this.prisma.wizard_sessions.count({ where });
+
+    // Get paginated sessions
+    const sessions = await this.prisma.wizard_sessions.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
       include: {
         approval_request: {
           include: {
@@ -351,12 +408,226 @@ async submitForApproval(sessionId: string): Promise<SubmitResult> {
                 username: true,
                 full_name: true
               }
-            }
+            },
+           
+          }
+        },
+        user: {
+          select: {
+            user_id: true,
+            username: true,
+            full_name: true,
+            role: true
+          }
+        },
+        sub_city: {
+          select: {
+            sub_city_id: true,
+            name: true
           }
         }
       }
     });
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      sessions,
+      page,
+      limit,
+      totalCount,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
+    };
   }
+
+  // Delete session (only if in DRAFT or REJECTED status)
+async deleteSession(sessionId: string, userId: string): Promise<{ message: string }> {
+  // Use transaction to ensure all related data is deleted
+  return await this.prisma.$transaction(async (tx) => {
+    // Get session with user info to verify permissions
+    const session = await tx.wizard_sessions.findUnique({
+      where: { session_id: sessionId },
+      include: {
+        user: {
+          select: {
+            user_id: true,
+            username: true,
+            full_name: true
+          }
+        }
+      }
+    });
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    // Verify session belongs to user
+    if (session.user_id !== userId) {
+      throw new Error('Access denied: You do not have permission to delete this session');
+    }
+
+    // Check if session can be deleted (only DRAFT or REJECTED)
+    if (session.status !== 'DRAFT' && session.status !== 'REJECTED') {
+      throw new Error(`Cannot delete session with status '${session.status}'. Only DRAFT or REJECTED sessions can be deleted.`);
+    }
+
+    // Check if DRAFT session is expired
+    if (session.status === 'DRAFT' && session.expires_at && new Date(session.expires_at) < new Date()) {
+      // Allow deletion of expired drafts
+      console.log('Deleting expired draft session');
+    }
+
+    // Delete temporary documents first
+    // Note: You'll need to implement this based on your document storage
+    try {
+      await this.deleteSessionDocuments(sessionId);
+    } catch (docError) {
+      console.error('Error deleting session documents:', docError);
+      // Continue with session deletion even if document deletion fails
+      // You might want to handle this differently based on your requirements
+    }
+
+    // If there's an associated approval request, handle it
+    if (session.approval_request_id) {
+      // For REJECTED sessions, we might want to keep the approval request for audit
+      // or delete it based on your business logic
+      if (session.status === 'REJECTED') {
+        // Option 1: Keep the approval request for audit purposes
+        // Just unlink it from the session
+        await tx.wizard_sessions.update({
+          where: { session_id: sessionId },
+          data: { approval_request_id: null }
+        });
+      } else {
+        // Option 2: Delete the approval request (for DRAFT sessions that never went to approval)
+        await tx.approval_requests.deleteMany({
+          where: { request_id: session.approval_request_id }
+        }).catch(err => {
+          console.error('Error deleting approval request:', err);
+          // Continue with session deletion
+        });
+      }
+    }
+
+    // Delete the wizard session
+    await tx.wizard_sessions.delete({
+      where: { session_id: sessionId }
+    });
+
+    // Log the deletion for audit
+    await this.auditService.log({
+      userId,
+      action: 'DELETE',
+      entityType: 'WIZARD_SESSION',
+      entityId: sessionId,
+      changes: {
+        session_id: sessionId,
+        status: session.status,
+        deleted_at: new Date().toISOString()
+      },
+      ipAddress: 'SYSTEM'
+    });
+
+    return {
+      message: session.status === 'DRAFT' 
+        ? 'Draft session deleted successfully' 
+        : 'Rejected session deleted successfully'
+    };
+  });
+}
+
+// Helper method to delete session documents
+private async deleteSessionDocuments(sessionId: string): Promise<void> {
+  try {
+    // Get the session to access document references
+    const session = await this.prisma.wizard_sessions.findUnique({
+      where: { session_id: sessionId },
+      select: {
+        parcel_docs: true,
+        owner_docs: true,
+        lease_docs: true
+      }
+    });
+
+    if (!session) return;
+
+    // Collect all document references
+    const allDocs = [
+      ...(Array.isArray(session.parcel_docs) ? session.parcel_docs : []),
+      ...(Array.isArray(session.owner_docs) ? session.owner_docs : []),
+      ...(Array.isArray(session.lease_docs) ? session.lease_docs : [])
+    ];
+
+    // Delete each document from storage
+    for (const doc of allDocs) {
+      if (doc.file_url) {
+        try {
+          // Extract filename from URL
+          const urlParts = doc.file_url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          
+          // Determine step from document type or URL
+          let step = 'parcel-docs';
+          if (doc.file_url.includes('owner-docs')) step = 'owner-docs';
+          if (doc.file_url.includes('lease-docs')) step = 'lease-docs';
+          
+          // Delete from temporary storage
+          // You'll need to inject DocumentStorageService or have access to it
+          // await this.documentStorage.deleteTemporary(sessionId, step, fileName);
+        } catch (docError) {
+          console.error(`Error deleting document ${doc.id}:`, docError);
+          // Continue with other documents
+        }
+      }
+    }
+
+    // Also delete any records from wizard_documents_temp table if it exists
+    await this.prisma.$executeRaw`
+      DELETE FROM wizard_documents_temp 
+      WHERE session_id = ${sessionId}
+    `.catch(err => {
+      console.error('Error deleting from wizard_documents_temp:', err);
+    });
+
+  } catch (error) {
+    console.error('Error in deleteSessionDocuments:', error);
+    throw error;
+  }
+}
+
+// Optional: Add a method to check if session can be deleted
+async canDeleteSession(sessionId: string, userId: string): Promise<{
+  canDelete: boolean;
+  reason?: string;
+}> {
+  const session = await this.prisma.wizard_sessions.findUnique({
+    where: { session_id: sessionId }
+  });
+
+  if (!session) {
+    return { canDelete: false, reason: 'Session not found' };
+  }
+
+  if (session.user_id !== userId) {
+    return { canDelete: false, reason: 'Access denied' };
+  }
+
+  if (session.status !== 'DRAFT' && session.status !== 'REJECTED') {
+    return { 
+      canDelete: false, 
+      reason: `Cannot delete session with status '${session.status}'. Only DRAFT or REJECTED sessions can be deleted.` 
+    };
+  }
+
+  return { canDelete: true };
+}
+
 
   async cleanupExpiredSessions() {
     const expired = await this.prisma.wizard_sessions.findMany({

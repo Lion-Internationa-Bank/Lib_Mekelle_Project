@@ -21,7 +21,6 @@ import RateConfigsPage from './routes/admin/RateConfigsPage';
 import { WizardProvider } from './contexts/WizardContext';
 import ParcelWizardV2 from './components/wizard/ParcelWizard';
 import UserSessionsPage from './routes/subcity/UserSessionsPage';
-import SessionDetailsPage from './routes/subcity/SessionDetailsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
 import ParcelWizardV3 from './components/wizard/ParcleWizardV2';
@@ -45,7 +44,6 @@ const App = () => {
           {/* Common protected routes */}
           <Route path="/parcels/new" element={<ParcelWizardV2 />} />
           <Route path="/sessions" element={<UserSessionsPage />} />
-        <Route path="/sessions/:sessionId" element={<SessionDetailsPage />} />
         <Route path="/wizard/:sessionId" element={<ParcelWizardV2 />} /> 
           <Route path="/ownership" element={<OwnershipPage />} />
           <Route path="/users" element={<UserManagementPage />} />

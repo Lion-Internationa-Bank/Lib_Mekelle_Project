@@ -231,23 +231,93 @@ export class WizardController {
   }
 
   // Get user's wizard sessions
-  async getUserSessions(req: AuthRequest, res: Response) {
-    try {
-      const user = req.user!;
-      const sessions = await this.wizardService.getUserSessions(user.user_id);
+// Get user's wizard sessions with pagination and filtering
+async getUserSessions(req: AuthRequest, res: Response) {
+  try {
+    const user = req.user!;
+    
+    // Extract query parameters with defaults
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string;
+    const sortBy = req.query.sortBy as string || 'created_at';
+    const sortOrder = req.query.sortOrder as 'asc' | 'desc' || 'desc';
 
-      return res.status(200).json({
-        success: true,
-        data: sessions
-      });
-    } catch (error) {
-      console.error('Get user sessions error:', error);
-      return res.status(500).json({
+    const result = await this.wizardService.getUserSessions(
+      user.user_id,
+      {
+        page,
+        limit,
+        status,
+        sortBy,
+        sortOrder
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.sessions,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage
+      }
+    });
+  } catch (error) {
+    console.error('Get user sessions error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user sessions'
+    });
+  }
+}
+
+// Delete wizard session (only if in DRAFT or REJECTED status)
+async deleteSession(req: AuthRequest, res: Response) {
+  try {
+    const session_id = req.params.session_id as string;
+    const user = req.user!;
+
+    const result = await this.wizardService.deleteSession(session_id, user.user_id);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error: any) {
+    console.error('Delete session error:', error);
+    
+    // Handle specific error types
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
         success: false,
-        message: 'Failed to fetch user sessions'
+        message: error.message
       });
     }
+    
+    if (error.message.includes('permission') || error.message.includes('Access denied')) {
+      return res.status(403).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    if (error.message.includes('only DRAFT or REJECTED')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete session'
+    });
   }
+}
 
   // Serve temporary document
   async serveDocument(req: AuthRequest, res: Response) {
