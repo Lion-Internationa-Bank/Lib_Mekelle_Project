@@ -21,6 +21,7 @@ interface WizardContextType {
   deleteDocument: (step: string, documentId: string) => Promise<void>;
   validateSession: () => Promise<ValidationResult>;
   submitForApproval: () => Promise<SubmitResult>;
+  resubmitForApproval: () => Promise<SubmitResult>;
 }
 
 const WizardContext = createContext<WizardContextType | undefined>(undefined);
@@ -203,6 +204,45 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(false);
     }
   };
+  const resubmitForApproval = async (): Promise<SubmitResult> => {
+  if (!currentSession) {
+    toast.error('No active session');
+    throw new Error('No active session');
+  }
+
+  try {
+    setIsLoading(true);
+    const response = await wizardApi.resubmitSession(currentSession.session_id);
+    console.log("Resubmit for approval response:", response);
+    
+    if (response.success && response.data?.data) {
+      const newStatus = response.data.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
+      setCurrentSession(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        };
+      });
+      
+      const message = response.data.data.requiresApproval 
+        ? 'Resubmitted for approval' 
+        : 'Parcel registered successfully';
+      toast.success(message);
+      
+      return response.data.data;
+    } else {
+      toast.error(response.error || 'Failed to resubmit for approval');
+      throw new Error(response.error || 'Failed to resubmit for approval');
+    }
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to resubmit for approval');
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
  const validateSession = useCallback(async (): Promise<ValidationResult> => {
     if (!currentSession) {
@@ -305,7 +345,8 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       uploadDocument,
       deleteDocument,
       validateSession,
-      submitForApproval
+      submitForApproval,
+      resubmitForApproval
     }}>
       {children}
     </WizardContext.Provider>

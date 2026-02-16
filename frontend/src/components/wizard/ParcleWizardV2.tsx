@@ -1,6 +1,6 @@
-// src/components/wizard/ParcelWizard.tsx
+// src/components/wizard/ParcelWizard.tsx - UPDATED VERSION WITH RESUBMIT HANDLING
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, useParams } from "react-router-dom"; // Add useParams
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWizard } from "../../contexts/WizardContext";
 import { toast } from 'sonner';
 
@@ -25,17 +25,14 @@ const STEPS = [
 
 type Step = (typeof STEPS)[number];
 
-const ParcelWizard = () => {
+const ParcelWizardV3 = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { sessionId: routeSessionId } = useParams(); // Get sessionId from route params
-  const { currentSession, createSession, loadSession, isLoading } = useWizard();
+  const { currentSession, createSession, loadSession, isLoading, updateSessionStatus } = useWizard();
 
-  // Get session_id from either query params or route params
-  const querySessionId = searchParams.get("session_id");
-  const sessionId = routeSessionId || querySessionId; // Prefer route param over query param
-  
+  const sessionId = searchParams.get("session_id");
   const currentStepParam = searchParams.get("step");
+  const resubmitParam = searchParams.get("resubmit");
   
   const validStep =
     currentStepParam && STEPS.includes(currentStepParam as Step)
@@ -47,6 +44,7 @@ const ParcelWizard = () => {
   const [hasSessionLoaded, setHasSessionLoaded] = useState(false);
   const [shouldSkipOwnerDocs, setShouldSkipOwnerDocs] = useState(false);
   const [shouldSkipLeaseSteps, setShouldSkipLeaseSteps] = useState(false);
+  const [isResubmitMode, setIsResubmitMode] = useState(false);
 
   // Initialize or load session
   useEffect(() => {
@@ -55,17 +53,22 @@ const ParcelWizard = () => {
       setHasSessionLoaded(false);
       
       try {
-        console.log("Session ID from route/query:", sessionId);
-        
+        console.log("Session ID",sessionId)
+        console.log("sessionId !== 'undefined'",sessionId !== 'undefined')
         if (sessionId && sessionId !== 'undefined') {
           console.log("Loading existing session from URL:", sessionId);
           await loadSession(sessionId);
           setHasSessionLoaded(true);
           
-          // Update URL to use route parameter format if it was using query param
-          if (querySessionId && !routeSessionId) {
-            // Replace the URL with the route parameter format
-            navigate(`/wizard/${sessionId}?step=${validStep}`, { replace: true });
+          // Check if this is a resubmit (from rejected session)
+          if (resubmitParam === "true") {
+            setIsResubmitMode(true);
+            
+            // If session is rejected, update status back to DRAFT for editing
+            if (currentSession?.status === "REJECTED") {
+              await updateSessionStatus(sessionId, "DRAFT");
+              toast.info("You can now update your information and resubmit for approval");
+            }
           }
         } else {
           console.log("Creating new session");
@@ -76,10 +79,12 @@ const ParcelWizard = () => {
             await loadSession(newSessionId);
             setHasSessionLoaded(true);
             
-            // Navigate to the new session using route parameter format
-            navigate(`/wizard/${newSessionId}?step=${validStep}`, { replace: true });
+            const params = new URLSearchParams();
+            params.set('session_id', newSessionId);
+            params.set('step', validStep);
+            setSearchParams(params);
           } else {
-            toast.error("Failed to create/load session");
+            toast.error("Failed to create session");
             navigate("/home");
           }
         }
@@ -93,17 +98,7 @@ const ParcelWizard = () => {
     };
 
     initializeSession();
-  }, [sessionId]); // Add sessionId to dependency array
-
-  // Show rejection warning when session loads and is rejected
-  useEffect(() => {
-    if (currentSession?.status === 'REJECTED' && hasSessionLoaded) {
-      toast.warning("This session was previously rejected. Please update the information and resubmit.", {
-        duration: 6000,
-        icon: "⚠️"
-      });
-    }
-  }, [currentSession?.status, hasSessionLoaded]);
+  }, [sessionId, resubmitParam]); // Add dependencies
 
   // Check if current owner is an existing owner (has owner_id)
   useEffect(() => {
@@ -167,45 +162,25 @@ const ParcelWizard = () => {
   // Ensure current step is valid based on available steps
   useEffect(() => {
     if (!availableSteps.includes(currentStep)) {
-      // If current step is not in available steps, navigate to the first available step
       console.log("Current step not available, redirecting to:", availableSteps[0]);
       goToStep(availableSteps[0]);
     }
   }, [availableSteps, currentStep]);
 
-  // Debug log
-  useEffect(() => {
-    console.log("ParcelWizard state:", {
-      currentStep,
-      hasSessionLoaded,
-      shouldSkipOwnerDocs,
-      shouldSkipLeaseSteps,
-      availableSteps,
-      currentStepIndexInAvailable,
-      currentSession: currentSession ? {
-        hasParcelData: !!currentSession.parcel_data,
-        parcelTenureType: currentSession.parcel_data?.[0]?.tenure_type,
-        hasOwnerData: !!currentSession.owner_data,
-        ownerHasId: currentSession.owner_data?.[0]?.owner_id ? true : false,
-        hasLeaseData: !!currentSession.lease_data,
-        sessionId: currentSession.session_id,
-        status: currentSession.status
-      } : 'No session',
-      canAccessValidation: canAccessStep("validation"),
-    });
-  }, [currentStep, hasSessionLoaded, currentSession, shouldSkipOwnerDocs, shouldSkipLeaseSteps, currentStepIndexInAvailable]);
-
   const updateUrl = (step: Step, extra?: Record<string, string>) => {
-    // Use the current session ID from the session, not from URL params
-    const currentSessionId = currentSession?.session_id || sessionId;
-    
     const params = new URLSearchParams({ 
+      session_id: sessionId || '',
       step 
     });
     
-    // Preserve existing params (except step)
+    // Preserve resubmit flag if it exists
+    if (resubmitParam === "true") {
+      params.set('resubmit', 'true');
+    }
+    
+    // Preserve existing params
     searchParams.forEach((value, key) => {
-      if (key !== "step") {
+      if (key !== "step" && key !== "session_id" && key !== "resubmit") {
         params.set(key, value);
       }
     });
@@ -216,9 +191,7 @@ const ParcelWizard = () => {
         if (value) params.set(key, value);
       });
     }
-    
-    // Navigate to the route parameter format
-    navigate(`/wizard/${currentSessionId}?${params.toString()}`);
+    setSearchParams(params);
   };
 
   const goToStep = (step: Step, extra?: Record<string, string>) => {
@@ -231,12 +204,7 @@ const ParcelWizard = () => {
     const currentIndex = availableSteps.indexOf(currentStep);
     if (currentIndex < availableSteps.length - 1) {
       const nextStepValue = availableSteps[currentIndex + 1];
-      console.log(`Moving to next step: ${nextStepValue}`, {
-        currentIndex,
-        availableStepsLength: availableSteps.length,
-        shouldSkipOwnerDocs,
-        shouldSkipLeaseSteps
-      });
+      console.log(`Moving to next step: ${nextStepValue}`);
       goToStep(nextStepValue);
     } else {
       console.log("Already at last step");
@@ -298,25 +266,21 @@ const ParcelWizard = () => {
       case "owner":
         return !!currentSession.parcel_data;
       case "owner-docs":
-        // If we have an existing owner (with owner_id), owner-docs is not required
         if (shouldSkipOwnerDocs) {
-          return false; // Don't allow access to skipped step
+          return false;
         }
         return !!currentSession.owner_data;
       case "lease":
-        // If we're skipping lease steps, don't allow access
         if (shouldSkipLeaseSteps) {
           return false;
         }
         return !!currentSession.owner_data;
       case "lease-docs":
-        // If we're skipping lease steps, don't allow access
         if (shouldSkipLeaseSteps) {
           return false;
         }
         return !!currentSession.lease_data;
       case "validation":
-        // Allow access if we have at least parcel data completed
         return !!currentSession.parcel_data;
       default:
         return false;
@@ -387,16 +351,12 @@ const ParcelWizard = () => {
                 <span className={`ml-4 px-2 py-1 text-xs rounded-full ${
                   currentSession.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
                   currentSession.status === 'PENDING_APPROVAL' ? 'bg-blue-100 text-blue-800' :
-                  currentSession.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                   currentSession.status === 'MERGED' ? 'bg-green-100 text-green-800' :
-                  currentSession.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                  currentSession.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
-                  {currentSession.status === 'PENDING_APPROVAL' ? 'Pending Approval' :
-                   currentSession.status === 'REJECTED' ? 'Rejected' :
-                   currentSession.status === 'MERGED' ? 'Completed' :
-                   currentSession.status === 'APPROVED' ? 'Approved' :
-                   currentSession.status}
+                  {currentSession.status.replace('_', ' ')}
+                  {isResubmitMode && " (Resubmit Mode)"}
                 </span>
                 {shouldSkipOwnerDocs && (
                   <span className="ml-4 px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
@@ -413,6 +373,25 @@ const ParcelWizard = () => {
                 Updated: {new Date(currentSession.updated_at).toLocaleDateString()}
               </div>
             </div>
+            
+            {/* Resubmit banner for rejected sessions */}
+            {isResubmitMode && (
+              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-orange-800">
+                      Resubmitting Rejected Session
+                    </p>
+                    <p className="text-xs text-orange-700 mt-1">
+                      Please review and update your information. When ready, go to the Review & Submit step to resubmit for approval.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -458,24 +437,12 @@ const ParcelWizard = () => {
                 ].join(" ")}
               >
                 {label}
+                {s === "validation" && isResubmitMode && (
+                  <span className="ml-1 text-xs">(Resubmit)</span>
+                )}
               </button>
             );
           })}
-        </div>
-
-        {/* Debug info (temporary) - remove in production */}
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-          <div className="font-medium text-yellow-800 mb-1">Debug Info:</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <div>Step: <span className="font-bold">{currentStep}</span></div>
-            <div>Existing Owner: <span className={shouldSkipOwnerDocs ? "text-purple-600" : "text-gray-600"}>{shouldSkipOwnerDocs ? "Yes" : "No"}</span></div>
-            <div>Is Lease: <span className={!shouldSkipLeaseSteps ? "text-green-600" : "text-gray-600"}>{!shouldSkipLeaseSteps ? "Yes" : "No"}</span></div>
-            <div>Tenure: <span className="font-medium">{currentSession.parcel_data?.[0]?.tenure_type || "N/A"}</span></div>
-            <div>Parcel: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
-            <div>Owner: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
-            <div>Owner ID: <span className={currentSession.owner_data?.[0]?.owner_id ? "text-green-600" : "text-gray-600"}>{currentSession.owner_data?.[0]?.owner_id || "None"}</span></div>
-            <div>Lease: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
-          </div>
         </div>
 
         {/* Card */}
@@ -514,7 +481,15 @@ const ParcelWizard = () => {
           )}
 
           {currentStep === "validation" && (
-            <ValidationStep key={currentSession?.session_id} prevStep={prevStep} onFinish={finishWizard} />
+            <>
+              {console.log("Rendering ValidationStep component...")}
+              <ValidationStep 
+                key={currentSession?.session_id} 
+                prevStep={prevStep} 
+                onFinish={finishWizard}
+                isResubmit={isResubmitMode}
+              />
+            </>
           )}
 
           {/* Back to Dashboard button */}
@@ -533,4 +508,4 @@ const ParcelWizard = () => {
   );
 };
 
-export default ParcelWizard;
+export default ParcelWizardV3;

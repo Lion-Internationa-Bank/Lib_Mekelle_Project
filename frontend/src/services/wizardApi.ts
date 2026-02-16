@@ -9,6 +9,22 @@ import type {
   ApprovalRequest
 } from './api/wizardTypes';
 
+
+interface PaginationMetadata {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: PaginationMetadata;
+  error?: string;
+}
 class WizardApi {
   // Create new wizard session
   async createSession(): Promise<ApiResponse<{ session_id: string; existing?: boolean }>> {
@@ -19,6 +35,32 @@ class WizardApi {
   async getSession(sessionId: string): Promise<ApiResponse<SessionData>> {
     return await api.get(`/wizard/sessions/${sessionId}`);
   }
+
+
+   async getUserSessions(
+    page: number = 1, 
+    limit: number = 10, 
+    status?: string,
+    sortBy: string = 'created_at',
+    sortOrder: 'asc' | 'desc' = 'desc'
+  ): Promise<ApiResponse<{
+    data: SessionData[];
+    pagination: PaginationMetadata;
+  }>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+    
+    if (status) {
+      params.append('status', status);
+    }
+
+    return await api.get(`/wizard/sessions?${params.toString()}`);
+  }
+
 
   // Save step data
   async saveStep(sessionId: string, data: SaveStepData): Promise<ApiResponse<{ message: string }>> {
@@ -61,10 +103,13 @@ class WizardApi {
     return await api.post(`/wizard/sessions/${sessionId}/submit`);
   }
 
-  // Get user's wizard sessions
-  async getUserSessions(): Promise<ApiResponse<SessionData[]>> {
-    return await api.get('/wizard/sessions');
+  // RESUBMIT a rejected session
+  async resubmitSession(sessionId: string): Promise<ApiResponse<SubmitResult>> {
+    // Rejected sessions can be resubmitted using the same submit endpoint
+    // The backend will handle it appropriately based on session status
+    return await api.post(`/wizard/sessions/${sessionId}/submit`);
   }
+
 
   // Get pending requests (for approvers)
   async getPendingRequests(): Promise<ApiResponse<ApprovalRequest[]>> {
@@ -84,6 +129,21 @@ class WizardApi {
   // Reject request
   async rejectRequest(requestId: string, rejectionReason: string): Promise<ApiResponse<any>> {
     return await api.post(`/maker-checker/requests/${requestId}/reject`, { rejection_reason: rejectionReason });
+  }
+
+  // Get rejection reason for a session
+  async getRejectionReason(sessionId: string): Promise<ApiResponse<{ reason: string; rejected_at: string; rejected_by: string }>> {
+    return await api.get(`/wizard/sessions/${sessionId}/rejection-reason`);
+  }
+
+  // Check if session can be resubmitted
+  async canResubmitSession(sessionId: string): Promise<boolean> {
+    try {
+      const session = await this.getSession(sessionId);
+      return session.success && session.data?.status === 'REJECTED';
+    } catch (error) {
+      return false;
+    }
   }
 
   // Serve document URL builder
@@ -107,6 +167,12 @@ class WizardApi {
     }
 
     return await response.blob();
+  }
+
+
+  // Delete a session (only if in DRAFT or REJECTED status)
+  async deleteSession(sessionId: string): Promise<ApiResponse<{ message: string }>> {
+    return await api.delete(`/wizard/sessions/${sessionId}`);
   }
 }
 

@@ -48,6 +48,11 @@ router.post('/sessions/:session_id/documents',
   (req, res) => wizardController.uploadDocument(req, res)
 );
 
+// Delete wizard session (only DRAFT or REJECTED)
+router.delete('/sessions/:session_id', 
+  (req, res) => wizardController.deleteSession(req, res)
+);
+
 // Delete document from wizard
 router.delete('/sessions/:session_id/documents/:document_id', 
   (req, res) => wizardController.deleteDocument(req, res)
