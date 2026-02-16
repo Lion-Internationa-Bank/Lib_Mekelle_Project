@@ -9,6 +9,7 @@ import {
   type LeaseStepFormData,
 } from "../../../validation/schemas";
 import { toast } from 'sonner';
+import { Receipt, Ruler, FileText } from "lucide-react";
 
 const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
   const { currentSession, saveStep, isLoading } = useWizard();
@@ -27,6 +28,10 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
       total_lease_amount: 0,
       down_payment_amount: 0,
       other_payment: 0,
+      // New fee fields
+      demarcation_fee: 0,
+      contract_registration_fee: 0,
+      engineering_service_fee: 0,
       lease_period_years: 0,
       payment_term_years: 0,
       start_date: today,
@@ -100,192 +105,306 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="space-y-8"
       >
-        {/* Price per m² */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Price per m² (ETB) *
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register("price_per_m2", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.price_per_m2 && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.price_per_m2.message}
-            </p>
-          )}
+        {/* Main Lease Information */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Lease Payment Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Price per m² */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Price per m² (ETB) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("price_per_m2", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.price_per_m2 && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.price_per_m2.message}
+                </p>
+              )}
+            </div>
+
+            {/* Total Lease Amount */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Total Lease Amount (ETB) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("total_lease_amount", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.total_lease_amount && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.total_lease_amount.message}
+                </p>
+              )}
+            </div>
+
+            {/* Down Payment Amount */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Down Payment Amount (ETB)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("down_payment_amount", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.down_payment_amount && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.down_payment_amount.message}
+                </p>
+              )}
+            </div>
+
+            {/* Other Payment Amount */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Other Payment Amount (ETB)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("other_payment", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.other_payment && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.other_payment.message}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Total Lease Amount */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Total Lease Amount (ETB) *
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register("total_lease_amount", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.total_lease_amount && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.total_lease_amount.message}
-            </p>
-          )}
-        </div>
+        {/* Additional Fees Section - NEW */}
+        <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Receipt className="w-5 h-5 text-purple-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Additional Fees 
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Demarcation Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <Ruler size={16} className="text-purple-600" />
+                Demarcation Fee (ETB)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("demarcation_fee", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+              {errors.demarcation_fee && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.demarcation_fee.message}
+                </p>
+              )}
+           
+            </div>
 
-        {/* Down Payment Amount */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Down Payment Amount (ETB)
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register("down_payment_amount", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.down_payment_amount && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.down_payment_amount.message}
-            </p>
-          )}
-        </div>
+            {/* Engineering Service Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <FileText size={16} className="text-purple-600" />
+                Engineering Service Fee (ETB)
+              </label>
+              <input
+              type="number"
+                min="0"
+                step="0.01"
+                {...register("engineering_service_fee", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+              {errors.engineering_service_fee && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.engineering_service_fee.message}
+                </p>
+              )}
+             
+            </div>
 
-        {/* Other Payment Amount */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Other Payment Amount (ETB)
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register("other_payment", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.other_payment && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.other_payment.message}
-            </p>
-          )}
+            {/* Contract Registration Fee */}
+                  
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <Receipt size={16} className="text-purple-600" />
+                Contract Registration Fee (ETB)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("contract_registration_fee", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+              {errors.contract_registration_fee && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.contract_registration_fee.message}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Contract registration fee amount
+              </p>
+            </div>
+          </div>
         </div>
+         
+      
 
-        {/* Lease Period */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Lease Period (Years) *
-          </label>
-          <input
-            type="number"
-            min="1"
-            {...register("lease_period_years", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.lease_period_years && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.lease_period_years.message}
-            </p>
-          )}
-        </div>
+        {/* Period Information */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Lease Period & Dates
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Lease Period */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Lease Period (Years) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                {...register("lease_period_years", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.lease_period_years && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.lease_period_years.message}
+                </p>
+              )}
+            </div>
 
-        {/* Payment Term */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Payment Term (Years) *
-          </label>
-          <input
-            type="number"
-            min="1"
-            {...register("payment_term_years", { valueAsNumber: true })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.payment_term_years && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.payment_term_years.message}
-            </p>
-          )}
-        </div>
+            {/* Payment Term */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Payment Term (Years) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                {...register("payment_term_years", { valueAsNumber: true })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.payment_term_years && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.payment_term_years.message}
+                </p>
+              )}
+            </div>
 
-        {/* Contract Date */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Contract Date *
-          </label>
-          <input
-            type="date"
-            max={today}
-            {...register("contract_date")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.contract_date && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.contract_date.message}
-            </p>
-          )}
-        </div>
+            {/* Contract Date */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Contract Date *
+              </label>
+              <input
+                type="date"
+                max={today}
+                {...register("contract_date")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.contract_date && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.contract_date.message}
+                </p>
+              )}
+            </div>
 
-        {/* Start Date */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Start Date *
-          </label>
-          <input
-            type="date"
-            min={today}
-            {...register("start_date")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          {errors.start_date && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.start_date.message}
-            </p>
-          )}
-        </div>
+            {/* Start Date */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Start Date *
+              </label>
+              <input
+                type="date"
+                min={today}
+                {...register("start_date")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.start_date && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.start_date.message}
+                </p>
+              )}
+            </div>
 
-        {/* Expiry Date (calculated, read-only) */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Expiry Date (calculated)
-          </label>
-          <input
-            type="text"
-            value={expiryDate || "Enter start date and lease period"}
-            readOnly
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Calculated based on start date + lease period
-          </p>
+            {/* Expiry Date (calculated, read-only) */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Expiry Date (calculated)
+              </label>
+              <input
+                type="text"
+                value={expiryDate || "Enter start date and lease period"}
+                readOnly
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Calculated based on start date + lease period
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Legal Framework */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Legal Framework *
-          </label>
-          <textarea
-            rows={3}
-            {...register("legal_framework")}
-            placeholder="e.g. Proclamation No. 721/2011, Urban Lands Lease Holding Proclamation"
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-          />
-          {errors.legal_framework && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.legal_framework.message}
-            </p>
-          )}
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Legal Information
+          </h3>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Legal Framework *
+            </label>
+            <textarea
+              rows={3}
+              {...register("legal_framework")}
+              placeholder="e.g. Proclamation No. 721/2011, Urban Lands Lease Holding Proclamation"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+            />
+            {errors.legal_framework && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.legal_framework.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-700 flex items-center gap-2">
+            <Receipt size={16} />
+            <span>
+              <strong>Note:</strong> Additional fees (demarcation, engineering, registration) are stored separately and do not affect the lease payment calculations or installment plans.
+            </span>
+          </p>
         </div>
 
         {/* Navigation */}
-        <div className="md:col-span-2 flex justify-between pt-6">
+        <div className="flex justify-between pt-6">
           <div className="flex gap-4">
             <button
               type="button"

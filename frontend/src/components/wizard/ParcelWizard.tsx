@@ -1,4 +1,4 @@
-// src/components/wizard/ParcelWizard.tsx - FIXED VERSION
+// src/components/wizard/ParcelWizard.tsx - UPDATED VERSION
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWizard } from "../../contexts/WizardContext";
@@ -41,6 +41,8 @@ const ParcelWizard = () => {
   const [currentStep, setCurrentStep] = useState<Step>(validStep);
   const [isInitializing, setIsInitializing] = useState(true);
   const [hasSessionLoaded, setHasSessionLoaded] = useState(false);
+  const [shouldSkipOwnerDocs, setShouldSkipOwnerDocs] = useState(false);
+  const [shouldSkipLeaseSteps, setShouldSkipLeaseSteps] = useState(false);
 
   // Initialize or load session
   useEffect(() => {
@@ -51,21 +53,17 @@ const ParcelWizard = () => {
       try {
         if (sessionId && sessionId !== 'undefined') {
           console.log("Loading existing session from URL:", sessionId);
-          // Load existing session from URL
           await loadSession(sessionId);
           setHasSessionLoaded(true);
         } else {
           console.log("Creating new session or loading existing draft");
-          // Create new session or get existing draft
           const newSessionId = await createSession();
           console.log("Session ID returned:", newSessionId);
           
           if (newSessionId) {
-            // Load the session first
             await loadSession(newSessionId);
             setHasSessionLoaded(true);
             
-            // Then update URL with session ID
             const params = new URLSearchParams();
             params.set('session_id', newSessionId);
             params.set('step', validStep);
@@ -87,6 +85,40 @@ const ParcelWizard = () => {
     initializeSession();
   }, []); // Run only once on mount
 
+  // Check if current owner is an existing owner (has owner_id)
+  useEffect(() => {
+    if (currentSession?.owner_data) {
+      const ownerData = Array.isArray(currentSession.owner_data) 
+        ? currentSession.owner_data[0] 
+        : currentSession.owner_data;
+      
+      // If owner has an ID, it's an existing owner - skip owner docs
+      setShouldSkipOwnerDocs(!!ownerData?.owner_id);
+    } else {
+      setShouldSkipOwnerDocs(false);
+    }
+  }, [currentSession?.owner_data]);
+
+  // Check if parcel tenure type is LEASE
+  useEffect(() => {
+    if (currentSession?.parcel_data) {
+      const parcelData = Array.isArray(currentSession.parcel_data) 
+        ? currentSession.parcel_data[0] 
+        : currentSession.parcel_data;
+      
+      // If tenure_type is not "LEASE", skip lease steps
+      // Adjust this condition based on your actual tenure_type values
+      const isLease = parcelData?.tenure_type === "LEASE" || 
+                      parcelData?.tenure_type === "lease" ||
+                      parcelData?.tenure_type === "Lease";
+      
+      setShouldSkipLeaseSteps(!isLease);
+      console.log("Parcel tenure type:", parcelData?.tenure_type, "isLease:", isLease, "skipLeaseSteps:", !isLease);
+    } else {
+      setShouldSkipLeaseSteps(false);
+    }
+  }, [currentSession?.parcel_data]);
+
   // Sync URL → currentStep on URL change
   useEffect(() => {
     if (currentStepParam && STEPS.includes(currentStepParam as Step)) {
@@ -94,27 +126,55 @@ const ParcelWizard = () => {
     }
   }, [currentStepParam]);
 
+  // Calculate available steps based on conditions
+  const getAvailableSteps = (): readonly Step[] => {
+    let steps = [...STEPS]; // Start with all steps
+    
+    if (shouldSkipOwnerDocs) {
+      steps = steps.filter(step => step !== "owner-docs");
+    }
+    
+    if (shouldSkipLeaseSteps) {
+      steps = steps.filter(step => step !== "lease" && step !== "lease-docs");
+    }
+    
+    return steps;
+  };
 
-   const stepIndex = STEPS.indexOf(currentStep) ;
-  const progress = ((stepIndex + 1) / STEPS.length) * 100;
-  // Debug log to see current session state
+  const availableSteps = getAvailableSteps();
+  const currentStepIndexInAvailable = availableSteps.indexOf(currentStep);
+  const progress = ((currentStepIndexInAvailable + 1) / availableSteps.length) * 100;
+
+  // Ensure current step is valid based on available steps
+  useEffect(() => {
+    if (!availableSteps.includes(currentStep)) {
+      // If current step is not in available steps, navigate to the first available step
+      console.log("Current step not available, redirecting to:", availableSteps[0]);
+      goToStep(availableSteps[0]);
+    }
+  }, [availableSteps, currentStep]);
+
+  // Debug log
   useEffect(() => {
     console.log("ParcelWizard state:", {
       currentStep,
       hasSessionLoaded,
+      shouldSkipOwnerDocs,
+      shouldSkipLeaseSteps,
+      availableSteps,
+      currentStepIndexInAvailable,
       currentSession: currentSession ? {
         hasParcelData: !!currentSession.parcel_data,
+        parcelTenureType: currentSession.parcel_data?.[0]?.tenure_type,
         hasOwnerData: !!currentSession.owner_data,
+        ownerHasId: currentSession.owner_data?.[0]?.owner_id ? true : false,
         hasLeaseData: !!currentSession.lease_data,
         sessionId: currentSession.session_id,
         status: currentSession.status
       } : 'No session',
       canAccessValidation: canAccessStep("validation"),
-      stepIndex
     });
-  }, [currentStep, hasSessionLoaded, currentSession, stepIndex]);
-
- 
+  }, [currentStep, hasSessionLoaded, currentSession, shouldSkipOwnerDocs, shouldSkipLeaseSteps, currentStepIndexInAvailable]);
 
   const updateUrl = (step: Step, extra?: Record<string, string>) => {
     const params = new URLSearchParams({ 
@@ -145,14 +205,27 @@ const ParcelWizard = () => {
   };
 
   const nextStep = () => {
-    if (stepIndex < STEPS.length - 1) {
-      goToStep(STEPS[stepIndex + 1]);
+    const currentIndex = availableSteps.indexOf(currentStep);
+    if (currentIndex < availableSteps.length - 1) {
+      const nextStepValue = availableSteps[currentIndex + 1];
+      console.log(`Moving to next step: ${nextStepValue}`, {
+        currentIndex,
+        availableStepsLength: availableSteps.length,
+        shouldSkipOwnerDocs,
+        shouldSkipLeaseSteps
+      });
+      goToStep(nextStepValue);
+    } else {
+      console.log("Already at last step");
     }
   };
 
   const prevStep = () => {
-    if (stepIndex > 0) {
-      goToStep(STEPS[stepIndex - 1]);
+    const currentIndex = availableSteps.indexOf(currentStep);
+    if (currentIndex > 0) {
+      const prevStepValue = availableSteps[currentIndex - 1];
+      console.log(`Moving to previous step: ${prevStepValue}`);
+      goToStep(prevStepValue);
     }
   };
 
@@ -202,14 +275,25 @@ const ParcelWizard = () => {
       case "owner":
         return !!currentSession.parcel_data;
       case "owner-docs":
+        // If we have an existing owner (with owner_id), owner-docs is not required
+        if (shouldSkipOwnerDocs) {
+          return false; // Don't allow access to skipped step
+        }
         return !!currentSession.owner_data;
       case "lease":
+        // If we're skipping lease steps, don't allow access
+        if (shouldSkipLeaseSteps) {
+          return false;
+        }
         return !!currentSession.owner_data;
       case "lease-docs":
+        // If we're skipping lease steps, don't allow access
+        if (shouldSkipLeaseSteps) {
+          return false;
+        }
         return !!currentSession.lease_data;
       case "validation":
         // Allow access if we have at least parcel data completed
-        // User can still review what they've filled so far
         return !!currentSession.parcel_data;
       default:
         return false;
@@ -285,6 +369,16 @@ const ParcelWizard = () => {
                 }`}>
                   {currentSession.status.replace('_', ' ')}
                 </span>
+                {shouldSkipOwnerDocs && (
+                  <span className="ml-4 px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
+                    Existing Owner
+                  </span>
+                )}
+                {shouldSkipLeaseSteps && (
+                  <span className="ml-4 px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
+                    Non-Lease Parcel
+                  </span>
+                )}
               </div>
               <div className="text-sm text-gray-500">
                 Updated: {new Date(currentSession.updated_at).toLocaleDateString()}
@@ -297,7 +391,9 @@ const ParcelWizard = () => {
         <div className="mb-10">
           <div className="flex justify-between text-sm font-medium text-gray-500 mb-3">
             <span>
-              Step {stepIndex + 1} of {STEPS.length}
+              Step {currentStepIndexInAvailable + 1} of {availableSteps.length}
+              {shouldSkipOwnerDocs && " (Owner Docs Skipped)"}
+              {shouldSkipLeaseSteps && " (Lease Steps Skipped)"}
             </span>
             <span>{stepLabel(currentStep)}</span>
           </div>
@@ -309,12 +405,12 @@ const ParcelWizard = () => {
           </div>
         </div>
 
-        {/* Step Pills */}
+        {/* Step Pills - Show only available steps */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-          {STEPS.map((s, i) => {
+          {availableSteps.map((s, i) => {
             const label = stepLabel(s);
             const isActive = currentStep === s;
-            const isDone = stepIndex > i;
+            const isDone = availableSteps.indexOf(currentStep) > i;
             const hasRequiredData = canAccessStep(s);
 
             return (
@@ -343,8 +439,12 @@ const ParcelWizard = () => {
           <div className="font-medium text-yellow-800 mb-1">Debug Info:</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             <div>Step: <span className="font-bold">{currentStep}</span></div>
+            <div>Existing Owner: <span className={shouldSkipOwnerDocs ? "text-purple-600" : "text-gray-600"}>{shouldSkipOwnerDocs ? "Yes" : "No"}</span></div>
+            <div>Is Lease: <span className={!shouldSkipLeaseSteps ? "text-green-600" : "text-gray-600"}>{!shouldSkipLeaseSteps ? "Yes" : "No"}</span></div>
+            <div>Tenure: <span className="font-medium">{currentSession.parcel_data?.[0]?.tenure_type || "N/A"}</span></div>
             <div>Parcel: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
             <div>Owner: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
+            <div>Owner ID: <span className={currentSession.owner_data?.[0]?.owner_id ? "text-green-600" : "text-gray-600"}>{currentSession.owner_data?.[0]?.owner_id || "None"}</span></div>
             <div>Lease: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
           </div>
         </div>
@@ -366,31 +466,30 @@ const ParcelWizard = () => {
             />
           )}
 
-          {currentStep === "owner-docs" && (
+          {/* Only show OwnerDocsStep if not skipping */}
+          {currentStep === "owner-docs" && !shouldSkipOwnerDocs && (
             <OwnerDocsStep nextStep={nextStep} prevStep={prevStep} />
           )}
 
-          {currentStep === "lease" && (
+          {/* Only show LeaseStep if not skipping */}
+          {currentStep === "lease" && !shouldSkipLeaseSteps && (
             <LeaseStep
               nextStep={nextStep}
               prevStep={prevStep}
             />
           )}
 
-          {currentStep === "lease-docs" && (
+          {/* Only show LeaseDocsStep if not skipping */}
+          {currentStep === "lease-docs" && !shouldSkipLeaseSteps && (
             <LeaseDocsStep nextStep={handleValidationComplete} prevStep={prevStep} />
           )}
-
-
 
           {currentStep === "validation" && (
             <>
               {console.log("Rendering ValidationStep component...")}
-              <ValidationStep   key={currentSession?.session_id}  prevStep={prevStep} onFinish={finishWizard} />
+              <ValidationStep key={currentSession?.session_id} prevStep={prevStep} onFinish={finishWizard} />
             </>
           )}
-
-
 
           {/* Back to Dashboard button */}
           <div className="mt-8 flex justify-end">

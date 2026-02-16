@@ -365,6 +365,10 @@ model lease_agreements {
   contract_date       DateTime          @db.Date
   created_at          DateTime          @default(now())
   down_payment_amount Decimal           @db.Decimal(18, 2)
+
+  demarcation_fee        Decimal?         @db.Decimal(18, 2) 
+  contract_registration_fee Decimal?            @db.Decimal(18, 2)
+  engineering_service_fee  Decimal?         @db.Decimal(18, 2)
   lease_period_years  Int
   legal_framework     String
   payment_term_years  Int

@@ -1,5 +1,5 @@
 // src/validation/schemas.ts
-import { z } from "zod";
+import { optional, z } from "zod";
 
 const UPIN_REGEX = /^[A-Za-z0-9\-_]+$/;
 
@@ -73,7 +73,15 @@ export type ParcelFormData = z.infer<typeof ParcelFormSchema>;
 // ========================
 // OWNER FORM VALIDATION
 // ========================
+
 export const OwnerFormSchema = z.object({
+  // For existing owners, we need to track if this is from search
+  owner_id: z
+    .string()
+    .optional()
+    .nullable(),
+
+  // These fields are required for new owners, but can be present from existing owners
   full_name: z
     .string()
     .min(1, { message: "Full name is required" })
@@ -82,7 +90,7 @@ export const OwnerFormSchema = z.object({
   national_id: z
     .string()
     .min(1, { message: "National ID is required" })
-    .regex(/^\d+$/, { message: "National ID must contain only digits" }),
+    .regex(/^[\d\s]+$/, { message: "National ID must contain only digits" }),
 
   phone_number: z
     .string()
@@ -94,14 +102,10 @@ export const OwnerFormSchema = z.object({
   tin_number: z
     .string()
     .optional()
-    .refine((val) => !val || /^\d+$/.test(val), {
+    .nullable()
+    .refine((val) => !val || /^[\d\s]+$/.test(val), {
       message: "TIN must contain only digits",
     }),
-
-  share_ratio: z.coerce
-    .number()
-    .min(0.01, { message: "Share ratio must be at least 0.01" })
-    .max(1, { message: "Share ratio cannot exceed 1.0" }),
 
   acquired_at: z
     .string()
@@ -109,7 +113,22 @@ export const OwnerFormSchema = z.object({
     .refine((date) => new Date(date) <= new Date(), {
       message: "Acquisition date cannot be in the future",
     }),
-});
+}).refine(
+  (data) => {
+    // If there's an owner_id, we're using an existing owner
+    // In this case, we don't need to validate the other fields as strictly
+    // since they come from the database
+    if (data.owner_id) {
+      return true;
+    }
+    // For new owners, all fields must be present and valid
+    // This is already handled by the individual field validations
+    return true;
+  },
+  {
+    message: "Invalid owner data",
+  }
+);
 
 export type OwnerFormData = z.infer<typeof OwnerFormSchema>;
 
@@ -129,6 +148,21 @@ export const LeaseFormSchema = z.object({
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
 
+  // New fee fields
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" })
+    .optional(),
+
+  contract_registration_fee: z
+    .number()
+    .min(0, { message: "Contract registration fee cannot be negative" })
+    .optional(),
+
+  engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering service fee cannot be negative" })
+    .optional(),
 
   lease_period_years: z.coerce
     .number()
@@ -169,17 +203,20 @@ export const LeaseFormSchema = z.object({
 
 export type LeaseFormData = z.infer<typeof LeaseFormSchema>;
 
-
 export const OwnerStepFormSchema = z.object({
+  owner_id: z
+    .string()
+    .trim()
+    .min(1, { message: "Full name is required and cannot be empty" }).optional,
   full_name: z
     .string()
     .trim()
-    .min(1, { message: "Full name is required and cannot be empty" }),
+    .min(1, { message: "Full name is required and cannot be empty" }).optional,
 
   national_id: z
     .string()
     .trim()
-    .min(1, { message: "National ID is required and cannot be empty" }),
+    .min(1, { message: "National ID is required and cannot be empty" }).optional,
 
   tin_number: z.string().trim().optional(),
 
@@ -204,7 +241,7 @@ phone_number: z
     }
     // Fallback (should not happen due to regex)
     return val;
-  }),
+  }).optional,
 
   // keep as string for date input, but validate similar to backend
   acquired_at: z
@@ -213,7 +250,7 @@ phone_number: z
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid acquisition date format",
     }),
-});
+}).optional;
 
 export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
 
@@ -227,33 +264,57 @@ export const LeaseStepFormSchema = z.object({
   price_per_m2: z.coerce
     .number()
     .positive({ message: "Price per m² must be greater than 0" }),
+  
   total_lease_amount: z.coerce
     .number()
     .positive({ message: "Total lease amount must be greater than 0" }),
+  
   down_payment_amount: z.coerce
     .number()
     .min(0, { message: "Down payment cannot be negative" }),
+  
   other_payment: z.coerce
     .number()
-    .min(0, { message: "Down payment cannot be negative" }),
+    .min(0, { message: "Other payment cannot be negative" }),
+  
+  // New fee fields
+  demarcation_fee: z.coerce
+    .number()
+    .min(0, { message: "Demarcation fee cannot be negative" })
+    .optional(),
+  
+  contract_registration_fee: z
+    .number()
+    .min(0, { message: "Contract registration fee  cannot be negative" })
+    .optional(),
+  
+  engineering_service_fee: z.coerce
+    .number()
+    .min(0, { message: "Engineering service fee cannot be negative" })
+    .optional(),
+  
   lease_period_years: z.coerce
     .number()
     .int()
     .positive({ message: "Lease period (years) must be a positive integer" }),
+  
   payment_term_years: z.coerce
     .number()
     .int()
     .positive({ message: "Payment term (years) must be a positive integer" }),
+  
   legal_framework: z
     .string()
     .trim()
     .min(1, { message: "Legal framework is required and cannot be empty" }),
+  
   contract_date: z
     .string()
     .min(1, { message: "Contract date is required" })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid contract date format",
     }),
+  
   start_date: z
     .string()
     .min(1, { message: "Start date is required" })
@@ -264,7 +325,6 @@ export const LeaseStepFormSchema = z.object({
 });
 
 export type LeaseStepFormData = z.infer<typeof LeaseStepFormSchema>;
-
 
 
 
@@ -368,9 +428,25 @@ export const EditLeaseFormSchema = z
       .nonnegative({ message: "Down payment cannot be negative" })
       .optional(),
 
-  other_payment: z
+    other_payment: z
       .number()
       .nonnegative({ message: "Other payment cannot be negative" })
+      .optional(),
+
+    // New fee fields for edit
+    demarcation_fee: z
+      .number()
+      .nonnegative({ message: "Demarcation fee cannot be negative" })
+      .optional(),
+
+    contract_registration_fee: z
+      .string()
+      .max(100, { message: "Contract registration fee cannot be negative" })
+      .optional(),
+
+    engineering_service_fee: z
+      .number()
+      .nonnegative({ message: "Engineering service fee cannot be negative" })
       .optional(),
 
     price_per_m2: z
@@ -447,7 +523,6 @@ export const EditLeaseFormSchema = z
   );
 
 export type EditLeaseFormData = z.infer<typeof EditLeaseFormSchema>;
-
 
 // 6) Encumbrance create/update
 export const EncumbranceFormSchema = z.object({

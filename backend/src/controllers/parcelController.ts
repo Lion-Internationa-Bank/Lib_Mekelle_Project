@@ -971,6 +971,9 @@ export const getParcelByUpin = async (
             expiry_date: true,
             contract_date: true,
             legal_framework: true,
+            demarcation_fee:true,
+            engineering_service_fee:true,
+            contract_registration_fee:true,
             documents: {
               where: { is_deleted: false },
               select: { 
