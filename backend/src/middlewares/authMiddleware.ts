@@ -23,6 +23,7 @@ export interface AuthRequest<
     encumbrance_id?:string;
     owner_id?:string;
     maker_id?:string;
+    transactionId?:string;
   },
   ResBody = any,
   ReqBody = any,
