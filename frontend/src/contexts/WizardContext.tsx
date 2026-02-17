@@ -285,20 +285,22 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.log("Submit for approval response:", response);
       
       if (response.success && response.data?.data) {
-        const newStatus = response.data.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
+        // const newStatus = response.data.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
         setCurrentSession(prev => {
           if (!prev) return null;
           return {
             ...prev,
-            status: newStatus,
+            // status: newStatus,
+            status:"PENDING_APPROVAL",
             updated_at: new Date().toISOString()
           };
         });
         console.log()
-        const message = response.data.data.requiresApproval 
-          ? 'Submitted for approval' 
-          : 'Parcel registered successfully';
-        toast.success(message);
+        // const message = response.data.data.requiresApproval 
+        //   ? 'Submitted for approval' 
+        //   : 'Parcel registered successfully';
+        // toast.success(message);
+           toast.success('Submitted for approval' );
         
         return response.data.data;
       } else {

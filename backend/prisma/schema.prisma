@@ -288,7 +288,6 @@ model land_parcels {
   child_parcels    land_parcels[]           @relation("ParcelLineage")
   sub_city         sub_cities               @relation(fields: [sub_city_id], references: [sub_city_id])
   lease_agreement  lease_agreements?
-  order_bill_items order_bill_items[]
   history          ownership_history[]
   owners           parcel_owners[]
   valuations       tax_valuation_roll[]
@@ -422,7 +421,6 @@ model billing_records {
   amount_paid        Decimal            @db.Decimal(18, 2)
   lease_agreement    lease_agreements?  @relation(fields: [lease_id], references: [lease_id])
   parcel             land_parcels       @relation(fields: [upin], references: [upin])
-  order_bill_items   order_bill_items[]
 
   @@unique([upin, lease_id, fiscal_year, bill_type, installment_number])
   @@index([fiscal_year])
@@ -434,7 +432,6 @@ model billing_records {
 model financial_transactions {
   transaction_id      String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin                String          @db.VarChar(50)
-  receipt_serial_no   String          @unique
   amount_paid         Decimal         @db.Decimal(18, 2)
   payment_date        DateTime        @default(now())
   created_at          DateTime        @default(now())
@@ -442,21 +439,16 @@ model financial_transactions {
   deleted_at          DateTime?
   is_deleted          Boolean         @default(false)
   bank_transaction_id String?
-  payment_method      String
-  revenue_type        String
+  payment_type        String
   bank_branch         String?
   bank_account        String?
   notes               String?
-  order_number        String?         @db.VarChar(50)
   recorded_at         DateTime        @default(now())
   transaction_type    String          @default("PAYMENT")
-  payment_orders      payment_orders? @relation(fields: [order_number], references: [order_number])
   parcel              land_parcels    @relation(fields: [upin], references: [upin])
 
   @@index([bank_transaction_id])
-  @@index([order_number])
   @@index([payment_date])
-  @@index([receipt_serial_no])
   @@index([upin, payment_date])
 }
 
@@ -514,53 +506,7 @@ model documents {
   parcel         land_parcels?      @relation(fields: [upin], references: [upin], onDelete: Cascade)
 }
 
-model order_bill_items {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_number    String          @db.VarChar(50)
-  bill_id         String          @db.Uuid
-  upin            String          @db.VarChar(50)
-  bill_type       String
-  amount          Decimal         @db.Decimal(18, 2)
-  created_at      DateTime        @default(now())
-  updated_at      DateTime?
-  fiscal_year     Int
-  billing_records billing_records @relation(fields: [bill_id], references: [bill_id], onDelete: Cascade)
-  peyment_orders  payment_orders  @relation(fields: [order_number], references: [order_number], onDelete: Cascade)
-  land_parcels    land_parcels    @relation(fields: [upin], references: [upin])
 
-  @@unique([order_number, bill_id])
-  @@unique([order_number, upin, bill_type])
-  @@index([bill_id])
-  @@index([bill_type])
-  @@index([fiscal_year])
-  @@index([order_number])
-  @@index([upin])
-}
-
-model payment_orders {
-  order_number             String                   @id @db.VarChar(50)
-  generated_at             DateTime                 @default(now())
-  expires_at               DateTime
-  status                   OrderStatus              @default(GENERATED)
-  generation_mode          OrderGenerationMode      @default(AUTO)
-  paid_at                  DateTime?
-  cancelled_at             DateTime?
-  payment_method           String?
-  final_amount_paid        Decimal?                 @db.Decimal(18, 2)
-  created_at               DateTime                 @default(now())
-  updated_at               DateTime?
-  deleted_at               DateTime?
-  is_deleted               Boolean                  @default(false)
-  total_amount             Decimal                  @db.Decimal(18, 2)
-  current_calculated_total Decimal?                 @db.Decimal(18, 2)
-  last_recalculated_at     DateTime?
-  financial_transactions   financial_transactions[]
-  order_bill_items         order_bill_items[]
-
-  @@index([expires_at])
-  @@index([generated_at])
-  @@index([status])
-}
 
 enum UserRole {
   CITY_ADMIN
