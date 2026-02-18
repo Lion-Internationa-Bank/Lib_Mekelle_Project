@@ -1,5 +1,6 @@
-// src/components/Sidebar.tsx
+// src/components/Sidebar.tsx (Enhanced with Reports Dropdown)
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 type MenuItem = {
@@ -10,88 +11,168 @@ type MenuItem = {
   allowedRoles?: string[];
 };
 
-const menuItems: MenuItem[] = [
+type ReportItem = {
+  id: string;
+  label: string;
+  icon: string;
+  href: string;
+  description: string;
+};
 
- {
+const menuItems: MenuItem[] = [
+  {
     id: 'parcels',
     label: 'Land Parcels',
-    icon: '🏞️', // National park - land parcels
+    icon: '🏞️',
     href: '/home',
     allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
-},
-{
+  },
+  {
     id: 'sessions',
     label: 'Sessions',
-    icon: '🖥️', // Desktop computer - active sessions
+    icon: '🖥️',
     href: '/sessions',
     allowedRoles: ['SUBCITY_NORMAL', 'REVENUE_USER'],
-},
-{
+  },
+  {
     id: 'pending-requests',
     label: 'Pending Requests',
-    icon: '⏳', // Hourglass - pending approval
+    icon: '⏳',
     href: '/pending-requests',
     allowedRoles: ['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_NORMAL'],
-},
-{
+  },
+  {
     id: 'ownership',
     label: 'Ownership',
-    icon: '📋', // Clipboard - ownership records
+    icon: '📋',
     href: '/ownership',
     allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'REVENUE_USER'],
-},
-{
+  },
+  {
     id: 'users',
     label: 'User Management',
-    icon: '👥', // Multiple users - user management
+    icon: '👥',
     href: '/users',
     allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
-},
-{
+  },
+  {
     id: 'subcities',
     label: 'Sub-cities',
-    icon: '🏛️', // Classical building - government administration
+    icon: '🏛️',
     href: '/sub-cities',
     allowedRoles: ['CITY_ADMIN'],
-},
-{
+  },
+  {
     id: 'rateconfigs',
     label: 'Rate Configs',
-    icon: '💰', // Money bag - financial rates
+    icon: '💰',
     href: '/rateConfigs',
     allowedRoles: ['REVENUE_ADMIN'],
-},
-{
+  },
+  {
     id: 'configs',
     label: 'Configurations',
-    icon: '⚙️', // Gear - system configuration
+    icon: '⚙️',
     href: '/configs',
     allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
-},
-{
-    id: 'reports',
-    label: 'Reports',
-    icon: '📊', // Bar chart - reports and analytics
-    href: '/reports',
-    allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'],
-},
+  },
 ];
+
+// Define available reports with role-based visibility
+const reports: ReportItem[] = [
+  {
+    id: 'bills',
+    label: 'Bills Report',
+    icon: '💰',
+    href: '/reports/bills',
+    description: 'View and download bills with filters',
+  },
+  {
+    id: 'payments',
+    label: 'Payments Report',
+    icon: '💳',
+    href: '/reports/payments',
+    description: 'Track all payments made',
+  },
+  {
+    id: 'parcels',
+    label: 'Parcels Report',
+    icon: '🏞️',
+    href: '/reports/parcels',
+    description: 'Land parcels and their status',
+  },
+  {
+    id: 'owners',
+    label: 'Owners Report',
+    icon: '👥',
+    href: '/reports/owners',
+    description: 'Property owners information',
+  },
+  {
+    id: 'leases',
+    label: 'Leases Report',
+    icon: '📄',
+    href: '/reports/leases',
+    description: 'Active and expired leases',
+  },
+  {
+    id: 'revenue',
+    label: 'Revenue Analysis',
+    icon: '📈',
+    href: '/reports/revenue',
+    description: 'Detailed revenue analysis',
+  },
+];
+
+// Define which reports are visible for each role
+const reportVisibilityByRole: Record<string, string[]> = {
+  CITY_ADMIN: ['bills', 'payments', 'parcels', 'owners', 'leases', 'revenue'],
+  REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
+  SUBCITY_ADMIN: ['bills', 'parcels', 'owners', 'leases'],
+  SUBCITY_NORMAL: [], // No reports for normal users
+  SUBCITY_AUDITOR: [], // No reports for auditors
+  REVENUE_USER: [], // No reports for revenue users
+};
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeMenu =
-    menuItems.find((item) => item.href === location.pathname)?.id || 'dashboard';
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsReportsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close dropdown when route changes
+  useEffect(() => {
+    setIsReportsOpen(false);
+  }, [location.pathname]);
+
+  const activeMenu = menuItems.find((item) => item.href === location.pathname)?.id || 
+    (location.pathname.startsWith('/reports') ? 'reports' : 'dashboard');
 
   const filteredItems = menuItems.filter(
     (item) => !item.allowedRoles || item.allowedRoles.includes(user?.role ?? '')
   );
 
+  // Get visible reports for current user
+  const visibleReports = reports.filter(report => 
+    user?.role && (reportVisibilityByRole[user.role]?.includes(report.id) || false)
+  );
+
+  // Check if user has access to reports
+  const canAccessReports = user?.role && ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'].includes(user.role);
+
   return (
     <aside className="w-64 bg-white/90 backdrop-blur-xl shadow-2xl border-r border-gray-200/50 h-screen sticky top-0 z-40 flex flex-col overflow-hidden">
-  
-
       {/* Navigation */}
       <nav className="p-4 flex-1 space-y-2 overflow-y-auto">
         {filteredItems.map((item) => (
@@ -108,11 +189,63 @@ const Sidebar = () => {
             <span className="font-medium">{item.label}</span>
           </Link>
         ))}
+
+        {/* Reports Dropdown - Only show if user has access */}
+        {canAccessReports && visibleReports.length > 0 && (
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setIsReportsOpen(!isReportsOpen)}
+              className={`w-full flex items-center justify-between space-x-3 px-4 py-3 rounded-xl transition-all ${
+                activeMenu === 'reports'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">📊</span>
+                <span className="font-medium">Reports</span>
+              </div>
+              <svg
+                className={`w-4 h-4 transition-transform ${isReportsOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isReportsOpen && (
+              <div className="absolute left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                {visibleReports.map((report) => (
+                  <Link
+                    key={report.id}
+                    to={report.href}
+                    className={`flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 transition-colors ${
+                      location.pathname === report.href ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                    }`}
+                  >
+                    <span className="text-base">{report.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{report.label}</div>
+                      <div className="text-xs text-gray-500">{report.description}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
-      {/* Logout at the bottom */}
+      {/* User Info and Logout */}
       {user && (
         <div className="p-4 border-t border-gray-200/50 mt-auto">
+          <div className="mb-3 px-2">
+            <p className="text-sm font-medium text-gray-700 truncate">{user.full_name}</p>
+            <p className="text-xs text-gray-500 truncate">{user.role.replace('_', ' ')}</p>
+          </div>
           <button
             onClick={logout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-medium transition-all duration-200"

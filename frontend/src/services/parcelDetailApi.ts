@@ -27,7 +27,6 @@ export type Subcity = {
 
 export type ParcelOwner = {
   parcel_owner_id: string;
-  share_ratio: string;
   acquired_at: string;
   owner: {
     owner_id: string;

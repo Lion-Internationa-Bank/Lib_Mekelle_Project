@@ -164,7 +164,7 @@ const ParcelDetailPage = () => {
 
         {/* Billing Tab */}
         {tab === "billing" && (
-          <BillingSection billingRecords={data.billing_records} lease ={data.lease_agreement} />
+          <BillingSection data={data} />
         )}
       </div>
     </div>

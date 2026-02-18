@@ -1,7 +1,6 @@
 // src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner'; // Add Sonner import [web:7]
-// import 'sonner/toast.css'; // Import styles (Vite handles CSS) [web:7][web:14]
+import { Toaster } from 'sonner';
 import { useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
@@ -24,6 +23,7 @@ import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
 import ParcelWizardV3 from './components/wizard/ParcleWizardV2';
+import { ReportsRoutes } from './routes/reports'; // Import the ReportsRoutes component
 
 const App = () => {
   const { isLoading } = useAuth();
@@ -33,38 +33,38 @@ const App = () => {
   return (
     <CalendarProvider>
       <WizardProvider>
-          <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected routes with MainLayout */}
-        <Route element={<MainLayout />}>
-          <Route path="/home" element={<RoleBasedHome />} />
+          {/* Protected routes with MainLayout */}
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<RoleBasedHome />} />
 
-          {/* Common protected routes */}
-          <Route path="/parcels/new" element={<ParcelWizardV2 />} />
-          <Route path="/sessions" element={<UserSessionsPage />} />
-        <Route path="/wizard/:sessionId" element={<ParcelWizardV2 />} /> 
-          <Route path="/ownership" element={<OwnershipPage />} />
-          <Route path="/users" element={<UserManagementPage />} />
-          <Route path="/sub-cities" element={<SubCitiesPage />} />
-          <Route path="/configs" element={<ConfigsPage />} />
-          <Route path="/rateConfigs" element={<RateConfigsPage />} />
-          {/* pending requests  */}
-      
-        <Route path="/pending-requests" element={<PendingRequestsPage/>}/> 
-        <Route path="/pending-requests/:requestId" element={<RequestDetailPage/>}/>
-        </Route>
-        <Route path="/parcels/:upin" element={<ParcelDetailPage />} />
+            {/* Reports routes - This will handle /reports, /reports/bills, etc. */}
+            <Route path="/reports/*" element={<ReportsRoutes />} />
 
-        
-
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
-      <Toaster position="top-right" richColors closeButton /> {/* Add global Toaster */}
-  
+            {/* Common protected routes */}
+            <Route path="/parcels/new" element={<ParcelWizardV2 />} />
+            <Route path="/sessions" element={<UserSessionsPage />} />
+            <Route path="/wizard/:sessionId" element={<ParcelWizardV2 />} /> 
+            <Route path="/ownership" element={<OwnershipPage />} />
+            <Route path="/users" element={<UserManagementPage />} />
+            <Route path="/sub-cities" element={<SubCitiesPage />} />
+            <Route path="/configs" element={<ConfigsPage />} />
+            <Route path="/rateConfigs" element={<RateConfigsPage />} />
+            
+            {/* Pending requests */}
+            <Route path="/pending-requests" element={<PendingRequestsPage/>}/> 
+            <Route path="/pending-requests/:requestId" element={<RequestDetailPage/>}/>
+          </Route>
+          
+          <Route path="/parcels/:upin" element={<ParcelDetailPage />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+        <Toaster position="top-right" richColors closeButton />
       </WizardProvider>
-      </CalendarProvider>
+    </CalendarProvider>
   );
 };
 
@@ -79,15 +79,14 @@ const RoleBasedHome = () => {
 
   switch (user.role) {
     case 'CITY_ADMIN':
-       return <CityAdminHome />;
+      return <CityAdminHome />;
     case 'SUBCITY_ADMIN':
       return <SubCityAdminHome />;
     case 'SUBCITY_NORMAL':
     case 'SUBCITY_AUDITOR':
-        case 'REVENUE_USER':
+    case 'REVENUE_USER':
       return <SubcityHome />;
     case 'REVENUE_ADMIN':
-    // case 'REVENUE_USER':
       return <RevenueHome />;
     default:
       return <div>Unknown role</div>;

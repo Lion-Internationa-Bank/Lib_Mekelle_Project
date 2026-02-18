@@ -147,7 +147,7 @@ export class BankCallbackController {
       
       const [transactions, total] = await Promise.all([
         prisma.financial_transactions.findMany({
-          where: { upin, is_deleted: false },
+          where: { upin, },
           orderBy: { payment_date: 'desc' },
           skip,
           take: Number(limit),
@@ -166,7 +166,7 @@ export class BankCallbackController {
           }
         }),
         prisma.financial_transactions.count({
-          where: { upin, is_deleted: false }
+          where: { upin, }
         })
       ]);
 

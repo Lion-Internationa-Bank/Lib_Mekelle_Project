@@ -9,40 +9,30 @@ datasource db {
   provider = "postgresql"
 }
 
-// Add to your existing schema
 model wizard_sessions {
-  session_id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String        @db.Uuid
-  user_role          UserRole
-  sub_city_id        String?       @db.Uuid
-  status             SessionStatus @default(DRAFT)
-  
-  // Wizard data
-  parcel_data        Json?
-  parcel_docs        Json?
-  owner_data         Json?
-  owner_docs         Json?
-  lease_data         Json?
-  lease_docs         Json?
-  
-  // Approval workflow
-  approval_request_id String?      @db.Uuid
-  current_step       String        @default("parcel")
-  
-  // Timestamps
-  completed_at       DateTime?
-  created_at         DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime      @updatedAt @db.Timestamptz(6)
-  submitted_at       DateTime?
-  expires_at         DateTime      @default(dbgenerated("(now() + '24 hours'::interval)")) @db.Timestamptz(6)
-  
-  // Relationships
-  user               users         @relation(fields: [user_id], references: [user_id])
+  session_id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String                  @db.Uuid
+  user_role              UserRole
+  sub_city_id            String?                 @db.Uuid
+  status                 SessionStatus           @default(DRAFT)
+  parcel_data            Json?
+  parcel_docs            Json?
+  owner_data             Json?
+  owner_docs             Json?
+  lease_data             Json?
+  lease_docs             Json?
+  approval_request_id    String?                 @unique @db.Uuid
+  current_step           String                  @default("parcel")
+  created_at             DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                @updatedAt @db.Timestamptz(6)
+  submitted_at           DateTime?
+  expires_at             DateTime                @default(dbgenerated("(now() + '24:00:00'::interval)")) @db.Timestamptz(6)
+  completed_at           DateTime?
+  wizard_documents_temps wizard_documents_temp[]
+  approval_request       approval_requests?      @relation(fields: [approval_request_id], references: [request_id])
+  sub_city               sub_cities?             @relation(fields: [sub_city_id], references: [sub_city_id])
+  user                   users                   @relation(fields: [user_id], references: [user_id])
 
-  sub_city           sub_cities?   @relation(fields: [sub_city_id], references: [sub_city_id])
-  approval_request   approval_requests? @relation(fields: [approval_request_id], references: [request_id])
-  wizard_documents_temps  wizard_documents_temp[]
-  @@unique([approval_request_id])
   @@index([user_id, status])
   @@index([sub_city_id, status])
   @@index([expires_at])
@@ -50,48 +40,46 @@ model wizard_sessions {
 }
 
 model wizard_documents_temp {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  session_id         String        @db.Uuid
-  step               String        // parcel-docs, owner-docs, lease-docs
-  document_type      String
-  file_name          String
-  file_url           String        // Temporary URL
-  file_size          Int
-  mime_type          String
-  metadata           Json?
-  expires_at         DateTime
-  created_at         DateTime      @default(now())
-  
-  session            wizard_sessions @relation(fields: [session_id], references: [session_id])
-  
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id    String          @db.Uuid
+  step          String
+  document_type String
+  file_name     String
+  file_url      String
+  file_size     Int
+  mime_type     String
+  metadata      Json?
+  expires_at    DateTime
+  created_at    DateTime        @default(now())
+  session       wizard_sessions @relation(fields: [session_id], references: [session_id])
+
   @@index([session_id])
   @@index([expires_at])
 }
 
 model approval_requests {
-  request_id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  entity_type       EntityType
-  entity_id         String         @db.VarChar(255)
-  action_type       ActionType      
-  request_data      Json
-  status            RequestStatus  @default(PENDING)
-  maker_id          String         @db.Uuid
-  maker_role        UserRole
-  approver_role     UserRole
-  sub_city_id       String?        @db.Uuid
-  rejection_reason  String?
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime       @updatedAt @db.Timestamptz(6)
-  approved_at       DateTime?
-  comments          String?
-  rejected_at       DateTime?
-  deleted_at        DateTime?
-  is_deleted        Boolean        @default(false)
-  
-  maker             users          @relation(fields: [maker_id], references: [user_id])
-  sub_city          sub_cities?    @relation(fields: [sub_city_id], references: [sub_city_id])
-  approval_logs     approval_logs[]
-  wizard_session    wizard_sessions?
+  request_id       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entity_id        String           @db.VarChar(255)
+  request_data     Json
+  status           RequestStatus    @default(PENDING)
+  maker_id         String           @db.Uuid
+  maker_role       UserRole
+  approver_role    UserRole
+  sub_city_id      String?          @db.Uuid
+  rejection_reason String?
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime         @updatedAt @db.Timestamptz(6)
+  approved_at      DateTime?
+  rejected_at      DateTime?
+  deleted_at       DateTime?
+  is_deleted       Boolean          @default(false)
+  action_type      ActionType
+  entity_type      EntityType
+  comments         String?
+  approval_logs    approval_logs[]
+  maker            users            @relation(fields: [maker_id], references: [user_id])
+  sub_city         sub_cities?      @relation(fields: [sub_city_id], references: [sub_city_id])
+  wizard_session   wizard_sessions?
 
   @@index([maker_id])
   @@index([status])
@@ -101,76 +89,21 @@ model approval_requests {
 }
 
 model approval_logs {
-  log_id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  request_id        String           @db.Uuid
+  log_id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id        String            @db.Uuid
   action            ApprovalAction
-  performed_by      String           @db.Uuid
+  performed_by      String            @db.Uuid
   performed_by_role UserRole
   comments          String?
   previous_status   RequestStatus?
   new_status        RequestStatus?
-  created_at        DateTime         @default(now()) @db.Timestamptz(6)
-  
-  request           approval_requests @relation(fields: [request_id], references: [request_id])
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
   user              users             @relation(fields: [performed_by], references: [user_id])
-  
+  request           approval_requests @relation(fields: [request_id], references: [request_id])
+
   @@index([request_id])
   @@index([performed_by])
 }
-
-
-
-// Add these enums
-enum SessionStatus {
-  DRAFT
-  PENDING_APPROVAL
-  APPROVED
-  REJECTED
-  EXPIRED
-  MERGED
-  FAILED
-}
-
-enum EntityType{
-  WIZARD_SESSION
-  LAND_PARCELS
-  OWNERS
-  LEASE_AGREEMENTS
-  ENCUMBRANCES
-  APPROVAL_REQUEST
-}
-
-
-enum ActionType {
-  CREATE
-  UPDATE
-  DELETE
-  TRANSFER
-  SUBDIVIDE
-  MERGE
-  TERMINATE
-  EXTEND
-  ADD_OWNER
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  RETURNED
-  CANCELLED
-  FAILED
-}
-
-
-enum ApprovalAction {
-  CREATE
-  APPROVE
-  REJECT
-  RETURN
-  COMMENT
-}
-
 
 model rate_configurations {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -190,40 +123,40 @@ model rate_configurations {
 }
 
 model sub_cities {
-  sub_city_id  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String         @unique @db.VarChar(100)
-  description  String?
-  created_at   DateTime       @default(now())
-  updated_at   DateTime       @updatedAt
-  deleted_at   DateTime?
-  is_deleted   Boolean        @default(false)
-  land_parcels land_parcels[]
-  users        users[]
-  owners       owners[]
-  wizard_sessions wizard_sessions[]
+  sub_city_id       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String              @unique @db.VarChar(100)
+  description       String?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  deleted_at        DateTime?
+  is_deleted        Boolean             @default(false)
   approval_requests approval_requests[]
+  land_parcels      land_parcels[]
+  owners            owners[]
+  users             users[]
+  wizard_sessions   wizard_sessions[]
 }
 
 model users {
-  user_id       String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username      String       @unique @db.VarChar(100)
-  email         String?      @unique @db.VarChar(255)
-  password_hash String
-  full_name     String
-  role          UserRole
-  sub_city_id   String?      @db.Uuid
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  last_login    DateTime?
-  is_active     Boolean      @default(true)
-  deleted_at    DateTime?
-  is_deleted    Boolean      @default(false)
-  audit_logs    audit_logs[]
-  approval_logs approval_logs[]
-  wizard_sessions wizard_sessions[]
+  user_id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username          String              @unique @db.VarChar(100)
+  email             String?             @unique @db.VarChar(255)
+  password_hash     String
+  full_name         String
+  role              UserRole
+  sub_city_id       String?             @db.Uuid
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  last_login        DateTime?
+  is_active         Boolean             @default(true)
+  deleted_at        DateTime?
+  is_deleted        Boolean             @default(false)
+  approval_logs     approval_logs[]
   approval_requests approval_requests[]
+  audit_logs        audit_logs[]
   documents         documents[]
-  sub_city      sub_cities?  @relation(fields: [sub_city_id], references: [sub_city_id])
+  sub_city          sub_cities?         @relation(fields: [sub_city_id], references: [sub_city_id])
+  wizard_sessions   wizard_sessions[]
 }
 
 model configurations {
@@ -258,60 +191,60 @@ model audit_logs {
 }
 
 model land_parcels {
-  upin             String                   @id @db.VarChar(50)
-  file_number      String                   @unique @db.VarChar(100)
-  tabia            String                   @db.VarChar(100)
-  ketena           String                   @db.VarChar(50)
-  block            String                   @db.VarChar(50)
-  total_area_m2    Decimal                  @db.Decimal(12, 2)
-  land_use         String?
-  created_at       DateTime                 @default(now())
-  updated_at       DateTime                 @updatedAt
-  deleted_at       DateTime?
-  is_deleted       Boolean                  @default(false)
-  land_grade       Decimal                  @db.Decimal(10, 2)
-  sub_city_id      String                   @db.Uuid
-  tenure_type      String                   @default("OLD_POSSESSION")
-  boundary_coords  Json?
-  boundary_east    String?                  @db.VarChar(255)
-  boundary_north   String?                  @db.VarChar(255)
-  boundary_south   String?                  @db.VarChar(255)
-  boundary_west    String?                  @db.VarChar(255)
-  parent_upin      String?                  @db.VarChar(50)
-  status           ParcelStatus             @default(ACTIVE)
-  billing_records  billing_records[]
-  buildings        building_details[]
-  documents        documents[]
-  encumbrances     encumbrances[]
-  transactions     financial_transactions[]
-  parent_parcel    land_parcels?            @relation("ParcelLineage", fields: [parent_upin], references: [upin])
-  child_parcels    land_parcels[]           @relation("ParcelLineage")
-  sub_city         sub_cities               @relation(fields: [sub_city_id], references: [sub_city_id])
-  lease_agreement  lease_agreements?
-  history          ownership_history[]
-  owners           parcel_owners[]
-  valuations       tax_valuation_roll[]
+  upin            String                   @id @db.VarChar(50)
+  file_number     String                   @unique @db.VarChar(100)
+  tabia           String                   @db.VarChar(100)
+  ketena          String                   @db.VarChar(50)
+  block           String                   @db.VarChar(50)
+  total_area_m2   Decimal                  @db.Decimal(12, 2)
+  land_use        String?
+  created_at      DateTime                 @default(now())
+  updated_at      DateTime                 @updatedAt
+  deleted_at      DateTime?
+  is_deleted      Boolean                  @default(false)
+  land_grade      Decimal                  @db.Decimal(10, 2)
+  sub_city_id     String                   @db.Uuid
+  tenure_type     String                   @default("OLD_POSSESSION")
+  boundary_coords Json?
+  boundary_east   String?                  @db.VarChar(255)
+  boundary_north  String?                  @db.VarChar(255)
+  boundary_south  String?                  @db.VarChar(255)
+  boundary_west   String?                  @db.VarChar(255)
+  parent_upin     String?                  @db.VarChar(50)
+  status          ParcelStatus             @default(ACTIVE)
+  billing_records billing_records[]
+  buildings       building_details[]
+  documents       documents[]
+  encumbrances    encumbrances[]
+  transactions    financial_transactions[]
+  parent_parcel   land_parcels?            @relation("ParcelLineage", fields: [parent_upin], references: [upin])
+  child_parcels   land_parcels[]           @relation("ParcelLineage")
+  sub_city        sub_cities               @relation(fields: [sub_city_id], references: [sub_city_id])
+  lease_agreement lease_agreements?
+  history         ownership_history[]
+  owners          parcel_owners[]
+  valuations      tax_valuation_roll[]
 
   @@index([sub_city_id, tabia])
   @@index([status])
 }
 
-model owners {
+model owners { 
   owner_id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   full_name        String
   national_id      String              @unique @db.VarChar(50)
   tin_number       String?             @unique @db.VarChar(50)
-  sub_city_id      String              @db.Uuid
   phone_number     String
   created_at       DateTime?           @default(now())
   updated_at       DateTime?           @updatedAt
   deleted_at       DateTime?
   is_deleted       Boolean             @default(false)
+  sub_city_id      String              @db.Uuid
   documents        documents[]
+  sub_city         sub_cities          @relation(fields: [sub_city_id], references: [sub_city_id])
   transferred_from ownership_history[] @relation("OwnershipHistoryFrom")
   transferred_to   ownership_history[] @relation("OwnershipHistoryTo")
   parcels          parcel_owners[]
-  sub_city         sub_cities   @relation(fields:[sub_city_id],references:[sub_city_id])
 }
 
 model parcel_owners {
@@ -354,33 +287,32 @@ model ownership_history {
 }
 
 model lease_agreements {
-  lease_id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin                String            @unique @db.VarChar(50)
-  annual_lease_fee    Decimal?          @db.Decimal(18, 2)
-  total_lease_amount  Decimal           @db.Decimal(18, 2)
-  start_date          DateTime          @db.Date
-  expiry_date         DateTime?         @db.Date
-  annual_installment  Decimal           @db.Decimal(18, 2)
-  contract_date       DateTime          @db.Date
-  created_at          DateTime          @default(now())
-  down_payment_amount Decimal           @db.Decimal(18, 2)
-
-  demarcation_fee        Decimal?         @db.Decimal(18, 2) 
-  contract_registration_fee Decimal?            @db.Decimal(18, 2)
-  engineering_service_fee  Decimal?         @db.Decimal(18, 2)
-  lease_period_years  Int
-  legal_framework     String
-  payment_term_years  Int
-  price_per_m2        Decimal           @db.Decimal(18, 2)
-  updated_at          DateTime?         @updatedAt
-  deleted_at          DateTime?
-  is_deleted          Boolean           @default(false)
-  interest_rate       Decimal?          @db.Decimal(5, 4)
-  status              LeaseStatus       @default(ACTIVE)
-  other_payment       Decimal?          @db.Decimal(18, 2)
-  billing_records     billing_records[]
-  documents           documents[]
-  land_parcel         land_parcels      @relation(fields: [upin], references: [upin])
+  lease_id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin                      String            @unique @db.VarChar(50)
+  annual_lease_fee          Decimal?          @db.Decimal(18, 2)
+  total_lease_amount        Decimal           @db.Decimal(18, 2)
+  start_date                DateTime          @db.Date
+  expiry_date               DateTime?         @db.Date
+  annual_installment        Decimal           @db.Decimal(18, 2)
+  contract_date             DateTime          @db.Date
+  created_at                DateTime          @default(now())
+  down_payment_amount       Decimal           @db.Decimal(18, 2)
+  lease_period_years        Int
+  legal_framework           String
+  payment_term_years        Int
+  price_per_m2              Decimal           @db.Decimal(18, 2)
+  updated_at                DateTime?         @updatedAt
+  deleted_at                DateTime?
+  is_deleted                Boolean           @default(false)
+  interest_rate             Decimal?          @db.Decimal(5, 4)
+  status                    LeaseStatus       @default(ACTIVE)
+  other_payment             Decimal?          @db.Decimal(18, 2)
+  demarcation_fee           Decimal?          @db.Decimal(18, 2)
+  engineering_service_fee   Decimal?          @db.Decimal(18, 2)
+  contract_registration_fee Decimal?          @db.Decimal(18, 2)
+  billing_records           billing_records[]
+  documents                 documents[]
+  land_parcel               land_parcels      @relation(fields: [upin], references: [upin])
 }
 
 model building_details {
@@ -397,30 +329,30 @@ model building_details {
 }
 
 model billing_records {
-  bill_id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin               String             @db.VarChar(50)
+  bill_id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin               String            @db.VarChar(50)
   fiscal_year        Int
-  amount_due         Decimal            @db.Decimal(18, 2)
-  penalty_amount     Decimal?           @default(0) @db.Decimal(18, 2)
-  payment_status     PaymentStatus      @default(UNPAID)
-  created_at         DateTime           @default(now())
-  updated_at         DateTime?          @updatedAt
+  amount_due         Decimal           @db.Decimal(18, 2)
+  penalty_amount     Decimal?          @default(0) @db.Decimal(18, 2)
+  payment_status     PaymentStatus     @default(UNPAID)
+  created_at         DateTime          @default(now())
+  updated_at         DateTime?         @updatedAt
   deleted_at         DateTime?
-  is_deleted         Boolean            @default(false)
+  is_deleted         Boolean           @default(false)
   due_date           DateTime?
-  interest_amount    Decimal            @default(0) @db.Decimal(18, 2)
+  interest_amount    Decimal           @default(0) @db.Decimal(18, 2)
   bill_type          String
-  interest_rate_used Decimal?           @db.Decimal(5, 4)
-  lease_id           String?            @db.Uuid
-  penalty_rate_used  Decimal?           @db.Decimal(10, 4)
-  sync_status        SyncStatus?        @default(PENDING)
+  interest_rate_used Decimal?          @db.Decimal(5, 4)
+  lease_id           String?           @db.Uuid
+  penalty_rate_used  Decimal?          @db.Decimal(10, 4)
+  sync_status        SyncStatus?       @default(PENDING)
   installment_number Int?
-  base_payment       Decimal?           @db.Decimal(18, 2)
-  remaining_amount   Decimal?           @default(0) @db.Decimal(18, 2)
+  base_payment       Decimal?          @db.Decimal(18, 2)
+  remaining_amount   Decimal?          @default(0) @db.Decimal(18, 2)
   last_payment_date  DateTime?
-  amount_paid        Decimal            @db.Decimal(18, 2)
-  lease_agreement    lease_agreements?  @relation(fields: [lease_id], references: [lease_id])
-  parcel             land_parcels       @relation(fields: [upin], references: [upin])
+  amount_paid        Decimal           @db.Decimal(18, 2)
+  lease_agreement    lease_agreements? @relation(fields: [lease_id], references: [lease_id])
+  parcel             land_parcels      @relation(fields: [upin], references: [upin])
 
   @@unique([upin, lease_id, fiscal_year, bill_type, installment_number])
   @@index([fiscal_year])
@@ -430,22 +362,20 @@ model billing_records {
 }
 
 model financial_transactions {
-  transaction_id      String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  upin                String          @db.VarChar(50)
-  amount_paid         Decimal         @db.Decimal(18, 2)
-  payment_date        DateTime        @default(now())
-  created_at          DateTime        @default(now())
-  updated_at          DateTime?       @updatedAt
-  deleted_at          DateTime?
-  is_deleted          Boolean         @default(false)
+  transaction_id      String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upin                String       @db.VarChar(50)
+  amount_paid         Decimal      @db.Decimal(18, 2)
+  payment_date        DateTime     @default(now())
+  created_at          DateTime     @default(now())
+  updated_at          DateTime?    @updatedAt
   bank_transaction_id String?
-  payment_type        String
   bank_branch         String?
   bank_account        String?
   notes               String?
-  recorded_at         DateTime        @default(now())
-  transaction_type    String          @default("PAYMENT")
-  parcel              land_parcels    @relation(fields: [upin], references: [upin])
+  recorded_at         DateTime     @default(now())
+  transaction_type    String       @default("PAYMENT")
+  payment_type        String
+  parcel              land_parcels @relation(fields: [upin], references: [upin])
 
   @@index([bank_transaction_id])
   @@index([payment_date])
@@ -502,11 +432,57 @@ model documents {
   history        ownership_history? @relation(fields: [history_id], references: [history_id], onDelete: Cascade)
   lease          lease_agreements?  @relation(fields: [lease_id], references: [lease_id], onDelete: Cascade)
   owner          owners?            @relation(fields: [owner_id], references: [owner_id], onDelete: Cascade)
-  user           users?             @relation(fields: [verified_by], references: [user_id], onDelete: Cascade)
   parcel         land_parcels?      @relation(fields: [upin], references: [upin], onDelete: Cascade)
+  user           users?             @relation(fields: [verified_by], references: [user_id], onDelete: Cascade)
 }
 
+enum SessionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  EXPIRED
+  MERGED
+  FAILED
+}
 
+enum EntityType {
+  WIZARD_SESSION
+  LAND_PARCELS
+  OWNERS
+  LEASE_AGREEMENTS
+  ENCUMBRANCES
+  APPROVAL_REQUEST
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  TRANSFER
+  SUBDIVIDE
+  MERGE
+  TERMINATE
+  EXTEND
+  ADD_OWNER
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RETURNED
+  CANCELLED
+  FAILED
+}
+
+enum ApprovalAction {
+  APPROVE
+  REJECT
+  RETURN
+  COMMENT
+  CREATE
+}
 
 enum UserRole {
   CITY_ADMIN

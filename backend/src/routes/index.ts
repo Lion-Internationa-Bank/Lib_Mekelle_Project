@@ -12,6 +12,7 @@ import makerCheckerRoutes from './makerCheckerRoutes.ts'; // NEW
 import wizardRoutes from './wizardRoutes.ts'; // NEW
 import docApproval from './approvalDocuments.ts'
 import bankRoutes from './bankRoutes.ts';
+import billRoutes from './reportRoutes.ts';
 
 const router: Router = express.Router();
 
@@ -25,7 +26,7 @@ router.use('/revenue-admin', revenueAdminRoutes);
 router.use('/maker-checker', makerCheckerRoutes); // NEW
 router.use('/wizard', wizardRoutes); // NEW
 router.use('/doc-approval',docApproval)
-
+router.use('/reports', billRoutes);
 router.use('/bank', bankRoutes); //
 
 
