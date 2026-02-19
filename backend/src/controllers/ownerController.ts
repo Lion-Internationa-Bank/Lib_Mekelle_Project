@@ -729,7 +729,8 @@ export const getOwnersWithParcels = async (req: AuthRequest, res: Response) => {
     
     // Pagination
     const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 100);
+    // const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 100);
+    const limit = 5
     const skip = (page - 1) * limit;
 
     // Search term (optional)
@@ -859,6 +860,7 @@ export const searchOwnersLite = async (req: AuthRequest, res: Response) => {
     const ownersInSubCity = await prisma.owners.findMany({
       where: {
         is_deleted: false,
+        sub_city_id:subcityId,
        
         // Add search filter directly here to avoid second query
         ...(search && {

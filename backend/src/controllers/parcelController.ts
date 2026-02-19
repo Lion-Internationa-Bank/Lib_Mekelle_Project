@@ -748,7 +748,8 @@ export const getParcels = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const page = parseInt(req.query.page || '1');
-    const limit = parseInt(req.query.limit || '10');
+    // const limit = parseInt(req.query.limit || '10');
+    const limit =4
     const skip = (page - 1) * limit;
 
     const { search, sub_city_id, tenure_type, ketena, land_use } = req.query;

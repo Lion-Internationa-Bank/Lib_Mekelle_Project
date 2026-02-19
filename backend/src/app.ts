@@ -3,8 +3,9 @@ import type { Request, Response, Application } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 import routes from './routes/index.ts';
+import { authenticate } from './middlewares/authMiddleware.ts';
+
 
 // Recreate __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files
 const uploadsPath = path.join(process.cwd(), 'uploads');
 console.log('Serving uploads from:', uploadsPath);
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads',authenticate, express.static(uploadsPath));
 
 app.use('/api/v1', routes);
 

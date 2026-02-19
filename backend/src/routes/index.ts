@@ -1,4 +1,4 @@
-// src/routes/index.ts (Updated)
+// src/routes/index.ts 
 import express from 'express';
 import type { Request, Response, Router } from 'express';
 import parcelRoutes from './parcelRoutes.ts';
@@ -8,8 +8,8 @@ import uploadRouter from './uploadRoutes.ts';
 import authRoutes from './authRoutes.ts';
 import cityAdminRoutes from './cityAdminRoutes.ts';
 import revenueAdminRoutes from './revenueAdminRoutes.ts';
-import makerCheckerRoutes from './makerCheckerRoutes.ts'; // NEW
-import wizardRoutes from './wizardRoutes.ts'; // NEW
+import makerCheckerRoutes from './makerCheckerRoutes.ts'; 
+import wizardRoutes from './wizardRoutes.ts'; 
 import docApproval from './approvalDocuments.ts'
 import bankRoutes from './bankRoutes.ts';
 import billRoutes from './reportRoutes.ts';
@@ -23,11 +23,11 @@ router.use('/upload', uploadRouter);
 router.use('/auth', authRoutes);
 router.use('/city-admin', cityAdminRoutes);
 router.use('/revenue-admin', revenueAdminRoutes);
-router.use('/maker-checker', makerCheckerRoutes); // NEW
-router.use('/wizard', wizardRoutes); // NEW
+router.use('/maker-checker', makerCheckerRoutes); 
+router.use('/wizard', wizardRoutes); 
 router.use('/doc-approval',docApproval)
 router.use('/reports', billRoutes);
-router.use('/bank', bankRoutes); //
+router.use('/bank', bankRoutes); 
 
 
 

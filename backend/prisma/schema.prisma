@@ -193,18 +193,19 @@ model audit_logs {
 model land_parcels {
   upin            String                   @id @db.VarChar(50)
   file_number     String                   @unique @db.VarChar(100)
-  tabia           String                   @db.VarChar(100)
-  ketena          String                   @db.VarChar(50)
-  block           String                   @db.VarChar(50)
-  total_area_m2   Decimal                  @db.Decimal(12, 2)
+  tender          String?                   @db.VarChar(50)
+  tabia           String?                   @db.VarChar(100)
+  ketena          String?                   @db.VarChar(50)
+  block           String?                  @db.VarChar(50)
+  total_area_m2   Decimal?                  @db.Decimal(12, 2)
   land_use        String?
   created_at      DateTime                 @default(now())
   updated_at      DateTime                 @updatedAt
   deleted_at      DateTime?
   is_deleted      Boolean                  @default(false)
-  land_grade      Decimal                  @db.Decimal(10, 2)
+  land_grade      Decimal?                  @db.Decimal(10, 2)
   sub_city_id     String                   @db.Uuid
-  tenure_type     String                   @default("OLD_POSSESSION")
+  tenure_type     String?                  @default("OLD_POSSESSION")
   boundary_coords Json?
   boundary_east   String?                  @db.VarChar(255)
   boundary_north  String?                  @db.VarChar(255)
@@ -232,9 +233,9 @@ model land_parcels {
 model owners { 
   owner_id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   full_name        String
-  national_id      String              @unique @db.VarChar(50)
+  national_id      String?              @unique @db.VarChar(50)
   tin_number       String?             @unique @db.VarChar(50)
-  phone_number     String
+  phone_number     String?
   created_at       DateTime?           @default(now())
   updated_at       DateTime?           @updatedAt
   deleted_at       DateTime?
@@ -385,7 +386,7 @@ model financial_transactions {
 model encumbrances {
   encumbrance_id    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   upin              String            @db.VarChar(50)
-  issuing_entity    String
+  issuing_entity    String?
   reference_number  String?
   status            EncumbranceStatus @default(ACTIVE)
   registration_date DateTime          @default(now())

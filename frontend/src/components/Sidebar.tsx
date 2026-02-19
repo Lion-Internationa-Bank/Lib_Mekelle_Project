@@ -32,7 +32,7 @@ const menuItems: MenuItem[] = [
     label: 'Sessions',
     icon: '🖥️',
     href: '/sessions',
-    allowedRoles: ['SUBCITY_NORMAL', 'REVENUE_USER'],
+    allowedRoles: ['SUBCITY_NORMAL'],
   },
   {
     id: 'pending-requests',
@@ -76,6 +76,13 @@ const menuItems: MenuItem[] = [
     href: '/configs',
     allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
   },
+  {
+  id: 'upload-excel',
+  label: 'Bulk Upload',
+  icon: '📤',
+  href: '/upload-excel',
+  allowedRoles: ['SUBCITY_ADMIN'], // Adjust roles as needed
+},
 ];
 
 // Define available reports with role-based visibility

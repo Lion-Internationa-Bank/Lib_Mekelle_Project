@@ -23,6 +23,8 @@ import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
 import ParcelWizardV3 from './components/wizard/ParcleWizardV2';
+import ExcelUploadPage from './routes/admin/ExcelUploadPage';
+
 import { ReportsRoutes } from './routes/reports'; // Import the ReportsRoutes component
 
 const App = () => {
@@ -53,7 +55,7 @@ const App = () => {
             <Route path="/sub-cities" element={<SubCitiesPage />} />
             <Route path="/configs" element={<ConfigsPage />} />
             <Route path="/rateConfigs" element={<RateConfigsPage />} />
-            
+            <Route path="/upload-excel" element={<ExcelUploadPage />} />
             {/* Pending requests */}
             <Route path="/pending-requests" element={<PendingRequestsPage/>}/> 
             <Route path="/pending-requests/:requestId" element={<RequestDetailPage/>}/>

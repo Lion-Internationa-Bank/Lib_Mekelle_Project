@@ -1,11 +1,12 @@
 // src/controllers/uploadController.ts (Updated)
-import type { Request, Response } from 'express';
+import type {Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import prisma from '../config/prisma.ts';
 import { AuditAction } from '../generated/prisma/enums.ts';
 import type { AuthRequest } from '../middlewares/authMiddleware.ts';
+import { uploadExcelFile } from '../services/uploadService.ts';
 
 // Configure multer for regular uploads (non-wizard)
 const upload = multer({
@@ -32,8 +33,9 @@ const upload = multer({
       'image/png', 
       'image/jpg', 
       'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
@@ -240,5 +242,371 @@ export const serveWizardDocument = async (req: Request, res: Response) => {
   }
 };
 
+
+
+// src/controllers/uploadController.ts (Updated uploadExcel function)
+
+export const uploadExcel = async (req: Request, res: Response) => {
+  let filePath: string | null = null;
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    filePath = req.file.path;
+
+    const subcityId = (req as any).user?.sub_city_id;
+    
+    if (!subcityId) {
+      // Clean up file if it exists
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Subcity ID not found in user context'
+      });
+    }
+
+    const result = await uploadExcelFile(filePath, subcityId);
+
+    // Generate summary report as string
+    const reportContent = generateSummaryReport(result);
+
+    // Clean up uploaded Excel file
+    try {
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (cleanupError) {
+      console.error('Error cleaning up file:', cleanupError);
+    }
+
+    // Set response headers for text file download
+    const fileName = `upload_report_${Date.now()}.txt`;
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', Buffer.byteLength(reportContent));
+
+    // Send the file content directly
+    return res.send(reportContent);
+
+  } catch (error: any) {
+    // Clean up file if it exists
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+    }
+
+    // Generate error report as string
+    const errorReport = generateErrorReport(error);
+    
+    // Set response headers for text file download
+    const fileName = `error_report_${Date.now()}.txt`;
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', Buffer.byteLength(errorReport));
+
+    // Send the error file content directly
+    return res.send(errorReport);
+  }
+};
+
+
+export const validateUpload = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No file uploaded'
+    });
+  }
+  next();
+};
+
+// Helper function to generate human-readable summary report
+function generateSummaryReport(result: any): string {
+  const date = new Date().toLocaleString();
+  const lines: string[] = [];
+  
+  lines.push('='.repeat(80));
+  lines.push('EXCEL UPLOAD SUMMARY REPORT');
+  lines.push('='.repeat(80));
+  lines.push(`Generated: ${date}`);
+  lines.push('');
+  
+  // Summary statistics
+  lines.push('SUMMARY STATISTICS');
+  lines.push('-'.repeat(40));
+  lines.push(`Total Rows Processed: ${result.totalRows}`);
+  lines.push(`✅ Successfully Processed: ${result.processedRows}`);
+  lines.push(`❌ Failed: ${result.failedRows}`);
+  lines.push(`⏭️ Skipped: ${result.skippedRows}`);
+  lines.push('');
+  
+  // Database operations
+  lines.push('DATABASE OPERATIONS');
+  lines.push('-'.repeat(40));
+  lines.push(`📦 Parcels Created: ${result.summary.parcelsCreated}`);
+  lines.push(`⏭️ Parcels Skipped (Duplicate UPIN): ${result.summary.parcelsSkipped}`);
+  lines.push(`👤 Owners Created: ${result.summary.ownersCreated}`);
+  lines.push(`🔗 Owner-Parcel Relationships: ${result.summary.ownersLinked}`);
+  lines.push(`⚖️ Encumbrances Created: ${result.summary.encumbrancesCreated}`);
+  lines.push('');
+  
+  // Successful rows
+  if (result.results.successful.length > 0) {
+    lines.push('✅ SUCCESSFUL ROWS');
+    lines.push('-'.repeat(40));
+    result.results.successful.forEach((item: any) => {
+      lines.push(`  Row ${item.row}: UPIN ${item.upin} - ${item.message}`);
+    });
+    lines.push('');
+  }
+  
+  // Skipped rows with reasons
+  if (result.results.skipped.length > 0) {
+    lines.push('⏭️ SKIPPED ROWS');
+    lines.push('-'.repeat(40));
+    result.results.skipped.forEach((item: any) => {
+      lines.push(`  Row ${item.row}: UPIN ${item.upin}`);
+      lines.push(`  Reason: ${item.reason}`);
+      lines.push('');
+    });
+  }
+  
+  // Failed rows with errors
+  if (result.results.failed.length > 0) {
+    lines.push('❌ FAILED ROWS - ACTION REQUIRED');
+    lines.push('-'.repeat(40));
+    result.results.failed.forEach((item: any) => {
+      lines.push(`Row ${item.row}: UPIN ${item.upin}`);
+      lines.push('  Errors:');
+      
+      // Format each error message to be human-readable
+      item.errors.forEach((error: string) => {
+        lines.push(`    • ${error}`);
+      });
+      lines.push('');
+    });
+  }
+  
+  // Recommendations based on errors
+  if (result.failedRows > 0 || result.skippedRows > 0) {
+    lines.push('📋 RECOMMENDATIONS');
+    lines.push('-'.repeat(40));
+    
+    // Check for specific error types and provide targeted recommendations
+    const hasDuplicateFileNumber = result.results.failed.some((item: any) => 
+      item.errors.some((e: string) => e.toLowerCase().includes('file number') && e.toLowerCase().includes('already exists'))
+    );
+    
+    const hasDuplicateUPIN = result.results.failed.some((item: any) => 
+      item.errors.some((e: string) => e.toLowerCase().includes('upin') && e.toLowerCase().includes('already exists'))
+    );
+    
+    const hasMissingRequired = result.results.failed.some((item: any) => 
+      item.errors.some((e: string) => e.toLowerCase().includes('required'))
+    );
+    
+    const hasInvalidValues = result.results.failed.some((item: any) => 
+      item.errors.some((e: string) => e.toLowerCase().includes('must be') || e.toLowerCase().includes('positive'))
+    );
+    
+    if (hasDuplicateFileNumber) {
+      lines.push('🔴 DUPLICATE FILE NUMBERS DETECTED:');
+      lines.push('   • Each file number must be unique in the system');
+      lines.push('   • The file numbers you provided already exist in the database');
+      lines.push('   • Check the failed rows above to see which file numbers are duplicate');
+      lines.push('   • Solution: Use different file numbers or remove these rows from your upload');
+      lines.push('');
+    }
+    
+    if (hasDuplicateUPIN) {
+      lines.push('🔴 DUPLICATE UPIN DETECTED:');
+      lines.push('   • Each UPIN must be unique in the system');
+      lines.push('   • The UPINs you provided already exist in the database');
+      lines.push('   • Solution: Remove duplicate UPINs from your file');
+      lines.push('');
+    }
+    
+    if (hasMissingRequired) {
+      lines.push('⚠️ MISSING REQUIRED FIELDS:');
+      lines.push('   • Some rows are missing required information');
+      lines.push('   • Check the failed rows above for specific missing fields');
+      lines.push('   • Solution: Fill in all required fields and re-upload');
+      lines.push('');
+    }
+    
+    if (hasInvalidValues) {
+      lines.push('⚠️ INVALID VALUES:');
+      lines.push('   • Some fields contain invalid data');
+      lines.push('   • Check the failed rows above for specific validation errors');
+      lines.push('   • Solution: Correct the values and re-upload');
+      lines.push('');
+    }
+    
+    // General recommendations
+    lines.push('📌 GENERAL GUIDANCE:');
+    if (result.failedRows > 0) {
+      lines.push('   • Fix the errors in failed rows and re-upload ONLY those rows');
+      lines.push('   • Keep the successful rows as they are - no need to re-upload');
+    }
+    
+    if (result.skippedRows > 0) {
+      lines.push('   • Skipped rows (duplicate UPINs) cannot be re-uploaded');
+      lines.push('   • Use the update feature to modify existing parcels');
+    }
+    
+    lines.push('');
+  }
+  
+  // Next steps
+  lines.push('🚀 NEXT STEPS');
+  lines.push('-'.repeat(40));
+  if (result.failedRows === 0 && result.skippedRows === 0) {
+    lines.push('✅ All rows processed successfully! No action needed.');
+  } else if (result.failedRows === 0 && result.skippedRows > 0) {
+    lines.push('⚠️ File partially processed. Review skipped rows above.');
+    lines.push('📤 You can proceed with the successfully created records.');
+  } else {
+    lines.push('📝 Please fix the errors in failed rows and upload a corrected file.');
+    lines.push('💾 Save this report for reference when fixing the errors.');
+  }
+  lines.push('');
+  
+  lines.push('='.repeat(80));
+  lines.push('END OF REPORT');
+  lines.push('='.repeat(80));
+  
+  return lines.join('\n');
+}
+
+// Helper function to generate error report
+function generateErrorReport(error: any): string {
+  const date = new Date().toLocaleString();
+  const lines: string[] = [];
+  
+  lines.push('='.repeat(80));
+  lines.push('EXCEL UPLOAD ERROR REPORT');
+  lines.push('='.repeat(80));
+  lines.push(`Generated: ${date}`);
+  lines.push('');
+  lines.push('❌ ERROR DETAILS');
+  lines.push('-'.repeat(40));
+  
+  // Format error based on type
+  if (error.code === 'ENOENT' || error.message?.includes('file not found')) {
+    lines.push('📁 FILE ACCESS ERROR');
+    lines.push('');
+    lines.push('The uploaded file could not be found or accessed.');
+    lines.push('');
+    lines.push('Possible causes:');
+    lines.push('  • File was deleted during upload');
+    lines.push('  • Insufficient file permissions');
+    lines.push('  • Invalid file path');
+    lines.push('  • Disk space issue');
+    lines.push('');
+    lines.push('Solutions:');
+    lines.push('  • Try uploading the file again');
+    lines.push('  • Check if you have write permissions in the uploads directory');
+    lines.push('  • Contact system administrator if the problem persists');
+  } 
+  else if (error.message?.includes('Invalid Excel file') || error.message?.includes('worksheet not found')) {
+    lines.push('📊 FILE FORMAT ERROR');
+    lines.push('');
+    lines.push('The file is not a valid Excel file or has an incorrect structure.');
+    lines.push('');
+    lines.push('Requirements:');
+    lines.push('  • File must be a valid Excel file (.xlsx or .xls)');
+    lines.push('  • Data must be in the first worksheet (Sheet1)');
+    lines.push('  • Headers should be in rows 1-2');
+    lines.push('  • Data should start from row 3');
+    lines.push('  • File must not be corrupted or password-protected');
+    lines.push('');
+    lines.push('Solutions:');
+    lines.push('  • Save your file as .xlsx format');
+    lines.push('  • Ensure the file is not open in another program');
+    lines.push('  • Try opening and re-saving the file');
+    lines.push('  • Remove any password protection from the file');
+  }
+  else if (error.code === 'P2002') {
+    lines.push('🔄 DUPLICATE RECORD ERROR');
+    lines.push('');
+    lines.push('A record with the same unique identifier already exists.');
+    lines.push('');
+    if (error.meta?.target) {
+      lines.push(`Duplicate field: ${error.meta.target.join(', ')}`);
+    }
+    lines.push('');
+    lines.push('Solutions:');
+    lines.push('  • Remove duplicate entries from your file');
+    lines.push('  • Use unique UPIN and file numbers');
+    lines.push('  • If updating existing records, use the update feature instead');
+  }
+  else if (error.code === 'P2003') {
+    lines.push('🔗 REFERENCE ERROR');
+    lines.push('');
+    lines.push('Invalid reference to parent record.');
+    lines.push('');
+    lines.push('Solutions:');
+    lines.push('  • Check that all referenced subcity IDs are valid');
+    lines.push('  • Ensure related records exist before creating this one');
+    lines.push('  • Verify you have the correct permissions');
+  }
+  else if (error.message?.includes('timeout')) {
+    lines.push('⏱️ TIMEOUT ERROR');
+    lines.push('');
+    lines.push('The upload operation took too long to complete.');
+    lines.push('');
+    lines.push('Solutions:');
+    lines.push('  • Reduce the number of rows in your file');
+    lines.push('  • Split large files into smaller batches');
+    lines.push('  • Try again during off-peak hours');
+  }
+  else {
+    lines.push(`Error Type: ${error.name || 'Unknown Error'}`);
+    lines.push(`Error Message: ${error.message || 'No message available'}`);
+    
+    if (process.env.NODE_ENV === 'development' && error.stack) {
+      lines.push('');
+      lines.push('Stack Trace:');
+      lines.push(error.stack);
+    }
+  }
+  
+  lines.push('');
+  lines.push('🔧 TROUBLESHOOTING STEPS');
+  lines.push('-'.repeat(40));
+  lines.push('1. Verify your Excel file follows the required template');
+  lines.push('2. Check that all required fields (UPIN, File Number) are filled');
+  lines.push('3. Ensure UPIN values are unique in your file');
+  lines.push('4. Validate that area values are positive numbers');
+  lines.push('5. Make sure YES/NO fields contain only "YES" or "NO"');
+  lines.push('6. Check that file numbers are unique');
+  lines.push('7. Try uploading a smaller batch of rows (50-100 rows)');
+  lines.push('8. Contact system administrator with this error report');
+  lines.push('');
+  lines.push('📞 SUPPORT INFORMATION');
+  lines.push('-'.repeat(40));
+  lines.push('Please provide this error report when contacting support:');
+  lines.push(`Error Code: ${error.code || 'N/A'}`);
+  lines.push(`Timestamp: ${date}`);
+  lines.push(`File: ${error.fileName || 'N/A'}`);
+  lines.push('');
+  lines.push('='.repeat(80));
+  lines.push('END OF ERROR REPORT');
+  lines.push('='.repeat(80));
+  
+  return lines.join('\n');
+}
+
 // Export middleware
 export const uploadMiddleware = upload.single('document');
+export const uploadExcelMiddleware = upload.single('file');

@@ -1,10 +1,12 @@
 // src/routes/uploadRoutes.ts (Updated)
 import express from 'express';
-import { uploadDocument, serveWizardDocument, uploadMiddleware } from '../controllers/uploadController.ts';
+import { uploadDocument, serveWizardDocument, uploadMiddleware,uploadExcel, validateUpload,uploadExcelMiddleware} from '../controllers/uploadController.ts';
 import { authenticate } from '../middlewares/authMiddleware.ts';
 import { authorize } from '../middlewares/roleMiddleware.ts';
-
+import path from 'path';
+import upload from '../middlewares/uploadMiddleware.ts';
 const router = express.Router();
+const uploadsPath = path.join(process.cwd(), 'uploads');
 
 // Regular document upload (for existing entities)
 router.post('/',
@@ -14,9 +16,32 @@ router.post('/',
   uploadDocument
 );
 
+// router.get(
+//   '/:filename',
+//   authenticate,
+//   (req, res) => {
+
+//     const filePath = path.join(
+//       uploadsPath,
+//       req.params.filename
+//     );
+
+//     res.sendFile(filePath);
+
+//   }
+// );
+
 // Serve wizard documents (public endpoint for preview)
 router.get('/wizard/:session_id/:step/:filename',
   serveWizardDocument
+);
+
+router.post(
+  '/excel',
+  authenticate,
+  uploadExcelMiddleware,
+  validateUpload,
+  uploadExcel
 );
 
 export default router;

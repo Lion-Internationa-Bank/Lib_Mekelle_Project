@@ -124,7 +124,7 @@ export class BillService {
       { header: 'Penalty Amt', key: 'penalty_amount', width: 12 },
       { header: 'Penalty Rate', key: 'penalty_rate_used', width: 12 },
       { header: 'Owner Name', key: 'full_name', width: 20 },
-      { header: 'Phone', key: 'phone_number', width: 15 }
+      { header: 'Phone Number', key: 'phone_number', width: 15 }
     ];
     
     // Style the header row - FIRST ROW

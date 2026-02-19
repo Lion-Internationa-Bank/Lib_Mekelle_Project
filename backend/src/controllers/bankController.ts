@@ -59,7 +59,7 @@ export class BankCallbackController {
   /**
    * Get payment options showing prioritized bills
    */
-//   static async getPaymentOptions(req: AuthRequest, res: Response) {
+  //   static async getPaymentOptions(req: AuthRequest, res: Response) {
 //     try {
 //       const { upin } = req.params;
       
@@ -77,7 +77,7 @@ export class BankCallbackController {
 //         message: 'Failed to fetch payment options'
 //       });
 //     }
-//   }
+  //   }
 
   /**
    * Get unpaid bills for a UPIN (simplified version)

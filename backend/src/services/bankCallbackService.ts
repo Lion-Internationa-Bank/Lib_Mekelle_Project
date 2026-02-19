@@ -160,14 +160,13 @@ export class BankCallbackService {
         data: {
           upin,
          
-          amount_paid: totalAmountToPay,
+          amount_paid: Number(amountPaid),
           payment_date: paymentDate ? new Date(paymentDate) : new Date(),
           bank_transaction_id: transactionId,
           payment_type: "LEASE BILLING",
           bank_branch: callbackData.bankBranch,
           bank_account: callbackData.bankAccount,
           notes: callbackData.notes || this.generateNotes(overduePaid, currentPaid, futurePaidCount, futureBillsPaidList.map(b => b.fiscal_year)),
-          
         }
       });
 
