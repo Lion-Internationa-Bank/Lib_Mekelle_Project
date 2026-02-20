@@ -9,7 +9,7 @@ const SKIP_ADMIN_SEED = process.env.SKIP_ADMIN_SEED === 'true';
 const SKIP_CONFIG_SEED = process.env.SKIP_CONFIG_SEED === 'true';
 
 const server = http.createServer(app);
-
+console.log("working direc",process.cwd())
 const startServer = async () => {
   try {
     // Test DB connection

@@ -5,7 +5,7 @@ import {
   deleteApprovalDocument 
 } from "../services/approvalRequestApi"; 
 import { toast } from "sonner";
-import { openDocument } from "../utils/documentViewer";
+import { openDocument } from '../services/documentService';  
 
 export type GenericDocType = string;
 
@@ -287,11 +287,9 @@ const GenericDocsUpload = ({
       return;
     }
     
-    console.log("handle open document clicked");
+    console.log("📄 Opening document:", file_url);
     openDocument(file_url);
   };
-
- 
 
   const hasErrors = documents.some((d) => d.status === "error");
   const hasUploads = documents.length > 0;

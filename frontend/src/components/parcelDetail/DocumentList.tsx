@@ -1,6 +1,6 @@
 // components/DocumentList.tsx
 import type { ParcelDocument } from "../../services/parcelDetailApi";
-const VITE_API_PDF_URL = import.meta.env.VITE_API_PDF_URL;
+import { openDocument } from "../../services/documentService";
 
 interface DocumentListProps {
   documents: ParcelDocument[];
@@ -8,9 +8,8 @@ interface DocumentListProps {
 }
 
 const DocumentList = ({ documents, title = "Documents" }: DocumentListProps) => {
-  const openDocument = (doc: ParcelDocument) => {
-    const url = `${VITE_API_PDF_URL}${doc.file_url}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handleViewDocument = (doc: ParcelDocument) => {
+    openDocument(doc.file_url);
   };
 
   if (!documents || documents.length === 0) {
@@ -30,7 +29,7 @@ const DocumentList = ({ documents, title = "Documents" }: DocumentListProps) => 
               </div>
             </div>
             <button
-              onClick={() => openDocument(doc)}
+              onClick={() => handleViewDocument(doc)}
               className="ml-3 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
             >
               View

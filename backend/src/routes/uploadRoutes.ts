@@ -6,7 +6,7 @@ import { authorize } from '../middlewares/roleMiddleware.ts';
 import path from 'path';
 import upload from '../middlewares/uploadMiddleware.ts';
 const router = express.Router();
-const uploadsPath = path.join(process.cwd(), 'uploads');
+const uploadsPath = path.join(process.cwd());
 
 // Regular document upload (for existing entities)
 router.post('/',
@@ -16,20 +16,16 @@ router.post('/',
   uploadDocument
 );
 
-// router.get(
-//   '/:filename',
-//   authenticate,
-//   (req, res) => {
-
-//     const filePath = path.join(
-//       uploadsPath,
-//       req.params.filename
-//     );
-
-//     res.sendFile(filePath);
-
-//   }
-// );
+router.get(
+  '/:filename',
+  authenticate,
+  (req, res) => {
+    console.log(req.params.filename)
+    const decodedFilename = decodeURIComponent(req.params.filename as string);
+    const filePath = path.join(uploadsPath, decodedFilename);
+    res.sendFile(filePath);
+  }
+);
 
 // Serve wizard documents (public endpoint for preview)
 router.get('/wizard/:session_id/:step/:filename',
@@ -43,5 +39,6 @@ router.post(
   validateUpload,
   uploadExcel
 );
+
 
 export default router;

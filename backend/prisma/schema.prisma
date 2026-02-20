@@ -193,17 +193,16 @@ model audit_logs {
 model land_parcels {
   upin            String                   @id @db.VarChar(50)
   file_number     String                   @unique @db.VarChar(100)
-  tender          String?                   @db.VarChar(50)
-  tabia           String?                   @db.VarChar(100)
-  ketena          String?                   @db.VarChar(50)
+  tabia           String?                  @db.VarChar(100)
+  ketena          String?                  @db.VarChar(50)
   block           String?                  @db.VarChar(50)
-  total_area_m2   Decimal?                  @db.Decimal(12, 2)
+  total_area_m2   Decimal?                 @db.Decimal(12, 2)
   land_use        String?
   created_at      DateTime                 @default(now())
   updated_at      DateTime                 @updatedAt
   deleted_at      DateTime?
   is_deleted      Boolean                  @default(false)
-  land_grade      Decimal?                  @db.Decimal(10, 2)
+  land_grade      Decimal?                 @db.Decimal(10, 2)
   sub_city_id     String                   @db.Uuid
   tenure_type     String?                  @default("OLD_POSSESSION")
   boundary_coords Json?
@@ -213,6 +212,7 @@ model land_parcels {
   boundary_west   String?                  @db.VarChar(255)
   parent_upin     String?                  @db.VarChar(50)
   status          ParcelStatus             @default(ACTIVE)
+  tender          String?                  @db.VarChar(50)
   billing_records billing_records[]
   buildings       building_details[]
   documents       documents[]
@@ -230,10 +230,10 @@ model land_parcels {
   @@index([status])
 }
 
-model owners { 
+model owners {
   owner_id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   full_name        String
-  national_id      String?              @unique @db.VarChar(50)
+  national_id      String?             @unique @db.VarChar(50)
   tin_number       String?             @unique @db.VarChar(50)
   phone_number     String?
   created_at       DateTime?           @default(now())

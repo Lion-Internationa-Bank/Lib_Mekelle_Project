@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
-import { openDocument } from "../../../utils/documentViewer";
+import { openDocument } from "../../../services/documentService";
 
 interface Document {
   id: string;
