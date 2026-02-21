@@ -4,7 +4,6 @@ import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
 
-
 interface OwnerRequestDetailProps {
   data: any;
   actionType: ActionType;
@@ -43,18 +42,18 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
 
     return (
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">New Owner Registration</h3>
+        <h3 className="text-lg font-semibold text-[#2a2718]">New Owner Registration</h3>
         
         {/* Regular fields grid */}
         {regularEntries.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {regularEntries.map(([key, value]) => (
-              <div key={key} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-[#f0cd6e]/5 p-4 rounded-lg border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-base font-semibold text-gray-900 break-words">
+                <div className="text-base font-semibold text-[#2a2718] break-words">
                   {renderValue(value)}
                 </div>
               </div>
@@ -93,31 +92,19 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
     
     return (
       <div>
-        <h3>Update Owner Information</h3>
+        <h3 className="text-lg font-semibold text-[#2a2718] mb-4">Update Owner Information</h3>
         
         {/* Current Owner Summary */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h4>Current Owner Details</h4>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '1rem',
-            padding: '1rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '4px',
-            border: '1px solid #e9ecef'
-          }}>
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-[#2a2718] mb-3">Current Owner Details</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e]">
             {Object.entries(current_data).map(([key, value]) => (
               <div key={key}>
-                <div style={{ 
-                  fontSize: '0.85rem',
-                  color: '#6c757d',
-                  marginBottom: '0.25rem'
-                }}>
+                <div className="text-xs text-[#2a2718]/70 mb-1">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div style={{ wordBreak: 'break-word' }}>
+                <div className="break-words text-[#2a2718]">
                   {String(value || 'N/A')}
                 </div>
               </div>
@@ -137,38 +124,27 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
 
   const renderDelete = () => (
     <div>
-      <h3>Delete Owner</h3>
-      <div style={{ 
-        padding: '1.5rem',
-        backgroundColor: '#f8d7da',
-        borderRadius: '4px',
-        color: '#721c24',
-        border: '1px solid #f5c6cb'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <strong>Owner ID:</strong> {entityId}
+      <h3 className="text-lg font-semibold text-[#2a2718] mb-4">Delete Owner</h3>
+      <div className="p-6 bg-red-50 rounded-lg border border-red-200 text-red-700">
+        <div className="mb-4">
+          <strong className="text-[#2a2718]">Owner ID:</strong> {entityId}
         </div>
         {data.reason && (
           <div>
-            <strong>Reason for Deletion:</strong> {data.reason}
+            <strong className="text-[#2a2718]">Reason for Deletion:</strong> {data.reason}
           </div>
         )}
         {data.current_data && (
-          <div style={{ 
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: 'rgba(255,255,255,0.3)',
-            borderRadius: '4px'
-          }}>
-            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+          <div className="mt-4 p-4 bg-white/50 rounded-lg">
+            <div className="font-semibold text-[#2a2718] mb-3">
               Owner Information:
             </div>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              <div><strong>Full Name:</strong> {data.current_data.full_name}</div>
-              <div><strong>National ID:</strong> {data.current_data.national_id}</div>
-              <div><strong>Phone:</strong> {data.current_data.phone_number}</div>
+            <div className="grid gap-2">
+              <div><strong className="text-[#2a2718]">Full Name:</strong> {data.current_data.full_name}</div>
+              <div><strong className="text-[#2a2718]">National ID:</strong> {data.current_data.national_id}</div>
+              <div><strong className="text-[#2a2718]">Phone:</strong> {data.current_data.phone_number}</div>
               {data.current_data.active_parcels_count !== undefined && (
-                <div><strong>Active Parcels:</strong> {data.current_data.active_parcels_count}</div>
+                <div><strong className="text-[#2a2718]">Active Parcels:</strong> {data.current_data.active_parcels_count}</div>
               )}
             </div>
           </div>
@@ -186,12 +162,7 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
       return renderDelete();
     default:
       return (
-        <div style={{ 
-          padding: '1rem',
-          backgroundColor: '#fff3cd',
-          borderRadius: '4px',
-          color: '#856404'
-        }}>
+        <div className="p-4 bg-[#f0cd6e]/20 rounded-lg border border-[#f0cd6e] text-[#2a2718]">
           Unsupported action type: {actionType}
         </div>
       );

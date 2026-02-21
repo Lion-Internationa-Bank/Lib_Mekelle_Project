@@ -8,14 +8,14 @@ interface ParcelDetailHeaderProps {
 
 const ParcelDetailHeader = ({ data }: ParcelDetailHeaderProps) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+    <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-8 mb-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         {/* Left: UPIN & File Number */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-4xl font-bold text-[#2a2718] tracking-tight">
             UPIN: {data.upin}
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-[#2a2718]/70">
             File Number: <span className="font-medium">{data.file_number || '—'}</span>
           </p>
         </div>
@@ -23,7 +23,7 @@ const ParcelDetailHeader = ({ data }: ParcelDetailHeaderProps) => {
         {/* Right: Back Button */}
         <Link
           to="/home"
-          className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:ring-offset-2"
         >
           ← Back to Dashboard
         </Link>

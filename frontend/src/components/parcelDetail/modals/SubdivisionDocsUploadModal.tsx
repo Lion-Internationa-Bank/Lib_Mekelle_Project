@@ -202,14 +202,14 @@ export default function SubdivisionDocsUploadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-5 rounded-t-2xl flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 rounded-t-2xl flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <FileText size={24} />
               Upload Subdivision Documents
             </h2>
-            <p className="text-blue-100 mt-1">
-              Approval Request: <span className="font-mono bg-blue-700/30 px-2 py-0.5 rounded">{approvalRequestId}</span>
+            <p className="text-white/80 mt-1">
+              Approval Request: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{approvalRequestId}</span>
             </p>
           </div>
           <button
@@ -221,10 +221,10 @@ export default function SubdivisionDocsUploadModal({
         </div>
 
         {/* Info Banner */}
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mx-6 mt-6 rounded-lg">
+        <div className="bg-[#f0cd6e]/10 border-l-4 border-[#f0cd6e] p-4 mx-6 mt-6 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
-            <div className="text-sm text-amber-800">
+            <AlertCircle size={20} className="text-[#2a2718] mt-0.5 shrink-0" />
+            <div className="text-sm text-[#2a2718]">
               <p className="font-medium mb-1">Upload documents for each child parcel separately</p>
               <p>Each child parcel can have its own survey plan, site map, and supporting documents. 
                  These documents will be permanently linked to their respective parcels upon approval.</p>
@@ -233,14 +233,14 @@ export default function SubdivisionDocsUploadModal({
         </div>
 
         {/* Document Stats */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+        <div className="px-6 py-4 border-b border-[#f0cd6e] flex justify-between items-center">
+          <div className="text-sm text-[#2a2718]/70">
             <span className="font-semibold">{documents.length}</span> documents uploaded
           </div>
           <button
             onClick={loadDocuments}
             disabled={loading}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            className="text-sm text-[#f0cd6e] hover:text-[#2a2718] flex items-center gap-1"
           >
             <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -253,8 +253,8 @@ export default function SubdivisionDocsUploadModal({
         <div className="flex-1 overflow-y-auto p-6">
           {loading && documents.length === 0 ? (
             <div className="text-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-              <p className="mt-4 text-gray-600">Loading documents...</p>
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#f0cd6e] border-r-transparent"></div>
+              <p className="mt-4 text-[#2a2718]">Loading documents...</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -264,23 +264,23 @@ export default function SubdivisionDocsUploadModal({
                 const isExpanded = expandedParcel === parcel.upin;
                 
                 return (
-                  <div key={parcel.upin} className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div key={parcel.upin} className="border border-[#f0cd6e] rounded-xl overflow-hidden">
                     {/* Parcel Header */}
                     <div 
                       className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${
-                        parcel.isParent ? 'bg-blue-50' : 'bg-gray-50'
-                      } hover:bg-gray-100`}
+                        parcel.isParent ? 'bg-[#f0cd6e]/10' : 'bg-[#f0cd6e]/5'
+                      } hover:bg-[#f0cd6e]/20`}
                       onClick={() => toggleParcel(parcel.upin)}
                     >
                       <div className="flex items-center gap-3">
                         {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         <div>
-                          <h3 className={`font-semibold ${parcel.isParent ? 'text-blue-800' : 'text-gray-800'}`}>
+                          <h3 className={`font-semibold ${parcel.isParent ? 'text-[#2a2718]' : 'text-[#2a2718]'}`}>
                             {parcel.upin}
-                            {parcel.isParent && <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">Parent</span>}
-                            {!parcel.isParent && <span className="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">Child</span>}
+                            {parcel.isParent && <span className="ml-2 text-xs bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-0.5 rounded-full">Parent</span>}
+                            {!parcel.isParent && <span className="ml-2 text-xs bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-0.5 rounded-full">Child</span>}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-[#2a2718]/70">
                             File: {parcel.file_number} | Area: {parcel.total_area_m2.toFixed(2)} m²
                           </p>
                         </div>
@@ -292,19 +292,19 @@ export default function SubdivisionDocsUploadModal({
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="p-4 border-t border-gray-200">
+                      <div className="p-4 border-t border-[#f0cd6e]">
                         {/* Existing Documents */}
                         {parcelDocs.length > 0 && (
                           <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Documents</h4>
+                            <h4 className="text-sm font-medium text-[#2a2718] mb-2">Uploaded Documents</h4>
                             <div className="space-y-2">
                               {parcelDocs.map((doc) => (
-                                <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                                <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-[#f0cd6e] rounded-lg">
                                   <div className="flex items-center gap-3">
-                                    <FileText size={16} className="text-gray-400" />
+                                    <FileText size={16} className="text-[#f0cd6e]" />
                                     <div>
-                                      <p className="text-sm font-medium">{doc.file_name}</p>
-                                      <p className="text-xs text-gray-500">
+                                      <p className="text-sm font-medium text-[#2a2718]">{doc.file_name}</p>
+                                      <p className="text-xs text-[#2a2718]/70">
                                         {doc.document_type.replace(/_/g, ' ')} • {(doc.file_size / 1024).toFixed(0)} KB
                                       </p>
                                     </div>
@@ -312,14 +312,14 @@ export default function SubdivisionDocsUploadModal({
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => handleDownload(doc)}
-                                      className="p-1.5 text-gray-600 hover:text-blue-600 rounded hover:bg-blue-50"
+                                      className="p-1.5 text-[#2a2718] hover:text-[#f0cd6e] rounded hover:bg-[#f0cd6e]/10"
                                       title="Download"
                                     >
                                       <Download size={16} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteDocument(doc.id)}
-                                      className="p-1.5 text-gray-600 hover:text-red-600 rounded hover:bg-red-50"
+                                      className="p-1.5 text-[#2a2718] hover:text-red-600 rounded hover:bg-red-50"
                                       title="Delete"
                                     >
                                       <X size={16} />
@@ -334,12 +334,12 @@ export default function SubdivisionDocsUploadModal({
                         {/* Uploading Files */}
                         {parcelUploading.length > 0 && (
                           <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Uploading...</h4>
+                            <h4 className="text-sm font-medium text-[#2a2718] mb-2">Uploading...</h4>
                             <div className="space-y-2">
                               {parcelUploading.map((file) => (
-                                <div key={file.tempId} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                                  <span className="text-sm text-blue-700">{file.file_name}</span>
+                                <div key={file.tempId} className="flex items-center gap-3 p-3 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-lg">
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f0cd6e] border-t-transparent" />
+                                  <span className="text-sm text-[#2a2718]">{file.file_name}</span>
                                 </div>
                               ))}
                             </div>
@@ -347,13 +347,13 @@ export default function SubdivisionDocsUploadModal({
                         )}
 
                         {/* Upload Form */}
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">Upload New Document</h4>
+                        <div className="bg-[#f0cd6e]/5 p-4 rounded-lg">
+                          <h4 className="text-sm font-medium text-[#2a2718] mb-3">Upload New Document</h4>
                           <div className="flex flex-col sm:flex-row gap-3">
                             <select
                               value={activeDocType[parcel.upin] || ''}
                               onChange={(e) => setActiveDocType(prev => ({ ...prev, [parcel.upin]: e.target.value }))}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                              className="flex-1 px-3 py-2 border border-[#f0cd6e] rounded-lg text-sm focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
                             >
                               <option value="">Select document type</option>
                               {documentTypeOptions.map(opt => (
@@ -380,7 +380,7 @@ export default function SubdivisionDocsUploadModal({
                               />
                               <div className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
                                 activeDocType[parcel.upin]
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                  ? 'bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e]'
                                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                               }`}>
                                 <Upload size={16} />
@@ -388,7 +388,7 @@ export default function SubdivisionDocsUploadModal({
                               </div>
                             </label>
                           </div>
-                          <p className="text-xs text-gray-500 mt-2">
+                          <p className="text-xs text-[#2a2718]/70 mt-2">
                             Supported formats: PDF, JPG, PNG (max 10MB)
                           </p>
                         </div>
@@ -402,14 +402,14 @@ export default function SubdivisionDocsUploadModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-2xl flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+        <div className="sticky bottom-0 bg-white border-t border-[#f0cd6e] px-6 py-4 rounded-b-2xl flex justify-between items-center">
+          <div className="text-sm text-[#2a2718]/70">
             {documents.length} total documents • {childParcels.length} child parcels
           </div>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
             >
               Close
             </button>
@@ -418,7 +418,7 @@ export default function SubdivisionDocsUploadModal({
                 onComplete?.();
                 onClose();
               }}
-              className="px-8 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 transition-colors font-medium flex items-center gap-2"
+              className="px-8 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors font-medium flex items-center gap-2"
             >
               Complete
               <span className="text-lg">→</span>

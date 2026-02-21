@@ -274,20 +274,20 @@ const OwnershipPage = () => {
       {/* Header with pending requests info */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ownership Management</h1>
-          <p className="text-gray-600 mt-2">Manage property owners and their details</p>
+          <h1 className="text-3xl font-bold text-[#2a2718]">Ownership Management</h1>
+          <p className="text-[#2a2718]/70 mt-2">Manage property owners and their details</p>
         </div>
         
         {/* Pending Requests Badge */}
         {pendingRequests.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="bg-[#f0cd6e]/20 border border-[#f0cd6e] rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <AlertCircle size={20} className="text-yellow-600" />
+              <AlertCircle size={20} className="text-[#2a2718]" />
               <div>
-                <p className="text-sm font-medium text-yellow-800">
+                <p className="text-sm font-medium text-[#2a2718]">
                   You have {pendingRequests.length} pending approval request{pendingRequests.length !== 1 ? 's' : ''}
                 </p>
-                <p className="text-xs text-yellow-600 mt-1">
+                <p className="text-xs text-[#2a2718]/70 mt-1">
                   {pendingRequests.some(r => !r.has_documents) && 
                     "Some requests may need supporting documents"}
                 </p>
@@ -307,7 +307,7 @@ const OwnershipPage = () => {
                 // Navigate to pending requests page or show modal
                 toast.info("Pending requests feature coming soon");
               }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white font-semibold shadow-md hover:shadow-lg transition-all"
             >
               <FileText size={18} />
               View Pending ({pendingRequests.length})
@@ -316,7 +316,7 @@ const OwnershipPage = () => {
           
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-lg transition-all"
           >
             <span className="text-lg">+</span>
             Add New Owner
@@ -327,18 +327,18 @@ const OwnershipPage = () => {
       {/* Search Form */}
       <form
         onSubmit={handleSearchSubmit}
-        className="bg-white/80 rounded-2xl border border-gray-200 px-4 py-3 flex items-center gap-3"
+        className="bg-white/80 rounded-2xl border border-[#f0cd6e] px-4 py-3 flex items-center gap-3"
       >
         <input
           type="text"
           placeholder="Search owner by name, national ID, or phone..."
-          className="flex-1 border-none focus:ring-0 text-sm bg-transparent"
+          className="flex-1 border-none focus:ring-0 text-sm bg-transparent text-[#2a2718] placeholder-[#2a2718]/50"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <button
           type="submit"
-          className="px-6 py-2 text-sm rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+          className="px-6 py-2 text-sm rounded-xl bg-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#2a2718] hover:text-white transition-colors"
         >
           Search
         </button>

@@ -114,13 +114,13 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'SUBCITY_ADMIN') {
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sub-city ID *</label>
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl">
-            <Building className="w-4 h-4 text-gray-500" />
-            <span className="text-gray-700">{currentUser.sub_city_id}</span>
-            <span className="text-xs text-gray-500 ml-auto">(Your sub-city)</span>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city ID *</label>
+          <div className="flex items-center gap-2 p-2 bg-[#f0cd6e]/10 rounded-xl border border-[#f0cd6e]">
+            <Building className="w-4 h-4 text-[#2a2718]" />
+            <span className="text-[#2a2718]">{currentUser.sub_city_id}</span>
+            <span className="text-xs text-[#2a2718]/70 ml-auto">(Your sub-city)</span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[#2a2718]/70 mt-1">
             As a Sub-city Admin, you can only create users in your own sub-city
           </p>
         </div>
@@ -131,10 +131,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'CITY_ADMIN' && formData.role === 'SUBCITY_ADMIN') {
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Sub-city *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Select Sub-city *</label>
           {loadingSubCities ? (
-            <div className="px-4 py-2 border border-gray-300 rounded-xl bg-gray-50">
-              <p className="text-sm text-gray-500">Loading sub-cities...</p>
+            <div className="px-4 py-2 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/5">
+              <p className="text-sm text-[#2a2718]/70">Loading sub-cities...</p>
             </div>
           ) : subCitiesError ? (
             <div className="px-4 py-2 border border-red-300 rounded-xl bg-red-50">
@@ -142,20 +142,20 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               <button
                 type="button"
                 onClick={loadSubCities}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                className="mt-2 text-sm text-[#f0cd6e] hover:text-[#2a2718]"
               >
                 Retry
               </button>
             </div>
           ) : subCities.length === 0 ? (
-            <div className="px-4 py-2 border border-gray-300 rounded-xl bg-gray-50">
-              <p className="text-sm text-gray-500">No sub-cities available</p>
+            <div className="px-4 py-2 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/5">
+              <p className="text-sm text-[#2a2718]/70">No sub-cities available</p>
             </div>
           ) : (
             <select
               value={formData.sub_city_id}
               onChange={(e) => setFormData({...formData, sub_city_id: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white"
               required
             >
               <option value="">Select a sub-city</option>
@@ -166,7 +166,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               ))}
             </select>
           )}
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[#2a2718]/70 mt-1">
             Select the sub-city this admin will manage
           </p>
         </div>
@@ -177,16 +177,16 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'CITY_ADMIN' && ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(formData.role)) {
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sub-city ID *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city ID *</label>
           <input
             type="text"
             value={formData.sub_city_id || ''}
             onChange={(e) => setFormData({...formData, sub_city_id: e.target.value})}
-            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             required
             placeholder="Enter sub-city ID"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[#2a2718]/70 mt-1">
             Enter the sub-city ID for this user
           </p>
         </div>
@@ -201,12 +201,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
       <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Add New User</h3>
-            <p className="text-sm text-gray-600 mt-1">Create a new user account</p>
+            <h3 className="text-xl font-bold text-[#2a2718]">Add New User</h3>
+            <p className="text-sm text-[#2a2718]/70 mt-1">Create a new user account</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-[#f0cd6e]/20 rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>
@@ -214,55 +214,55 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">Full Name *</label>
             <input
               type="text"
               value={formData.full_name}
               onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">Username *</label>
             <input
               type="text"
               value={formData.username}
               onChange={(e) => setFormData({...formData, username: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
             />
           </div>
 
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">Password *</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] pr-10"
                 required
                 minLength={6}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#2a2718]/70 hover:text-[#2a2718]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+            <p className="text-xs text-[#2a2718]/70 mt-1">Minimum 6 characters</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">Role *</label>
             <select
               value={formData.role}
               onChange={(e) => handleRoleChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white"
             >
               {getCreatableRoles().map(role => (
                 <option key={role} value={role}>
@@ -278,14 +278,14 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors"
+              className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={creatingUser || (shouldShowSubCityField(formData.role) && !formData.sub_city_id)}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {creatingUser ? 'Creating...' : 'Create User'}
             </button>

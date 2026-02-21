@@ -1,3 +1,4 @@
+// src/components/common/DocumentList.tsx
 import React from 'react';
 import DocumentCard from './DocumentCard';
 import { type Document, isDocument } from '../../utils/documentHelpers';
@@ -25,8 +26,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
   if (validDocuments.length === 0) {
     return (
       <div>
-        {title && <h4 className="text-xs font-semibold text-gray-500 mb-2">{title}</h4>}
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
+        {title && <h4 className="text-xs font-semibold text-[#2a2718]/70 mb-2">{title}</h4>}
+        <p className="text-sm text-[#2a2718]/70">{emptyMessage}</p>
       </div>
     );
   }
@@ -37,11 +38,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <div>
         {title && (
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-semibold text-gray-500">{title}</h4>
-            <span className="text-xs text-gray-400">{validDocuments.length} file(s)</span>
+            <h4 className="text-xs font-semibold text-[#2a2718]/70">{title}</h4>
+            <span className="text-xs text-[#2a2718]/70">{validDocuments.length} file(s)</span>
           </div>
         )}
-        <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
+        <ul className="divide-y divide-[#f0cd6e] rounded-xl border border-[#f0cd6e] bg-white">
           {validDocuments.map((doc, index) => (
             <DocumentCard
               key={doc.id || doc.doc_id || index}
@@ -60,8 +61,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
     <div>
       {title && (
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-700">{title}</h4>
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+          <h4 className="text-sm font-semibold text-[#2a2718]">{title}</h4>
+          <span className="text-xs bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-1 rounded-full border border-[#f0cd6e]">
             {validDocuments.length} file(s)
           </span>
         </div>

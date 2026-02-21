@@ -4,7 +4,6 @@ import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
 
-
 interface ParcelRequestDetailProps {
   data: any;
   actionType: ActionType;
@@ -19,37 +18,15 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
   const renderCreate = () => {
     return (
       <div>
-        <h3>New Parcel Registration</h3>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '1.5rem',
-          padding: '1.5rem',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '4px',
-          border: '1px solid #e9ecef'
-        }}>
+        <h3 className="text-lg font-semibold text-[#2a2718] mb-4">New Parcel Registration</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e]">
           {Object.entries(data).map(([key, value]) => (
-            <div key={key} style={{ 
-              padding: '1rem',
-              backgroundColor: 'white',
-              borderRadius: '4px',
-              border: '1px solid #dee2e6'
-            }}>
-              <div style={{ 
-                fontSize: '0.85rem',
-                color: '#6c757d',
-                marginBottom: '0.5rem',
-                fontWeight: '500'
-              }}>
+            <div key={key} className="p-4 bg-white rounded-lg border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-2 font-medium uppercase tracking-wider">
                 {key.replace(/_/g, ' ')
                     .replace(/\b\w/g, l => l.toUpperCase())}
               </div>
-              <div style={{ 
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                wordBreak: 'break-word'
-              }}>
+              <div className="text-base font-semibold text-[#2a2718] break-words">
                 {typeof value === 'object' 
                   ? JSON.stringify(value, null, 2) 
                   : String(value)}
@@ -66,31 +43,19 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
     
     return (
       <div>
-        <h3>Update Parcel Information</h3>
+        <h3 className="text-lg font-semibold text-[#2a2718] mb-4">Update Parcel Information</h3>
         
         {/* Current Parcel Summary */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h4>Current Parcel Details</h4>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '1rem',
-            padding: '1rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '4px',
-            border: '1px solid #e9ecef'
-          }}>
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-[#2a2718] mb-3">Current Parcel Details</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e]">
             {Object.entries(current_data).map(([key, value]) => (
               <div key={key}>
-                <div style={{ 
-                  fontSize: '0.85rem',
-                  color: '#6c757d',
-                  marginBottom: '0.25rem'
-                }}>
+                <div className="text-xs text-[#2a2718]/70 mb-1">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div style={{ wordBreak: 'break-word' }}>
+                <div className="break-words text-[#2a2718]">
                   {typeof value === 'object' 
                     ? JSON.stringify(value) 
                     : String(value)}
@@ -139,7 +104,7 @@ const renderTransfer = () => {
   );
 
   const formatCurrency = (value: number): string => {
-    return `$${Number(value).toLocaleString('en-US', {
+    return `ETB ${Number(value).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -175,39 +140,39 @@ const renderTransfer = () => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Ownership Transfer</h3>
+      <h3 className="text-lg font-semibold text-[#2a2718]">Ownership Transfer</h3>
       
       {/* Owner Transfer Cards - Only showing names */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* From Owner Card */}
-        <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-semibold text-blue-800 bg-blue-100 px-3 py-1 rounded-full">
+            <span className="text-sm font-semibold text-[#2a2718] bg-[#f0cd6e]/20 px-3 py-1 rounded-full border border-[#f0cd6e]">
               FROM
             </span>
           </div>
-          <div className="bg-white p-4 rounded-lg border border-blue-100">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+          <div className="bg-white p-4 rounded-lg border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
               Owner Name
             </div>
-            <div className="text-lg font-semibold text-gray-900 break-words">
+            <div className="text-lg font-semibold text-[#2a2718] break-words">
               {ownerDetails.from_owner_name || 'N/A'}
             </div>
           </div>
         </div>
         
         {/* To Owner Card */}
-        <div className="bg-green-50 p-5 rounded-lg border border-green-200">
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-semibold text-green-800 bg-green-100 px-3 py-1 rounded-full">
+            <span className="text-sm font-semibold text-[#2a2718] bg-[#f0cd6e]/20 px-3 py-1 rounded-full border border-[#f0cd6e]">
               TO
             </span>
           </div>
-          <div className="bg-white p-4 rounded-lg border border-green-100">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+          <div className="bg-white p-4 rounded-lg border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
               Owner Name
             </div>
-            <div className="text-lg font-semibold text-gray-900 break-words">
+            <div className="text-lg font-semibold text-[#2a2718] break-words">
               {ownerDetails.to_owner_name || 'N/A'}
             </div>
           </div>
@@ -216,19 +181,19 @@ const renderTransfer = () => {
 
       {/* Parcel Information */}
       {Object.keys(parcelInfo).length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span className="text-gray-600">🏢</span>
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+            <span className="text-[#2a2718]">🏢</span>
             Parcel Details
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(parcelInfo).map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-gray-100">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-gray-900 break-words">
+                <div className="text-sm font-medium text-[#2a2718] break-words">
                   {String(value || 'N/A')}
                 </div>
               </div>
@@ -239,16 +204,16 @@ const renderTransfer = () => {
 
       {/* Transfer Details */}
       {regularEntries.length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Transfer Details</h4>
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3">Transfer Details</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {regularEntries.map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-gray-100">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-gray-900 break-words">
+                <div className="text-sm font-medium text-[#2a2718] break-words">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -343,23 +308,23 @@ const renderAddOwner = () => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Add Owner to Parcel</h3>
+      <h3 className="text-lg font-semibold text-[#2a2718]">Add Owner to Parcel</h3>
       
       {/* Parcel Information */}
       {Object.keys(parcelInfo).length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span className="text-gray-600">🏢</span>
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+            <span className="text-[#2a2718]">🏢</span>
             Parcel Details
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(parcelInfo).map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-gray-100">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-gray-900 break-words">
+                <div className="text-sm font-medium text-[#2a2718] break-words">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -370,16 +335,16 @@ const renderAddOwner = () => {
 
       {/* New Owner Information */}
       {Object.keys(newOwnerDetails).length > 0 && (
-        <div className="bg-green-50 p-5 rounded-lg border border-green-200">
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-semibold text-green-800 bg-green-100 px-3 py-1 rounded-full">
+            <span className="text-sm font-semibold text-[#2a2718] bg-[#f0cd6e]/20 px-3 py-1 rounded-full border border-[#f0cd6e]">
               NEW OWNER
             </span>
             {requestData.is_first_owner !== undefined && (
-              <span className={`text-xs px-2 py-1 rounded-full ${
+              <span className={`text-xs px-2 py-1 rounded-full border ${
                 requestData.is_first_owner 
-                  ? 'bg-blue-100 text-blue-800' 
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-[#f0cd6e]/20 text-[#2a2718] border-[#f0cd6e]' 
+                  : 'bg-[#f0cd6e]/10 text-[#2a2718] border-[#f0cd6e]'
               }`}>
                 {requestData.is_first_owner ? 'First Owner' : 'Additional Owner'}
               </span>
@@ -387,23 +352,23 @@ const renderAddOwner = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(newOwnerDetails).map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-green-100">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-gray-900 break-words">
+                <div className="text-sm font-medium text-[#2a2718] break-words">
                   {String(value || 'N/A')}
                 </div>
               </div>
             ))}
           </div>
           {requestData.acquired_at && (
-            <div className="mt-3 bg-white p-3 rounded-md border border-green-100">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="mt-3 bg-white p-3 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 ACQUISITION DATE
               </div>
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-sm font-medium text-[#2a2718]">
                 {formatDate(requestData.acquired_at)}
               </div>
             </div>
@@ -413,22 +378,22 @@ const renderAddOwner = () => {
 
       {/* Existing Owners */}
       {existingOwners.length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span className="text-gray-600">👥</span>
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+            <span className="text-[#2a2718]">👥</span>
             Existing Owners ({existingOwners.length})
           </h4>
           <div className="space-y-3">
             {existingOwners.map((owner, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+              <div key={index} className="bg-white p-4 rounded-lg border border-[#f0cd6e]">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.entries(owner).map(([key, value]) => (
                     <div key={key}>
-                      <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                      <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                         {key.replace(/_/g, ' ')
                             .replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
-                      <div className="text-sm font-medium text-gray-900 break-words">
+                      <div className="text-sm font-medium text-[#2a2718] break-words">
                         {key.toLowerCase().includes('date') && value
                           ? formatDate(value as string)
                           : String(value || 'N/A')}
@@ -444,16 +409,16 @@ const renderAddOwner = () => {
 
       {/* Additional Transfer Details */}
       {regularEntries.length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Additional Information</h4>
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3">Additional Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {regularEntries.map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-gray-100">
-                <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-gray-900 break-words">
+                <div className="text-sm font-medium text-[#2a2718] break-words">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -494,7 +459,7 @@ const renderSubdivide = () => {
   
   if (!requestData) {
     return (
-      <div className="p-4 bg-yellow-50 text-yellow-700 rounded-md border border-yellow-200">
+      <div className="p-4 bg-[#f0cd6e]/20 text-[#2a2718] rounded-md border border-[#f0cd6e]">
         No subdivision data available
       </div>
     );
@@ -523,65 +488,65 @@ const renderSubdivide = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-blue-600">🗺️</span>
+      <div className="bg-[#f0cd6e]/10 p-6 rounded-lg border border-[#f0cd6e]">
+        <h3 className="text-xl font-semibold text-[#2a2718] flex items-center gap-2">
+          <span className="text-[#2a2718]">🗺️</span>
           Parcel Subdivision Request
         </h3>
-        <p className="text-blue-700 mt-2">
+        <p className="text-[#2a2718]/70 mt-2">
           Subdividing parcel into {childParcels.length} child {childParcels.length === 1 ? 'parcel' : 'parcels'}
         </p>
       </div>
 
       {/* Parent Parcel Information */}
       {parent_details && (
-        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <span className="text-gray-600">🏞️</span>
+        <div className="bg-[#f0cd6e]/5 p-6 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-4 flex items-center gap-2">
+            <span className="text-[#2a2718]">🏞️</span>
             Parent Parcel Details
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 UPIN
               </div>
-              <div className="text-lg font-semibold text-gray-900">
+              <div className="text-lg font-semibold text-[#2a2718]">
                 {parent_details.upin || entityId}
               </div>
             </div>
             
-            <div className="bg-white p-4 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 File Number
               </div>
-              <div className="text-base font-medium text-gray-900">
+              <div className="text-base font-medium text-[#2a2718]">
                 {parent_details.file_number || 'N/A'}
               </div>
             </div>
             
-            <div className="bg-white p-4 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 Tenure Type
               </div>
-              <div className="text-base font-medium text-gray-900">
+              <div className="text-base font-medium text-[#2a2718]">
                 {parent_details.tenure_type || 'N/A'}
               </div>
             </div>
             
-            <div className="bg-white p-4 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 Owners Count
               </div>
-              <div className="text-base font-medium text-gray-900">
+              <div className="text-base font-medium text-[#2a2718]">
                 {parent_details.owners_count || 0} {parent_details.owners_count === 1 ? 'Owner' : 'Owners'}
               </div>
             </div>
             
-            <div className="bg-white p-4 rounded-md border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 Total Area
               </div>
-              <div className="text-lg font-semibold text-gray-900">
+              <div className="text-lg font-semibold text-[#2a2718]">
                 {formatArea(parent_details.total_area_m2 || 0)}
               </div>
             </div>
@@ -589,7 +554,7 @@ const renderSubdivide = () => {
 
           {/* Parent Documents */}
           {parcel_documents[parent_details.upin]?.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-4 border-t border-[#f0cd6e]">
               <DocumentList
                 documents={parcel_documents[parent_details.upin]}
                 title="Parent Parcel Documents"
@@ -603,62 +568,62 @@ const renderSubdivide = () => {
 
       {/* Area Distribution Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-green-50 p-5 rounded-lg border border-green-200">
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs text-green-700 mb-1 font-medium uppercase tracking-wider">
+              <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
                 Parent Area
               </div>
-              <div className="text-2xl font-bold text-green-800">
+              <div className="text-2xl font-bold text-[#2a2718]">
                 {formatArea(parentArea)}
               </div>
             </div>
-            <span className="text-2xl text-green-600">🏞️</span>
+            <span className="text-2xl text-[#2a2718]">🏞️</span>
           </div>
         </div>
         
-        <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
+              <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
                 Total Child Area
               </div>
-              <div className="text-2xl font-bold text-blue-800">
+              <div className="text-2xl font-bold text-[#2a2718]">
                 {formatArea(totalChildArea)}
               </div>
-              <div className="text-xs text-blue-600 mt-2">
+              <div className="text-xs text-[#2a2718]/70 mt-2">
                 Across {childParcels.length} {childParcels.length === 1 ? 'parcel' : 'parcels'}
               </div>
             </div>
-            <span className="text-2xl text-blue-600">🧩</span>
+            <span className="text-2xl text-[#2a2718]">🧩</span>
           </div>
         </div>
         
         <div className={`p-5 rounded-lg border ${
           areaMatch 
-            ? 'bg-green-50 border-green-200' 
+            ? 'bg-[#f0cd6e]/10 border-[#f0cd6e]' 
             : 'bg-yellow-50 border-yellow-200'
         }`}>
           <div className="flex items-start justify-between">
             <div>
               <div className={`text-xs mb-1 font-medium uppercase tracking-wider ${
-                areaMatch ? 'text-green-700' : 'text-yellow-700'
+                areaMatch ? 'text-[#2a2718]' : 'text-yellow-700'
               }`}>
                 Area Balance
               </div>
               <div className={`text-2xl font-bold ${
-                areaMatch ? 'text-green-800' : 'text-yellow-800'
+                areaMatch ? 'text-[#2a2718]' : 'text-yellow-800'
               }`}>
                 {formatArea(areaDifference)}
               </div>
               <div className={`text-xs mt-2 ${
-                areaMatch ? 'text-green-600' : 'text-yellow-600'
+                areaMatch ? 'text-[#2a2718]/70' : 'text-yellow-600'
               }`}>
                 {areaMatch ? '✓ Areas match' : '⚠ Area mismatch'}
               </div>
             </div>
             <span className={`text-2xl ${
-              areaMatch ? 'text-green-600' : 'text-yellow-600'
+              areaMatch ? 'text-[#2a2718]' : 'text-yellow-600'
             }`}>⚖️</span>
           </div>
         </div>
@@ -668,11 +633,11 @@ const renderSubdivide = () => {
       {childParcels.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="text-orange-500">🧩</span>
+            <h4 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
+              <span className="text-[#2a2718]">🧩</span>
               Child Parcels ({childParcels.length})
             </h4>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[#2a2718]/70">
               Average area: {formatArea(totalChildArea / childParcels.length)}
             </div>
           </div>
@@ -684,29 +649,29 @@ const renderSubdivide = () => {
               return (
                 <div 
                   key={index}
-                  className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                  className="bg-white rounded-lg border border-[#f0cd6e] shadow-sm hover:shadow-md transition-shadow overflow-hidden"
                 >
                   {/* Child Header */}
-                  <div className="bg-gradient-to-r from-orange-50 to-white p-5 border-b border-gray-200">
+                  <div className="bg-gradient-to-r from-[#f0cd6e]/10 to-white p-5 border-b border-[#f0cd6e]">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="shrink-0 w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                        <div className="shrink-0 w-10 h-10 bg-[#f0cd6e] text-[#2a2718] rounded-full flex items-center justify-center font-bold text-lg">
                           {index + 1}
                         </div>
                         <div>
-                          <div className="font-bold text-lg text-gray-900">
+                          <div className="font-bold text-lg text-[#2a2718]">
                             Child Parcel #{index + 1}
                           </div>
-                          <div className="text-sm text-gray-600 font-mono">
+                          <div className="text-sm text-[#2a2718]/70 font-mono">
                             {child.upin}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-2xl font-bold text-[#2a2718]">
                           {formatArea(child.total_area_m2 || 0)}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-[#2a2718]/70 mt-1">
                           {((child.total_area_m2 || 0) / parentArea * 100).toFixed(1)}% of parent
                         </div>
                       </div>
@@ -717,19 +682,19 @@ const renderSubdivide = () => {
                   <div className="p-5 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                        <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                           File Number
                         </div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-[#2a2718]">
                           {child.file_number || 'N/A'}
                         </div>
                       </div>
                       {child.land_use && (
                         <div>
-                          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                          <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                             Land Use
                           </div>
-                          <div className="font-medium text-gray-700">
+                          <div className="font-medium text-[#2a2718]/80">
                             {child.land_use.replace(/_/g, ' ')}
                           </div>
                         </div>
@@ -738,36 +703,36 @@ const renderSubdivide = () => {
                     
                     {child.land_grade && (
                       <div>
-                        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                        <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                           Land Grade
                         </div>
-                        <div className="text-gray-700">{child.land_grade}</div>
+                        <div className="text-[#2a2718]/80">{child.land_grade}</div>
                       </div>
                     )}
                     
                     {child.tenure_type && (
                       <div>
-                        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                        <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                           Tenure Type
                         </div>
-                        <div className="text-gray-700">{child.tenure_type}</div>
+                        <div className="text-[#2a2718]/80">{child.tenure_type}</div>
                       </div>
                     )}
                     
                     {/* Boundaries Section */}
                     {(child.boundary_north || child.boundary_south || child.boundary_east || child.boundary_west) && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <div className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                          <span className="text-gray-500">📍</span>
+                      <div className="pt-4 border-t border-[#f0cd6e]">
+                        <div className="text-sm font-medium text-[#2a2718] mb-3 flex items-center gap-2">
+                          <span className="text-[#2a2718]/70">📍</span>
                           Boundaries
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           {child.boundary_north && (
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#f0cd6e] rounded-full"></div>
                               <div>
-                                <div className="text-xs text-gray-500">North</div>
-                                <div className="text-sm truncate max-w-[150px]" title={child.boundary_north}>
+                                <div className="text-xs text-[#2a2718]/70">North</div>
+                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_north}>
                                   {child.boundary_north}
                                 </div>
                               </div>
@@ -775,10 +740,10 @@ const renderSubdivide = () => {
                           )}
                           {child.boundary_south && (
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#2a2718] rounded-full"></div>
                               <div>
-                                <div className="text-xs text-gray-500">South</div>
-                                <div className="text-sm truncate max-w-[150px]" title={child.boundary_south}>
+                                <div className="text-xs text-[#2a2718]/70">South</div>
+                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_south}>
                                   {child.boundary_south}
                                 </div>
                               </div>
@@ -786,10 +751,10 @@ const renderSubdivide = () => {
                           )}
                           {child.boundary_east && (
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#f0cd6e] rounded-full"></div>
                               <div>
-                                <div className="text-xs text-gray-500">East</div>
-                                <div className="text-sm truncate max-w-[150px]" title={child.boundary_east}>
+                                <div className="text-xs text-[#2a2718]/70">East</div>
+                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_east}>
                                   {child.boundary_east}
                                 </div>
                               </div>
@@ -797,10 +762,10 @@ const renderSubdivide = () => {
                           )}
                           {child.boundary_west && (
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#2a2718] rounded-full"></div>
                               <div>
-                                <div className="text-xs text-gray-500">West</div>
-                                <div className="text-sm truncate max-w-[150px]" title={child.boundary_west}>
+                                <div className="text-xs text-[#2a2718]/70">West</div>
+                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_west}>
                                   {child.boundary_west}
                                 </div>
                               </div>
@@ -812,7 +777,7 @@ const renderSubdivide = () => {
 
                     {/* Child Parcel Documents */}
                     {childDocuments.length > 0 && (
-                      <div className="pt-4 border-t border-gray-100">
+                      <div className="pt-4 border-t border-[#f0cd6e]">
                         <DocumentList
                           documents={childDocuments}
                           title={`Documents for ${child.upin}`}
@@ -831,7 +796,7 @@ const renderSubdivide = () => {
 
       {/* Overall Documents Section */}
       {requestData.documents && requestData.documents.length > 0 && (
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-8 pt-6 border-t border-[#f0cd6e]">
           <DocumentList
             documents={requestData.documents}
             title="All Subdivision Documents"
@@ -844,45 +809,285 @@ const renderSubdivide = () => {
   );
 };
 
-  const renderDelete = () => (
-    <div>
-      <h3>Delete Parcel</h3>
-      <div style={{ 
-        padding: '1.5rem',
-        backgroundColor: '#f8d7da',
-        borderRadius: '4px',
-        color: '#721c24',
-        border: '1px solid #f5c6cb'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <strong>UPIN:</strong> {entityId}
-        </div>
-        {data.reason && (
-          <div>
-            <strong>Reason for Deletion:</strong> {data.reason}
-          </div>
-        )}
-        {data.current_data && (
-          <div style={{ 
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: 'rgba(255,255,255,0.3)',
-            borderRadius: '4px'
-          }}>
-            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-              Parcel Information:
+ const renderDelete = () => {
+  // Extract data from request_data
+  const requestData = data.request_data || data;
+  
+  // Document field names to look for
+  const documentFieldNames = ['documents', 'attachments', 'supporting_documents'];
+  
+  // Parcel info to display
+  const parcelInfo = requestData.parcel_details || {};
+  
+  // Validation checks
+  const validationChecks = requestData.validation_checks || {};
+  
+  // Additional fields (exclude complex objects and handled fields)
+  const regularEntries = Object.entries(requestData).filter(
+    ([key]) => !documentFieldNames.includes(key) && 
+               !key.toLowerCase().includes('document') &&
+               !key.includes('parcel_details') &&
+               !key.includes('validation_checks') &&
+               !key.includes('owner_details') &&
+               !key.includes('existing_owners') &&
+               typeof requestData[key] !== 'object'
+  );
+  
+  const documentEntries = Object.entries(requestData).filter(
+    ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
+  );
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const renderValue = (key: string, value: any): string => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    if (key.toLowerCase().includes('date') && value) {
+      return formatDate(value);
+    }
+    
+    if (key.toLowerCase().includes('area') || key.toLowerCase().includes('size')) {
+      return `${value} m²`;
+    }
+    
+    return String(value);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Status Badge */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-[#2a2718]">Delete Parcel Request</h3>
+        <span className={`
+          inline-flex px-3 py-1 text-sm font-medium rounded-full border
+          ${data.status === 'PENDING' 
+            ? 'bg-[#f0cd6e]/20 text-[#2a2718] border-[#f0cd6e]' 
+            : data.status === 'APPROVED'
+            ? 'bg-green-100 text-green-800 border-green-200'
+            : data.status === 'REJECTED'
+            ? 'bg-red-100 text-red-800 border-red-200'
+            : 'bg-gray-100 text-gray-800 border-gray-200'
+          }
+        `}>
+          {data.status}
+        </span>
+      </div>
+
+      {/* Request Metadata Card */}
+      <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+        <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+          <span className="text-[#2a2718]">📋</span>
+          Request Information
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+              Request ID
             </div>
-            {Object.entries(data.current_data).slice(0, 4).map(([key, value]) => (
-              <div key={key} style={{ fontSize: '0.9rem' }}>
-                {key.replace(/_/g, ' ')}: {String(value)}
+            <div className="text-sm font-mono font-medium text-[#2a2718] break-all">
+              {data.request_id}
+            </div>
+          </div>
+          <div className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+              UPIN / Entity ID
+            </div>
+            <div className="text-sm font-mono font-medium text-[#2a2718]">
+              {data.entity_id}
+            </div>
+          </div>
+          <div className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+              Sub City
+            </div>
+            <div className="text-sm font-medium text-[#2a2718]">
+              {data.sub_city?.name || data.sub_city_id}
+            </div>
+          </div>
+          <div className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+            <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+              Created At
+            </div>
+            <div className="text-sm font-medium text-[#2a2718]">
+              {formatDate(data.created_at)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Parcel Information */}
+      {Object.keys(parcelInfo).length > 0 && (
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+            <span className="text-[#2a2718]">🏢</span>
+            Parcel Details
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(parcelInfo).map(([key, value]) => (
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+                  {key.replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())}
+                </div>
+                <div className="text-sm font-medium text-[#2a2718] break-words">
+                  {renderValue(key, value)}
+                </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Validation Checks */}
+      {Object.keys(validationChecks).length > 0 && (
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+            <span className="text-[#2a2718]">✓</span>
+            Validation Checks
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(validationChecks).map(([key, value]) => (
+              <div key={key} className={`
+                bg-white p-3 rounded-md border
+                ${key === 'can_delete' 
+                  ? value === true 
+                    ? 'border-[#f0cd6e] bg-[#f0cd6e]/5' 
+                    : 'border-red-200 bg-red-50'
+                  : 'border-[#f0cd6e]'
+                }
+              `}>
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+                  {key.replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())}
+                </div>
+                <div className={`
+                  text-sm font-medium flex items-center gap-1 text-[#2a2718]
+                `}>
+                  {key === 'can_delete' && (
+                    <span>{value === true ? '✅' : '❌'}</span>
+                  )}
+                  {String(value)}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Show warning if cannot delete */}
+          {validationChecks.can_delete === false && (
+            <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <span className="text-red-600 text-lg">⚠️</span>
+                <div>
+                  <h5 className="text-sm font-semibold text-red-800 mb-1">
+                    Deletion Not Allowed
+                  </h5>
+                  <p className="text-sm text-red-700">
+                    This parcel cannot be deleted due to the following active records:
+                  </p>
+                  <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                    {validationChecks.active_lease > 0 && (
+                      <li>Active Lease: {validationChecks.active_lease}</li>
+                    )}
+                    {validationChecks.active_owners > 0 && (
+                      <li>Active Owners: {validationChecks.active_owners}</li>
+                    )}
+                    {validationChecks.child_parcels > 0 && (
+                      <li>Child Parcels: {validationChecks.child_parcels}</li>
+                    )}
+                    {validationChecks.active_billing > 0 && (
+                      <li>Active Billing Records: {validationChecks.active_billing}</li>
+                    )}
+                    {validationChecks.active_encumbrances > 0 && (
+                      <li>Active Encumbrances: {validationChecks.active_encumbrances}</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Comments / Reason Section */}
+      {data.comments && (
+        <div className="bg-[#f0cd6e]/10 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
+            <span className="text-[#2a2718]">💬</span>
+            Reason for Deletion
+          </h4>
+          <div className="bg-white p-4 rounded-md border border-[#f0cd6e]">
+            <p className="text-sm text-[#2a2718] whitespace-pre-wrap">
+              {data.comments}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Reason (if rejected) */}
+      {data.rejection_reason && (
+        <div className="bg-red-50 p-5 rounded-lg border border-red-200">
+          <h4 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+            <span className="text-red-600">❌</span>
+            Rejection Reason
+          </h4>
+          <div className="bg-white p-4 rounded-md border border-red-100">
+            <p className="text-sm text-[#2a2718] whitespace-pre-wrap">
+              {data.rejection_reason}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Information */}
+      {regularEntries.length > 0 && (
+        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
+          <h4 className="text-sm font-semibold text-[#2a2718] mb-3">Additional Information</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {regularEntries.map(([key, value]) => (
+              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+                  {key.replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())}
+                </div>
+                <div className="text-sm font-medium text-[#2a2718] break-words">
+                  {renderValue(key, value)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Documents sections */}
+      {documentEntries.map(([key, value]) => {
+        const documents = Array.isArray(value) ? value : (value ? [value] : []);
+        if (documents.length === 0) return null;
+
+        return (
+          <div key={key} className="mt-4">
+            <DocumentList
+              documents={documents}
+              title={key.replace(/_/g, ' ')
+                  .replace(/\b\w/g, l => l.toUpperCase())}
+              variant="compact"
+              showUploadInfo={true}
+            />
+          </div>
+        );
+      })}
     </div>
   );
-
+};
   switch (actionType) {
     case 'CREATE':
       return renderCreate();
@@ -898,12 +1103,7 @@ const renderSubdivide = () => {
       return renderSubdivide();
     default:
       return (
-        <div style={{ 
-          padding: '1rem',
-          backgroundColor: '#fff3cd',
-          borderRadius: '4px',
-          color: '#856404'
-        }}>
+        <div className="p-4 bg-[#f0cd6e]/20 rounded-lg border border-[#f0cd6e] text-[#2a2718]">
           Unsupported action type: {actionType}
         </div>
       );

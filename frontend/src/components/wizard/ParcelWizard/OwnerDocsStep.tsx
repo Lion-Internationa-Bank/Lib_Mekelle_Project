@@ -131,36 +131,36 @@ const handleViewDocument = (file_url: string) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
         Owner Documents
       </h2>
-      <p className="text-gray-600 mb-8">
+      <p className="text-[#2a2718]/70 mb-8">
         Upload supporting documents for the owner (PDF, JPG, PNG up to 10MB)
       </p>
 
       {/* Documents List */}
       <div className="space-y-4 mb-8">
         {documents.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl">
-            <p className="text-gray-500">No documents uploaded yet</p>
+          <div className="text-center py-8 border-2 border-dashed border-[#f0cd6e] rounded-xl">
+            <p className="text-[#2a2718]/70">No documents uploaded yet</p>
           </div>
         ) : (
           documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border-2 border-emerald-100">
+            <div key={doc.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 rounded-xl border-2 border-[#f0cd6e]">
               <div className="flex items-center gap-4 flex-1">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-md ${
-                  doc.status === "success" || !doc.status ? "bg-green-100 text-green-700 border-green-300" :
-                  doc.status === "uploading" ? "bg-emerald-100 text-emerald-700 border-emerald-300 animate-pulse" :
+                  doc.status === "success" || !doc.status ? "bg-[#f0cd6e]/20 text-[#2a2718] border-[#f0cd6e]" :
+                  doc.status === "uploading" ? "bg-[#f0cd6e]/30 text-[#2a2718] border-[#f0cd6e] animate-pulse" :
                   "bg-red-100 text-red-700 border-red-300"
                 }`}>
                   {doc.status === "uploading" ? "⏳" : doc.status === "success" || !doc.status ? "📄" : "❌"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-gray-900 truncate">
+                  <div className="font-semibold text-[#2a2718] truncate">
                     {ownerDocumentTypes.find(t => t.value === doc.document_type)?.label || doc.document_type}
                   </div>
-                  <div className="text-sm text-gray-500 truncate">{doc.file_name}</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-sm text-[#2a2718]/70 truncate">{doc.file_name}</div>
+                  <div className="text-xs text-[#2a2718]/70">
                     {new Date(doc.uploaded_at).toLocaleDateString()} • {doc.uploaded_by || 'You'}
                   </div>
                 </div>
@@ -168,7 +168,7 @@ const handleViewDocument = (file_url: string) => {
               <div className="flex items-center gap-2">
             {   doc.file_url &&(    <button
                   onClick={() => handleViewDocument(doc.file_url)}
-                  className="p-2 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-colors"
+                  className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-xl transition-colors"
                   title="View document"
                 >
                   👁️ View
@@ -188,25 +188,25 @@ const handleViewDocument = (file_url: string) => {
       </div>
 
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-8 hover:border-emerald-400 transition-all duration-200 hover:shadow-md bg-gradient-to-br from-emerald-50/50 to-green-50/50 mb-10">
+      <div className="border-2 border-dashed border-[#f0cd6e] rounded-2xl p-8 hover:border-[#2a2718] transition-all duration-200 hover:shadow-md bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 mb-10">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
             📄
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Owner Documents</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">Upload Owner Documents</h3>
+          <p className="text-[#2a2718]/70 mb-6 max-w-md mx-auto">
             Click below to upload owner identification documents (PDF, JPG, PNG up to 10MB)
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {ownerDocumentTypes.map((type) => (
               <label key={type.value} className="group relative cursor-pointer">
-                <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-200 group-hover:shadow-md text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors">
-                    <span className="text-xl font-bold text-emerald-600">📄</span>
+                <div className="p-6 border-2 border-dashed border-[#f0cd6e] rounded-xl hover:border-[#2a2718] hover:bg-[#f0cd6e]/20 transition-all duration-200 group-hover:shadow-md text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-[#f0cd6e]/20 group-hover:bg-[#f0cd6e]/30 rounded-xl flex items-center justify-center transition-colors">
+                    <span className="text-xl font-bold text-[#2a2718]">📄</span>
                   </div>
-                  <div className="font-semibold text-gray-900 mb-1">{type.label}</div>
-                  <div className="text-sm text-gray-500">Click to upload</div>
+                  <div className="font-semibold text-[#2a2718] mb-1">{type.label}</div>
+                  <div className="text-sm text-[#2a2718]/70">Click to upload</div>
                 </div>
                 <input
                   type="file"
@@ -222,10 +222,10 @@ const handleViewDocument = (file_url: string) => {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-12 border-t border-gray-200">
+      <div className="flex justify-between pt-12 border-t border-[#f0cd6e]">
         <button
           onClick={prevStep}
-          className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+          className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
         >
           ← Back
         </button>
@@ -233,7 +233,7 @@ const handleViewDocument = (file_url: string) => {
         <div className="flex gap-4">
           <button
             onClick={nextStep}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
             disabled={isLoading || !!uploadingDoc}
           >
             Next Step →
@@ -243,9 +243,9 @@ const handleViewDocument = (file_url: string) => {
       </div>
 
       {/* Optional Lease Info */}
-      <div className="mt-6 p-4 bg-purple-50 border border-purple-100 rounded-xl">
-        <h4 className="font-medium text-purple-800 mb-1">Optional: Lease Registration</h4>
-        <p className="text-sm text-purple-700">
+      <div className="mt-6 p-4 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-xl">
+        <h4 className="font-medium text-[#2a2718] mb-1">Optional: Lease Registration</h4>
+        <p className="text-sm text-[#2a2718]/70">
           If this parcel has a lease agreement, continue to the next step to register lease details.
           If not, you can skip the lease steps after this.
         </p>

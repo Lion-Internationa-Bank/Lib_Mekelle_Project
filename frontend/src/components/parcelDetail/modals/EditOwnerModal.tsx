@@ -68,7 +68,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold mb-6">Edit Owner</h2>
+        <h2 className="text-xl font-bold text-[#2a2718] mb-6">Edit Owner</h2>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
@@ -79,7 +79,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
         <div className="space-y-4">
           {Object.keys(form).map((key) => (
             <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 capitalize mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] capitalize mb-1">
                 {key.replace(/_/g, " ")}
               </label>
               <input
@@ -87,7 +87,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, [key]: e.target.value }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
           ))}
@@ -95,13 +95,13 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
         <div className="mt-8 flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-6 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e]"
           >
             Save
           </button>

@@ -569,7 +569,7 @@ export const updateParcel = async (req: AuthRequest, res: Response) => {
 // ---- DELETE PARCEL (Approval Request) ----
 
 export const deleteParcel = async (req: AuthRequest, res: Response) => {
-  const  upin  = req.params as string ;
+  const  upin  = req.params.upin as string ;
   const data = req.body as DeleteParcelBody;
   const actor = (req as any).user;
 
@@ -577,7 +577,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
     // Get current parcel data for validation
     const currentParcel = await prisma.land_parcels.findFirst({
       where: { 
-        upin,
+        upin:upin,
         is_deleted: false 
       },
     });
@@ -594,7 +594,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       // Check if parcel has active owners
       prisma.parcel_owners.count({
         where: { 
-          upin, 
+          upin:upin, 
           is_active: true,
           is_deleted: false,
         },
@@ -602,7 +602,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       // Check if parcel has active billing records
       prisma.billing_records.count({
         where: { 
-          upin, 
+          upin:upin, 
           is_deleted: false,
           payment_status: { in: [PaymentStatus.UNPAID, PaymentStatus.OVERDUE] }
         },
@@ -617,7 +617,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       // Check if parcel has active lease
       prisma.lease_agreements.count({
         where: { 
-          upin,
+          upin:upin,
           is_deleted: false,
           status: 'ACTIVE'
         }
@@ -625,7 +625,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       // Check if parcel has active encumbrances
       prisma.encumbrances.count({
         where: { 
-          upin,
+          upin:upin,
           is_deleted: false,
           status: 'ACTIVE'
         }
@@ -640,7 +640,6 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       entityId: upin,
       actionType: 'DELETE',
       requestData: {
-        reason: data.reason,
         parcel_details: {
           file_number: currentParcel.file_number,
           sub_city_id: currentParcel.sub_city_id,
@@ -665,7 +664,7 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       makerId: actor.user_id,
       makerRole: actor.role,
       subCityId: actor.sub_city_id,
-      comments: data.reason || `Request to delete parcel ${upin}`
+      comments:  `Request to delete parcel ${upin}`
     });
 
     // Create audit log for delete request
@@ -679,7 +678,6 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
           action: 'delete_parcel_request',
           upin,
           original_file_number: currentParcel.file_number,
-          reason: data.reason,
           validation_checks: {
             active_owners: activeOwners,
             active_billing: activeBilling,

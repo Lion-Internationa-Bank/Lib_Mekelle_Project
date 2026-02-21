@@ -18,7 +18,7 @@ const tabs = [
 ] as const;
 
 const ParcelDetailTabs = ({ tab, setTab }: Props) => (
-  <div className="border-b border-gray-200 mb-8">
+  <div className="border-b border-[#f0cd6e] mb-8">
     <nav className="flex space-x-8 overflow-x-auto">
       {tabs.map((t) => (
         <button
@@ -26,8 +26,8 @@ const ParcelDetailTabs = ({ tab, setTab }: Props) => (
           onClick={() => setTab(t.id)}
           className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
             tab === t.id
-              ? "border-blue-600 text-blue-700"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ? "border-[#2a2718] text-[#2a2718]"
+              : "border-transparent text-[#2a2718]/50 hover:text-[#2a2718] hover:border-[#f0cd6e]"
           }`}
         >
           {t.label}

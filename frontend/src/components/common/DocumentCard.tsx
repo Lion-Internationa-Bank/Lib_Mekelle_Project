@@ -1,7 +1,7 @@
+// src/components/common/DocumentCard.tsx
 import React from 'react';
 import { type Document, formatFileSize, formatDate } from '../../utils/documentHelpers';
 import { openDocument } from '../../services/documentService';
-
 
 interface DocumentCardProps {
   document: Document;
@@ -31,12 +31,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   // Compact variant - list item style
   if (variant === 'compact') {
     return (
-      <li className="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50">
+      <li className="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#f0cd6e]/10">
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-gray-900 truncate max-w-xs">
+          <div className="font-medium text-[#2a2718] truncate max-w-xs">
             {file_name || 'Unnamed Document'}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-[#2a2718]/70">
             {document_type?.replace(/_/g, ' ') || 'Document'}
             {file_size && ` • ${formatFileSize(file_size)}`}
             {mime_type && ` • ${mime_type.split('/').pop()?.toUpperCase()}`}
@@ -46,7 +46,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
        {file_url &&(
          <button
           onClick={() => handleOpenDocument(file_url)}
-          className="ml-3 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+          className="ml-3 px-3 py-1.5 text-xs font-semibold text-[#f0cd6e] border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
         >
           View
         </button>
@@ -57,17 +57,17 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
 
   // Full variant - card style
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
+    <div className="border border-[#f0cd6e] rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">📄</span>
             <div>
-              <div className="font-medium text-gray-900 truncate max-w-md">
+              <div className="font-medium text-[#2a2718] truncate max-w-md">
                 {file_name || 'Unnamed Document'}
               </div>
               {document_type && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[#2a2718]/70">
                   {document_type.replace(/_/g, ' ')}
                 </span>
               )}
@@ -77,28 +77,28 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
             {file_size && (
               <>
-                <span className="text-gray-500">Size:</span>
-                <span className="font-medium text-gray-900">{formatFileSize(file_size)}</span>
+                <span className="text-[#2a2718]/70">Size:</span>
+                <span className="font-medium text-[#2a2718]">{formatFileSize(file_size)}</span>
               </>
             )}
             {mime_type && (
               <>
-                <span className="text-gray-500">Type:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-[#2a2718]/70">Type:</span>
+                <span className="font-medium text-[#2a2718]">
                   {mime_type.split('/').pop()?.toUpperCase()}
                 </span>
               </>
             )}
             {metadata?.uploaded_at && (
               <>
-                <span className="text-gray-500">Uploaded:</span>
-                <span className="font-medium text-gray-900">{formatDate(metadata.uploaded_at)}</span>
+                <span className="text-[#2a2718]/70">Uploaded:</span>
+                <span className="font-medium text-[#2a2718]">{formatDate(metadata.uploaded_at)}</span>
               </>
             )}
             {metadata?.uploaded_by_role && (
               <>
-                <span className="text-gray-500">Uploaded by:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-[#2a2718]/70">Uploaded by:</span>
+                <span className="font-medium text-[#2a2718]">
                   {metadata.uploaded_by_role.replace(/_/g, ' ')}
                 </span>
               </>
@@ -109,7 +109,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
         {file_url &&(
           <button
             onClick={() => handleOpenDocument(file_url)}  // Fixed: Wrapped in arrow function
-            className="ml-3 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
+            className="ml-3 px-3 py-1.5 text-xs font-semibold text-[#f0cd6e] border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors whitespace-nowrap"
           >
             View Document
           </button>

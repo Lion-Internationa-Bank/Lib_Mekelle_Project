@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-import ParcelStep from "./ParcelWizard/ParcelStep";
-import ParcelDocsStep from "./ParcelWizard/ParcelDocsStep";
-import OwnerStep from "./ParcelWizard/OwnerStep";
-import OwnerDocsStep from "./ParcelWizard/OwnerDocsStep";
-import LeaseStep from "./ParcelWizard/LeaseStep";
-import LeaseDocsStep from "./ParcelWizard/LeaseDocsStep";
+import ParcelStep from "../ParcelWizard/ParcelStep";
+import ParcelDocsStep from "../ParcelWizard/ParcelDocsStep";
+import OwnerStep from "../ParcelWizard/OwnerStep";
+import OwnerDocsStep from "../ParcelWizard/OwnerDocsStep";
+import LeaseStep from "../ParcelWizard/LeaseStep";
+import LeaseDocsStep from "../ParcelWizard/LeaseDocsStep";
 
 const STEPS = [
   "parcel",

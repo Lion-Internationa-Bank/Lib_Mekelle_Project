@@ -39,7 +39,7 @@ const OwnershipTable = ({
     
   return (
     <>
-      <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-visible">
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-[#f0cd6e]/50 shadow-2xl overflow-visible">
         {loading && <LoadingOwnersBlock />}
         {error && !loading && <ErrorBlock error={error} onRetry={onRetry} />}
         {!loading && !error && owners.length === 0 && (
@@ -71,9 +71,9 @@ const OwnershipTable = ({
 
 const LoadingOwnersBlock = () => (
   <div className="p-16 text-center">
-    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-6"></div>
-    <p className="text-xl font-semibold text-gray-700">Loading owners...</p>
-    <p className="text-gray-500 mt-2">Connecting to backend API</p>
+    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-6"></div>
+    <p className="text-xl font-semibold text-[#2a2718]">Loading owners...</p>
+    <p className="text-[#2a2718]/70 mt-2">Connecting to backend API</p>
   </div>
 );
 
@@ -84,12 +84,12 @@ const ErrorBlock = ({
   error: string;
   onRetry: () => void;
 }) => (
-  <div className="p-16 text-center border-t border-gray-200 bg-red-50/50">
+  <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-[#2a2718]/5">
     <div className="text-6xl mb-6">⚠️</div>
-    <h3 className="text-2xl font-bold text-red-800 mb-4">{error}</h3>
+    <h3 className="text-2xl font-bold text-[#2a2718] mb-4">{error}</h3>
     <button
       onClick={onRetry}
-      className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
+      className="bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
     >
       Retry
     </button>
@@ -97,15 +97,15 @@ const ErrorBlock = ({
 );
 
 const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => (
-  <div className="p-16 text-center border-t border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+  <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
     <span className="text-6xl mb-4 block">👥</span>
-    <h3 className="text-2xl font-bold text-gray-800 mb-3">No owners found</h3>
-    <p className="text-gray-600 mb-6">
+    <h3 className="text-2xl font-bold text-[#2a2718] mb-3">No owners found</h3>
+    <p className="text-[#2a2718]/70 mb-6">
       Try adjusting your search or add the first owner.
     </p>
     <button
       onClick={onCreate}
-      className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+      className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
     >
       Add Owner
     </button>
@@ -127,7 +127,7 @@ const OwnersTableInner = ({
 }) => (
   <div>
     {/* Table Header */}
-    <div className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50/90 border-b border-gray-200">
+    <div className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-xs font-semibold text-[#2a2718] uppercase tracking-wider bg-[#f0cd6e]/20 border-b border-[#f0cd6e]">
       <div></div> {/* Empty for chevron */}
       <div>Owner</div>
       <div>National ID</div>
@@ -138,7 +138,7 @@ const OwnersTableInner = ({
     </div>
 
     {/* Rows */}
-    <div className="divide-y divide-gray-200/70">
+    <div className="divide-y divide-[#f0cd6e]/30">
       {owners.map((owner) => (
         <OwnerRow
           key={owner.owner_id}
@@ -164,21 +164,21 @@ const PaginationBar = ({
   onPrev: () => void;
   onNext: () => void;
 }) => (
-  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl shadow-sm">
+  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-sm border border-[#f0cd6e]/50 rounded-2xl shadow-sm">
     {/* Info */}
-    <div className="text-sm text-gray-600 mb-3 sm:mb-0">
+    <div className="text-sm text-[#2a2718]/70 mb-3 sm:mb-0">
       Showing{" "}
-      <span className="font-semibold text-gray-900">
+      <span className="font-semibold text-[#2a2718]">
         {pagination.page * pagination.limit - pagination.limit + 1}–
         {Math.min(pagination.page * pagination.limit, pagination.total)}
       </span>{" "}
       of{" "}
-      <span className="font-semibold text-gray-900">
+      <span className="font-semibold text-[#2a2718]">
         {pagination.total.toLocaleString()}
       </span>{" "}
       owners • Page{" "}
-      <span className="font-semibold text-gray-900">{pagination.page}</span> of{" "}
-      <span className="font-semibold text-gray-900">{pagination.totalPages}</span>
+      <span className="font-semibold text-[#2a2718]">{pagination.page}</span> of{" "}
+      <span className="font-semibold text-[#2a2718]">{pagination.totalPages}</span>
     </div>
 
     {/* Buttons */}
@@ -186,7 +186,7 @@ const PaginationBar = ({
       <button
         onClick={onPrev}
         disabled={!pagination.hasPrev || loading}
-        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
       >
         Previous
       </button>
@@ -194,7 +194,7 @@ const PaginationBar = ({
       <button
         onClick={onNext}
         disabled={!pagination.hasNext || loading}
-        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
       >
         Next
       </button>
@@ -262,11 +262,11 @@ const OwnerRow = ({
   }, [menuOpen]);
 
   return (
-    <div className="border-b border-gray-200/70">
+    <div className="border-b border-[#f0cd6e]/30">
       {/* Main Row - Clickable only on chevron */}
       <div
         ref={rowRef}
-        className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-sm items-center hover:bg-gray-50/80 transition-colors"
+        className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-sm items-center hover:bg-[#f0cd6e]/10 transition-colors"
       >
         {/* Chevron - Only this toggles */}
         <button
@@ -276,7 +276,7 @@ const OwnerRow = ({
             e.preventDefault();
             onToggle();
           }}
-          className="flex items-center justify-center w-6 h-6 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center justify-center w-6 h-6 rounded-full border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition-transform focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
           aria-expanded={isExpanded}
           aria-label="Toggle owner details"
         >
@@ -297,23 +297,23 @@ const OwnerRow = ({
           </svg>
         </button>
 
-        <div className="font-semibold text-gray-900 truncate">
+        <div className="font-semibold text-[#2a2718] truncate">
           {owner.full_name}
         </div>
 
-        <div className="font-mono text-xs text-gray-800 truncate">
+        <div className="font-mono text-xs text-[#2a2718]/80 truncate">
           {owner.national_id}
         </div>
 
-        <div className="text-gray-700 truncate">
+        <div className="text-[#2a2718]/70 truncate">
           {owner.tin_number || "-"}
         </div>
 
-        <div className="text-gray-700 truncate">
+        <div className="text-[#2a2718]/70 truncate">
           {owner.phone_number || "-"}
         </div>
 
-        <div className="text-gray-700">
+        <div className="text-[#2a2718]/70">
           {parcelCount === 0
             ? "No parcels"
             : `${parcelCount} parcel${parcelCount > 1 ? "s" : ""}`}
@@ -325,11 +325,11 @@ const OwnerRow = ({
             <button
               ref={menuButtonRef}
               onClick={handleMenuToggle}
-              className="p-2 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded-lg hover:bg-[#f0cd6e]/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
               aria-label="Owner actions menu"
             >
               <svg
-                className="w-4 h-4 text-gray-600"
+                className="w-4 h-4 text-[#2a2718]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -345,12 +345,12 @@ const OwnerRow = ({
 
             {menuOpen && (
               <div
-                className={`absolute right-0 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 ${
+                className={`absolute right-0 w-48 bg-white rounded-xl shadow-2xl border border-[#f0cd6e] py-2 z-50 ${
                   menuFlipUp ? "bottom-full mb-2" : "top-full mt-2"
                 }`}
               >
                 <button
-                  className="w-full text-left px-5 py-3 text-sm hover:bg-gray-100 transition-colors"
+                  className="w-full text-left px-5 py-3 text-sm hover:bg-[#f0cd6e]/20 transition-colors text-[#2a2718]"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -379,9 +379,9 @@ const OwnerRow = ({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-6 bg-gray-50/60">
+        <div className="px-4 pb-6 bg-[#f0cd6e]/10">
           {parcelCount === 0 ? (
-            <div className="border border-dashed border-gray-300 rounded-xl p-4 text-xs text-gray-600 text-center">
+            <div className="border border-dashed border-[#f0cd6e] rounded-xl p-4 text-xs text-[#2a2718]/70 text-center">
               No parcels registered for this owner.
             </div>
           ) : (
@@ -391,31 +391,31 @@ const OwnerRow = ({
                 return (
                   <div
                     key={parcel.upin || index}
-                    className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-xs"
+                    className="bg-white border border-[#f0cd6e] rounded-xl p-4 shadow-sm text-xs"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-[#2a2718]">
                         UPIN: {parcel.upin}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-[#2a2718]/70">
                         {new Date(ownership.acquired_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-gray-700">
+                    <div className="grid grid-cols-2 gap-2 text-[#2a2718]/70">
                       <div>
-                        <div className="font-medium text-gray-600">Sub City</div>
+                        <div className="font-medium text-[#2a2718]">Sub City</div>
                         <div>{parcel.sub_city.name || "-"}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-gray-600">Ketena</div>
+                        <div className="font-medium text-[#2a2718]">Ketena</div>
                         <div>{parcel.ketena || "-"}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-gray-600">Area (m²)</div>
+                        <div className="font-medium text-[#2a2718]">Area (m²)</div>
                         <div>{Number(parcel.total_area_m2).toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-gray-600">Land Use</div>
+                        <div className="font-medium text-[#2a2718]">Land Use</div>
                         <div>{parcel.land_use || "-"}</div>
                       </div>
                     </div>

@@ -212,8 +212,8 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
           onSubdivide={() => setShowSubdivide(true)}
         />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center text-gray-500">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
+        <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 text-center text-[#2a2718]/70">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f0cd6e] mx-auto mb-4" />
           Loading parcel data...
         </div>
       )}
@@ -232,11 +232,11 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       {isSubcityNormal && showAddCoOwnerSearch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Add Co-Owner</h2>
+            <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
               <button
                 onClick={handleCloseAddCoOwner}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
               >
                 <X size={20} />
               </button>
@@ -244,10 +244,10 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
             
             <div className="p-6">
               {/* Info banner */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-lg p-4 mb-6">
                 <div className="flex items-start gap-3">
-                  <AlertCircle size={20} className="text-blue-600 mt-0.5 shrink-0" />
-                  <div className="text-sm text-blue-800">
+                  <AlertCircle size={20} className="text-[#2a2718] mt-0.5 shrink-0" />
+                  <div className="text-sm text-[#2a2718]">
                     <p className="font-medium mb-1">Adding Co-Owner to {parcel.upin}</p>
                     <p>Current owners: {parcel.owners?.length || 0}</p>
                     <p className="mt-2 text-xs">
@@ -261,7 +261,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
 
               {/* Search existing */}
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Search Existing Owner
                 </label>
                 <input
@@ -269,26 +269,26 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                   value={ownerSearch}
                   onChange={(e) => setOwnerSearch(e.target.value)}
                   placeholder="Search by name, national ID, phone or TIN..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                   autoFocus
                 />
               </div>
 
               {isSearching ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                <div className="text-center py-8 text-[#2a2718]/70">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#f0cd6e] border-t-transparent" />
                   <p className="mt-2">Searching...</p>
                 </div>
               ) : searchResults.length > 0 ? (
-                <div className="max-h-60 overflow-y-auto border rounded-lg divide-y">
+                <div className="max-h-60 overflow-y-auto border border-[#f0cd6e] rounded-lg divide-y">
                   {searchResults.map((owner) => (
                     <div
                       key={owner.owner_id}
                       onClick={() => handleSelectOwner(owner)}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="px-4 py-3 hover:bg-[#f0cd6e]/10 cursor-pointer transition-colors"
                     >
-                      <div className="font-medium">{owner.full_name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="font-medium text-[#2a2718]">{owner.full_name}</div>
+                      <div className="text-sm text-[#2a2718]/70">
                         {owner.national_id && `ID: ${owner.national_id} • `}
                         {owner.phone_number || "No phone"}
                         {owner.tin_number && ` • TIN: ${owner.tin_number}`}
@@ -297,19 +297,19 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                   ))}
                 </div>
               ) : ownerSearch.length >= 2 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[#2a2718]/70">
                   No matching owners found
                 </div>
               ) : null}
 
-              <div className="my-8 text-center text-gray-500">— OR —</div>
+              <div className="my-8 text-center text-[#2a2718]/50">— OR —</div>
 
               <button
                 onClick={() => {
                   setShowAddCoOwnerSearch(false);
                   setShowCreateOwner(true);
                 }}
-                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Plus size={18} />
                 Create New Owner
@@ -323,35 +323,35 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       {isSubcityNormal && showAddAcquiredDate && selectedOwner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Add Co-Owner</h2>
+            <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
               <button
                 onClick={handleCloseAcquiredDate}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
               >
                 <X size={20} />
               </button>
             </div>
             
             <div className="p-6">
-              <p className="text-gray-600 mb-6">
+              <p className="text-[#2a2718] mb-6">
                 Adding <span className="font-medium">{selectedOwner.full_name}</span> as co-owner to <br />
-                <span className="font-mono text-blue-600">{parcel.upin}</span>
+                <span className="font-mono text-[#f0cd6e]">{parcel.upin}</span>
               </p>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Acquisition Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
                   value={acquiredAt}
                   onChange={(e) => setAcquiredAt(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                   required
                   max={new Date().toISOString().split('T')[0]}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#2a2718]/70 mt-1">
                   Date when this owner acquired ownership of the parcel
                 </p>
               </div>
@@ -360,7 +360,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                 <button
                   onClick={handleAddExistingOwner}
                   disabled={!acquiredAt || addingOwner}
-                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {addingOwner ? (
                     <>
@@ -373,7 +373,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                 </button>
                 <button
                   onClick={handleCloseAcquiredDate}
-                  className="flex-1 py-2.5 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-2.5 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
                   disabled={addingOwner}
                 >
                   Back

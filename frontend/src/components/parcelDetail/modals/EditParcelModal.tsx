@@ -115,7 +115,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full my-8">
-        <h2 className="text-2xl font-bold mb-6">Edit Parcel</h2>
+        <h2 className="text-2xl font-bold text-[#2a2718] mb-6">Edit Parcel</h2>
 
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -124,8 +124,8 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
         )}
 
         {loadingOptions ? (
-          <div className="text-center py-12 text-gray-500">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2" />
+          <div className="text-center py-12 text-[#2a2718]/70">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#f0cd6e] mx-auto mb-2" />
             Loading options...
           </div>
         ) : optionsError ? (
@@ -134,7 +134,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* File Number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 File Number
               </label>
               <input
@@ -143,13 +143,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, file_number: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Tabia */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Tabia
               </label>
               <input
@@ -158,13 +158,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, tabia: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Ketena */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Ketena
               </label>
               <input
@@ -173,13 +173,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, ketena: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Block */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Block
               </label>
               <input
@@ -188,13 +188,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, block: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Total Area m² */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Total Area (m²)
               </label>
               <input
@@ -206,13 +206,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     total_area_m2: e.target.value ? Number(e.target.value) : undefined,
                   }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Land Use */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Land Use
               </label>
               <select
@@ -220,7 +220,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, land_use: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               >
                 <option value="">Select Land Use</option>
                 {landUses.map((opt) => (
@@ -233,7 +233,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
 
             {/* Land Grade */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Land Grade
               </label>
               <input
@@ -245,13 +245,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     land_grade: e.target.value ? Number(e.target.value) : undefined,
                   }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               />
             </div>
 
             {/* Tenure Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
                 Tenure Type
               </label>
               <select
@@ -259,7 +259,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, tenure_type: e.target.value || undefined }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               >
                 <option value="">Select Tenure Type</option>
                 {tenureTypes.map((opt) => (
@@ -273,7 +273,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* NEW: Boundary Fields - All Optional */}
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                   North Boundary (optional)
                 </label>
                 <input
@@ -282,13 +282,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, boundary_north: e.target.value || undefined }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g. North boundary description"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                   East Boundary (optional)
                 </label>
                 <input
@@ -297,13 +297,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, boundary_east: e.target.value || undefined }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g. East boundary description"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                   South Boundary (optional)
                 </label>
                 <input
@@ -312,13 +312,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, boundary_south: e.target.value || undefined }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g. South boundary description"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                   West Boundary (optional)
                 </label>
                 <input
@@ -327,14 +327,14 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, boundary_west: e.target.value || undefined }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g. West boundary description"
                 />
               </div>
 
               {/* Boundary Coordinates (JSON) */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                   Boundary Coordinates (JSON, optional)
                 </label>
                 <textarea
@@ -343,7 +343,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     setForm((f) => ({ ...f, boundary_coords: e.target.value || undefined }))
                   }
                   rows={5}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] font-mono text-sm"
                   placeholder='{"type": "Polygon", "coordinates": [[[lon1, lat1], [lon2, lat2], ...]]}'
                 />
               </div>
@@ -354,7 +354,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
         <div className="mt-10 flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+            className="px-6 py-3 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition"
             disabled={saving}
           >
             Cancel
@@ -362,7 +362,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] transition disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>

@@ -1,6 +1,6 @@
 // src/routes/admin/UserManagementPage.tsx
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getUsers,
   suspendUser,
@@ -8,18 +8,18 @@ import {
   createUser,
   type User as UserType ,
   type UserCreateInput,
-} from '../services/userService';
+} from '../../services/userService';
 import { Plus, RefreshCw, AlertCircle, User, Shield, Building, TrendingUp, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Import components
-import UserStats from '../components/userMgt/UserStats';
-import UserFilters from '../components/userMgt/UserFilters';
-import UsersTable from '../components/userMgt/UsersTable';
-import AddUserModal from '../components/userMgt/AddUserModal';
-import SuspendActivateModal from '../components/userMgt/SuspendActivateModal';
-import DeleteUserModal from '../components/userMgt/DeleteUserModal';
-import MessageAlert from '../components/common/MessageAlert';
+import UserStats from '../../components/userMgt/UserStats';
+import UserFilters from '../../components/userMgt/UserFilters';
+import UsersTable from '../../components/userMgt/UsersTable';
+import AddUserModal from '../../components/userMgt/AddUserModal';
+import SuspendActivateModal from '../../components/userMgt/SuspendActivateModal';
+import DeleteUserModal from '../../components/userMgt/DeleteUserModal';
+import MessageAlert from '../../components/common/MessageAlert';
 
 
 const UserManagementPage = () => {
@@ -168,8 +168,8 @@ const UserManagementPage = () => {
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">Access Denied</h2>
+          <p className="text-[#2a2718]/70">You don't have permission to access this page.</p>
         </div>
       </div>
     );
@@ -180,22 +180,22 @@ const UserManagementPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-[#2a2718]">{pageTitle}</h1>
+          <p className="text-[#2a2718]/70 mt-1">
             Manage user accounts and permissions in your scope
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={fetchUsers}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 transition-colors border border-[#f0cd6e]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button 
             onClick={() => setAddUserModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add User
@@ -242,8 +242,8 @@ const UserManagementPage = () => {
       {/* Users Table */}
       {loading ? (
         <div className="text-center py-12">
-          <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading users...</p>
+          <RefreshCw className="w-8 h-8 text-[#f0cd6e] animate-spin mx-auto mb-4" />
+          <p className="text-[#2a2718]">Loading users...</p>
         </div>
       ) : (
         <UsersTable

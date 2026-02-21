@@ -1,3 +1,4 @@
+// src/components/GenericDocsUpload.tsx
 import { useState, useEffect } from "react";
 import { 
   uploadApprovalDocument, 
@@ -301,22 +302,22 @@ const GenericDocsUpload = ({
       {!hideTitle && (
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{title}</h2>
+            <h2 className="text-3xl font-bold text-[#2a2718] mb-2">{title}</h2>
             {upin && (
-              <p className="text-gray-600">
-                Upload documents for <strong className="text-blue-600">{upin}</strong>
+              <p className="text-[#2a2718]/70">
+                Upload documents for <strong className="text-[#f0cd6e]">{upin}</strong>
                 {subCity && ` (${subCity})`}
               </p>
             )}
             {isApprovalRequest && approvalRequestId && (
-              <p className="text-sm text-gray-500 mt-1">
-                Approval Request ID: <code className="bg-gray-100 px-2 py-1 rounded">{approvalRequestId}</code>
+              <p className="text-sm text-[#2a2718]/70 mt-1">
+                Approval Request ID: <code className="bg-[#f0cd6e]/10 px-2 py-1 rounded border border-[#f0cd6e]">{approvalRequestId}</code>
               </p>
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
             {maxFiles && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[#2a2718]/70">
                 {documents.length} / {maxFiles} files
                 {remainingSlots > 0 && ` (${remainingSlots} remaining)`}
               </div>
@@ -325,7 +326,7 @@ const GenericDocsUpload = ({
               <button
                 onClick={loadExistingDocuments}
                 disabled={loading}
-                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1"
+                className="px-3 py-1.5 text-sm bg-[#f0cd6e]/10 text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-lg transition-colors flex items-center gap-1 border border-[#f0cd6e]"
                 title="Refresh documents"
               >
                 <svg 
@@ -351,8 +352,8 @@ const GenericDocsUpload = ({
       {/* Loading State */}
       {loading && (
         <div className="text-center py-8">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">Loading documents...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#f0cd6e] border-r-transparent"></div>
+          <p className="mt-2 text-[#2a2718]">Loading documents...</p>
         </div>
       )}
 
@@ -360,10 +361,10 @@ const GenericDocsUpload = ({
       {hasUploads && !loading && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-[#2a2718]">
               {isApprovalRequest ? "Submitted Documents" : "Uploaded Documents"}
             </h3>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-[#2a2718]/70">
               Total: {documents.length} document{documents.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -372,9 +373,9 @@ const GenericDocsUpload = ({
               key={doc.id}
               className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                 doc.status === "success" || doc.status === "existing"
-                  ? "bg-green-50 border-green-200 hover:border-green-300"
+                  ? "bg-[#f0cd6e]/10 border-[#f0cd6e] hover:border-[#2a2718]"
                   : doc.status === "uploading"
-                  ? "bg-blue-50 border-blue-200 animate-pulse"
+                  ? "bg-[#f0cd6e]/10 border-[#f0cd6e] animate-pulse"
                   : "bg-red-50 border-red-200"
               }`}
             >
@@ -382,9 +383,9 @@ const GenericDocsUpload = ({
                 <div
                   className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-md ${
                     doc.status === "success" || doc.status === "existing"
-                      ? "bg-green-100 text-green-700 border-2 border-green-300"
+                      ? "bg-[#f0cd6e]/20 text-[#2a2718] border-2 border-[#f0cd6e]"
                       : doc.status === "uploading"
-                      ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                      ? "bg-[#f0cd6e]/20 text-[#2a2718] border-2 border-[#f0cd6e]"
                       : "bg-red-100 text-red-700 border-2 border-red-300"
                   }`}
                 >
@@ -392,22 +393,22 @@ const GenericDocsUpload = ({
                    doc.status === "success" || doc.status === "existing" ? "✓" : "❌"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-gray-900 truncate">
+                  <div className="font-semibold text-[#2a2718] truncate">
                     {doc.document_type.replace(/_/g, " ")}
                   </div>
-                  <div className="text-sm text-gray-500 truncate">{doc.file_name}</div>
+                  <div className="text-sm text-[#2a2718]/70 truncate">{doc.file_name}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-[#2a2718]/70">
                       {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : ''}
                     </span>
                     {doc.status === "uploading" && (
-                      <span className="text-xs text-blue-600 animate-pulse">Uploading...</span>
+                      <span className="text-xs text-[#f0cd6e] animate-pulse">Uploading...</span>
                     )}
                     {doc.status === "success" && (
-                      <span className="text-xs text-green-600">Uploaded</span>
+                      <span className="text-xs text-[#2a2718]">Uploaded</span>
                     )}
                     {doc.status === "existing" && (
-                      <span className="text-xs text-gray-600">Submitted</span>
+                      <span className="text-xs text-[#2a2718]/70">Submitted</span>
                     )}
                     {doc.status === "error" && (
                       <span className="text-xs text-red-600">Failed</span>
@@ -419,7 +420,7 @@ const GenericDocsUpload = ({
                 {(doc.status === "success" || doc.status === "existing") && (
                   <button
                     onClick={() => handleOpenDocument(doc.file_url)}
-                    className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 text-sm bg-[#f0cd6e]/10 text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-lg transition-colors flex items-center gap-1 border border-[#f0cd6e]"
                     title="View document"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,7 +434,7 @@ const GenericDocsUpload = ({
                 {allowDelete && doc.status === "existing" && isApprovalRequest && (
                   <button
                     onClick={() => handleDeleteDocument(doc.id)}
-                    className="px-3 py-1.5 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors flex items-center gap-1 border border-red-200"
                     title="Delete document"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,13 +451,13 @@ const GenericDocsUpload = ({
 
       {/* Upload Grid (only show if not at max files) */}
       {(!maxFiles || documents.length < maxFiles) && (
-        <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+        <div className="border-2 border-dashed border-[#f0cd6e] rounded-2xl p-8 hover:border-[#2a2718] transition-all duration-200 hover:shadow-md bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
               📄
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Documents</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-xl font-semibold text-[#2a2718] mb-2">Upload Documents</h3>
+            <p className="text-[#2a2718]/70 mb-6 max-w-md mx-auto">
               Select a document type and click to upload (PDF, JPG, PNG up to 10MB)
             </p>
 
@@ -475,25 +476,25 @@ const GenericDocsUpload = ({
                     <div
                       className={`p-6 border-2 border-dashed rounded-xl transition-all duration-200 text-center ${
                         isUploaded
-                          ? "border-green-300 bg-green-50"
-                          : "border-gray-300 hover:border-blue-400 hover:bg-blue-50 group-hover:shadow-md"
+                          ? "border-[#f0cd6e] bg-[#f0cd6e]/10"
+                          : "border-[#f0cd6e] hover:border-[#2a2718] hover:bg-[#f0cd6e]/10 group-hover:shadow-md"
                       } ${uploadingDoc ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div
                         className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center transition-colors ${
-                          isUploaded ? "bg-green-200" : "bg-blue-100 group-hover:bg-blue-200"
+                          isUploaded ? "bg-[#f0cd6e]/20" : "bg-[#f0cd6e]/20 group-hover:bg-[#f0cd6e]/30"
                         }`}
                       >
-                        <span className="text-xl font-bold text-blue-600">
+                        <span className="text-xl font-bold text-[#2a2718]">
                           {isUploaded ? "✓" : "📄"}
                         </span>
                       </div>
-                      <div className="font-semibold text-gray-900 mb-1">{type.label}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="font-semibold text-[#2a2718] mb-1">{type.label}</div>
+                      <div className="text-sm text-[#2a2718]/70">
                         {isUploaded ? "Uploaded" : "Click to upload"}
                       </div>
                       {isUploaded && (
-                        <div className="text-xs text-green-600 mt-1">Already uploaded</div>
+                        <div className="text-xs text-[#f0cd6e] mt-1">Already uploaded</div>
                       )}
                     </div>
                     <input
@@ -509,7 +510,7 @@ const GenericDocsUpload = ({
             </div>
             
             {maxFiles && remainingSlots > 0 && (
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-[#2a2718]/70">
                 You can upload up to {remainingSlots} more file{remainingSlots !== 1 ? 's' : ''}
               </p>
             )}
@@ -538,7 +539,7 @@ const GenericDocsUpload = ({
           <button
             onClick={onAllUploaded}
             disabled={!!uploadingDoc}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
+            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
           >
             Continue →
             {uploadingDoc && (

@@ -102,22 +102,22 @@ const ApprovalRequestDocsModal: React.FC<ApprovalRequestDocsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-[#2a2718]">
               {title}
             </h2>
             {description && (
-              <p className="text-sm text-gray-600 mt-1">{description}</p>
+              <p className="text-sm text-[#2a2718]/70 mt-1">{description}</p>
             )}
-            <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+            <div className="mt-2 flex items-center gap-2 text-sm text-[#2a2718]/70">
               <FileText size={14} />
-              <span>Request ID: <code className="font-mono bg-gray-100 px-2 py-0.5 rounded">{approvalRequestId}</code></span>
+              <span>Request ID: <code className="font-mono bg-[#f0cd6e]/10 px-2 py-0.5 rounded border border-[#f0cd6e]">{approvalRequestId}</code></span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100"
+            className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
             aria-label="Close"
           >
             <X size={20} />
@@ -125,10 +125,10 @@ const ApprovalRequestDocsModal: React.FC<ApprovalRequestDocsModalProps> = ({
         </div>
 
         {/* Info Banner */}
-        <div className="p-6 border-b border-gray-200 bg-blue-50">
+        <div className="p-6 border-b border-[#f0cd6e] bg-[#f0cd6e]/10">
           <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-blue-600 mt-0.5 shrink-0" />
-            <div className="text-sm text-blue-800">
+            <AlertCircle size={20} className="text-[#2a2718] mt-0.5 shrink-0" />
+            <div className="text-sm text-[#2a2718]">
               <p className="font-medium">Document Upload Guidelines:</p>
               <ul className="mt-1 list-disc list-inside space-y-1">
                 <li>Upload supporting documents for the approver's review</li>
@@ -157,29 +157,29 @@ const ApprovalRequestDocsModal: React.FC<ApprovalRequestDocsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+        <div className="sticky bottom-0 bg-white border-t border-[#f0cd6e] px-6 py-4 flex justify-between items-center">
+          <div className="text-sm text-[#2a2718]/70">
             {documentsUploaded ? (
-              <span className="flex items-center gap-2 text-green-600">
+              <span className="flex items-center gap-2 text-[#2a2718]">
                 <Upload size={16} />
                 Documents ready for review
               </span>
             ) : (
-              <span className="text-gray-500">No documents uploaded yet</span>
+              <span className="text-[#2a2718]/70">No documents uploaded yet</span>
             )}
           </div>
           
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
             >
               Cancel
             </button>
             
             <button
               onClick={handleComplete}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+              className="px-6 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors font-medium flex items-center gap-2"
             >
               Complete
               <span className="text-lg">→</span>

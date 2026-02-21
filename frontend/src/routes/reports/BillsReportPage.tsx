@@ -205,34 +205,34 @@ export const BillsReportPage: React.FC = () => {
         <button
           onClick={onToggle}
           type="button"
-          className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full flex items-center justify-between px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/10 focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent text-[#2a2718]"
         >
-          <span className={date ? 'text-gray-900' : 'text-gray-500'}>
+          <span className={date ? 'text-[#2a2718]' : 'text-[#2a2718]/70'}>
             {date ? formatDisplayDate(date) : placeholder}
           </span>
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#f0cd6e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
 
         {isOpen && (
-          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-3 min-w-[280px]">
+          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-lg border border-[#f0cd6e] p-3 min-w-[280px]">
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-[#f0cd6e]/10 rounded"
                 type="button"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium text-[#2a2718]">
                 {formatMonthYear(currentMonth)}
               </span>
               <button
                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-[#f0cd6e]/10 rounded"
                 type="button"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,7 +243,7 @@ export const BillsReportPage: React.FC = () => {
 
             <div className="grid grid-cols-7 gap-1 mb-1">
               {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                <div key={day} className="text-xs font-medium text-gray-500 text-center w-8">
+                <div key={day} className="text-xs font-medium text-[#2a2718]/70 text-center w-8">
                   {day}
                 </div>
               ))}
@@ -263,9 +263,9 @@ export const BillsReportPage: React.FC = () => {
                     disabled={!day}
                     type="button"
                     className={`w-8 h-8 text-sm rounded-full flex items-center justify-center transition-colors
-                      ${!day ? 'text-gray-300 cursor-default' : 'hover:bg-gray-100'}
+                      ${!day ? 'text-[#2a2718]/30 cursor-default' : 'hover:bg-[#f0cd6e]/20 text-[#2a2718]'}
                       ${day && date && isSameDay(day, date)
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]'
                         : ''
                       }
                     `}
@@ -277,7 +277,7 @@ export const BillsReportPage: React.FC = () => {
             ))}
 
             {date && (
-              <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="mt-2 pt-2 border-t border-[#f0cd6e]">
                 <button
                   onClick={() => {
                     onSelect(undefined);
@@ -301,11 +301,11 @@ export const BillsReportPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Subcity Filter - Using data from cityAdminService */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subcity</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Subcity</label>
           <select
             value={filters.subcityId || ''}
             onChange={(e) => setFilters({ ...filters, subcityId: e.target.value || undefined })}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent text-[#2a2718]"
           >
             <option value="">All Subcities</option>
             {subCities.map((city) => (
@@ -318,11 +318,11 @@ export const BillsReportPage: React.FC = () => {
 
         {/* Status Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Payment Status</label>
           <select
             value={filters.status || ''}
             onChange={(e) => setFilters({ ...filters, status: e.target.value as any || undefined })}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent text-[#2a2718]"
           >
             <option value="">All Statuses</option>
             {STATUS_OPTIONS.map((status) => (
@@ -335,7 +335,7 @@ export const BillsReportPage: React.FC = () => {
 
         {/* From Date Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">From Date</label>
           <DatePicker
             date={filters.fromDate ? new Date(filters.fromDate) : undefined}
             onSelect={(date) => {
@@ -353,7 +353,7 @@ export const BillsReportPage: React.FC = () => {
 
         {/* To Date Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">To Date</label>
           <DatePicker
             date={filters.toDate ? new Date(filters.toDate) : undefined}
             onSelect={(date) => {
@@ -385,7 +385,7 @@ export const BillsReportPage: React.FC = () => {
         {activeFilterCount > 0 && (
           <button
             onClick={handleClearFilters}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-4 py-2 text-sm font-medium text-[#2a2718] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/10 focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:ring-offset-2"
           >
             <span className="flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +398,7 @@ export const BillsReportPage: React.FC = () => {
         <button
           onClick={handleDownload}
           disabled={isLoading || (filters.fromDate && filters.toDate && new Date(filters.fromDate) > new Date(filters.toDate))}
-          className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isLoading ? (
             <>
@@ -448,18 +448,18 @@ export const BillsReportPage: React.FC = () => {
       isLoading={isLoading}
       filterCount={activeFilterCount}
     >
-      <div className="p-8 text-center text-gray-500">
+      <div className="p-8 text-center text-[#2a2718]/70 border border-[#f0cd6e] rounded-lg">
         <div className="mb-4">
-          <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 mx-auto text-[#f0cd6e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Download Bills Report</h3>
-        <p className="text-sm text-gray-500 max-w-md mx-auto">
+        <h3 className="text-lg font-medium text-[#2a2718] mb-2">Download Bills Report</h3>
+        <p className="text-sm text-[#2a2718]/70 max-w-md mx-auto">
           Select filters above and click the Download button to generate an Excel report with all bills matching your criteria.
         </p>
-        <div className="mt-4 text-xs text-gray-400 bg-gray-50 p-3 rounded-lg max-w-md mx-auto">
-          <p className="font-medium text-gray-600 mb-1">Report includes:</p>
+        <div className="mt-4 text-xs text-[#2a2718]/70 bg-[#f0cd6e]/5 p-3 rounded-lg max-w-md mx-auto border border-[#f0cd6e]">
+          <p className="font-medium text-[#2a2718] mb-1">Report includes:</p>
           <p>UPIN, Installment Number, Fiscal Year, Base Payment, Amount Due, Due Date, Payment Status, Interest Amount, Interest Rate, Penalty Amount, Penalty Rate, Owner Name, and Phone Number</p>
         </div>
       </div>

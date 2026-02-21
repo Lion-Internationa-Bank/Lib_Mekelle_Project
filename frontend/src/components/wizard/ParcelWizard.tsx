@@ -326,11 +326,11 @@ const ParcelWizard = () => {
   // Show loading state
   if (isInitializing || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-4"></div>
+            <p className="text-[#2a2718]">
               {isInitializing ? "Initializing wizard session..." : "Loading session data..."}
             </p>
           </div>
@@ -342,12 +342,12 @@ const ParcelWizard = () => {
   // Show error if no session loaded
   if (!currentSession || !hasSessionLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Session Error</h3>
-            <p className="text-gray-600 mb-4">Failed to load wizard session. Please try again.</p>
-            <div className="text-sm text-gray-500 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#f0cd6e]/30 p-8 text-center">
+            <h3 className="text-2xl font-bold text-[#2a2718] mb-2">Session Error</h3>
+            <p className="text-[#2a2718]/70 mb-4">Failed to load wizard session. Please try again.</p>
+            <div className="text-sm text-[#2a2718]/70 mb-6">
               <p>Session ID from URL: {sessionId || 'none'}</p>
               <p>Has session loaded: {hasSessionLoaded ? 'Yes' : 'No'}</p>
               <p>Current session: {currentSession ? 'Exists' : 'Null'}</p>
@@ -355,13 +355,13 @@ const ParcelWizard = () => {
             <div className="space-x-4">
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                className="px-6 py-2 rounded-xl bg-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#2a2718] hover:text-white transition"
               >
                 Retry
               </button>
               <button
                 onClick={goBackToDashboard}
-                className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+                className="px-6 py-2 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
               >
                 ← Back to Dashboard
               </button>
@@ -373,19 +373,19 @@ const ParcelWizard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Session Info */}
         {currentSession && (
-          <div className="mb-6 p-4 bg-white/80 rounded-xl shadow-sm border border-gray-200">
+          <div className="mb-6 p-4 bg-white/80 rounded-xl shadow-sm border border-[#f0cd6e]">
             <div className="flex justify-between items-center">
               <div>
-                <span className="text-sm font-medium text-gray-600">Session:</span>
-                <span className="ml-2 font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                <span className="text-sm font-medium text-[#2a2718]">Session:</span>
+                <span className="ml-2 font-mono text-sm bg-[#f0cd6e]/20 px-2 py-1 rounded">
                   {currentSession.session_id.substring(0, 8)}...
                 </span>
                 <span className={`ml-4 px-2 py-1 text-xs rounded-full ${
-                  currentSession.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                  currentSession.status === 'DRAFT' ? 'bg-[#f0cd6e]/30 text-[#2a2718]' :
                   currentSession.status === 'PENDING_APPROVAL' ? 'bg-blue-100 text-blue-800' :
                   currentSession.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                   currentSession.status === 'MERGED' ? 'bg-green-100 text-green-800' :
@@ -409,7 +409,7 @@ const ParcelWizard = () => {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[#2a2718]/70">
                 Updated: {new Date(currentSession.updated_at).toLocaleDateString()}
               </div>
             </div>
@@ -418,7 +418,7 @@ const ParcelWizard = () => {
 
         {/* Progress */}
         <div className="mb-10">
-          <div className="flex justify-between text-sm font-medium text-gray-500 mb-3">
+          <div className="flex justify-between text-sm font-medium text-[#2a2718]/70 mb-3">
             <span>
               Step {currentStepIndexInAvailable + 1} of {availableSteps.length}
               {shouldSkipOwnerDocs && " (Owner Docs Skipped)"}
@@ -428,7 +428,7 @@ const ParcelWizard = () => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full shadow-lg transition-all duration-500"
+              className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] h-3 rounded-full shadow-lg transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -451,7 +451,7 @@ const ParcelWizard = () => {
                 className={[
                   "px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all",
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                    ? "bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white shadow-md"
                     : isDone && hasRequiredData
                     ? "bg-green-100 text-green-800 hover:bg-green-200"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60",
@@ -479,7 +479,7 @@ const ParcelWizard = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 lg:p-10">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#f0cd6e]/30 p-6 sm:p-8 lg:p-10">
           {currentStep === "parcel" && (
             <ParcelStep nextStep={nextStep} />
           )}
@@ -522,7 +522,7 @@ const ParcelWizard = () => {
             <button
               type="button"
               onClick={goBackToDashboard}
-              className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+              className="px-6 py-2 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
               ← Back to Dashboard
             </button>

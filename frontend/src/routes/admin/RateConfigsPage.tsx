@@ -108,13 +108,13 @@ const RateConfigsPage: React.FC = () => {
 
   if (!user || user.role !== "REVENUE_ADMIN") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-3">
             Access Denied
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-[#2a2718]/70 mb-6">
             Only Revenue Administrators can manage rate configurations.
           </p>
         </div>
@@ -337,16 +337,16 @@ const handleSave = async () => {
   const isReadOnly = formMode === "view";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Settings className="w-8 h-8 text-green-600" />
+            <h1 className="text-3xl font-bold text-[#2a2718] flex items-center gap-3">
+              <Settings className="w-8 h-8 text-[#f0cd6e]" />
               Rate Configurations
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-[#2a2718]/70 mt-1">
               Manage interest, penalty and other revenue-related rates.
             </p>
           </div>
@@ -355,14 +355,14 @@ const handleSave = async () => {
             <button
               type="button"
               onClick={() => setShowSidebar((prev) => !prev)}
-              className="md:hidden px-3 py-2 text-sm border rounded-lg bg-white text-gray-700"
+              className="md:hidden px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg bg-white text-[#2a2718] hover:bg-[#f0cd6e]/20"
             >
               {showSidebar ? "Hide Rate Types" : "Show Rate Types"}
             </button>
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-[#f0cd6e]">
               <div className="flex items-center gap-2">
-                <Percent className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-gray-800">
+                <Percent className="w-5 h-5 text-[#f0cd6e]" />
+                <span className="font-medium text-[#2a2718]">
                   {user.role.replace("_", " ")}
                 </span>
               </div>
@@ -393,9 +393,9 @@ const handleSave = async () => {
           {/* Sidebar: rate types */}
           {showSidebar && (
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <Percent className="w-5 h-5 text-green-600" />
+              <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6 border border-[#f0cd6e]">
+                <h2 className="text-lg font-semibold text-[#2a2718] mb-5 flex items-center gap-2">
+                  <Percent className="w-5 h-5 text-[#f0cd6e]" />
                   Rate Types
                 </h2>
                 <div className="space-y-2">
@@ -405,14 +405,14 @@ const handleSave = async () => {
                       onClick={() => setSelectedRateType(rt)}
                       className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
                         selectedRateType === rt
-                          ? "bg-green-50 border-l-4 border-green-600 text-green-700"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-[#f0cd6e]/10 border-l-4 border-[#f0cd6e] text-[#2a2718]"
+                          : "text-[#2a2718]/70 hover:bg-[#f0cd6e]/10"
                       }`}
                     >
                       <div className="font-medium">
                         {rateMeta[rt].label}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                      <div className="text-xs text-[#2a2718]/70 mt-0.5 line-clamp-1">
                         {rateMeta[rt].desc}
                       </div>
                     </button>
@@ -428,11 +428,11 @@ const handleSave = async () => {
               showSidebar ? "lg:col-span-3 space-y-6" : "col-span-1 space-y-6"
             }
           >
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-6 bg-gradient-to-r from-gray-50 to-white">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#f0cd6e]">
+              <div className="border-b border-[#f0cd6e] px-6 py-6 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100 text-green-600 rounded-xl">
+                    <div className="p-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl">
                       {selectedRateType === "PENALTY_RATE" ? (
                         <AlertTriangle className="w-5 h-5" />
                       ) : (
@@ -440,14 +440,14 @@ const handleSave = async () => {
                       )}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-[#2a2718]">
                         {rateMeta[selectedRateType].label}
                       </h2>
-                      <p className="text-gray-600 mt-1">
+                      <p className="text-[#2a2718]/70 mt-1">
                         {rateMeta[selectedRateType].desc}
                       </p>
                       {currentRate && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-[#2a2718]/70 mt-1">
                           Currently effective from{" "}
                           {currentRate.effective_from
                             ? new Date(
@@ -470,13 +470,13 @@ const handleSave = async () => {
                     <button
                       type="button"
                       onClick={() => setMenuOpen((prev) => !prev)}
-                      className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
+                      className="p-2 rounded-full hover:bg-[#f0cd6e]/10 text-[#2a2718]"
                     >
                       <MoreVertical className="w-5 h-5" />
                     </button>
                     {menuOpen && (
                       <div
-                        className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-10"
+                        className="absolute right-0 mt-2 w-44 bg-white border border-[#f0cd6e] rounded-md shadow-lg z-10"
                         onMouseLeave={() => setMenuOpen(false)}
                       >
                         <button
@@ -485,7 +485,7 @@ const handleSave = async () => {
                             setMenuOpen(false);
                             startCreateNew();
                           }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0cd6e]/10 text-[#2a2718]"
                         >
                           Add new rate
                         </button>
@@ -496,7 +496,7 @@ const handleSave = async () => {
                             startEditExisting();
                           }}
                           disabled={!currentRate}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0cd6e]/10 text-[#2a2718] disabled:text-[#2a2718]/40 disabled:cursor-not-allowed"
                         >
                           Update current rate
                         </button>
@@ -509,14 +509,14 @@ const handleSave = async () => {
               <div className="p-8">
                 {loading ? (
                   <div className="text-center py-20">
-                    <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">Loading current rate...</p>
+                    <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
+                    <p className="text-[#2a2718]">Loading current rate...</p>
                   </div>
                 ) : (
                   <div className="space-y-8 max-w-2xl">
                     {/* Value */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                         {selectedRateType === "LATE_PAYMENT_GRACE_DAYS"
                           ? "Grace Days"
                           : "Rate Value"}
@@ -527,7 +527,7 @@ const handleSave = async () => {
                           step="0.01"
                           value={value}
                           onChange={(e) => setValue(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                          className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] disabled:bg-[#f0cd6e]/5"
                           placeholder={
                             selectedRateType === "LATE_PAYMENT_GRACE_DAYS"
                               ? "e.g. 15"
@@ -536,7 +536,7 @@ const handleSave = async () => {
                           disabled={isReadOnly}
                         />
                         {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS" && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2a2718]/70 font-bold">
                             %
                           </span>
                         )}
@@ -546,7 +546,7 @@ const handleSave = async () => {
                     {/* Effective dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                           Effective From
                         </label>
                         <UniversalDateInput
@@ -558,7 +558,7 @@ const handleSave = async () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                           Effective Until
                         </label>
                         <UniversalDateInput
@@ -573,13 +573,13 @@ const handleSave = async () => {
 
                     {/* Source */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                         Source / Reference (optional)
                       </label>
                       <textarea
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 min-h-[80px] resize-none disabled:bg-gray-100"
+                        className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] min-h-[80px] resize-none disabled:bg-[#f0cd6e]/5"
                         placeholder="e.g., Council Resolution No. 123..."
                         disabled={isReadOnly}
                       />
@@ -587,7 +587,7 @@ const handleSave = async () => {
 
                     {/* Actions */}
                     {formMode !== "view" && (
-                      <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
+                      <div className="pt-6 border-t border-[#f0cd6e] flex flex-col sm:flex-row gap-3">
                         <button
                           onClick={handleSave}
                           disabled={
@@ -596,7 +596,7 @@ const handleSave = async () => {
                             !value.trim() ||
                             !effectiveFrom
                           }
-                          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 disabled:opacity-50 transition-all shadow hover:shadow-lg"
+                          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 transition-all shadow hover:shadow-lg"
                         >
                           {saving ? (
                             <>
@@ -638,41 +638,23 @@ const handleSave = async () => {
                               );
                             }
                           }}
-                          className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all"
+                          className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-[#f0cd6e] text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/10 transition-all"
                         >
                           Cancel
                         </button>
                       </div>
                     )}
-
-                    {/* (Optional) deactivate button if needed */}
-                    {/* <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handleDeactivate}
-                        disabled={
-                          saving ||
-                          loading ||
-                          !currentRate ||
-                          !currentRate.effective_from ||
-                          !currentRate.is_active
-                        }
-                        className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-red-500 text-red-600 rounded-xl hover:bg-red-50 disabled:opacity-50 transition-all"
-                      >
-                        Deactivate Current
-                      </button>
-                    </div> */}
                   </div>
                 )}
               </div>
             </div>
 
             {/* History */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#f0cd6e]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <History className="w-5 h-5 text-gray-700" />
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <History className="w-5 h-5 text-[#2a2718]" />
+                  <h3 className="text-lg font-semibold text-[#2a2718]">
                     Rate History
                   </h3>
                 </div>
@@ -680,33 +662,33 @@ const handleSave = async () => {
 
               {historyLoading ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
+                  <Loader2 className="w-6 h-6 text-[#f0cd6e] animate-spin" />
                 </div>
               ) : history.length === 0 ? (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[#2a2718]/70">
                   No history found for this rate type.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
-                      <tr className="border-b bg-gray-50">
-                        <th className="px-3 py-2 text-left text-gray-600">
+                      <tr className="border-b bg-[#f0cd6e]/10">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Value
                         </th>
-                        <th className="px-3 py-2 text-left text-gray-600">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Effective From
                         </th>
-                        <th className="px-3 py-2 text-left text-gray-600">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Effective Until
                         </th>
-                        <th className="px-3 py-2 text-left text-gray-600">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Active
                         </th>
-                        <th className="px-3 py-2 text-left text-gray-600">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Source
                         </th>
-                        <th className="px-3 py-2 text-left text-gray-600">
+                        <th className="px-3 py-2 text-left text-[#2a2718]">
                           Updated At
                         </th>
                       </tr>
@@ -720,9 +702,9 @@ const handleSave = async () => {
                         return (
                           <tr
                             key={idx}
-                            className="border-b last:border-0 hover:bg-gray-50"
+                            className="border-b last:border-0 hover:bg-[#f0cd6e]/5"
                           >
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-[#2a2718]">
                               {uiValue}
                               {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS"
                                 ? " %"
@@ -747,10 +729,10 @@ const handleSave = async () => {
                                 showCalendarIndicator={true}
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-[#2a2718]">
                               {h.is_active ? "Yes" : "No"}
                             </td>
-                            <td className="px-3 py-2 max-w-xs truncate">
+                            <td className="px-3 py-2 max-w-xs truncate text-[#2a2718]">
                               {h.source || "-"}
                             </td>
                             <td className="px-3 py-2">

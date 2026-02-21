@@ -188,14 +188,14 @@ export default function SubdivideParcelModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-5 flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 <FileText size={24} />
                 Subdivide Parcel
               </h2>
-              <p className="text-blue-100 mt-1">
-                Parent UPIN: <span className="font-mono bg-blue-700/30 px-2 py-0.5 rounded">{parcel.upin}</span>
+              <p className="text-white/80 mt-1">
+                Parent UPIN: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{parcel.upin}</span>
               </p>
             </div>
             <button 
@@ -209,16 +209,16 @@ export default function SubdivideParcelModal({
 
           <div className="p-6">
             {/* Parent Info */}
-            <div className="bg-blue-50 p-5 rounded-lg mb-8 border border-blue-200">
+            <div className="bg-[#f0cd6e]/10 p-5 rounded-lg mb-8 border border-[#f0cd6e]">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-blue-800 font-medium text-lg">
+                  <p className="text-[#2a2718] font-medium text-lg">
                     Parent Parcel: <strong>{parcel.upin}</strong>
                   </p>
-                  <p className="text-sm text-blue-700 mt-2">
+                  <p className="text-sm text-[#2a2718]/70 mt-2">
                     Total Area: <strong>{parentArea.toLocaleString()} m²</strong>
                   </p>
-                  <p className="text-sm text-blue-600 mt-3">
+                  <p className="text-sm text-[#2a2718]/70 mt-3">
                     <span className="font-medium">Area Balance:</span>{' '}
                     {totalChildArea > 0 ? (
                       <span className={isValidArea ? 'text-green-700' : 'text-red-700'}>
@@ -230,9 +230,9 @@ export default function SubdivideParcelModal({
                     )}
                   </p>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
-                  <span className="text-sm font-medium text-gray-600">Owners to copy:</span>
-                  <span className="ml-2 text-lg font-bold text-blue-700">{parcel.owners?.length || 0}</span>
+                <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-[#f0cd6e]">
+                  <span className="text-sm font-medium text-[#2a2718]/70">Owners to copy:</span>
+                  <span className="ml-2 text-lg font-bold text-[#f0cd6e]">{parcel.owners?.length || 0}</span>
                 </div>
               </div>
             </div>
@@ -247,10 +247,10 @@ export default function SubdivideParcelModal({
 
             {/* Children */}
             {children.map((child, index) => (
-              <div key={index} className="border border-gray-200 rounded-xl p-6 mb-8 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+              <div key={index} className="border border-[#f0cd6e] rounded-xl p-6 mb-8 bg-[#f0cd6e]/5 hover:bg-[#f0cd6e]/10 transition-colors">
                 <div className="flex justify-between items-center mb-5">
-                  <h3 className="font-semibold text-lg text-gray-800 flex items-center gap-2">
-                    <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold">
+                  <h3 className="font-semibold text-lg text-[#2a2718] flex items-center gap-2">
+                    <span className="w-8 h-8 bg-[#f0cd6e]/20 rounded-full flex items-center justify-center text-[#2a2718] font-bold">
                       {String.fromCharCode(65 + index)}
                     </span>
                     Child Parcel {String.fromCharCode(65 + index)}
@@ -269,13 +269,13 @@ export default function SubdivideParcelModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* UPIN */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                       UPIN *
                     </label>
                     <input
                       value={child.upin}
                       onChange={e => updateChild(index, 'upin', e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                       required
                       disabled={loading}
                     />
@@ -283,13 +283,13 @@ export default function SubdivideParcelModal({
 
                   {/* File Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                       File Number *
                     </label>
                     <input
                       value={child.file_number}
                       onChange={e => updateChild(index, 'file_number', e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                       required
                       disabled={loading}
                     />
@@ -297,7 +297,7 @@ export default function SubdivideParcelModal({
 
                   {/* Area */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                       Total Area (m²) *
                     </label>
                     <input
@@ -306,7 +306,7 @@ export default function SubdivideParcelModal({
                       min="0.01"
                       value={child.total_area_m2}
                       onChange={e => updateChild(index, 'total_area_m2', Number(e.target.value))}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                       required
                       disabled={loading}
                     />
@@ -318,7 +318,7 @@ export default function SubdivideParcelModal({
                   <button
                     type="button"
                     onClick={() => toggleBoundaries(index)}
-                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="flex items-center text-sm text-[#f0cd6e] hover:text-[#2a2718] font-medium"
                     disabled={loading}
                   >
                     {child.showBoundaries ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -328,9 +328,9 @@ export default function SubdivideParcelModal({
                   </button>
 
                   {child.showBoundaries && (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-200">
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-[#f0cd6e]">
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                           Boundary Coordinates (JSON)
                         </label>
                         <textarea
@@ -338,55 +338,55 @@ export default function SubdivideParcelModal({
                           onChange={e => updateChild(index, 'boundary_coords', e.target.value)}
                           rows={4}
                           placeholder='{"type":"Polygon","coordinates":[[[...]]]}'
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                          className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] font-mono text-sm"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                           North Boundary
                         </label>
                         <input
                           value={child.boundary_north || ''}
                           onChange={e => updateChild(index, 'boundary_north', e.target.value)}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                           East Boundary
                         </label>
                         <input
                           value={child.boundary_east || ''}
                           onChange={e => updateChild(index, 'boundary_east', e.target.value)}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                           South Boundary
                         </label>
                         <input
                           value={child.boundary_south || ''}
                           onChange={e => updateChild(index, 'boundary_south', e.target.value)}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
                           West Boundary
                         </label>
                         <input
                           value={child.boundary_west || ''}
                           onChange={e => updateChild(index, 'boundary_west', e.target.value)}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                           disabled={loading}
                         />
                       </div>
@@ -400,7 +400,7 @@ export default function SubdivideParcelModal({
             <button
               onClick={addChild}
               disabled={loading || children.length >= 10}
-              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-400 flex items-center justify-center gap-2 mt-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 border-2 border-dashed border-[#f0cd6e] rounded-xl text-[#2a2718] hover:bg-[#f0cd6e]/10 hover:border-[#2a2718] flex items-center justify-center gap-2 mt-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={20} />
               Add Another Child Parcel
@@ -411,7 +411,7 @@ export default function SubdivideParcelModal({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="px-8 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+                className="px-8 py-3 border border-[#f0cd6e] rounded-xl hover:bg-[#f0cd6e]/20 disabled:opacity-50 text-[#2a2718]"
               >
                 Cancel
               </button>
@@ -419,7 +419,7 @@ export default function SubdivideParcelModal({
               <button
                 onClick={handleSubmit}
                 disabled={loading || !isValidArea}
-                className="px-10 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+                className="px-10 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
               >
                 {loading ? (
                   <>

@@ -149,10 +149,10 @@ useEffect(() => {
   const activeCount = Object.values(filters).filter(Boolean).length;
 
   return (
-    <div className="bg-white/80 rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+    <div className="bg-white/80 rounded-2xl p-6 border border-[#f0cd6e] shadow-sm mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-[#2a2718] mb-1">
             Search UPIN/File
           </label>
           <input
@@ -160,12 +160,12 @@ useEffect(() => {
             value={filters.search}
             onChange={handleChange}
             placeholder="UPIN, file..."
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-[#2a2718] mb-1">
             Sub City
           </label>
 
@@ -174,7 +174,7 @@ useEffect(() => {
             <input
               value={lockedSubCityName}
               disabled
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+              className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg bg-[#f0cd6e]/10 text-[#2a2718]"
             />
           ) : subCities && subCities.length > 0 ? (
             // For other roles: dropdown of sub-cities from API
@@ -182,7 +182,7 @@ useEffect(() => {
               name="sub_city"
               value={selectedSubCity ?? filters.sub_city}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             >
               <option value="">
                 {subCitiesLoading ? "Loading..." : "All sub-cities"}
@@ -200,13 +200,13 @@ useEffect(() => {
               value={filters.sub_city}
               onChange={handleChange}
               placeholder="Adi Haki..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             />
           )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-[#2a2718] mb-1">
             Ketena
           </label>
           <input
@@ -214,12 +214,12 @@ useEffect(() => {
             value={filters.ketena}
             onChange={handleChange}
             placeholder="Ketena 01..."
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-[#2a2718] mb-1">
             Tenure Type
           </label>
           <select
@@ -227,7 +227,7 @@ useEffect(() => {
             value={filters.tenure_type}
             onChange={handleChange}
             disabled={loadingTenureTypes}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] disabled:bg-[#f0cd6e]/10"
           >
             <option value="">All</option>
             {loadingTenureTypes ? (
@@ -243,12 +243,12 @@ useEffect(() => {
             )}
           </select>
           {errorTenureTypes && (
-            <p className="text-xs text-red-500 mt-1">{errorTenureTypes}</p>
+            <p className="text-xs text-[#2a2718] mt-1">{errorTenureTypes}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-[#2a2718] mb-1">
             Land Use
           </label>
           <select
@@ -256,7 +256,7 @@ useEffect(() => {
             value={filters.land_use}
             onChange={handleChange}
             disabled={loadingLandUses}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] disabled:bg-[#f0cd6e]/10"
           >
             <option value="">All</option>
             {loadingLandUses ? (
@@ -272,7 +272,7 @@ useEffect(() => {
             )}
           </select>
           {errorLandUses && (
-            <p className="text-xs text-red-500 mt-1">{errorLandUses}</p>
+            <p className="text-xs text-[#2a2718] mt-1">{errorLandUses}</p>
           )}
         </div>
       </div>
@@ -280,12 +280,12 @@ useEffect(() => {
       <div className="flex justify-between items-center text-xs">
         <button
           onClick={clearFilters}
-          className="px-4 py-1.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-xs font-medium"
+          className="px-4 py-1.5 text-[#2a2718] bg-[#f0cd6e]/20 hover:bg-[#f0cd6e]/40 rounded-lg transition-colors text-xs font-medium"
         >
           Clear Filters
         </button>
         {activeCount > 0 && (
-          <span className="text-gray-500">
+          <span className="text-[#2a2718]/70">
             {activeCount} active filter{activeCount > 1 ? "s" : ""}
           </span>
         )}

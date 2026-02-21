@@ -23,55 +23,55 @@ const UsersTable = ({
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-2xl shadow border">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <UserX className="w-8 h-8 text-gray-400" />
+      <div className="text-center py-12 bg-white rounded-2xl shadow border border-[#f0cd6e]">
+        <div className="w-16 h-16 bg-[#f0cd6e]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <UserX className="w-8 h-8 text-[#2a2718]" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-        <p className="text-gray-600">Try adjusting your filters or search term</p>
+        <h3 className="text-lg font-medium text-[#2a2718] mb-2">No users found</h3>
+        <p className="text-[#2a2718]/70">Try adjusting your filters or search term</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow border overflow-hidden">
+    <div className="bg-white rounded-2xl shadow border border-[#f0cd6e] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[#f0cd6e]/10">
             <tr>
-              <th className="px-6 py-4 text-left font-semibold text-gray-700">User</th>
-              <th className="px-6 py-4 text-left font-semibold text-gray-700">Role</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">User</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Role</th>
               {showSubCityColumn && (
-                <th className="px-6 py-4 text-left font-semibold text-gray-700">Sub-city</th>
+                <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Sub-city</th>
               )}
-              <th className="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
-              <th className="px-6 py-4 text-right font-semibold text-gray-700">Actions</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Status</th>
+              <th className="px-6 py-4 text-right font-semibold text-[#2a2718]">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-[#f0cd6e]/30">
             {users.map((u) => (
-              <tr key={u.user_id} className="hover:bg-gray-50 transition-colors">
+              <tr key={u.user_id} className="hover:bg-[#f0cd6e]/10 transition-colors">
                 <td className="px-6 py-4">
                   <div>
-                    <div className="font-medium text-gray-900">{u.full_name}</div>
-                    <div className="text-sm text-gray-500">{u.username}</div>
+                    <div className="font-medium text-[#2a2718]">{u.full_name}</div>
+                    <div className="text-sm text-[#2a2718]/70">{u.username}</div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
                     {getRoleIcon(u.role)}
-                    <span className="text-gray-700">{getRoleDisplayName(u.role)}</span>
+                    <span className="text-[#2a2718]">{getRoleDisplayName(u.role)}</span>
                   </div>
                 </td>
                 {showSubCityColumn && (
                   <td className="px-6 py-4">
                     {u.sub_city_id ? (
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm">
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f0cd6e]/10 text-[#2a2718] text-sm border border-[#f0cd6e]">
                         <Building className="w-3 h-3" />
                         {u.sub_city_id.substring(0, 8)}...
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-sm">N/A</span>
+                      <span className="text-[#2a2718]/50 text-sm">N/A</span>
                     )}
                   </td>
                 )}
@@ -87,10 +87,10 @@ const UsersTable = ({
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => onSuspendActivate(u)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
                         u.is_active
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                          ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
+                          : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
                       }`}
                     >
                       {u.is_active ? (
@@ -107,7 +107,7 @@ const UsersTable = ({
                     </button>
                     <button
                       onClick={() => onDelete(u)}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 text-sm font-medium transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 text-sm font-medium transition-colors border border-red-200"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete

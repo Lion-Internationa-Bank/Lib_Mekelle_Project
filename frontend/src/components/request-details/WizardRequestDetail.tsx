@@ -16,7 +16,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
   
   if (actionType !== 'CREATE') {
     return (
-      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800">
+      <div className="p-4 bg-[#f0cd6e]/20 rounded-lg border border-[#f0cd6e] text-[#2a2718]">
         Invalid action type for wizard session: {actionType}
       </div>
     );
@@ -44,7 +44,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
   };
 
   const formatCurrency = (value: number): string => {
-    return `$${Number(value).toLocaleString('en-US', {
+    return `ETB ${Number(value).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -57,48 +57,48 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-blue-600">✨</span>
+      <div className="bg-[#f0cd6e]/10 p-6 rounded-lg border border-[#f0cd6e]">
+        <h2 className="text-xl font-semibold text-[#2a2718] flex items-center gap-2">
+          <span className="text-[#2a2718]">✨</span>
           New Land Registration Wizard
         </h2>
-        <p className="text-blue-700 mt-2">
+        <p className="text-[#2a2718]/70 mt-2">
           Complete land registration with parcel, owner, and lease information
         </p>
       </div>
       
       {/* Parcel Information */}
       {parcel && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <span className="text-green-600">🏞️</span>
+        <div className="bg-white p-6 rounded-lg border border-[#f0cd6e] shadow-sm">
+          <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2 mb-4">
+            <span className="text-[#2a2718]">🏞️</span>
             Parcel Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Key parcel identifiers - emphasized */}
-            <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200 col-span-1 md:col-span-2 lg:col-span-1">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e] col-span-1 md:col-span-2 lg:col-span-1">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 UPIN
               </div>
-              <div className="text-xl font-bold text-gray-900">
+              <div className="text-xl font-bold text-[#2a2718]">
                 {parcel.upin || 'N/A'}
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 File Number
               </div>
-              <div className="text-lg font-semibold text-gray-900">
+              <div className="text-lg font-semibold text-[#2a2718]">
                 {parcel.file_number || 'N/A'}
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
+              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 Total Area
               </div>
-              <div className="text-lg font-semibold text-green-600">
+              <div className="text-lg font-semibold text-[#2a2718]">
                 {formatArea(parcel.total_area_m2 || 0)}
               </div>
             </div>
@@ -113,11 +113,11 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
               { label: 'Tenure Type', value: parcel.tenure_type?.replace(/_/g, ' ') }
             ].map((item, index) => (
               item.value && (
-                <div key={index} className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                  <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                <div key={index} className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
+                  <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                     {item.label}
                   </div>
-                  <div className="text-sm font-medium text-gray-900 break-words">
+                  <div className="text-sm font-medium text-[#2a2718] break-words">
                     {item.value}
                   </div>
                 </div>
@@ -127,34 +127,34 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
           {/* Boundaries Section */}
           {(parcel.boundary_north || parcel.boundary_south || parcel.boundary_east || parcel.boundary_west) && (
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="text-gray-500">📍</span>
+            <div className="mt-6 pt-4 border-t border-[#f0cd6e]">
+              <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
+                <span className="text-[#2a2718]/70">📍</span>
                 Boundaries
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {parcel.boundary_north && (
-                  <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                    <span className="text-xs text-gray-500 block">North</span>
-                    <span className="text-sm font-medium">{parcel.boundary_north}</span>
+                  <div className="bg-[#f0cd6e]/5 p-2 rounded border border-[#f0cd6e]">
+                    <span className="text-xs text-[#2a2718]/70 block">North</span>
+                    <span className="text-sm font-medium text-[#2a2718]">{parcel.boundary_north}</span>
                   </div>
                 )}
                 {parcel.boundary_south && (
-                  <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                    <span className="text-xs text-gray-500 block">South</span>
-                    <span className="text-sm font-medium">{parcel.boundary_south}</span>
+                  <div className="bg-[#f0cd6e]/5 p-2 rounded border border-[#f0cd6e]">
+                    <span className="text-xs text-[#2a2718]/70 block">South</span>
+                    <span className="text-sm font-medium text-[#2a2718]">{parcel.boundary_south}</span>
                   </div>
                 )}
                 {parcel.boundary_east && (
-                  <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                    <span className="text-xs text-gray-500 block">East</span>
-                    <span className="text-sm font-medium">{parcel.boundary_east}</span>
+                  <div className="bg-[#f0cd6e]/5 p-2 rounded border border-[#f0cd6e]">
+                    <span className="text-xs text-[#2a2718]/70 block">East</span>
+                    <span className="text-sm font-medium text-[#2a2718]">{parcel.boundary_east}</span>
                   </div>
                 )}
                 {parcel.boundary_west && (
-                  <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                    <span className="text-xs text-gray-500 block">West</span>
-                    <span className="text-sm font-medium">{parcel.boundary_west}</span>
+                  <div className="bg-[#f0cd6e]/5 p-2 rounded border border-[#f0cd6e]">
+                    <span className="text-xs text-[#2a2718]/70 block">West</span>
+                    <span className="text-sm font-medium text-[#2a2718]">{parcel.boundary_west}</span>
                   </div>
                 )}
               </div>
@@ -166,64 +166,64 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
       {/* Owners Information */}
       {owners.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span className="text-purple-600">👥</span>
+          <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
+            <span className="text-[#2a2718]">👥</span>
             Owners ({owners.length})
           </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {owners.map((owner: any, index: number) => (
               <div 
                 key={index}
-                className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white p-6 rounded-lg border border-[#f0cd6e] shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start gap-4 mb-4 pb-4 border-b border-gray-100">
-                  <div className="shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="flex items-start gap-4 mb-4 pb-4 border-b border-[#f0cd6e]">
+                  <div className="shrink-0 w-12 h-12 bg-gradient-to-br from-[#f0cd6e] to-[#2a2718] text-white rounded-full flex items-center justify-center font-bold text-lg">
                     {owner.full_name?.charAt(0) || 'O'}
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-lg text-gray-900">
+                    <div className="font-semibold text-lg text-[#2a2718]">
                       {owner.full_name}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-[#2a2718]/70">
                       Owner #{index + 1}
                     </div>
                   </div>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                  <span className="px-3 py-1 bg-[#f0cd6e]/20 text-[#2a2718] text-xs font-semibold rounded-full border border-[#f0cd6e]">
                     {owner.acquired_at ? formatDate(owner.acquired_at) : 'New Owner'}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                    <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                       National ID
                     </div>
-                    <div className="text-base font-semibold text-gray-900 font-mono">
+                    <div className="text-base font-semibold text-[#2a2718] font-mono">
                       {owner.national_id || 'N/A'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                    <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                       TIN Number
                     </div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-[#2a2718]">
                       {owner.tin_number || 'N/A'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                    <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                       Phone Number
                     </div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-[#2a2718]">
                       {owner.phone_number || 'N/A'}
                     </div>
                   </div>
                   {owner.acquired_at && (
                     <div>
-                      <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+                      <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                         Acquisition Date
                       </div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-[#2a2718]">
                         {formatDate(owner.acquired_at)}
                       </div>
                     </div>
@@ -237,56 +237,56 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
       {/* Lease Information */}
 {lease && Object.keys(lease).length > 0 && (
-  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-      <span className="text-amber-600">📄</span>
+  <div className="bg-white p-6 rounded-lg border border-[#f0cd6e] shadow-sm">
+    <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2 mb-4">
+      <span className="text-[#2a2718]">📄</span>
       Lease Agreement
     </h3>
     
     {/* Lease Summary Cards */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-gradient-to-br from-amber-50 to-white p-4 rounded-lg border border-amber-200">
-        <div className="text-xs text-amber-700 mb-1 font-medium uppercase tracking-wider">
+      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+        <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Lease Period
         </div>
-        <div className="text-2xl font-bold text-gray-900">
+        <div className="text-2xl font-bold text-[#2a2718]">
           {lease.lease_period_years || 0} Years
         </div>
         {lease.payment_term_years && (
-          <div className="text-xs text-gray-600 mt-2">
+          <div className="text-xs text-[#2a2718]/70 mt-2">
             Payment term: {lease.payment_term_years} years
           </div>
         )}
       </div>
       
-      <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-lg border border-green-200">
-        <div className="text-xs text-green-700 mb-1 font-medium uppercase tracking-wider">
+      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+        <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Total Amount
         </div>
-        <div className="text-2xl font-bold text-green-600">
+        <div className="text-2xl font-bold text-[#2a2718]">
           {formatCurrency(lease.total_lease_amount || 0)}
         </div>
         {lease.price_per_m2 && (
-          <div className="text-xs text-gray-600 mt-2">
+          <div className="text-xs text-[#2a2718]/70 mt-2">
             Price per m²: {formatCurrency(lease.price_per_m2)}
           </div>
         )}
       </div>
       
-      <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-lg border border-blue-200">
-        <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
+      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+        <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Down Payment
         </div>
-        <div className="text-2xl font-bold text-blue-600">
+        <div className="text-2xl font-bold text-[#2a2718]">
           {formatCurrency(lease.down_payment_amount || 0)}
         </div>
       </div>
       
-      <div className="bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg border border-purple-200">
-        <div className="text-xs text-purple-700 mb-1 font-medium uppercase tracking-wider">
+      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+        <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Other Payment
         </div>
-        <div className="text-2xl font-bold text-purple-600">
+        <div className="text-2xl font-bold text-[#2a2718]">
           {formatCurrency(lease.other_payment || 0)}
         </div>
       </div>
@@ -295,54 +295,54 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
     {/* Additional Fees Section - NEW */}
     {(lease.demarcation_fee || lease.contract_registration_fee || lease.engineering_service_fee) && (
       <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
-          <span className="text-purple-600">💰</span>
+        <h4 className="text-sm font-semibold text-[#2a2718] flex items-center gap-2 mb-3">
+          <span className="text-[#2a2718]">💰</span>
           Additional Fees
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {lease.demarcation_fee !== undefined && lease.demarcation_fee !== null && (
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <div className="bg-[#f0cd6e]/10 p-4 rounded-lg border border-[#f0cd6e]">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-purple-600 text-lg">📏</span>
-                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                <span className="text-[#2a2718] text-lg">📏</span>
+                <div className="text-xs text-[#2a2718] font-medium uppercase tracking-wider">
                   Demarcation Fee
                 </div>
               </div>
-              <div className="text-xl font-bold text-purple-700">
+              <div className="text-xl font-bold text-[#2a2718]">
                 {formatCurrency(Number(lease.demarcation_fee))}
               </div>
             </div>
           )}
           
           {lease.engineering_service_fee !== undefined && lease.engineering_service_fee !== null && (
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <div className="bg-[#f0cd6e]/10 p-4 rounded-lg border border-[#f0cd6e]">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-purple-600 text-lg">🔧</span>
-                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                <span className="text-[#2a2718] text-lg">🔧</span>
+                <div className="text-xs text-[#2a2718] font-medium uppercase tracking-wider">
                   Engineering Service Fee
                 </div>
               </div>
-              <div className="text-xl font-bold text-purple-700">
+              <div className="text-xl font-bold text-[#2a2718]">
                 {formatCurrency(Number(lease.engineering_service_fee))}
               </div>
             </div>
           )}
           
           {lease.contract_registration_fee !== undefined && lease.contract_registration_fee !== null && (
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <div className="bg-[#f0cd6e]/10 p-4 rounded-lg border border-[#f0cd6e]">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-purple-600 text-lg">📝</span>
-                <div className="text-xs text-purple-700 font-medium uppercase tracking-wider">
+                <span className="text-[#2a2718] text-lg">📝</span>
+                <div className="text-xs text-[#2a2718] font-medium uppercase tracking-wider">
                   Contract Registration
                 </div>
               </div>
-              <div className="text-xl font-bold text-purple-700">
+              <div className="text-xl font-bold text-[#2a2718]">
                 {/* Handle both string and number cases */}
                 {typeof lease.contract_registration_fee === 'string' 
                   ? lease.contract_registration_fee 
                   : formatCurrency(Number(lease.contract_registration_fee))}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-[#2a2718]/70 mt-1">
                 Reference/Receipt
               </div>
             </div>
@@ -354,31 +354,31 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
     {/* Lease Dates */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {lease.contract_date && (
-        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+        <div className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
+          <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
             Contract Date
           </div>
-          <div className="text-base font-semibold text-gray-900">
+          <div className="text-base font-semibold text-[#2a2718]">
             {formatDate(lease.contract_date)}
           </div>
         </div>
       )}
       {lease.start_date && (
-        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+        <div className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
+          <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
             Start Date
           </div>
-          <div className="text-base font-semibold text-gray-900">
+          <div className="text-base font-semibold text-[#2a2718]">
             {formatDate(lease.start_date)}
           </div>
         </div>
       )}
       {lease.expiry_date && (
-        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-          <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+        <div className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
+          <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
             Expiry Date
           </div>
-          <div className="text-base font-semibold text-gray-900">
+          <div className="text-base font-semibold text-[#2a2718]">
             {formatDate(lease.expiry_date)}
           </div>
         </div>
@@ -387,11 +387,11 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
     {/* Legal Framework */}
     {lease.legal_framework && (
-      <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+      <div className="mt-4 p-4 bg-[#f0cd6e]/5 rounded-md border border-[#f0cd6e]">
+        <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
           Legal Framework
         </div>
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-[#2a2718]">
           {lease.legal_framework}
         </div>
       </div>
@@ -399,20 +399,20 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
     {/* Annual Installment Info (if available) */}
     {lease.annual_installment && (
-      <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200">
+      <div className="mt-4 p-4 bg-[#f0cd6e]/10 rounded-md border border-[#f0cd6e]">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs text-blue-700 mb-1 font-medium uppercase tracking-wider">
+            <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
               Annual Installment
             </div>
-            <div className="text-xl font-bold text-blue-700">
+            <div className="text-xl font-bold text-[#2a2718]">
               {formatCurrency(lease.annual_installment)}
             </div>
           </div>
           {lease.annual_lease_fee && (
             <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Annual Lease Fee</div>
-              <div className="text-lg font-semibold text-gray-700">
+              <div className="text-xs text-[#2a2718]/70 mb-1">Annual Lease Fee</div>
+              <div className="text-lg font-semibold text-[#2a2718]/80">
                 {formatCurrency(lease.annual_lease_fee)}
               </div>
             </div>
@@ -425,20 +425,20 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
       {/* Documents Section */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-blue-600">📎</span>
+        <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
+          <span className="text-[#2a2718]">📎</span>
           Documents
         </h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Parcel Documents */}
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+          <div className="bg-white p-5 rounded-lg border border-[#f0cd6e] shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl text-green-600">🏞️</span>
-              <h4 className="text-md font-semibold text-gray-800">
+              <span className="text-2xl text-[#2a2718]">🏞️</span>
+              <h4 className="text-md font-semibold text-[#2a2718]">
                 Parcel Documents
               </h4>
-              <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+              <span className="ml-auto bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-1 rounded-full text-xs font-semibold border border-[#f0cd6e]">
                 {parcel_docs?.length || 0}
               </span>
             </div>
@@ -450,21 +450,21 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                 emptyMessage="No parcel documents"
               />
             ) : (
-              <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+              <div className="p-8 text-center bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e]">
                 <span className="text-3xl mb-2 block">📄</span>
-                <p className="text-sm text-gray-500">No parcel documents</p>
+                <p className="text-sm text-[#2a2718]/70">No parcel documents</p>
               </div>
             )}
           </div>
           
           {/* Owner Documents */}
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+          <div className="bg-white p-5 rounded-lg border border-[#f0cd6e] shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl text-purple-600">👤</span>
-              <h4 className="text-md font-semibold text-gray-800">
+              <span className="text-2xl text-[#2a2718]">👤</span>
+              <h4 className="text-md font-semibold text-[#2a2718]">
                 Owner Documents
               </h4>
-              <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+              <span className="ml-auto bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-1 rounded-full text-xs font-semibold border border-[#f0cd6e]">
                 {owner_docs?.length || 0}
               </span>
             </div>
@@ -476,22 +476,22 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                 emptyMessage="No owner documents"
               />
             ) : (
-              <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+              <div className="p-8 text-center bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e]">
                 <span className="text-3xl mb-2 block">🆔</span>
-                <p className="text-sm text-gray-500">No owner documents</p>
+                <p className="text-sm text-[#2a2718]/70">No owner documents</p>
               </div>
             )}
           </div>
           
           {/* Lease Documents */}
           {lease_docs && lease_docs.length > 0 && (
-            <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+            <div className="bg-white p-5 rounded-lg border border-[#f0cd6e] shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl text-amber-600">📋</span>
-                <h4 className="text-md font-semibold text-gray-800">
+                <span className="text-2xl text-[#2a2718]">📋</span>
+                <h4 className="text-md font-semibold text-[#2a2718]">
                   Lease Documents
                 </h4>
-                <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+                <span className="ml-auto bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-1 rounded-full text-xs font-semibold border border-[#f0cd6e]">
                   {lease_docs.length}
                 </span>
               </div>
@@ -507,13 +507,13 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
         {/* Overall Documents */}
         {requestData.documents && requestData.documents.length > 0 && (
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm mt-4">
+          <div className="bg-white p-5 rounded-lg border border-[#f0cd6e] shadow-sm mt-4">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl text-gray-600">📎</span>
-              <h4 className="text-md font-semibold text-gray-800">
+              <span className="text-2xl text-[#2a2718]">📎</span>
+              <h4 className="text-md font-semibold text-[#2a2718]">
                 All Documents
               </h4>
-              <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+              <span className="ml-auto bg-[#f0cd6e]/20 text-[#2a2718] px-2 py-1 rounded-full text-xs font-semibold border border-[#f0cd6e]">
                 {requestData.documents.length}
               </span>
             </div>

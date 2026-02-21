@@ -119,10 +119,10 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
         Register Land Parcel
       </h2>
-      <p className="text-gray-600 mb-8">
+      <p className="text-[#2a2718]/70 mb-8">
         Fill in all required fields to register a new parcel
       </p>
 
@@ -132,12 +132,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
       >
         {/* UPIN */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             UPIN *
           </label>
           <input
             {...register("upin")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-mono"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] text-lg font-mono"
             placeholder="e.g. MANC-2347"
           />
           {errors.upin && (
@@ -147,12 +147,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* File Number */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             File Number *
           </label>
           <input
             {...register("file_number")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             placeholder="e.g. FIL-2026-001"
           />
           {errors.file_number && (
@@ -164,12 +164,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Ketena */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Ketena *
           </label>
           <input
             {...register("ketena")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             placeholder="e.g. Ketena 01"
           />
           {errors.ketena && (
@@ -179,12 +179,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Tabia */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Tabia *
           </label>
           <input
             {...register("tabia")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             placeholder="e.g. Tabia 05"
           />
           {errors.tabia && (
@@ -194,12 +194,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Block */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Block *
           </label>
           <input
             {...register("block")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             placeholder="e.g. Block A"
           />
           {errors.block && (
@@ -209,7 +209,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Total Area */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Total Area (m²) *
           </label>
           <input
@@ -217,7 +217,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
             type="number"
             min="0"
             step="0.01"
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
           {errors.total_area_m2 && (
             <p className="mt-1 text-sm text-red-600">
@@ -228,12 +228,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Land Use */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Land Use *
           </label>
           <select
             {...register("land_use")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             disabled={loadingConfig}
           >
             <option value="">Select Land Use</option>
@@ -256,7 +256,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Land Grade */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Land Grade *
           </label>
           <input
@@ -265,7 +265,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
             step="0.01"
             min="1.0"
             placeholder="e.g. 1.0"
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
           {errors.land_grade && (
             <p className="mt-1 text-sm text-red-600">
@@ -276,12 +276,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Tenure Type */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Tenure Type *
           </label>
           <select
             {...register("tenure_type")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             disabled={loadingConfig}
           >
             <option value="">Select Tenure Type</option>
@@ -304,13 +304,13 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
 
         {/* Optional Geometry Data */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Geometry Data (Optional)
           </label>
           <textarea
             {...register("boundary_coords")}
             rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] font-mono text-sm"
             placeholder='{"type": "Polygon", "coordinates": [...]}'
           />
           {errors.boundary_coords && (
@@ -321,7 +321,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
           <button
             type="button"
             onClick={fillExampleGeometry}
-            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            className="mt-2 text-sm text-[#f0cd6e] hover:text-[#2a2718]"
           >
             Fill with example geometry
           </button>
@@ -330,45 +330,45 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Boundary Fields */}
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
               North Boundary (optional)
             </label>
             <input
               {...register("boundary_north")}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
               placeholder="e.g. North boundary description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
               East Boundary (optional)
             </label>
             <input
               {...register("boundary_east")}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
               placeholder="e.g. East boundary description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
               South Boundary (optional)
             </label>
             <input
               {...register("boundary_south")}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
               placeholder="e.g. South boundary description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
               West Boundary (optional)
             </label>
             <input
               {...register("boundary_west")}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
               placeholder="e.g. West boundary description"
             />
           </div>
@@ -379,7 +379,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || isLoading || loadingConfig}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center gap-3"
+            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-70 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center gap-3"
           >
             {isSubmitting || isLoading ? (
               <>

@@ -25,13 +25,13 @@ const SuspendActivateModal = ({ isOpen, user, suspend, onClose, onConfirm }: Sus
             <UserCheck className="w-6 h-6 text-green-600" />
           )}
         </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <h3 className="text-xl font-bold text-[#2a2718] mb-2">
           {suspend ? 'Suspend User' : 'Activate User'}
         </h3>
-        <p className="text-gray-600 mb-2">
+        <p className="text-[#2a2718]/70 mb-2">
           Are you sure you want to {suspend ? 'suspend' : 'activate'} <span className="font-semibold">{user.full_name}</span>?
         </p>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-[#2a2718]/70 mb-6">
           {suspend
             ? 'This user will lose access to the system until activated again.'
             : 'This user will regain access to the system.'}
@@ -39,7 +39,7 @@ const SuspendActivateModal = ({ isOpen, user, suspend, onClose, onConfirm }: Sus
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors"
+            className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e]"
           >
             Cancel
           </button>

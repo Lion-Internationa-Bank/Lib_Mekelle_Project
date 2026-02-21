@@ -1,3 +1,4 @@
+// src/components/parcelDetail/sections/EncumbrancesSection.tsx
 import { useState, useEffect } from "react";
 import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
@@ -94,7 +95,7 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
           <div className="text-center py-8">
             <button
               onClick={() => setAddingNew(true)}
-              className="px-6 py-3 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50"
+              className="px-6 py-3 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20"
             >
               + Add First Encumbrance
             </button>
@@ -113,7 +114,7 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
           <div className="text-center">
             <button
               onClick={() => setAddingNew(true)}
-              className="px-6 py-3 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50"
+              className="px-6 py-3 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20"
             >
               + Add New Encumbrance
             </button>
@@ -139,19 +140,19 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
       {isSubcityNormal && showUploadStep && latestEncumbranceId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-8 border-b border-gray-200 bg-liear-to-r from-amber-50 to-orange-50">
+            <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
                     Encumbrance Registered ✓
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-[#2a2718]/70">
                     Upload supporting documents for parcel{" "}
-                    <span className="font-mono font-bold text-blue-600">{upin}</span>
+                    <span className="font-mono font-bold text-[#f0cd6e]">{upin}</span>
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-4 py-2 text-sm font-bold bg-amber-100 text-amber-800 rounded-full">
+                  <span className="inline-block px-4 py-2 text-sm font-bold bg-[#f0cd6e] text-[#2a2718] rounded-full">
                     Optional Step
                   </span>
                 </div>
@@ -176,16 +177,16 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
               />
             </div>
 
-            <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+            <div className="p-8 border-t border-[#f0cd6e] bg-[#f0cd6e]/5 rounded-b-2xl flex justify-between items-center">
               <button
                 onClick={handleSkipUpload}
-                className="text-sm text-gray-600 hover:text-gray-900 underline transition"
+                className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
               >
                 Skip for now
               </button>
               <button
                 onClick={handleUploadComplete}
-                className="px-8 py-3 rounded-xl bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
               >
                 Done – Close
                 <span className="text-lg">→</span>

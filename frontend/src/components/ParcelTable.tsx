@@ -1,5 +1,4 @@
-// ParcelTable.tsx
-
+// src/components/ParcelTable.tsx
 import { useNavigate } from "react-router-dom";
 
 interface Parcel {
@@ -20,9 +19,9 @@ interface ParcelTableProps {
 
 const ParcelTable = ({ parcels }: ParcelTableProps) => {
   return (
-    <div className="bg-white/80 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white/80 rounded-2xl border border-[#f0cd6e] shadow-sm overflow-hidden">
       {/* Table Header */}
-      <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50/90 border-b-2 border-gray-300 sticky top-0 z-10">
+      <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-xs font-semibold text-[#2a2718] uppercase tracking-wider bg-[#f0cd6e]/20 border-b-2 border-[#f0cd6e] sticky top-0 z-10">
         <div>UPIN</div>
         <div>File Number</div>
         <div>Sub City</div>
@@ -35,9 +34,9 @@ const ParcelTable = ({ parcels }: ParcelTableProps) => {
       </div>
 
       {/* Table Body */}
-      <div className="divide-y divide-gray-200/70">
+      <div className="divide-y divide-[#f0cd6e]/30">
         {parcels.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 text-sm">
+          <div className="text-center py-12 text-[#2a2718]/70 text-sm">
             No parcels found
           </div>
         ) : (
@@ -59,35 +58,35 @@ const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
   }
 
   return (
-    <div className="group grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-sm hover:bg-gray-50/70 transition-colors cursor-pointer "onClick={handleRowClick}>
+    <div className="group grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-sm hover:bg-[#f0cd6e]/10 transition-colors cursor-pointer" onClick={handleRowClick}>
       {/* UPIN */}
-      <div className="font-semibold text-gray-900">{parcel.upin}</div>
+      <div className="font-semibold text-[#2a2718]">{parcel.upin}</div>
 
       {/* File Number */}
-      <div className="text-gray-700">{parcel.file_number}</div>
+      <div className="text-[#2a2718]/80">{parcel.file_number}</div>
 
       {/* Sub City */}
-      <div className="font-medium text-gray-800">{parcel.sub_city}</div>
+      <div className="font-medium text-[#2a2718]">{parcel.sub_city}</div>
 
       {/* Ketena */}
-      <div className="text-gray-700">{parcel.ketena}</div>
+      <div className="text-[#2a2718]/80">{parcel.ketena}</div>
 
       {/* Area */}
-      <div className="font-medium">{parcel.total_area_m2.toLocaleString()}</div>
+      <div className="font-medium text-[#2a2718]">{parcel.total_area_m2.toLocaleString()}</div>
 
       {/* Land Use */}
-      <div className="text-gray-700 capitalize">{parcel.land_use}</div>
+      <div className="text-[#2a2718]/80 capitalize">{parcel.land_use}</div>
 
       {/* Tenure Type */}
-      <div className="text-gray-700 capitalize">{parcel.tenure_type}</div>
+      <div className="text-[#2a2718]/80 capitalize">{parcel.tenure_type}</div>
 
       {/* Encumbrance Status */}
       <div>
         <span
           className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${
             parcel.encumbrance_status === "Clear"
-              ? "bg-green-100 text-green-700"
-              : "bg-orange-100 text-orange-700"
+              ? "bg-[#f0cd6e]/30 text-[#2a2718]"
+              : "bg-[#2a2718]/20 text-[#2a2718]"
           }`}
         >
           {parcel.encumbrance_status}
@@ -96,22 +95,22 @@ const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
 
       {/* Owner(s) - hidden on smaller screens */}
       <div
-        className="hidden xl:block text-gray-600 text-xs truncate max-w-xs"
+        className="hidden xl:block text-[#2a2718]/70 text-xs truncate max-w-xs"
         title={parcel.owners}
       >
         {parcel.owners}
       </div>
 
       {/* Mobile-only: Extra details */}
-      <div className="xl:hidden mt-3 pt-3 border-t border-gray-200/50 text-xs text-gray-600 space-y-1">
+      <div className="xl:hidden mt-3 pt-3 border-t border-[#f0cd6e]/30 text-xs text-[#2a2718]/70 space-y-1">
         <div>
-          <span className="font-medium">File:</span> {parcel.file_number}
+          <span className="font-medium text-[#2a2718]">File:</span> {parcel.file_number}
         </div>
         <div>
-          <span className="font-medium">Tenure:</span> {parcel.tenure_type}
+          <span className="font-medium text-[#2a2718]">Tenure:</span> {parcel.tenure_type}
         </div>
         <div>
-          <span className="font-medium">Owner(s):</span> {parcel.owners}
+          <span className="font-medium text-[#2a2718]">Owner(s):</span> {parcel.owners}
         </div>
       </div>
     </div>

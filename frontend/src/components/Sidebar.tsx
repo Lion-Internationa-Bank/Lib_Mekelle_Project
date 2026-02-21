@@ -179,7 +179,7 @@ const Sidebar = () => {
   const canAccessReports = user?.role && ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'].includes(user.role);
 
   return (
-    <aside className="w-64 bg-white/90 backdrop-blur-xl shadow-2xl border-r border-gray-200/50 h-screen sticky top-0 z-40 flex flex-col overflow-hidden">
+    <aside className="w-64 bg-white/90 backdrop-blur-xl shadow-2xl border-r border-[#f0cd6e]/50 h-screen sticky top-0 z-40 flex flex-col overflow-hidden">
       {/* Navigation */}
       <nav className="p-4 flex-1 space-y-2 overflow-y-auto">
         {filteredItems.map((item) => (
@@ -188,8 +188,8 @@ const Sidebar = () => {
             to={item.href}
             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
               activeMenu === item.id
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
+                : 'text-[#2a2718] hover:bg-[#f0cd6e]/20'
             }`}
           >
             <span className="text-lg">{item.icon}</span>
@@ -204,8 +204,8 @@ const Sidebar = () => {
               onClick={() => setIsReportsOpen(!isReportsOpen)}
               className={`w-full flex items-center justify-between space-x-3 px-4 py-3 rounded-xl transition-all ${
                 activeMenu === 'reports'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
+                  : 'text-[#2a2718] hover:bg-[#f0cd6e]/20'
               }`}
             >
               <div className="flex items-center space-x-3">
@@ -224,19 +224,19 @@ const Sidebar = () => {
 
             {/* Dropdown Menu */}
             {isReportsOpen && (
-              <div className="absolute left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+              <div className="absolute left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-[#f0cd6e] py-1 z-50">
                 {visibleReports.map((report) => (
                   <Link
                     key={report.id}
                     to={report.href}
-                    className={`flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 transition-colors ${
-                      location.pathname === report.href ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                    className={`flex items-center space-x-3 px-4 py-2 hover:bg-[#f0cd6e]/20 transition-colors ${
+                      location.pathname === report.href ? 'bg-[#a68f4e]/20 text-[#6d5f35]' : 'text-[#2a2718]'
                     }`}
                   >
                     <span className="text-base">{report.icon}</span>
                     <div className="flex-1">
                       <div className="text-sm font-medium">{report.label}</div>
-                      <div className="text-xs text-gray-500">{report.description}</div>
+                      <div className="text-xs text-[#2a2718]/60">{report.description}</div>
                     </div>
                   </Link>
                 ))}
@@ -248,14 +248,14 @@ const Sidebar = () => {
 
       {/* User Info and Logout */}
       {user && (
-        <div className="p-4 border-t border-gray-200/50 mt-auto">
+        <div className="p-4 border-t border-[#f0cd6e]/50 mt-auto">
           <div className="mb-3 px-2">
-            <p className="text-sm font-medium text-gray-700 truncate">{user.full_name}</p>
-            <p className="text-xs text-gray-500 truncate">{user.role.replace('_', ' ')}</p>
+            <p className="text-sm font-medium text-[#2a2718] truncate">{user.full_name}</p>
+            <p className="text-xs text-[#6d5f35] truncate">{user.role.replace('_', ' ')}</p>
           </div>
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-medium transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#2a2718]/10 hover:bg-[#2a2718]/20 text-[#2a2718] font-medium transition-all duration-200"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7" />

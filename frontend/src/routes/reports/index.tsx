@@ -21,7 +21,7 @@ const reportCards: ReportCard[] = [
     description: 'View and download bills with filtering by subcity, status, and date range',
     icon: '💰',
     path: '/reports/bills',
-    color: 'bg-blue-50 text-blue-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
   {
     id: 'payments',
@@ -29,7 +29,7 @@ const reportCards: ReportCard[] = [
     description: 'Track all payments made across different time periods',
     icon: '💳',
     path: '/reports/payments',
-    color: 'bg-green-50 text-green-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
   {
     id: 'parcels',
@@ -37,7 +37,7 @@ const reportCards: ReportCard[] = [
     description: 'Comprehensive report on land parcels and their status',
     icon: '🏞️',
     path: '/reports/parcels',
-    color: 'bg-purple-50 text-purple-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
   {
     id: 'owners',
@@ -45,7 +45,7 @@ const reportCards: ReportCard[] = [
     description: 'Property owners information and their holdings',
     icon: '👥',
     path: '/reports/owners',
-    color: 'bg-orange-50 text-orange-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
   {
     id: 'leases',
@@ -53,7 +53,7 @@ const reportCards: ReportCard[] = [
     description: 'Active and expired lease agreements overview',
     icon: '📄',
     path: '/reports/leases',
-    color: 'bg-indigo-50 text-indigo-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
   {
     id: 'revenue',
@@ -61,7 +61,7 @@ const reportCards: ReportCard[] = [
     description: 'Detailed revenue analysis and trends',
     icon: '📈',
     path: '/reports/revenue',
-    color: 'bg-pink-50 text-pink-600',
+    color: 'bg-[#f0cd6e]/10 text-[#2a2718]',
   },
 ];
 
@@ -88,13 +88,13 @@ export const ReportsHomePage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {visibleReports.map((report) => (
           <Link key={report.id} to={report.path} className="block">
-            <div className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <div className="bg-white rounded-lg border border-[#f0cd6e] hover:shadow-lg transition-shadow cursor-pointer h-full">
               <div className="p-6">
-                <div className={`inline-flex p-3 rounded-lg ${report.color} mb-4`}>
+                <div className={`inline-flex p-3 rounded-lg ${report.color} border border-[#f0cd6e] mb-4`}>
                   <span className="text-2xl">{report.icon}</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{report.title}</h3>
-                <p className="text-sm text-gray-500">{report.description}</p>
+                <h3 className="text-lg font-semibold text-[#2a2718] mb-2">{report.title}</h3>
+                <p className="text-sm text-[#2a2718]/70">{report.description}</p>
               </div>
             </div>
           </Link>
@@ -112,27 +112,27 @@ export const ReportsRoutes: React.FC = () => {
       <Route path="bills" element={<BillsReportPage />} />
       <Route path="payments" element={
         <ReportsLayout title="Payments Report" description="Coming soon">
-          <div className="p-8 text-center text-gray-500">Payments Report - Coming Soon</div>
+          <div className="p-8 text-center text-[#2a2718]/70">Payments Report - Coming Soon</div>
         </ReportsLayout>
       } />
       <Route path="parcels" element={
         <ReportsLayout title="Parcels Report" description="Coming soon">
-          <div className="p-8 text-center text-gray-500">Parcels Report - Coming Soon</div>
+          <div className="p-8 text-center text-[#2a2718]/70">Parcels Report - Coming Soon</div>
         </ReportsLayout>
       } />
       <Route path="owners" element={
         <ReportsLayout title="Owners Report" description="Coming soon">
-          <div className="p-8 text-center text-gray-500">Owners Report - Coming Soon</div>
+          <div className="p-8 text-center text-[#2a2718]/70">Owners Report - Coming Soon</div>
         </ReportsLayout>
       } />
       <Route path="leases" element={
         <ReportsLayout title="Leases Report" description="Coming soon">
-          <div className="p-8 text-center text-gray-500">Leases Report - Coming Soon</div>
+          <div className="p-8 text-center text-[#2a2718]/70">Leases Report - Coming Soon</div>
         </ReportsLayout>
       } />
       <Route path="revenue" element={
         <ReportsLayout title="Revenue Analysis" description="Coming soon">
-          <div className="p-8 text-center text-gray-500">Revenue Report - Coming Soon</div>
+          <div className="p-8 text-center text-[#2a2718]/70">Revenue Report - Coming Soon</div>
         </ReportsLayout>
       } />
       <Route path="*" element={<Navigate to="/reports" replace />} />

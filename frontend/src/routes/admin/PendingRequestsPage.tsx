@@ -227,7 +227,7 @@ const PendingRequestsPage: React.FC = () => {
 
   const getStatusColor = (status: RequestStatus): string => {
     const colors: Record<RequestStatus, string> = {
-      'PENDING': 'bg-yellow-100 text-yellow-800',
+      'PENDING': 'bg-[#f0cd6e]/20 text-[#2a2718]',
       'APPROVED': 'bg-green-100 text-green-800',
       'REJECTED': 'bg-red-100 text-red-800',
       'RETURNED': 'bg-blue-100 text-blue-800',
@@ -258,8 +258,8 @@ const PendingRequestsPage: React.FC = () => {
       <div className="flex justify-center items-center h-[70vh]">
         <div className="text-center">
           <div className="text-5xl mb-4">⏳</div>
-          <div className="text-xl text-gray-700">Loading requests...</div>
-          <div className="text-sm text-gray-500 mt-2">
+          <div className="text-xl text-[#2a2718]">Loading requests...</div>
+          <div className="text-sm text-[#2a2718]/70 mt-2">
             Please wait while we fetch your requests
           </div>
         </div>
@@ -272,17 +272,17 @@ const PendingRequestsPage: React.FC = () => {
       {/* Header Section */}
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 m-0">
+          <h1 className="text-3xl font-bold text-[#2a2718] m-0">
             {isApprover ? 'Pending Approval Requests' : 'My Requests'}
           </h1>
           <div className="flex items-center gap-4 mt-2">
-            <p className="text-gray-600 m-0">
+            <p className="text-[#2a2718]/70 m-0">
               {totalCount.toLocaleString()} request{totalCount !== 1 ? 's' : ''} found
             </p>
             {(statusFilter || entityTypeFilter || actionTypeFilter) && (
               <button
                 onClick={clearFilters}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm text-gray-700 flex items-center gap-1 transition-colors"
+                className="px-3 py-1 bg-[#f0cd6e]/20 hover:bg-[#f0cd6e]/40 rounded text-sm text-[#2a2718] flex items-center gap-1 transition-colors"
               >
                 ✕ Clear Filters
               </button>
@@ -293,7 +293,7 @@ const PendingRequestsPage: React.FC = () => {
         {/* Role indicator */}
         <div className={`
           px-5 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-sm
-          ${isApprover ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}
+          ${isApprover ? 'bg-[#2a2718] text-white' : 'bg-[#f0cd6e] text-[#2a2718]'}
         `}>
           <span className="text-lg">{isApprover ? '👤' : '✍️'}</span>
           <span>{isApprover ? 'Approver View' : 'Maker View'}</span>
@@ -305,13 +305,13 @@ const PendingRequestsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Status Filter */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-[#2a2718] mb-2">
               Status
             </label>
             <select
               value={statusFilter}
               onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
               <option value="">All Statuses</option>
               {REQUEST_STATUSES.map(status => (
@@ -324,13 +324,13 @@ const PendingRequestsPage: React.FC = () => {
 
           {/* Entity Type Filter */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-[#2a2718] mb-2">
               Entity Type
             </label>
             <select
               value={entityTypeFilter}
               onChange={(e) => handleEntityTypeFilterChange(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
               <option value="">All Entities</option>
               {ENTITY_TYPES.map(type => (
@@ -343,13 +343,13 @@ const PendingRequestsPage: React.FC = () => {
 
           {/* Action Type Filter */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-[#2a2718] mb-2">
               Action Type
             </label>
             <select
               value={actionTypeFilter}
               onChange={(e) => handleActionTypeFilterChange(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
               <option value="">All Actions</option>
               {ACTION_TYPES.map(type => (
@@ -362,14 +362,14 @@ const PendingRequestsPage: React.FC = () => {
 
           {/* Sort Options */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-[#2a2718] mb-2">
               Sort By
             </label>
             <div className="flex gap-2">
               <select
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value, sortOrder)}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
               >
                 <option value="created_at">Created Date</option>
                 <option value="updated_at">Updated Date</option>
@@ -377,7 +377,7 @@ const PendingRequestsPage: React.FC = () => {
               </select>
               <button
                 onClick={() => handleSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="px-4 py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
+                className="px-4 py-3 rounded-lg border border-[#f0cd6e] bg-white hover:bg-[#f0cd6e]/20 transition-colors text-[#2a2718]"
                 title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
@@ -388,8 +388,8 @@ const PendingRequestsPage: React.FC = () => {
 
         {/* Active Filters Display */}
         {(statusFilter || entityTypeFilter || actionTypeFilter) && (
-          <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-            <span className="text-sm text-gray-600">Active filters:</span>
+          <div className="flex items-center gap-2 pt-4 border-t border-[#f0cd6e]">
+            <span className="text-sm text-[#2a2718]/70">Active filters:</span>
             {statusFilter && (
               <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(statusFilter as RequestStatus)}`}>
                 Status: {getStatusDisplayName(statusFilter as RequestStatus)}
@@ -402,7 +402,7 @@ const PendingRequestsPage: React.FC = () => {
               </span>
             )}
             {entityTypeFilter && (
-              <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 flex items-center gap-1">
+              <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#f0cd6e]/20 text-[#2a2718] flex items-center gap-1">
                 {getEntityIcon(entityTypeFilter as EntityType)} {getEntityDisplayName(entityTypeFilter as EntityType)}
                 <button 
                   className="ml-1 hover:opacity-70"
@@ -443,10 +443,10 @@ const PendingRequestsPage: React.FC = () => {
 
       {/* Requests Grid */}
       {(!requests || requests.length === 0) && !loading ? (
-        <div className="text-center py-16 bg-gray-50 rounded-xl">
+        <div className="text-center py-16 bg-[#f0cd6e]/10 rounded-xl">
           <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No requests found</h3>
-          <p className="text-gray-600 max-w-md mx-auto">
+          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">No requests found</h3>
+          <p className="text-[#2a2718]/70 max-w-md mx-auto">
             {statusFilter || entityTypeFilter || actionTypeFilter
               ? 'No requests match your current filters. Try clearing some filters.'
               : isApprover 
@@ -456,7 +456,7 @@ const PendingRequestsPage: React.FC = () => {
           {(statusFilter || entityTypeFilter || actionTypeFilter) && (
             <button
               onClick={clearFilters}
-              className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-6 px-6 py-3 bg-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#2a2718] hover:text-white transition-colors"
             >
               Clear Filters
             </button>
@@ -466,19 +466,19 @@ const PendingRequestsPage: React.FC = () => {
         <>
           {/* Results Summary */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-sm text-gray-600">
-              Showing <strong>{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> to{' '}
-              <strong>{Math.min(currentPage * limit, totalCount)}</strong> of{' '}
-              <strong>{totalCount.toLocaleString()}</strong> requests
+            <div className="text-sm text-[#2a2718]/70">
+              Showing <strong className="text-[#2a2718]">{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> to{' '}
+              <strong className="text-[#2a2718]">{Math.min(currentPage * limit, totalCount)}</strong> of{' '}
+              <strong className="text-[#2a2718]">{totalCount.toLocaleString()}</strong> requests
             </div>
             
             {/* Page Size Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show:</span>
+              <span className="text-sm text-[#2a2718]/70">Show:</span>
               <select
                 value={limit}
                 onChange={(e) => handleLimitChange(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="px-3 py-2 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
               >
                 {DEFAULT_PAGE_SIZE_OPTIONS.map(size => (
                   <option key={size} value={size}>{size} per page</option>
@@ -496,15 +496,15 @@ const PendingRequestsPage: React.FC = () => {
                 <div
                   key={req.request_id}
                   onClick={() => navigate(`/pending-requests/${req.request_id}`)}
-                  className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 cursor-pointer flex flex-col gap-4 hover:-translate-y-1"
+                  className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 border border-[#f0cd6e] cursor-pointer flex flex-col gap-4 hover:-translate-y-1"
                 >
                   {/* Header with Icon and Status */}
                   <div className="flex items-start gap-4">
-                    <div className="text-3xl bg-gray-50 w-14 h-14 flex items-center justify-center rounded-xl border border-gray-200">
+                    <div className="text-3xl bg-[#f0cd6e]/20 w-14 h-14 flex items-center justify-center rounded-xl border border-[#f0cd6e]">
                       {getEntityIcon(req.entity_type)}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-lg text-gray-900 mb-2">
+                      <div className="font-semibold text-lg text-[#2a2718] mb-2">
                         {getEntityDisplayName(req.entity_type)}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -520,15 +520,15 @@ const PendingRequestsPage: React.FC = () => {
 
                   {/* Maker/Requester Info */}
                   {req.maker && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-9 h-9 bg-gray-600 text-white rounded-full flex items-center justify-center text-base font-semibold uppercase">
+                    <div className="flex items-center gap-3 p-3 bg-[#f0cd6e]/10 rounded-lg">
+                      <div className="w-9 h-9 bg-[#2a2718] text-white rounded-full flex items-center justify-center text-base font-semibold uppercase">
                         {req.maker.full_name?.charAt(0) || 'U'}
                       </div>
                       <div>
-                        <div className="font-semibold text-sm text-gray-900">
+                        <div className="font-semibold text-sm text-[#2a2718]">
                           {req.maker.full_name || 'Unknown User'}
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-[#2a2718]/70">
                           {req.maker.role?.replace('_', ' ')} • {req.maker.username}
                         </div>
                       </div>
@@ -537,14 +537,14 @@ const PendingRequestsPage: React.FC = () => {
 
                   {/* Sub-city Info */}
                   {req.sub_city && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-[#2a2718]/70 p-2 bg-[#f0cd6e]/10 rounded-lg">
                       <span>📍</span>
                       <span>{req.sub_city.name}</span>
                     </div>
                   )}
 
                   {/* Footer with ID and Date */}
-                  <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-100 pt-3 mt-1">
+                  <div className="flex justify-between items-center text-xs text-[#2a2718]/70 border-t border-[#f0cd6e] pt-3 mt-1">
                     <span className="font-mono">
                       ID: {req.request_id?.slice(0, 8)}...
                     </span>
@@ -565,7 +565,7 @@ const PendingRequestsPage: React.FC = () => {
           {totalPages > 1 && (
             <div className="flex flex-col items-center gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
               {/* Pagination Info */}
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[#2a2718]/70">
                 Page {currentPage} of {totalPages}
               </div>
 
@@ -578,7 +578,7 @@ const PendingRequestsPage: React.FC = () => {
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
                     ${currentPage === 1 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
                   ⏮️ First
@@ -591,7 +591,7 @@ const PendingRequestsPage: React.FC = () => {
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
                     ${!hasPreviousPage 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
                   ◀️ Previous
@@ -605,8 +605,8 @@ const PendingRequestsPage: React.FC = () => {
                       onClick={() => handlePageChange(pageNum)}
                       className={`min-w-[40px] px-3 py-2 rounded-lg border text-sm font-medium transition-colors
                         ${currentPage === pageNum 
-                          ? 'bg-blue-600 text-white border-blue-600' 
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-[#f0cd6e] text-[#2a2718] border-[#f0cd6e]' 
+                          : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                         }`}
                     >
                       {pageNum}
@@ -621,7 +621,7 @@ const PendingRequestsPage: React.FC = () => {
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
                     ${!hasNextPage 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
                   Next ▶️
@@ -634,7 +634,7 @@ const PendingRequestsPage: React.FC = () => {
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
                     ${currentPage === totalPages 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
                   Last ⏭️
@@ -643,7 +643,7 @@ const PendingRequestsPage: React.FC = () => {
 
               {/* Jump to Page */}
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-gray-600">Jump to page:</span>
+                <span className="text-sm text-[#2a2718]/70">Jump to page:</span>
                 <input
                   type="number"
                   min={1}
@@ -655,9 +655,9 @@ const PendingRequestsPage: React.FC = () => {
                       handlePageChange(page);
                     }
                   }}
-                  className="w-16 px-3 py-2 rounded-lg border border-gray-300 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-16 px-3 py-2 rounded-lg border border-[#f0cd6e] text-sm text-center focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
                 />
-                <span className="text-sm text-gray-600">of {totalPages}</span>
+                <span className="text-sm text-[#2a2718]/70">of {totalPages}</span>
               </div>
             </div>
           )}

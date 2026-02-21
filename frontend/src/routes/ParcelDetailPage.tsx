@@ -76,7 +76,7 @@ const ParcelDetailPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e]" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ const ParcelDetailPage = () => {
           </p>
           <button
             onClick={() => navigate("/home")}
-            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+            className="mt-4 px-6 py-3 bg-[#f0cd6e] text-[#2a2718] rounded-xl hover:bg-[#2a2718] hover:text-white transition"
           >
             ← Back to Dashboard
           </button>
@@ -116,8 +116,8 @@ const ParcelDetailPage = () => {
             <OwnersSection parcel={data} onReload={reload} />
 
             {/* Parcel-level Documents */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Parcel Documents</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-8">
+              <h2 className="text-xl font-semibold text-[#2a2718] mb-6">Parcel Documents</h2>
               <DocumentList documents={data.documents} />
             </div>
             { isSubcityNormal &&

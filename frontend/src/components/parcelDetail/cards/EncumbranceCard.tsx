@@ -12,11 +12,11 @@ interface EncumbranceCardProps {
 const EncumbranceCard = ({ encumbrance, onEdit, onAddNew, isNew = false }: EncumbranceCardProps) => {
   if (isNew) {
     return (
-      <div className="bg-white/80 border border-dashed border-gray-300 rounded-2xl p-8 text-center">
-        <p className="text-gray-500 mb-4">No encumbrances recorded yet.</p>
+      <div className="bg-white/80 border border-dashed border-[#f0cd6e] rounded-2xl p-8 text-center">
+        <p className="text-[#2a2718]/70 mb-4">No encumbrances recorded yet.</p>
         <button
           onClick={onAddNew}
-          className="px-6 py-3 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm"
+          className="px-6 py-3 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20 hover:border-[#2a2718] transition-all shadow-sm"
         >
           + Add New Encumbrance
         </button>
@@ -25,15 +25,15 @@ const EncumbranceCard = ({ encumbrance, onEdit, onAddNew, isNew = false }: Encum
   }
 
   return (
-    <div className="bg-white/80 border border-gray-200 rounded-2xl overflow-hidden">
+    <div className="bg-white/80 border border-[#f0cd6e] rounded-2xl overflow-hidden">
       {/* Header with Edit Button */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 px-6 py-4 border-b border-[#f0cd6e] flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-[#2a2718]">
           {encumbrance!.type} ({encumbrance!.status})
         </h3>
         <button
           onClick={onEdit}
-          className="px-5 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm"
+          className="px-5 py-2 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20 hover:border-[#2a2718] transition-all shadow-sm"
         >
           Edit Encumbrance
         </button>
@@ -43,23 +43,23 @@ const EncumbranceCard = ({ encumbrance, onEdit, onAddNew, isNew = false }: Encum
       <div className="p-6 space-y-4">
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <dt className="font-medium text-gray-600">Issuing Entity</dt>
-            <dd className="mt-1 text-gray-900">{encumbrance!.issuing_entity}</dd>
+            <dt className="font-medium text-[#2a2718]/70">Issuing Entity</dt>
+            <dd className="mt-1 text-[#2a2718]">{encumbrance!.issuing_entity}</dd>
           </div>
           <div>
-            <dt className="font-medium text-gray-600">Reference Number</dt>
-            <dd className="mt-1 text-gray-900">{encumbrance!.reference_number || "-"}</dd>
+            <dt className="font-medium text-[#2a2718]/70">Reference Number</dt>
+            <dd className="mt-1 text-[#2a2718]">{encumbrance!.reference_number || "-"}</dd>
           </div>
           <div>
-            <dt className="font-medium text-gray-600">Registration Date</dt>
-            <dd className="mt-1 text-gray-900">
+            <dt className="font-medium text-[#2a2718]/70">Registration Date</dt>
+            <dd className="mt-1 text-[#2a2718]">
               {encumbrance!.registration_date
                 ? new Date(encumbrance!.registration_date).toLocaleDateString()
                 : "-"}
             </dd>
           </div>
           <div>
-            <dt className="font-medium text-gray-600">Status</dt>
+            <dt className="font-medium text-[#2a2718]/70">Status</dt>
             <dd className="mt-1">
               <span
                 className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
@@ -75,7 +75,7 @@ const EncumbranceCard = ({ encumbrance, onEdit, onAddNew, isNew = false }: Encum
         </dl>
 
         {/* Documents */}
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-[#f0cd6e]">
           <DocumentList
             documents={encumbrance!.documents}
             title="Encumbrance Documents"

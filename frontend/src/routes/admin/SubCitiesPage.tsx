@@ -157,32 +157,32 @@ const SubCitiesPage = () => {
 
   if (user?.role !== 'CITY_ADMIN') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-4">This page is only accessible to City Administrators.</p>
-          <p className="text-sm text-gray-500">Your current role: {user?.role || 'Not authenticated'}</p>
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">Access Denied</h2>
+          <p className="text-[#2a2718]/70 mb-4">This page is only accessible to City Administrators.</p>
+          <p className="text-sm text-[#2a2718]/70">Your current role: {user?.role || 'Not authenticated'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Building2 className="w-7 h-7 text-blue-600" />
+            <h1 className="text-2xl md:text-3xl font-bold text-[#2a2718] flex items-center gap-3">
+              <Building2 className="w-7 h-7 text-[#f0cd6e]" />
               Sub-cities Management
             </h1>
-            <p className="text-gray-600 mt-1 text-sm">Manage all sub-cities within the city administration</p>
+            <p className="text-[#2a2718]/70 mt-1 text-sm">Manage all sub-cities within the city administration</p>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2">
+            <div className="text-sm text-[#2a2718]/70 bg-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2 border border-[#f0cd6e]">
               <Globe className="w-4 h-4" />
               <span>{subCities.length} sub-cities</span>
             </div>
@@ -192,7 +192,7 @@ const SubCitiesPage = () => {
                 resetForm();
                 setShowForm(!showForm);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow hover:shadow-md flex items-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2"
             >
               {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               {showForm ? 'Cancel' : 'Add Sub-city'}
@@ -223,17 +223,17 @@ const SubCitiesPage = () => {
 
         {/* Create/Edit Form */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
-            <div className="border-b border-gray-200 px-6 py-5 bg-gradient-to-r from-gray-50 to-white">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn border border-[#f0cd6e]">
+            <div className="border-b border-[#f0cd6e] px-6 py-5 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
+              <h2 className="text-xl font-bold text-[#2a2718] flex items-center gap-3">
                 {editingId ? (
                   <>
-                    <Edit className="w-5 h-5 text-blue-600" />
+                    <Edit className="w-5 h-5 text-[#f0cd6e]" />
                     Edit Sub-city
                   </>
                 ) : (
                   <>
-                    <Plus className="w-5 h-5 text-blue-600" />
+                    <Plus className="w-5 h-5 text-[#f0cd6e]" />
                     Add New Sub-city
                   </>
                 )}
@@ -243,7 +243,7 @@ const SubCitiesPage = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
                     Sub-city Name
                     <span className="text-red-500">*</span>
@@ -252,35 +252,35 @@ const SubCitiesPage = () => {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-gray-400"
+                    className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all placeholder:text-[#2a2718]/40"
                     placeholder="e.g., Bole, Kirkos, Lideta"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-2">Enter the official name of the sub-city</p>
+                  <p className="text-xs text-[#2a2718]/70 mt-2">Enter the official name of the sub-city</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <Info className="w-4 h-4" />
                     Description
-                    <span className="text-gray-500 text-sm font-normal">(optional)</span>
+                    <span className="text-[#2a2718]/70 text-sm font-normal">(optional)</span>
                   </label>
                   <textarea
                     value={form.description || ''}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all min-h-[100px] resize-none placeholder:text-gray-400"
+                    className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all min-h-[100px] resize-none placeholder:text-[#2a2718]/40"
                     placeholder="Brief description about this sub-city..."
                     rows={3}
                   />
-                  <p className="text-xs text-gray-500 mt-2">Add any relevant details about this sub-city</p>
+                  <p className="text-xs text-[#2a2718]/70 mt-2">Add any relevant details about this sub-city</p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-[#f0cd6e]">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md flex items-center justify-center gap-2 font-medium"
+                  className="px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md flex items-center justify-center gap-2 font-medium"
                 >
                   {saving ? (
                     <>
@@ -298,7 +298,7 @@ const SubCitiesPage = () => {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center gap-2 font-medium"
+                  className="px-6 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-all flex items-center justify-center gap-2 font-medium border border-[#f0cd6e]"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -309,28 +309,28 @@ const SubCitiesPage = () => {
         )}
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-[#f0cd6e]">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <Search className="w-5 h-5 text-[#f0cd6e] absolute left-3 top-1/2 transform -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search sub-cities by name or description..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all"
                 />
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
+              <div className="text-sm text-[#2a2718]/70 bg-[#f0cd6e]/10 px-3 py-1.5 rounded-lg border border-[#f0cd6e]">
                 Showing {filteredCities.length} of {subCities.length}
               </div>
               
-              <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Filter className="w-5 h-5 text-gray-600" />
+              <button className="p-2 border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/10 transition-colors">
+                <Filter className="w-5 h-5 text-[#2a2718]" />
               </button>
             </div>
           </div>
@@ -338,17 +338,17 @@ const SubCitiesPage = () => {
 
         {/* Sub-cities List */}
         {loading && subCities.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading sub-cities...</p>
+          <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-[#f0cd6e]">
+            <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
+            <p className="text-[#2a2718]">Loading sub-cities...</p>
           </div>
         ) : filteredCities.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-            <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-5" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-[#f0cd6e]">
+            <MapPin className="w-16 h-16 text-[#f0cd6e]/30 mx-auto mb-5" />
+            <h3 className="text-xl font-semibold text-[#2a2718] mb-2">
               {searchTerm ? 'No matching sub-cities found' : 'No sub-cities yet'}
             </h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            <p className="text-[#2a2718]/70 mb-8 max-w-md mx-auto">
               {searchTerm 
                 ? 'Try adjusting your search terms or filters'
                 : 'Get started by adding your first sub-city using the "Add Sub-city" button above.'
@@ -357,7 +357,7 @@ const SubCitiesPage = () => {
             {!searchTerm && (
               <button
                 onClick={() => setShowForm(true)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow hover:shadow-md flex items-center gap-2 mx-auto"
+                className="px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-5 h-5" />
                 Add Your First Sub-city
@@ -365,15 +365,15 @@ const SubCitiesPage = () => {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#f0cd6e]">
             {/* Table Header */}
-            <div className="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+            <div className="border-b border-[#f0cd6e] px-6 py-4 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
                   <Building2 className="w-5 h-5" />
                   All Sub-cities
                 </h3>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[#2a2718]/70">
                   {filteredCities.length} sub-cities
                 </div>
               </div>
@@ -382,68 +382,68 @@ const SubCitiesPage = () => {
             {/* Table Content */}
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#f0cd6e]/10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4" />
                         Name
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <Info className="w-4 h-4" />
                         Description
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
                         Created
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-[#f0cd6e]/30">
                   {filteredCities.map((sub, index) => (
                     <tr 
                       key={sub.sub_city_id} 
-                      className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                      className={`hover:bg-[#f0cd6e]/10 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#f0cd6e]/5'}`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-[#f0cd6e]/10 text-[#2a2718] rounded-lg flex items-center justify-center">
                             <Building2 className="w-4 h-4" />
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">{sub.name}</div>
-                            <div className="text-xs text-gray-500 font-mono">{sub.sub_city_id.substring(0, 8)}...</div>
+                            <div className="font-medium text-[#2a2718]">{sub.name}</div>
+                            <div className="text-xs text-[#2a2718]/70 font-mono">{sub.sub_city_id.substring(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="max-w-xs">
-                          <p className="text-gray-600 text-sm">
+                          <p className="text-[#2a2718]/70 text-sm">
                             {sub.description || (
-                              <span className="text-gray-400 italic">No description</span>
+                              <span className="text-[#2a2718]/50 italic">No description</span>
                             )}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">{formatDate(sub.created_at)}</span>
+                          <Calendar className="w-4 h-4 text-[#f0cd6e]" />
+                          <span className="text-sm text-[#2a2718]">{formatDate(sub.created_at)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(sub)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/10 rounded-lg transition-colors"
                             title="Edit sub-city"
                           >
                             <Edit className="w-4 h-4" />
@@ -464,8 +464,8 @@ const SubCitiesPage = () => {
             </div>
 
             {/* Table Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-              <div className="flex items-center justify-between text-sm text-gray-500">
+            <div className="border-t border-[#f0cd6e] px-6 py-4 bg-[#f0cd6e]/5">
+              <div className="flex items-center justify-between text-sm text-[#2a2718]/70">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   <span>Total sub-cities: {subCities.length}</span>

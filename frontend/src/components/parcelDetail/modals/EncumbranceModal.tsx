@@ -1,3 +1,4 @@
+// src/modals/EncumbranceModal.tsx
 import { useEffect, useState } from "react";
 import {
   createEncumbranceApi,
@@ -153,7 +154,7 @@ const EncumbranceModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full my-8">
-        <h2 className="text-xl font-bold mb-4">
+        <h2 className="text-xl font-bold text-[#2a2718] mb-4">
           {isEdit ? "Edit Encumbrance" : "Add New Encumbrance"}
         </h2>
 
@@ -172,13 +173,13 @@ const EncumbranceModal = ({
         <div className="space-y-4">
           {/* Type - Dynamic from backend */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">
               Type *
             </label>
             {loadingTypes ? (
-              <div className="text-sm text-gray-500">Loading types...</div>
+              <div className="text-sm text-[#2a2718]/70">Loading types...</div>
             ) : encumbranceTypes.length === 0 ? (
-              <div className="text-sm text-gray-500">No types available</div>
+              <div className="text-sm text-[#2a2718]/70">No types available</div>
             ) : (
               <select
                 value={form.type}
@@ -188,7 +189,7 @@ const EncumbranceModal = ({
                     type: e.target.value as EncumbranceFormData["type"],
                   }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                 required
               >
                 <option value="">Select type</option>
@@ -202,7 +203,7 @@ const EncumbranceModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">
               Issuing Entity *
             </label>
             <input
@@ -210,13 +211,13 @@ const EncumbranceModal = ({
               onChange={(e) =>
                 setForm((f) => ({ ...f, issuing_entity: e.target.value }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">
               Reference Number
             </label>
             <input
@@ -224,12 +225,12 @@ const EncumbranceModal = ({
               onChange={(e) =>
                 setForm((f) => ({ ...f, reference_number: e.target.value }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">
               Status
             </label>
             <select
@@ -240,7 +241,7 @@ const EncumbranceModal = ({
                   status: e.target.value as EncumbranceFormData["status"],
                 }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
             >
               <option value="ACTIVE">Active</option>
               <option value="RELEASED">Released</option>
@@ -248,7 +249,7 @@ const EncumbranceModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">
               Registration Date
             </label>
             <input
@@ -260,7 +261,7 @@ const EncumbranceModal = ({
                   registration_date: e.target.value,
                 }))
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
             />
           </div>
         </div>
@@ -268,7 +269,7 @@ const EncumbranceModal = ({
         <div className="mt-8 flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-6 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
             disabled={saving}
           >
             Cancel
@@ -276,7 +277,7 @@ const EncumbranceModal = ({
           <button
             onClick={handleSubmit}
             disabled={saving || !form.type || !form.issuing_entity}
-            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
           >
             {saving
               ? isEdit

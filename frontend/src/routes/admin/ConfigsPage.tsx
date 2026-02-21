@@ -226,13 +226,13 @@ const ConfigsPage: React.FC = () => {
 
   if (!user || !["CITY_ADMIN", "REVENUE_ADMIN"].includes(user.role)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-3">
             Access Denied
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-[#2a2718]/70 mb-6">
             Only City Administrators and Revenue Administrators can manage
             system configurations.
           </p>
@@ -242,30 +242,30 @@ const ConfigsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Settings className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-[#2a2718] flex items-center gap-3">
+              <Settings className="w-8 h-8 text-[#f0cd6e]" />
               System Configurations
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-[#2a2718]/70 mt-1">
               {user.role === "CITY_ADMIN"
                 ? "Manage land and property-related configuration options"
                 : "Manage payment configuration options"}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-[#f0cd6e]">
             <div className="flex items-center gap-2">
               {user.role === "CITY_ADMIN" ? (
-                <Home className="w-5 h-5 text-blue-600" />
+                <Home className="w-5 h-5 text-[#f0cd6e]" />
               ) : (
-                <Percent className="w-5 h-5 text-green-600" />
+                <Percent className="w-5 h-5 text-[#f0cd6e]" />
               )}
-              <span className="font-medium text-gray-800">
+              <span className="font-medium text-[#2a2718]">
                 {user.role.replace("_", " ")}
               </span>
             </div>
@@ -295,15 +295,15 @@ const ConfigsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                <Tag className="w-5 h-5 text-blue-600" />
+            <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6 border border-[#f0cd6e]">
+              <h2 className="text-lg font-semibold text-[#2a2718] mb-5 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-[#f0cd6e]" />
                 Allowed Categories
               </h2>
 
               <div className="space-y-2">
                 {categories.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-4 text-center">
+                  <p className="text-[#2a2718]/70 text-sm py-4 text-center">
                     No categories available for your role
                   </p>
                 ) : (
@@ -315,15 +315,15 @@ const ConfigsPage: React.FC = () => {
                         onClick={() => setSelectedCategory(cat)}
                         className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 ${
                           selectedCategory === cat
-                            ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
-                            : "text-gray-700 hover:bg-gray-50"
+                            ? "bg-[#f0cd6e]/10 border-l-4 border-[#f0cd6e] text-[#2a2718]"
+                            : "text-[#2a2718]/70 hover:bg-[#f0cd6e]/10"
                         }`}
                       >
                         <div
                           className={`p-2 rounded-md ${
                             selectedCategory === cat
-                              ? "bg-blue-100"
-                              : "bg-gray-100"
+                              ? "bg-[#f0cd6e]/20"
+                              : "bg-[#f0cd6e]/10"
                           }`}
                         >
                           {IconComponent && (
@@ -334,7 +334,7 @@ const ConfigsPage: React.FC = () => {
                           <div className="font-medium">
                             {categoryMeta[cat]?.label}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                          <div className="text-xs text-[#2a2718]/70 mt-0.5 line-clamp-1">
                             {categoryMeta[cat]?.desc}
                           </div>
                         </div>
@@ -349,11 +349,11 @@ const ConfigsPage: React.FC = () => {
           {/* Editor Area */}
           <div className="lg:col-span-3">
             {selectedCategory ? (
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#f0cd6e]">
                 {/* Header */}
-                <div className="border-b border-gray-200 px-6 py-6 bg-gradient-to-r from-gray-50 to-white">
+                <div className="border-b border-[#f0cd6e] px-6 py-6 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                    <div className="p-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl">
                       {(() => {
                         const IconComponent =
                           categoryMeta[selectedCategory]?.icon;
@@ -363,10 +363,10 @@ const ConfigsPage: React.FC = () => {
                       })()}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-[#2a2718]">
                         {categoryMeta[selectedCategory]?.label}
                       </h2>
-                      <p className="text-gray-600 mt-1">
+                      <p className="text-[#2a2718]/70 mt-1">
                         {categoryMeta[selectedCategory]?.desc}
                       </p>
                     </div>
@@ -377,8 +377,8 @@ const ConfigsPage: React.FC = () => {
                 <div className="p-8">
                   {loading ? (
                     <div className="text-center py-20">
-                      <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                      <p className="text-gray-600">
+                      <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
+                      <p className="text-[#2a2718]">
                         Loading configuration...
                       </p>
                     </div>
@@ -387,12 +387,12 @@ const ConfigsPage: React.FC = () => {
                      
                       {/* Options for config categories */}
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-semibold text-[#2a2718]">
                           Configuration Options
                         </h3>
                         <button
                           onClick={addOption}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+                          className="flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/10 text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition border border-[#f0cd6e]"
                         >
                           <Plus className="w-4 h-4" />
                           Add Option
@@ -400,12 +400,12 @@ const ConfigsPage: React.FC = () => {
                       </div>
 
                       {options.length === 0 ? (
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
-                          <Tag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-gray-600 font-medium mb-2">
+                        <div className="border-2 border-dashed border-[#f0cd6e] rounded-xl p-10 text-center">
+                          <Tag className="w-12 h-12 text-[#f0cd6e]/30 mx-auto mb-3" />
+                          <p className="text-[#2a2718] font-medium mb-2">
                             No options configured yet
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-[#2a2718]/70">
                             Add your first configuration option above
                           </p>
                         </div>
@@ -414,9 +414,9 @@ const ConfigsPage: React.FC = () => {
                           {options.map((opt, index) => (
                             <div
                               key={index}
-                              className="flex items-start gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 hover:border-blue-200 transition-all"
+                              className="flex items-start gap-4 bg-[#f0cd6e]/5 p-4 rounded-xl border border-[#f0cd6e] hover:border-[#2a2718] transition-all"
                             >
-                              <div className="w-8 h-8 bg-white border border-gray-300 rounded-full flex items-center justify-center font-medium text-gray-700 flex-shrink-0">
+                              <div className="w-8 h-8 bg-white border border-[#f0cd6e] rounded-full flex items-center justify-center font-medium text-[#2a2718] flex-shrink-0">
                                 {index + 1}
                               </div>
 
@@ -431,7 +431,7 @@ const ConfigsPage: React.FC = () => {
                                     )
                                   }
                                   placeholder="Option value (required)"
-                                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                                 />
                                 <input
                                   value={opt.description || ""}
@@ -443,7 +443,7 @@ const ConfigsPage: React.FC = () => {
                                     )
                                   }
                                   placeholder="Description (optional)"
-                                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                                 />
                               </div>
 
@@ -460,7 +460,7 @@ const ConfigsPage: React.FC = () => {
                       )}
 
                       {/* Save Button */}
-                      <div className="pt-8 border-t border-gray-200">
+                      <div className="pt-8 border-t border-[#f0cd6e]">
                         <button
                           onClick={handleSave}
                           disabled={
@@ -468,7 +468,7 @@ const ConfigsPage: React.FC = () => {
                             loading ||
                             options.some((opt) => !opt.value.trim())
                           }
-                          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow hover:shadow-lg flex items-center justify-center gap-2 mx-auto font-medium"
+                          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 transition-all shadow hover:shadow-lg flex items-center justify-center gap-2 mx-auto font-medium"
                         >
                           {saving ? (
                             <>
@@ -495,16 +495,16 @@ const ConfigsPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-[#f0cd6e]">
                 <div className="max-w-lg mx-auto">
-                  <Settings className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <Settings className="w-16 h-16 text-[#f0cd6e]/30 mx-auto mb-6" />
+                  <h3 className="text-2xl font-semibold text-[#2a2718] mb-3">
                     No Category Selected
                   </h3>
-                  <p className="text-gray-600 mb-8">
+                  <p className="text-[#2a2718]/70 mb-8">
                     Choose a configuration category from the list on the left
                   </p>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg text-sm text-gray-500">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/5 rounded-lg text-sm text-[#2a2718] border border-[#f0cd6e]">
                     <Info className="w-4 h-4" />
                     {categories.length} categories available for your role
                   </div>

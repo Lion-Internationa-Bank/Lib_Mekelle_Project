@@ -156,19 +156,19 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-[#2a2718]">
               Edit Lease Agreement
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-gray-600">Lease ID: {lease.lease_id}</p>
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+              <p className="text-sm text-[#2a2718]/70">Lease ID: {lease.lease_id}</p>
+              <span className="text-xs px-2 py-0.5 bg-[#f0cd6e]/20 text-[#2a2718] rounded">
                 {isEthiopian ? "ዓ/ም" : "GC"}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-[#f0cd6e]/20 rounded-lg transition-colors"
             disabled={saving}
           >
             ✕
@@ -184,17 +184,17 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
 
         <div className="space-y-8">
           {/* Financial Information */}
-          <div className="bg-gray-50 p-6 rounded-xl">
+          <div className="bg-[#f0cd6e]/5 p-6 rounded-xl border border-[#f0cd6e]">
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
+              <DollarSign className="w-5 h-5 text-[#2a2718]" />
+              <h3 className="text-lg font-semibold text-[#2a2718]">
                 Financial Information
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Total Lease Amount */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Total Lease Amount (ETB)
                 </label>
                 <input
@@ -210,14 +210,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="0.00"
                 />
               </div>
 
               {/* Down Payment Amount */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Down Payment Amount (ETB)
                 </label>
                 <input
@@ -233,14 +233,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="0.00"
                 />
               </div>
 
               {/* Other Payment Amount */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Other Payment Amount (ETB)
                 </label>
                 <input
@@ -256,14 +256,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="0.00"
                 />
               </div>
 
               {/* Price per m² */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Price per m² (ETB)
                 </label>
                 <input
@@ -279,7 +279,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="0.00"
                 />
               </div>
@@ -287,25 +287,25 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
           </div>
 
           {/* Additional Fees Section - NEW */}
-          <div className="bg-gray-50 p-6 rounded-xl border-l-4 border-purple-400">
+          <div className="bg-[#f0cd6e]/5 p-6 rounded-xl border-l-4 border-[#f0cd6e]">
             <div className="flex items-center gap-2 mb-4">
-              <Receipt className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
+              <Receipt className="w-5 h-5 text-[#2a2718]" />
+              <h3 className="text-lg font-semibold text-[#2a2718]">
                 Additional Fees
               </h3>
-              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+              <span className="text-xs px-2 py-0.5 bg-[#f0cd6e]/20 text-[#2a2718] rounded-full">
                 Optional
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Demarcation Fee */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Demarcation Fee (ETB)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Ruler className="h-4 w-4 text-gray-400" />
+                    <Ruler className="h-4 w-4 text-[#2a2718]" />
                   </div>
                   <input
                     type="number"
@@ -320,23 +320,23 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                           : undefined,
                       }))
                     }
-                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-10 px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                     placeholder="0.00"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-[#2a2718]/70">
                   Land demarcation/survey fee
                 </p>
               </div>
 
               {/* Engineering Service Fee */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Engineering Service Fee (ETB)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FileText className="h-4 w-4 text-gray-400" />
+                    <FileText className="h-4 w-4 text-[#2a2718]" />
                   </div>
                   <input
                     type="number"
@@ -351,23 +351,23 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                           : undefined,
                       }))
                     }
-                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-10 px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                     placeholder="0.00"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-[#2a2718]/70">
                   Engineering/consultancy fees
                 </p>
               </div>
 
               {/* Contract Registration Fee (String) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Contract Registration Fee
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Receipt className="h-4 w-4 text-gray-400" />
+                    <Receipt className="h-4 w-4 text-[#2a2718]" />
                   </div>
                   <input
                    type="number"
@@ -381,7 +381,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                       }))
                     }
                      placeholder="0.00"
-                    className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-10 px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                  
                   />
                 </div>
@@ -390,17 +390,17 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
           </div>
 
           {/* Period Information */}
-          <div className="bg-gray-50 p-6 rounded-xl">
+          <div className="bg-[#f0cd6e]/5 p-6 rounded-xl border border-[#f0cd6e]">
             <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
+              <Clock className="w-5 h-5 text-[#2a2718]" />
+              <h3 className="text-lg font-semibold text-[#2a2718]">
                 Period Information
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Lease Period Years */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Lease Period (Years)
                 </label>
                 <input
@@ -416,14 +416,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g., 25"
                 />
               </div>
 
               {/* Payment Term Years */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Payment Term (Years)
                 </label>
                 <input
@@ -439,7 +439,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         : undefined,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                   placeholder="e.g., 10"
                 />
               </div>
@@ -447,14 +447,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
           </div>
 
           {/* Date Information */}
-          <div className="bg-gray-50 p-6 rounded-xl">
+          <div className="bg-[#f0cd6e]/5 p-6 rounded-xl border border-[#f0cd6e]">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-purple-600" />
+              <Calendar className="w-5 h-5 text-[#2a2718]" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-[#2a2718]">
                   Date Information
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[#2a2718]/70">
                   Dates in {isEthiopian ? "Ethiopian" : "Gregorian"} calendar
                   {isEthiopian && " (hover for Gregorian equivalent)"}
                   {!isEthiopian && " (hover for Ethiopian equivalent)"}
@@ -464,7 +464,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Contract Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Contract Date
                 </label>
                 <UniversalDateInput
@@ -482,7 +482,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
 
               {/* Start Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Start Date
                 </label>
                 <UniversalDateInput
@@ -501,15 +501,15 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
           </div>
 
           {/* Legal Information */}
-          <div className="bg-gray-50 p-6 rounded-xl">
+          <div className="bg-[#f0cd6e]/5 p-6 rounded-xl border border-[#f0cd6e]">
             <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-orange-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
+              <FileText className="w-5 h-5 text-[#2a2718]" />
+              <h3 className="text-lg font-semibold text-[#2a2718]">
                 Legal Information
               </h3>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#2a2718] mb-2">
                 Legal Framework
               </label>
               <input
@@ -521,7 +521,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                     legal_framework: e.target.value || undefined,
                   }))
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                 placeholder="e.g., Proclamation No. 123/2021"
               />
             </div>
@@ -529,10 +529,10 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-4">
+        <div className="mt-8 pt-6 border-t border-[#f0cd6e] flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50"
+            className="px-6 py-3 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition disabled:opacity-50"
             disabled={saving}
           >
             Cancel
@@ -540,7 +540,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] transition disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? (
               <>

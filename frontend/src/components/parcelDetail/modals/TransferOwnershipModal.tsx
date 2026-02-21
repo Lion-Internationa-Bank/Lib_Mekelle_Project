@@ -1,3 +1,4 @@
+// src/components/modals/TransferOwnershipModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, FileText, AlertCircle } from 'lucide-react';
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
@@ -257,18 +258,18 @@ export default function TransferOwnershipModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+          <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
                   Transfer Completed ✓
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-[#2a2718]/70">
                   Upload supporting documents for parcel{' '}
-                  <span className="font-mono font-bold text-blue-600">{parcelUpin}</span>
+                  <span className="font-mono font-bold text-[#f0cd6e]">{parcelUpin}</span>
                 </p>
               </div>
-              <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-emerald-100 text-emerald-800 rounded-full">
+              <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full">
                 Optional Step
               </span>
             </div>
@@ -294,17 +295,17 @@ export default function TransferOwnershipModal({
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+          <div className="p-8 border-t border-[#f0cd6e] bg-[#f0cd6e]/5 rounded-b-2xl flex justify-between items-center">
             <button
               onClick={handleSkipUpload}
-              className="text-sm text-gray-600 hover:text-gray-900 underline transition"
+              className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
             >
               Skip for now
             </button>
 
             <button
               onClick={handleUploadComplete}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
             >
               Done – Close
               <span className="text-lg">→</span>
@@ -323,18 +324,18 @@ export default function TransferOwnershipModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-[#2a2718] dark:text-white">
                 Transfer Ownership
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-sm text-[#2a2718]/70 dark:text-gray-400 mt-0.5">
                 UPIN: {parcelUpin}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-2 rounded-full hover:bg-[#f0cd6e]/20 dark:hover:bg-gray-800"
               aria-label="Close"
             >
               <X size={20} />
@@ -343,10 +344,10 @@ export default function TransferOwnershipModal({
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Info banner */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl p-4">
+            <div className="bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle size={20} className="text-blue-600 dark:text-blue-400 mt-1 shrink-0" />
-                <div className="text-sm text-blue-800 dark:text-blue-200">
+                <AlertTriangle size={20} className="text-[#2a2718] mt-1 shrink-0" />
+                <div className="text-sm text-[#2a2718]">
                   <strong className="font-medium block mb-1">Full Ownership Transfer</strong>
                   <p>The selected current owner's entire share will be transferred to the new owner.</p>
                   <p className="mt-2 text-xs">
@@ -361,14 +362,14 @@ export default function TransferOwnershipModal({
 
             {/* From Owner */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Current Owner (Seller) <span className="text-gray-500 font-normal">(optional)</span>
+              <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
+                Current Owner (Seller) <span className="text-[#2a2718]/70 font-normal">(optional)</span>
               </label>
               <select
                 name="from_owner_id"
                 value={formData.from_owner_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
               >
                 <option value="">— Whole parcel transfer —</option>
                 {currentOwners.map(owner => (
@@ -381,7 +382,7 @@ export default function TransferOwnershipModal({
 
             {/* Buyer Search */}
             <div className="relative" ref={dropdownRef}>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
+              <label className="text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5 flex items-center gap-2">
                 <UserPlus size={16} />
                 New Owner (Buyer/Receiver) <span className="text-red-500">*</span>
               </label>
@@ -397,24 +398,24 @@ export default function TransferOwnershipModal({
                   }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Search by name, national ID, phone or TIN..."
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] pr-10 text-[#2a2718]"
                 />
-                <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f0cd6e] pointer-events-none" />
               </div>
 
               {showDropdown && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {isSearching ? (
-                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <div className="p-4 text-center text-sm text-[#2a2718]/70 dark:text-gray-400">
                       Searching...
                     </div>
                   ) : searchResults.length === 0 && buyerSearch.length >= 2 ? (
-                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <div className="p-4 text-center text-sm text-[#2a2718]/70 dark:text-gray-400">
                       No matching owners found
                       <button
                         type="button"
                         onClick={() => alert("Create new owner feature - to be implemented")}
-                        className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 transition-colors"
+                        className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-[#f0cd6e] bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded hover:bg-[#f0cd6e]/20 transition-colors"
                       >
                         <Plus size={14} className="mr-1" />
                         Create New
@@ -426,16 +427,16 @@ export default function TransferOwnershipModal({
                         <div
                           key={owner.owner_id}
                           onClick={() => selectBuyer(owner)}
-                          className={`px-4 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
-                            formData.to_owner_id === owner.owner_id ? 'bg-blue-50 dark:bg-blue-950/30' : ''
+                          className={`px-4 py-2.5 cursor-pointer hover:bg-[#f0cd6e]/10 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
+                            formData.to_owner_id === owner.owner_id ? 'bg-[#f0cd6e]/20 dark:bg-blue-950/30' : ''
                           }`}
                         >
                           {formData.to_owner_id === owner.owner_id && (
-                            <Check size={16} className="text-blue-600" />
+                            <Check size={16} className="text-[#f0cd6e]" />
                           )}
                           <div>
-                            <div className="font-medium">{owner.full_name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="font-medium text-[#2a2718]">{owner.full_name}</div>
+                            <div className="text-xs text-[#2a2718]/70 dark:text-gray-400">
                               {owner.national_id} • {owner.phone_number || '—'} • {owner.tin_number || '—'}
                             </div>
                           </div>
@@ -449,7 +450,7 @@ export default function TransferOwnershipModal({
 
             {/* Transfer Type - Dynamic */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
                 Transfer Type <span className="text-red-500">*</span>
               </label>
               {loadingTypes ? (
@@ -463,7 +464,7 @@ export default function TransferOwnershipModal({
                   onChange={handleChange}
                   required
                   disabled={transferTypes.length === 0}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718] disabled:opacity-60"
                 >
                   <option value="">— Select type —</option>
                   {transferTypes.map(type => (
@@ -478,7 +479,7 @@ export default function TransferOwnershipModal({
             {/* Price & Reference */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
                   Transfer Price (ETB)
                 </label>
                 <input
@@ -489,12 +490,12 @@ export default function TransferOwnershipModal({
                   placeholder="0.00"
                   step="0.01"
                   min="0"
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
                   Reference Number
                 </label>
                 <input
@@ -503,7 +504,7 @@ export default function TransferOwnershipModal({
                   value={formData.reference_no}
                   onChange={handleChange}
                   placeholder="Optional"
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
                 />
               </div>
             </div>
@@ -515,18 +516,18 @@ export default function TransferOwnershipModal({
             )}
 
             {formData.to_owner_id && selectedBuyer && (
-              <div className="text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-700">
+              <div className="text-sm bg-[#f0cd6e]/10 p-3 rounded-lg text-center border border-[#f0cd6e] text-[#2a2718]">
                 Transferring full ownership → <strong>{selectedBuyer.full_name}</strong>
                 {formData.from_owner_id && <> from <strong>{fromOwnerName}</strong></>}
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#f0cd6e] dark:border-gray-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-6 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="flex-1 px-6 py-2.5 border border-[#f0cd6e] dark:border-gray-700 rounded-lg hover:bg-[#f0cd6e]/20 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 text-[#2a2718]"
               >
                 Cancel
               </button>
@@ -534,7 +535,7 @@ export default function TransferOwnershipModal({
               <button
                 type="submit"
                 disabled={loading || !formData.to_owner_id || !formData.transfer_type || loadingTypes}
-                className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

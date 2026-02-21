@@ -96,10 +96,10 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
         Register Lease Agreement
       </h2>
-      <p className="text-gray-600 mb-8">
+      <p className="text-[#2a2718]/70 mb-8">
         Optional: Register lease agreement for the parcel
       </p>
 
@@ -108,14 +108,14 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         className="space-y-8"
       >
         {/* Main Lease Information */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
+          <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
             Lease Payment Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Price per m² */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Price per m² (ETB) *
               </label>
               <input
@@ -123,7 +123,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("price_per_m2", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.price_per_m2 && (
                 <p className="mt-1 text-sm text-red-600">
@@ -134,7 +134,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Total Lease Amount */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Total Lease Amount (ETB) *
               </label>
               <input
@@ -142,7 +142,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("total_lease_amount", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.total_lease_amount && (
                 <p className="mt-1 text-sm text-red-600">
@@ -153,7 +153,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Down Payment Amount */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Down Payment Amount (ETB)
               </label>
               <input
@@ -161,7 +161,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("down_payment_amount", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.down_payment_amount && (
                 <p className="mt-1 text-sm text-red-600">
@@ -172,7 +172,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Other Payment Amount */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Other Payment Amount (ETB)
               </label>
               <input
@@ -180,7 +180,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("other_payment", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.other_payment && (
                 <p className="mt-1 text-sm text-red-600">
@@ -192,10 +192,10 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         </div>
 
         {/* Additional Fees Section - NEW */}
-        <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+        <div className="bg-[#f0cd6e]/10 p-6 rounded-xl border border-[#f0cd6e]">
           <div className="flex items-center gap-2 mb-4">
-            <Receipt className="w-5 h-5 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <Receipt className="w-5 h-5 text-[#2a2718]" />
+            <h3 className="text-lg font-semibold text-[#2a2718]">
               Additional Fees 
             </h3>
           </div>
@@ -203,8 +203,8 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Demarcation Fee */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                <Ruler size={16} className="text-purple-600" />
+              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+                <Ruler size={16} className="text-[#2a2718]" />
                 Demarcation Fee (ETB)
               </label>
               <input
@@ -212,7 +212,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("demarcation_fee", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="0.00"
               />
               {errors.demarcation_fee && (
@@ -225,8 +225,8 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Engineering Service Fee */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                <FileText size={16} className="text-purple-600" />
+              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+                <FileText size={16} className="text-[#2a2718]" />
                 Engineering Service Fee (ETB)
               </label>
               <input
@@ -234,7 +234,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("engineering_service_fee", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="0.00"
               />
               {errors.engineering_service_fee && (
@@ -248,8 +248,8 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Contract Registration Fee */}
                   
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                <Receipt size={16} className="text-purple-600" />
+              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+                <Receipt size={16} className="text-[#2a2718]" />
                 Contract Registration Fee (ETB)
               </label>
               <input
@@ -257,7 +257,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 min="0"
                 step="0.01"
                 {...register("contract_registration_fee", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="0.00"
               />
               {errors.contract_registration_fee && (
@@ -265,7 +265,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                   {errors.contract_registration_fee.message}
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[#2a2718]/70 mt-1">
                 Contract registration fee amount
               </p>
             </div>
@@ -275,21 +275,21 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
       
 
         {/* Period Information */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
+          <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
             Lease Period & Dates
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Lease Period */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Lease Period (Years) *
               </label>
               <input
                 type="number"
                 min="1"
                 {...register("lease_period_years", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.lease_period_years && (
                 <p className="mt-1 text-sm text-red-600">
@@ -300,14 +300,14 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Payment Term */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Payment Term (Years) *
               </label>
               <input
                 type="number"
                 min="1"
                 {...register("payment_term_years", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.payment_term_years && (
                 <p className="mt-1 text-sm text-red-600">
@@ -318,14 +318,14 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Contract Date */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Contract Date *
               </label>
               <input
                 type="date"
                 max={today}
                 {...register("contract_date")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.contract_date && (
                 <p className="mt-1 text-sm text-red-600">
@@ -336,14 +336,14 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Start Date *
               </label>
               <input
                 type="date"
                 min={today}
                 {...register("start_date")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               />
               {errors.start_date && (
                 <p className="mt-1 text-sm text-red-600">
@@ -354,16 +354,16 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Expiry Date (calculated, read-only) */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Expiry Date (calculated)
               </label>
               <input
                 type="text"
                 value={expiryDate || "Enter start date and lease period"}
                 readOnly
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[#2a2718]/70 mt-1">
                 Calculated based on start date + lease period
               </p>
             </div>
@@ -371,19 +371,19 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         </div>
 
         {/* Legal Framework */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
+          <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
             Legal Information
           </h3>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-[#2a2718] mb-2">
               Legal Framework *
             </label>
             <textarea
               rows={3}
               {...register("legal_framework")}
               placeholder="e.g. Proclamation No. 721/2011, Urban Lands Lease Holding Proclamation"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] resize-none"
             />
             {errors.legal_framework && (
               <p className="mt-1 text-sm text-red-600">
@@ -394,8 +394,8 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         </div>
 
         {/* Info Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-700 flex items-center gap-2">
+        <div className="bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-lg p-4">
+          <p className="text-sm text-[#2a2718] flex items-center gap-2">
             <Receipt size={16} />
             <span>
               <strong>Note:</strong> Additional fees (demarcation, engineering, registration) are stored separately and do not affect the lease payment calculations or installment plans.
@@ -409,7 +409,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             <button
               type="button"
               onClick={prevStep}
-              className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+              className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
               ← Back
             </button>
@@ -417,7 +417,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             <button
               type="button"
               onClick={nextStep}
-              className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+              className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
               Skip Lease
             </button>
@@ -426,7 +426,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
+            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
             {isSubmitting ? "Saving..." : "Save Lease & Continue →"}
           </button>

@@ -48,13 +48,7 @@ const DataDiffViewer: React.FC<DataDiffViewerProps> = ({
 
   if (Object.keys(changedFields).length === 0) {
     return (
-      <div style={{ 
-        padding: '1rem',
-        backgroundColor: '#fff3cd',
-        borderRadius: '4px',
-        color: '#856404',
-        border: '1px solid #ffeaa7'
-      }}>
+      <div className="p-4 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-lg text-[#2a2718]">
         <strong>No changes detected.</strong> The updated data is identical to the original.
       </div>
     );
@@ -62,97 +56,46 @@ const DataDiffViewer: React.FC<DataDiffViewerProps> = ({
 
   return (
     <div>
-      <h4>{title}</h4>
-      <div style={{ 
-        backgroundColor: '#f8f9fa',
-        borderRadius: '4px',
-        border: '1px solid #e9ecef',
-        overflow: 'hidden'
-      }}>
+      <h4 className="text-lg font-semibold text-[#2a2718] mb-4">{title}</h4>
+      <div className="bg-[#f0cd6e]/5 rounded-lg border border-[#f0cd6e] overflow-hidden">
         {Object.entries(changedFields).map(([key, diff], index) => (
           <div 
             key={key}
-            style={{
-              padding: '1rem',
-              backgroundColor: index % 2 === 0 ? 'white' : '#f8f9fa',
-              borderBottom: index < Object.keys(changedFields).length - 1 ? '1px solid #e9ecef' : 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem'
-            }}
+            className={`p-4 ${
+              index % 2 === 0 ? 'bg-white' : 'bg-[#f0cd6e]/5'
+            } border-b border-[#f0cd6e] last:border-b-0`}
           >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-              gap: '0.5rem'
-            }}>
-              <div style={{ fontWeight: '600', color: '#495057' }}>
+            <div className="flex justify-between items-start flex-wrap gap-2 mb-3">
+              <div className="font-semibold text-[#2a2718]">
                 {formatKey(key)}
               </div>
-              <div style={{ 
-                fontSize: '0.75rem',
-                padding: '0.25rem 0.5rem',
-                backgroundColor: '#007bff',
-                color: 'white',
-                borderRadius: '4px'
-              }}>
+              <div className="text-xs px-2 py-1 bg-[#f0cd6e] text-[#2a2718] rounded">
                 Changed
               </div>
             </div>
             
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: '1fr auto 1fr',
-              gap: '1rem',
-              alignItems: 'center'
-            }}>
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
               {/* Original Value */}
-              <div style={{ 
-                padding: '0.75rem',
-                backgroundColor: '#f8d7da',
-                borderRadius: '4px',
-                borderLeft: '3px solid #dc3545'
-              }}>
-                <div style={{ 
-                  fontSize: '0.75rem',
-                  color: '#721c24',
-                  fontWeight: '500',
-                  marginBottom: '0.25rem'
-                }}>
+              <div className="p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
+                <div className="text-xs text-red-700 font-medium mb-1">
                   Original:
                 </div>
-                <div style={{ wordBreak: 'break-word' }}>
+                <div className="break-words text-[#2a2718]">
                   {formatValue(diff.from)}
                 </div>
               </div>
               
               {/* Arrow */}
-              <div style={{ 
-                fontSize: '1.5rem',
-                color: '#6c757d',
-                textAlign: 'center'
-              }}>
+              <div className="text-2xl text-[#f0cd6e] text-center">
                 →
               </div>
               
               {/* Updated Value */}
-              <div style={{ 
-                padding: '0.75rem',
-                backgroundColor: '#d1e7dd',
-                borderRadius: '4px',
-                borderLeft: '3px solid #28a745'
-              }}>
-                <div style={{ 
-                  fontSize: '0.75rem',
-                  color: '#0f5132',
-                  fontWeight: '500',
-                  marginBottom: '0.25rem'
-                }}>
+              <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                <div className="text-xs text-green-700 font-medium mb-1">
                   Updated:
                 </div>
-                <div style={{ wordBreak: 'break-word' }}>
+                <div className="break-words text-[#2a2718]">
                   {formatValue(diff.to)}
                 </div>
               </div>

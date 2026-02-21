@@ -251,8 +251,8 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     <>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Register Owner</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-3xl font-bold text-[#2a2718]">Register Owner</h2>
+          <p className="text-[#2a2718]/70 mt-1">
             {selectedOwner 
               ? `Using existing owner: ${selectedOwner.full_name}` 
               : "Register a new owner or search for an existing one"}
@@ -263,7 +263,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <button
             type="button"
             onClick={() => setShowSearch(true)}
-            className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-[#f0cd6e]/20 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/30 transition-colors flex items-center gap-2"
           >
             <Search size={18} />
             Search Existing Owner
@@ -275,11 +275,11 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       {showSearch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Select Existing Owner</h2>
+            <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#2a2718]">Select Existing Owner</h2>
               <button
                 onClick={() => setShowSearch(false)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
               >
                 <X size={20} />
               </button>
@@ -288,7 +288,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             <div className="p-6">
               {/* Search input */}
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
                   Search by name, national ID, phone or TIN
                 </label>
                 <input
@@ -296,7 +296,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Type at least 2 characters..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                   autoFocus
                 />
               </div>
@@ -304,39 +304,39 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
               {/* Search results */}
               {isSearching ? (
                 <div className="text-center py-8 text-gray-500">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#f0cd6e] border-t-transparent" />
                   <p className="mt-2">Searching...</p>
                 </div>
               ) : searchResults.length > 0 ? (
-                <div className="max-h-60 overflow-y-auto border rounded-lg divide-y">
+                <div className="max-h-60 overflow-y-auto border border-[#f0cd6e] rounded-lg divide-y">
                   {searchResults.map((owner) => (
                     <div
                       key={owner.owner_id}
                       onClick={() => handleSelectOwner(owner)}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between"
+                      className="px-4 py-3 hover:bg-[#f0cd6e]/10 cursor-pointer transition-colors flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-medium">{owner.full_name}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="font-medium text-[#2a2718]">{owner.full_name}</div>
+                        <div className="text-sm text-[#2a2718]/70">
                           {owner.national_id && `ID: ${owner.national_id}`}
                           {owner.phone_number && ` • ${owner.phone_number}`}
                           {owner.tin_number && ` • TIN: ${owner.tin_number}`}
                         </div>
                       </div>
-                      <Check size={18} className="text-gray-400" />
+                      <Check size={18} className="text-[#f0cd6e]" />
                     </div>
                   ))}
                 </div>
               ) : searchTerm.length >= 2 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[#2a2718]/70">
                   No matching owners found
                 </div>
               ) : null}
 
-              <div className="mt-6 pt-4 border-t">
+              <div className="mt-6 pt-4 border-t border-[#f0cd6e]">
                 <button
                   onClick={handleCreateNew}
-                  className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <UserPlus size={18} />
                   Create New Owner Instead
@@ -349,27 +349,27 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
       {/* Selected Owner Banner */}
       {selectedOwner && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+        <div className="mb-6 p-4 bg-[#f0cd6e]/20 border border-[#f0cd6e] rounded-xl">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              <UserCheck size={20} className="text-blue-600 mt-0.5" />
+              <UserCheck size={20} className="text-[#2a2718] mt-0.5" />
               <div>
-                <h3 className="font-medium text-blue-900">Using Existing Owner</h3>
-                <p className="text-blue-800 mt-1">
+                <h3 className="font-medium text-[#2a2718]">Using Existing Owner</h3>
+                <p className="text-[#2a2718] mt-1">
                   <span className="font-medium">{selectedOwner.full_name}</span>
                   {selectedOwner.national_id && ` (ID: ${selectedOwner.national_id})`}
                 </p>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-[#2a2718]/70 mt-1">
                   Owner ID: {selectedOwner.owner_id}
                 </p>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-[#2a2718]/70 mt-1">
                   You can modify the acquisition date below. Owner details cannot be changed.
                 </p>
               </div>
             </div>
             <button
               onClick={handleClearSelected}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="text-[#2a2718] hover:text-[#2a2718]/80 text-sm font-medium"
             >
               Change
             </button>
@@ -389,12 +389,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <>
             {/* Full Name */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Full Name *
               </label>
               <input
                 {...register("full_name")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="e.g. John Doe"
               />
               {errors.full_name && (
@@ -406,12 +406,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
             {/* National ID */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 National ID *
               </label>
               <input
                 {...register("national_id")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="1234567890"
               />
               {errors.national_id && (
@@ -423,12 +423,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
             {/* Phone Number */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Phone Number *
               </label>
               <input
                 {...register("phone_number")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="+251911223344"
               />
               {errors.phone_number && (
@@ -440,12 +440,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
             {/* TIN Number */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 TIN Number
               </label>
               <input
                 {...register("tin_number")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="Optional"
               />
               {errors.tin_number && (
@@ -459,47 +459,47 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           /* Show read-only summary of owner data when existing owner is selected */
           <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Full Name
               </label>
               <input
                 type="text"
                 value={selectedOwner.full_name}
                 disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 National ID
               </label>
               <input
                 type="text"
                 value={selectedOwner.national_id}
                 disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 Phone Number
               </label>
               <input
                 type="text"
                 value={selectedOwner.phone_number}
                 disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                 TIN Number
               </label>
               <input
                 type="text"
                 value={selectedOwner.tin_number || "Not provided"}
                 disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+                className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
             </div>
           </div>
@@ -507,14 +507,14 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
 
         {/* Acquisition Date - Always shown */}
         <div className={selectedOwner ? "md:col-span-2" : "md:col-span-2"}>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
             Acquisition Date *
           </label>
           <input
             type="date"
             max={today}
             {...register("acquired_at")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
           {errors.acquired_at && (
             <p className="mt-1 text-sm text-red-600">
@@ -522,7 +522,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             </p>
           )}
           {selectedOwner && (
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-[#2a2718]/70">
               Date when this owner acquired the parcel
             </p>
           )}
@@ -533,7 +533,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <button
             type="button"
             onClick={prevStep}
-            className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+            className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
           >
             ← Back
           </button>
@@ -541,7 +541,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
+            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
             {isSubmitting ? "Saving..." : selectedOwner ? "Link Owner & Continue →" : "Save Owner & Continue →"}
           </button>
@@ -549,9 +549,9 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       </form>
 
       {/* Help text */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <h4 className="font-medium text-blue-800 mb-1">Note:</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
+      <div className="mt-6 p-4 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-xl">
+        <h4 className="font-medium text-[#2a2718] mb-1">Note:</h4>
+        <ul className="text-sm text-[#2a2718]/70 space-y-1">
           <li>• You can either create a new owner or link an existing one</li>
           <li>• When linking an existing owner, their details are shown but cannot be edited</li>
           <li>• Only one owner can be registered per wizard session</li>
