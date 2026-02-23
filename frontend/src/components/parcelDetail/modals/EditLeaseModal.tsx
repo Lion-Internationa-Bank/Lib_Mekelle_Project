@@ -9,7 +9,7 @@ import {
   type EditLeaseFormData,
 } from "../../../validation/schemas";
 import { z } from "zod";
-import UniversalDateInput from "../../UniversalDateInput";
+import UniversalDateInput from "../../common/UniversalDateInput";
 import { Calendar, DollarSign, Clock, FileText, Receipt, Ruler } from "lucide-react";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import { toast } from "sonner";
@@ -167,7 +167,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             </div>
           </div>
 
-          
+
           <button
             onClick={onClose}
             className="p-2 hover:bg-[#f0cd6e]/20 rounded-lg transition-colors"

@@ -2,7 +2,7 @@
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 import { useCalendar } from "../../../contexts/CalendarContext";
-import DateDisplay from "../../DateDisplay";
+import DateDisplay from "../../common/DateDisplay";
 import { useAuth } from "../../../contexts/AuthContext";
 import { 
   CalendarDays, 

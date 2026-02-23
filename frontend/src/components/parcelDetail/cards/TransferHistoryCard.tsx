@@ -1,6 +1,7 @@
 // src/components/parcelDetail/cards/TransferHistoryCard.tsx
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
+import DateDisplay from "../../common/DateDisplay";
 
 interface TransferHistoryCardProps {
   entry: ParcelDetail["history"][number];
@@ -37,7 +38,14 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
               {entry.transfer_type.replace("_", " ")} Transfer
             </h3>
             <p className="text-sm text-[#2a2718]/70 mt-1">
-              Date: <span className="font-medium">{formatDate(entry.transfer_date)}</span>
+              Date: <span className="font-medium">
+                <DateDisplay 
+                  date={entry.transfer_date} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
+              </span>
               {entry.reference_no && (
                 <> • Ref: <span className="font-mono">{entry.reference_no}</span></>
               )}

@@ -3,6 +3,7 @@ import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
+import DateDisplay from '../common/DateDisplay'; // Import DateDisplay
 
 interface EncumbranceRequestDetailProps {
   data: any;
@@ -15,88 +16,94 @@ const EncumbranceRequestDetail: React.FC<EncumbranceRequestDetailProps> = ({
   actionType, 
   entityId 
 }) => {
-const renderCreate = () => {
-  // Document field names to look for
-  const documentFieldNames = ['documents', 'attachments', 'encumbrance_docs', 'supporting_documents', 'registered_document'];
-  
-  const regularEntries = Object.entries(data).filter(
-    ([key]) => !documentFieldNames.includes(key) && !key.toLowerCase().includes('document')
-  );
-  
-  const documentEntries = Object.entries(data).filter(
-    ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
-  );
+  // Helper function to check if a field is a date field
+  const isDateField = (key: string): boolean => {
+    const dateKeywords = ['date', 'created_at', 'updated_at', 'registered_on', 'issued_date', 'expiry_date', 'effective_date'];
+    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  };
 
-  const renderValue = (value: any): string => {
-    if (value === null || value === undefined) return 'N/A';
-    if (typeof value === 'object') {
-      if (Array.isArray(value)) {
-        if (value.length === 0) return 'No items';
-        return `${value.length} item(s)`;
+  const renderCreate = () => {
+    // Document field names to look for
+    const documentFieldNames = ['documents', 'attachments', 'encumbrance_docs', 'supporting_documents', 'registered_document'];
+    
+    const regularEntries = Object.entries(data).filter(
+      ([key]) => !documentFieldNames.includes(key) && !key.toLowerCase().includes('document')
+    );
+    
+    const documentEntries = Object.entries(data).filter(
+      ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
+    );
+
+    const renderValue = (value: any): string => {
+      if (value === null || value === undefined) return 'N/A';
+      if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+          if (value.length === 0) return 'No items';
+          return `${value.length} item(s)`;
+        }
+        if (Object.keys(value).length === 0) return 'Empty object';
+        return JSON.stringify(value);
       }
-      if (Object.keys(value).length === 0) return 'Empty object';
-      return JSON.stringify(value);
-    }
-    return String(value);
-  };
+      return String(value);
+    };
 
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return dateString;
-    }
-  };
+    // Remove the old formatDate function - we'll use DateDisplay instead
 
-  return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-[#2a2718]">New Encumbrance Registration</h3>
-      
-      {/* Regular fields grid */}
-      {regularEntries.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {regularEntries.map(([key, value]) => (
-            <div key={key} className="bg-[#f0cd6e]/5 p-4 rounded-lg border border-[#f0cd6e]">
-              <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
-                {key.replace(/_/g, ' ')
-                    .replace(/\b\w/g, l => l.toUpperCase())}
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-[#2a2718]">New Encumbrance Registration</h3>
+        
+        {/* Regular fields grid */}
+        {regularEntries.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {regularEntries.map(([key, value]) => (
+              <div key={key} className="bg-[#f0cd6e]/5 p-4 rounded-lg border border-[#f0cd6e]">
+                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+                  {key.replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())}
+                </div>
+                <div className="text-base font-semibold text-[#2a2718] break-words">
+                  {isDateField(key) && value ? (
+                    <DateDisplay 
+                      date={value as string} 
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  ) : (
+                    renderValue(value)
+                  )}
+                </div>
               </div>
-              <div className="text-base font-semibold text-[#2a2718] break-words">
-                {key.toLowerCase().includes('date') && value 
-                  ? formatDate(value as string)
-                  : renderValue(value)
-                }
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Documents sections */}
-      {documentEntries.map(([key, value]) => {
-        const documents = Array.isArray(value) ? value : (value ? [value] : []);
-        if (documents.length === 0) return null;
-
-        return (
-          <div key={key} className="mt-4">
-            <DocumentList
-              documents={documents}
-              title={key.replace(/_/g, ' ')
-                  .replace(/\b\w/g, l => l.toUpperCase())}
-              variant="compact"
-              showUploadInfo={true}
-            />
+            ))}
           </div>
-        );
-      })}
+        )}
 
-      {/* Show message if no documents */}
-      {documentEntries.length === 0 && (
-        <DocumentList documents={[]} title="Documents" />
-      )}
-    </div>
-  );
-};
+        {/* Documents sections */}
+        {documentEntries.map(([key, value]) => {
+          const documents = Array.isArray(value) ? value : (value ? [value] : []);
+          if (documents.length === 0) return null;
+
+          return (
+            <div key={key} className="mt-4">
+              <DocumentList
+                documents={documents}
+                title={key.replace(/_/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase())}
+                variant="compact"
+                showUploadInfo={true}
+              />
+            </div>
+          );
+        })}
+
+        {/* Show message if no documents */}
+        {documentEntries.length === 0 && (
+          <DocumentList documents={[]} title="Documents" />
+        )}
+      </div>
+    );
+  };
 
   const renderUpdate = () => {
     const { changes, current_data } = data;
@@ -119,10 +126,16 @@ const renderCreate = () => {
                       .replace(/\b\w/g, l => l.toUpperCase())}:
                 </div>
                 <div className="break-words text-[#2a2718]">
-                  {key.includes('date') && value 
-                    ? new Date(value as string).toLocaleDateString()
-                    : String(value)
-                  }
+                  {isDateField(key) && value ? (
+                    <DateDisplay 
+                      date={value as string} 
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  ) : (
+                    String(value)
+                  )}
                 </div>
               </div>
             ))}
@@ -149,6 +162,17 @@ const renderCreate = () => {
         {data.reason && (
           <div>
             <strong className="text-[#2a2718]">Reason for Release:</strong> {data.reason}
+          </div>
+        )}
+        {data.release_date && (
+          <div className="mt-2">
+            <strong className="text-[#2a2718]">Release Date:</strong>{' '}
+            <DateDisplay 
+              date={data.release_date} 
+              format="medium"
+              showCalendarIndicator={true}
+              showTooltip={true}
+            />
           </div>
         )}
       </div>

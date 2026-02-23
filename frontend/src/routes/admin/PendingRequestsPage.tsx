@@ -22,6 +22,7 @@ import {
   DEFAULT_SORT_ORDER
 } from '../../types/makerChecker';
 import { toast } from 'sonner';
+import DateDisplay from '../../components/common/DateDisplay';
 
 // Pagination constants
 const DEFAULT_PAGE = 1;
@@ -548,13 +549,15 @@ const PendingRequestsPage: React.FC = () => {
                     <span className="font-mono">
                       ID: {req.request_id?.slice(0, 8)}...
                     </span>
-                    <span>
-                      {new Date(req.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </span>
+                          <span className="font-medium">
+                <DateDisplay 
+                  date={req.created_at} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
+              </span>
+
                   </div>
                 </div>
               );

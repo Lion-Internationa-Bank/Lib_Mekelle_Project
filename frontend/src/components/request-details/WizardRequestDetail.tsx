@@ -2,6 +2,7 @@
 import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
 import DocumentList from '../common/DocumentList';
+import DateDisplay from '../common/DateDisplay';
 
 const VITE_API_PDF_URL = import.meta.env.VITE_API_PDF_URL || import.meta.env.VITE_API_URL || '';
 
@@ -31,17 +32,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
     lease_docs = [] 
   } = requestData;
 
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  // Remove old formatDate function - we'll use DateDisplay instead
 
   const formatCurrency = (value: number): string => {
     return `ETB ${Number(value).toLocaleString('en-US', {
@@ -52,6 +43,35 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
 
   const formatArea = (area: number): string => {
     return `${area.toFixed(2)} m²`;
+  };
+
+  // Helper function to check if a field is a date field
+  const isDateField = (key: string): boolean => {
+    const dateKeywords = [
+      'date', 'acquired_at', 'created_at', 'updated_at', 
+      'contract_date', 'start_date', 'expiry_date', 'effective_date'
+    ];
+    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  };
+
+  // Render value with appropriate formatting
+  const renderValue = (key: string, value: any): React.ReactNode => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    // Handle date fields
+    if (isDateField(key) && value) {
+      return (
+        <DateDisplay 
+          date={value}
+          format="medium"
+          showCalendarIndicator={true}
+          showTooltip={true}
+        />
+      );
+    }
+    
+    // Handle other types
+    return String(value);
   };
 
   return (
@@ -189,7 +209,16 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                     </div>
                   </div>
                   <span className="px-3 py-1 bg-[#f0cd6e]/20 text-[#2a2718] text-xs font-semibold rounded-full border border-[#f0cd6e]">
-                    {owner.acquired_at ? formatDate(owner.acquired_at) : 'New Owner'}
+                    {owner.acquired_at ? (
+                      <DateDisplay 
+                        date={owner.acquired_at}
+                        format="short"
+                        showCalendarIndicator={false}
+                        showTooltip={false}
+                      />
+                    ) : (
+                      'New Owner'
+                    )}
                   </span>
                 </div>
                 
@@ -224,7 +253,12 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                         Acquisition Date
                       </div>
                       <div className="text-sm font-medium text-[#2a2718]">
-                        {formatDate(owner.acquired_at)}
+                        <DateDisplay 
+                          date={owner.acquired_at}
+                          format="medium"
+                          showCalendarIndicator={true}
+                          showTooltip={true}
+                        />
                       </div>
                     </div>
                   )}
@@ -292,7 +326,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
       </div>
     </div>
 
-    {/* Additional Fees Section - NEW */}
+    {/* Additional Fees Section */}
     {(lease.demarcation_fee || lease.contract_registration_fee || lease.engineering_service_fee) && (
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-[#2a2718] flex items-center gap-2 mb-3">
@@ -351,7 +385,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
       </div>
     )}
 
-    {/* Lease Dates */}
+    {/* Lease Dates - Updated with DateDisplay */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {lease.contract_date && (
         <div className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
@@ -359,7 +393,12 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
             Contract Date
           </div>
           <div className="text-base font-semibold text-[#2a2718]">
-            {formatDate(lease.contract_date)}
+            <DateDisplay 
+              date={lease.contract_date}
+              format="medium"
+              showCalendarIndicator={true}
+              showTooltip={true}
+            />
           </div>
         </div>
       )}
@@ -369,7 +408,12 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
             Start Date
           </div>
           <div className="text-base font-semibold text-[#2a2718]">
-            {formatDate(lease.start_date)}
+            <DateDisplay 
+              date={lease.start_date}
+              format="medium"
+              showCalendarIndicator={true}
+              showTooltip={true}
+            />
           </div>
         </div>
       )}
@@ -379,7 +423,12 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
             Expiry Date
           </div>
           <div className="text-base font-semibold text-[#2a2718]">
-            {formatDate(lease.expiry_date)}
+            <DateDisplay 
+              date={lease.expiry_date}
+              format="medium"
+              showCalendarIndicator={true}
+              showTooltip={true}
+            />
           </div>
         </div>
       )}

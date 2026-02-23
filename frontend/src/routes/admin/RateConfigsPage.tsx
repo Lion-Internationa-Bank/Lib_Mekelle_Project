@@ -23,8 +23,9 @@ import {
   History,
   MoreVertical,
 } from "lucide-react";
-import UniversalDateInput from "../../components/UniversalDateInput";
-import DateDisplay from "../../components/DateDisplay";
+import UniversalDateInput from "../../components/common/UniversalDateInput";
+import DateDisplay from "../../components/common/DateDisplay";
+import { formatLocalDate, parseLocalDate } from "../../utils/calendarUtils";
 import { toast } from "sonner";
 
 const RATE_TYPES = [
@@ -125,6 +126,16 @@ const RateConfigsPage: React.FC = () => {
   const isPercentageType = (type: RateType) =>
     type !== "LATE_PAYMENT_GRACE_DAYS";
 
+  // Format rate for display (convert decimal to percentage with 2 decimal places)
+  const formatRateForDisplay = (decimalValue: number): string => {
+    return (decimalValue * 100).toFixed(2);
+  };
+
+  // Format rate for backend (convert percentage to decimal)
+  const formatRateForBackend = (percentageValue: number): number => {
+    return Number((percentageValue / 100).toFixed(4));
+  };
+
   const loadCurrent = async (type: RateType) => {
     setLoading(true);
     setError("");
@@ -136,16 +147,16 @@ const RateConfigsPage: React.FC = () => {
         const r = res.data;
         setCurrentRate(r);
 
-        // Backend stores 0–1; UI shows percent except for grace days
+        // Backend stores 0–1; UI shows percent with 2 decimal places except for grace days
         const raw = r.value ?? 0;
-        const uiValue = isPercentageType(type) ? raw * 100 : raw;
-        setValue(uiValue.toString());
+        const uiValue = isPercentageType(type) ? formatRateForDisplay(raw) : raw.toString();
+        setValue(uiValue);
 
         setSource(r.source || "");
-        setEffectiveFrom(r.effective_from ? new Date(r.effective_from) : null);
-        setEffectiveUntil(
-          r.effective_until ? new Date(r.effective_until) : null
-        );
+        
+        // Parse dates using parseLocalDate to ensure consistent handling
+        setEffectiveFrom(r.effective_from ? parseLocalDate(r.effective_from) : null);
+        setEffectiveUntil(r.effective_until ? parseLocalDate(r.effective_until) : null);
       } else {
         setCurrentRate(null);
         setValue("");
@@ -198,20 +209,27 @@ const handleSave = async () => {
 
     if (selectedRateType === "LATE_PAYMENT_GRACE_DAYS") {
       numericValue = Number(value);
-      if (!Number.isFinite(numericValue) || numericValue < 0) {
-        setError("Grace days must be a non-negative number");
+      if (!Number.isFinite(numericValue) || numericValue < 0 || numericValue > 365) {
+        setError("Grace days must be between 0 and 365");
         setSaving(false);
         return;
       }
     } else {
       const percent = parseFloat(value);
-      if (isNaN(percent) || percent < 0 || percent > 100) {
-        setError("Rate must be a number between 0 and 100");
+      if (isNaN(percent) || percent <= 0 || percent > 100) {
+        setError("Rate must be a number between 0 and 100 (exclusive for 0)");
         setSaving(false);
         return;
       }
-      // Convert percent to decimal 0–1 for backend
-      numericValue = percent / 100;
+      // Convert percent to decimal 0–1 for backend (exclusive for 0)
+      numericValue = formatRateForBackend(percent);
+      
+      // Ensure value is between 0 and 1 (exclusive for 0)
+      if (numericValue <= 0 || numericValue > 1) {
+        setError("Rate must be between 0 and 1 (exclusive for 0)");
+        setSaving(false);
+        return;
+      }
     }
 
     if (!effectiveFrom) {
@@ -220,13 +238,12 @@ const handleSave = async () => {
       return;
     }
 
+    // Format dates using formatLocalDate to ensure YYYY-MM-DD format without timezone issues
     const payload = {
       value: numericValue,
       source: source.trim() || undefined,
-      effective_from: effectiveFrom.toISOString(),
-      effective_until: effectiveUntil
-        ? effectiveUntil.toISOString()
-        : undefined,
+      effective_from: formatLocalDate(effectiveFrom),
+      effective_until: effectiveUntil ? formatLocalDate(effectiveUntil) : undefined,
     };
 
     const res =
@@ -298,8 +315,9 @@ const handleSave = async () => {
     setError("");
     setSuccess("");
     try {
+      // Use formatLocalDate for the effective_from date
       const res = await deactivateRate(selectedRateType, {
-        effective_from: currentRate.effective_from,
+        effective_from: formatLocalDate(parseLocalDate(currentRate.effective_from) || new Date()),
       });
       if (res.success) {
         setSuccess("Rate deactivated successfully");
@@ -335,6 +353,13 @@ const handleSave = async () => {
   };
 
   const isReadOnly = formMode === "view";
+
+  // Helper to format date for display in the header
+  const formatDateForHeader = (dateString: string | undefined): string => {
+    if (!dateString) return "N/A";
+    const date = parseLocalDate(dateString);
+    return date ? date.toLocaleDateString() : "Invalid date";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
@@ -450,14 +475,10 @@ const handleSave = async () => {
                         <p className="text-xs text-[#2a2718]/70 mt-1">
                           Currently effective from{" "}
                           {currentRate.effective_from
-                            ? new Date(
-                                currentRate.effective_from
-                              ).toLocaleDateString()
+                            ? formatDateForHeader(currentRate.effective_from)
                             : "N/A"}{" "}
                           {currentRate.effective_until
-                            ? `to ${new Date(
-                                currentRate.effective_until
-                              ).toLocaleDateString()}`
+                            ? `to ${formatDateForHeader(currentRate.effective_until)}`
                             : "(no end date)"}{" "}
                           • {currentRate.is_active ? "Active" : "Inactive"}
                         </p>
@@ -519,12 +540,14 @@ const handleSave = async () => {
                       <label className="block text-sm font-semibold text-[#2a2718] mb-2">
                         {selectedRateType === "LATE_PAYMENT_GRACE_DAYS"
                           ? "Grace Days"
-                          : "Rate Value"}
+                          : "Rate Value (%)"}
                       </label>
                       <div className="relative">
                         <input
                           type="number"
-                          step="0.01"
+                          step={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "1" : "0.01"}
+                          min={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "0" : "0.01"}
+                          max={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "365" : "100"}
                           value={value}
                           onChange={(e) => setValue(e.target.value)}
                           className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] disabled:bg-[#f0cd6e]/5"
@@ -541,6 +564,11 @@ const handleSave = async () => {
                           </span>
                         )}
                       </div>
+                      {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS" && (
+                        <p className="text-xs text-[#2a2718]/70 mt-1">
+                          Enter rate as percentage (e.g., 12.5 for 12.5%)
+                        </p>
+                      )}
                     </div>
 
                     {/* Effective dates */}
@@ -619,21 +647,19 @@ const handleSave = async () => {
                             setFormMode("view");
                             if (currentRate) {
                               const raw = currentRate.value ?? 0;
-                              const uiValue = isPercentageType(
-                                selectedRateType
-                              )
-                                ? raw * 100
-                                : raw;
-                              setValue(uiValue.toString());
+                              const uiValue = isPercentageType(selectedRateType)
+                                ? formatRateForDisplay(raw)
+                                : raw.toString();
+                              setValue(uiValue);
                               setSource(currentRate.source || "");
                               setEffectiveFrom(
                                 currentRate.effective_from
-                                  ? new Date(currentRate.effective_from)
+                                  ? parseLocalDate(currentRate.effective_from)
                                   : null
                               );
                               setEffectiveUntil(
                                 currentRate.effective_until
-                                  ? new Date(currentRate.effective_until)
+                                  ? parseLocalDate(currentRate.effective_until)
                                   : null
                               );
                             }
@@ -697,8 +723,8 @@ const handleSave = async () => {
                       {history.map((h, idx) => {
                         const raw = h.value ?? 0;
                         const uiValue = isPercentageType(selectedRateType)
-                          ? raw * 100
-                          : raw;
+                          ? formatRateForDisplay(raw)
+                          : raw.toString();
                         return (
                           <tr
                             key={idx}
@@ -713,7 +739,7 @@ const handleSave = async () => {
 
                             <td className="px-3 py-2">
                               <DateDisplay
-                                date={h.effective_from}
+                                date={h.effective_from ? parseLocalDate(h.effective_from) : null}
                                 format="medium"
                                 className="font-semibold"
                                 showTooltip={true}
@@ -722,7 +748,7 @@ const handleSave = async () => {
                             </td>
                             <td className="px-3 py-2">
                               <DateDisplay
-                                date={h.effective_until}
+                                date={h.effective_until ? parseLocalDate(h.effective_until) : null}
                                 format="medium"
                                 className="font-semibold"
                                 showTooltip={true}
@@ -737,7 +763,7 @@ const handleSave = async () => {
                             </td>
                             <td className="px-3 py-2">
                               <DateDisplay
-                                date={h.updated_at ?? h.created_at}
+                                date={h.updated_at ?? h.created_at ? parseLocalDate(h.updated_at ?? h.created_at) : null}
                                 format="medium"
                                 className="font-semibold"
                                 showTooltip={true}

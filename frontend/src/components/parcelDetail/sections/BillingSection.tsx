@@ -1,7 +1,7 @@
 // src/components/parcelDetail/sections/BillingSection.tsx
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { CalendarDays, DollarSign, FileText, Clock, CreditCard, Download } from "lucide-react";
-import DateDisplay from "../../DateDisplay";
+import DateDisplay from "../../common/DateDisplay";
 import { generateBillingPDF } from "../../../utils/pdfGenerator";
 
 type Props = {

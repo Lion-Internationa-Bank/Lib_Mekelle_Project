@@ -1,6 +1,6 @@
 // src/layouts/MainLayout.tsx
 import { Outlet } from 'react-router-dom';
-import Header from '../components/Header';
+import Header from '../components/common/Header';
 import Sidebar from '../components/Sidebar';
 import { CalendarProvider } from '../contexts/CalendarContext';
 import { useState } from 'react';

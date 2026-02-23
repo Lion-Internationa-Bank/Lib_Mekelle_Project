@@ -4,15 +4,15 @@ import ParcelInfoCard from "../cards/ParcelInfoCard";
 import EditParcelModal from "../modals/EditParcelModal";
 import { CreateOwnerModal, OwnerDocsUploadModal } from "../../ownership/OwnershipModals";
 import SubdivideParcelModal from "../modals/SubdivideParcelModal";
-import ApprovalRequestDocsModal from "../../../components/ApprovalRequestDocsModal";
+import ApprovalRequestDocsModal from "../../../components/common/ApprovalRequestDocsModal";
 import { searchOwnersLiteApi, addOwnerToParcel, } from "../../../services/parcelDetailApi";
 import { createOwner } from "../../../services/parcelApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "sonner";
 import { X,AlertCircle,Plus } from "lucide-react";
-import UniversalDateInput from "../../UniversalDateInput";
-
+import UniversalDateInput from "../../common/UniversalDateInput";
+import { formatLocalDate, parseLocalDate } from "../../../utils/calendarUtils";
 type Props = {
   parcel: ParcelDetail;
   onReload: () => Promise<void>;
@@ -89,6 +89,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
     setShowAddAcquiredDate(true);
     setShowAddCoOwnerSearch(false);
   };
+
 
   const handleAddExistingOwner = async () => {
     if (!selectedOwner) return;
@@ -346,21 +347,22 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
           <label className="block text-sm font-medium text-[#2a2718] mb-2">
             Acquisition Date <span className="text-red-500">*</span>
           </label>
-          <UniversalDateInput
-            value={acquiredAt ? new Date(acquiredAt) : null}
-            onChange={(date) => {
-              if (date) {
-                console.log("data form parcle info section:",date)
-                setAcquiredAt(date.toISOString().split('T')[0]);
-              }
-            }}
-            // maxDate={new Date()}
-            required
-            size="md"
-            placeholder="Select acquisition date"
-          />
+        <UniversalDateInput
+  value={acquiredAt ? parseLocalDate(acquiredAt) : null}
+  onChange={(date) => {
+    if (date) {
+      console.log("Selected date:", date);
+      const formattedDate = formatLocalDate(date);
+      setAcquiredAt(formattedDate);
+      console.log("Stored date:", formattedDate);
+    }
+  }}
+  required
+  size="md"
+  placeholder="Select acquisition date"
+/>
           <p className="text-xs text-[#2a2718]/70 mt-1">
-            Date when this owner acquired ownership of the parcel
+            Date when this owner acquired ownership of the parcel acquiredAt: {acquiredAt}
           </p>
         </div>
 

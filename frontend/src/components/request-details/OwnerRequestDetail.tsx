@@ -3,6 +3,7 @@ import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
+import DateDisplay from '../common/DateDisplay';
 
 interface OwnerRequestDetailProps {
   data: any;
@@ -15,6 +16,12 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
   actionType, 
   entityId 
 }) => {
+  // Helper function to check if a field is a date field
+  const isDateField = (key: string): boolean => {
+    const dateKeywords = ['date', 'birth_date', 'registration_date', 'created_at', 'updated_at', 'date_of_birth'];
+    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  };
+
  const renderCreate = () => {
     // Document field names to look for
     const documentFieldNames = ['documents', 'attachments', 'identification_docs', 'supporting_documents'];
@@ -27,8 +34,14 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
       ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
     );
 
-    const renderValue = (value: any): string => {
+    const renderValue = (key: string, value: any): string => {
       if (value === null || value === undefined) return 'N/A';
+      
+      // Handle date fields - return empty string as we'll use DateDisplay separately
+      if (isDateField(key) && value) {
+        return ''; // This will be handled by DateDisplay in the render
+      }
+      
       if (typeof value === 'object') {
         if (Array.isArray(value)) {
           if (value.length === 0) return 'No items';
@@ -54,7 +67,16 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="text-base font-semibold text-[#2a2718] break-words">
-                  {renderValue(value)}
+                  {isDateField(key) && value ? (
+                    <DateDisplay 
+                      date={value as string}
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  ) : (
+                    renderValue(key, value)
+                  )}
                 </div>
               </div>
             ))}
@@ -105,7 +127,16 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="break-words text-[#2a2718]">
-                  {String(value || 'N/A')}
+                  {isDateField(key) && value ? (
+                    <DateDisplay 
+                      date={value as string}
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  ) : (
+                    String(value || 'N/A')
+                  )}
                 </div>
               </div>
             ))}
@@ -140,11 +171,41 @@ const OwnerRequestDetail: React.FC<OwnerRequestDetailProps> = ({
               Owner Information:
             </div>
             <div className="grid gap-2">
-              <div><strong className="text-[#2a2718]">Full Name:</strong> {data.current_data.full_name}</div>
-              <div><strong className="text-[#2a2718]">National ID:</strong> {data.current_data.national_id}</div>
-              <div><strong className="text-[#2a2718]">Phone:</strong> {data.current_data.phone_number}</div>
+              <div>
+                <strong className="text-[#2a2718]">Full Name:</strong> {data.current_data.full_name}
+              </div>
+              <div>
+                <strong className="text-[#2a2718]">National ID:</strong> {data.current_data.national_id}
+              </div>
+              <div>
+                <strong className="text-[#2a2718]">Phone:</strong> {data.current_data.phone_number}
+              </div>
+              {data.current_data.date_of_birth && (
+                <div>
+                  <strong className="text-[#2a2718]">Date of Birth:</strong>{' '}
+                  <DateDisplay 
+                    date={data.current_data.date_of_birth}
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
+                </div>
+              )}
+              {data.current_data.registration_date && (
+                <div>
+                  <strong className="text-[#2a2718]">Registration Date:</strong>{' '}
+                  <DateDisplay 
+                    date={data.current_data.registration_date}
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
+                </div>
+              )}
               {data.current_data.active_parcels_count !== undefined && (
-                <div><strong className="text-[#2a2718]">Active Parcels:</strong> {data.current_data.active_parcels_count}</div>
+                <div>
+                  <strong className="text-[#2a2718]">Active Parcels:</strong> {data.current_data.active_parcels_count}
+                </div>
               )}
             </div>
           </div>

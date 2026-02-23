@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, FileText, AlertCircle } from 'lucide-react';
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
-import GenericDocsUpload from "../../../components/GenericDocsUpload";
+import GenericDocsUpload from "../../common/GenericDocsUpload";
 import ApprovalRequestDocsModal from "../../../components/ApprovalRequestDocsModal";
 import { toast } from 'sonner';
 import { useAuth } from '../../../contexts/AuthContext';

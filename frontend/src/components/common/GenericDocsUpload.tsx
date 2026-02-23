@@ -4,9 +4,9 @@ import {
   uploadApprovalDocument, 
   getApprovalRequestDocuments,
   deleteApprovalDocument 
-} from "../services/approvalRequestApi"; 
+} from "../../services/approvalRequestApi"; 
 import { toast } from "sonner";
-import { openDocument } from '../services/documentService';  
+import { openDocument } from '../../services/documentService';  
 
 export type GenericDocType = string;
 
@@ -195,7 +195,7 @@ const GenericDocsUpload = ({
         if (historyId) formData.append("history_id", historyId);
 
         // Import your API function for legacy uploads
-        const { apiFetch } = await import("../services/api");
+        const { apiFetch } = await import("../../services/api");
         const response = await apiFetch('/api/documents/upload', {
           method: 'POST',
           body: formData,

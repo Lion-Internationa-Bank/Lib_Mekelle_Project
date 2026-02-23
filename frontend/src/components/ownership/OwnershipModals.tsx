@@ -1,6 +1,6 @@
 // src/components/ownership/OwnershipModals.tsx
 import { Info, X } from 'lucide-react';
-import GenericDocsUpload from "../GenericDocsUpload";
+import GenericDocsUpload from "../common/GenericDocsUpload";
 import type { OwnerWithParcels } from "../../services/ownersApi";
 
 // Updated CreateOwnerModal to handle approval requests

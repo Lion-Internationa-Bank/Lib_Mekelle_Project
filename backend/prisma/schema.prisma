@@ -454,6 +454,7 @@ enum EntityType {
   LEASE_AGREEMENTS
   ENCUMBRANCES
   APPROVAL_REQUEST
+  REVENUE
 }
 
 enum ActionType {

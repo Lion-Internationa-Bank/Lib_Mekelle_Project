@@ -3,6 +3,7 @@ import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
+import DateDisplay from '../common/DateDisplay';
 
 interface ParcelRequestDetailProps {
   data: any;
@@ -15,6 +16,69 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
   actionType, 
   entityId 
 }) => {
+  // Helper function to check if a field is a date field
+  const isDateField = (key: string): boolean => {
+    const dateKeywords = [
+      'date', 'created_at', 'updated_at', 'acquired_at', 'registration_date',
+      'effective_date', 'expiry_date', 'start_date', 'end_date', 'contract_date'
+    ];
+    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  };
+
+  const formatCurrency = (value: number): string => {
+    return `ETB ${Number(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  const formatArea = (area: number) => `${area.toFixed(2)} m²`;
+
+  const renderValue = (key: string, value: any): React.ReactNode => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    // Handle date fields
+    if (isDateField(key) && value) {
+      return (
+        <DateDisplay 
+          date={value}
+          format="medium"
+          showCalendarIndicator={true}
+          showTooltip={true}
+        />
+      );
+    }
+    
+    // Handle price/amount fields
+    if (typeof value === 'number' && 
+        (key.toLowerCase().includes('price') || 
+         key.toLowerCase().includes('amount') || 
+         key.toLowerCase().includes('value') ||
+         key.toLowerCase().includes('cost') ||
+         key.toLowerCase().includes('fee'))) {
+      return formatCurrency(value);
+    }
+    
+    // Handle area fields
+    if (typeof value === 'number' && 
+        (key.toLowerCase().includes('area') || 
+         key.toLowerCase().includes('size'))) {
+      return formatArea(value);
+    }
+    
+    // Handle objects/arrays
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        if (value.length === 0) return 'No items';
+        return `${value.length} item(s)`;
+      }
+      if (Object.keys(value).length === 0) return 'Empty object';
+      return JSON.stringify(value);
+    }
+    
+    return String(value);
+  };
+
   const renderCreate = () => {
     return (
       <div>
@@ -27,9 +91,7 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
                     .replace(/\b\w/g, l => l.toUpperCase())}
               </div>
               <div className="text-base font-semibold text-[#2a2718] break-words">
-                {typeof value === 'object' 
-                  ? JSON.stringify(value, null, 2) 
-                  : String(value)}
+                {renderValue(key, value)}
               </div>
             </div>
           ))}
@@ -56,9 +118,7 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="break-words text-[#2a2718]">
-                  {typeof value === 'object' 
-                    ? JSON.stringify(value) 
-                    : String(value)}
+                  {renderValue(key, value)}
                 </div>
               </div>
             ))}
@@ -102,41 +162,6 @@ const renderTransfer = () => {
   const documentEntries = Object.entries(requestData).filter(
     ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
   );
-
-  const formatCurrency = (value: number): string => {
-    return `ETB ${Number(value).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const renderValue = (key: string, value: any): string => {
-    if (value === null || value === undefined) return 'N/A';
-    
-    if (key.toLowerCase().includes('date') && value) {
-      return formatDate(value);
-    }
-    
-    if (key.toLowerCase().includes('price') || 
-        key.toLowerCase().includes('amount') || 
-        key.toLowerCase().includes('value')) {
-      return formatCurrency(value);
-    }
-    
-    return String(value);
-  };
 
   return (
     <div className="space-y-6">
@@ -194,7 +219,7 @@ const renderTransfer = () => {
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="text-sm font-medium text-[#2a2718] break-words">
-                  {String(value || 'N/A')}
+                  {renderValue(key, value)}
                 </div>
               </div>
             ))}
@@ -280,32 +305,6 @@ const renderAddOwner = () => {
     ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
   );
 
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const renderValue = (key: string, value: any): string => {
-    if (value === null || value === undefined) return 'N/A';
-    
-    if (key.toLowerCase().includes('date') && value) {
-      return formatDate(value);
-    }
-    
-    if (key.toLowerCase().includes('area') || key.toLowerCase().includes('size')) {
-      return `${value} m²`;
-    }
-    
-    return String(value);
-  };
-
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-[#2a2718]">Add Owner to Parcel</h3>
@@ -358,7 +357,7 @@ const renderAddOwner = () => {
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="text-sm font-medium text-[#2a2718] break-words">
-                  {String(value || 'N/A')}
+                  {renderValue(key, value)}
                 </div>
               </div>
             ))}
@@ -369,7 +368,12 @@ const renderAddOwner = () => {
                 ACQUISITION DATE
               </div>
               <div className="text-sm font-medium text-[#2a2718]">
-                {formatDate(requestData.acquired_at)}
+                <DateDisplay 
+                  date={requestData.acquired_at} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
               </div>
             </div>
           )}
@@ -394,32 +398,10 @@ const renderAddOwner = () => {
                             .replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
                       <div className="text-sm font-medium text-[#2a2718] break-words">
-                        {key.toLowerCase().includes('date') && value
-                          ? formatDate(value as string)
-                          : String(value || 'N/A')}
+                        {renderValue(key, value)}
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Additional Transfer Details */}
-      {regularEntries.length > 0 && (
-        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
-          <h4 className="text-sm font-semibold text-[#2a2718] mb-3">Additional Information</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {regularEntries.map(([key, value]) => (
-              <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
-                <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
-                  {key.replace(/_/g, ' ')
-                      .replace(/\b\w/g, l => l.toUpperCase())}
-                </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
-                  {renderValue(key, value)}
                 </div>
               </div>
             ))}
@@ -471,9 +453,6 @@ const renderSubdivide = () => {
     parcel_documents = {},
     validation = {}
   } = requestData;
-
-  // Format area helper
-  const formatArea = (area: number) => `${area.toFixed(2)} m²`;
 
   // Calculate total child area
   const totalChildArea = childParcels.reduce((sum: number, child: any) => 
@@ -837,32 +816,6 @@ const renderSubdivide = () => {
     ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
   );
 
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const renderValue = (key: string, value: any): string => {
-    if (value === null || value === undefined) return 'N/A';
-    
-    if (key.toLowerCase().includes('date') && value) {
-      return formatDate(value);
-    }
-    
-    if (key.toLowerCase().includes('area') || key.toLowerCase().includes('size')) {
-      return `${value} m²`;
-    }
-    
-    return String(value);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header with Status Badge */}
@@ -919,7 +872,12 @@ const renderSubdivide = () => {
               Created At
             </div>
             <div className="text-sm font-medium text-[#2a2718]">
-              {formatDate(data.created_at)}
+              <DateDisplay 
+                date={data.created_at}
+                format="medium"
+                showCalendarIndicator={true}
+                showTooltip={true}
+              />
             </div>
           </div>
         </div>

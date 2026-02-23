@@ -1,7 +1,7 @@
 // src/components/Sidebar.tsx (Enhanced with Reports Dropdown)
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 type MenuItem = {
   id: string;

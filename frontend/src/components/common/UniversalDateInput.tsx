@@ -1,7 +1,7 @@
 // src/components/UniversalDateInput.tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Calendar, ChevronDown, ChevronUp, X, Info } from "lucide-react";
-import { useCalendar } from "../contexts/CalendarContext";
+import { useCalendar } from "../../contexts/CalendarContext";
 import Portal from "./Portal";
 import {
   type CalendarDate,
@@ -17,7 +17,7 @@ import {
   getDaysInMonth,
   gregorianToEthiopian,
   ethiopianToGregorian,
-} from "../utils/calendarUtils";
+} from "../../utils/calendarUtils";
 
 interface UniversalDateInputProps {
   value?: Date | string | null;
@@ -119,19 +119,42 @@ const UniversalDateInput: React.FC<UniversalDateInputProps> = ({
     [calendarType, isEthiopian]
   );
 
-  const toGregorian = useCallback(
-    (displayDate: CalendarDate): Date => {
-      console.log("display date",displayDate)
-      if (isEthiopian) {
-        console.log("ethiopian to gorigorian :", ethiopianToGregorian(displayDate as EthiopianDate))
-        return ethiopianToGregorian(displayDate as EthiopianDate);
-      } else {
-        const gDate = displayDate as GregorianDate;
-        return new Date(gDate.year, gDate.month - 1, gDate.day);
-      }
-    },
-    [isEthiopian]
-  );
+  
+const toGregorian = useCallback(
+  (displayDate: CalendarDate): Date => {
+    console.log("display date", displayDate);
+    
+    let result: Date;
+    
+    if (isEthiopian) {
+      // Get the Gregorian date from Ethiopian
+      const gregDate = ethiopianToGregorian(displayDate as EthiopianDate);
+      
+      // Create a new date at UTC midnight to avoid timezone shifts
+      // Then convert to local date by adding the timezone offset
+      const utcDate = new Date(Date.UTC(
+        gregDate.getFullYear(),
+        gregDate.getMonth(),
+        gregDate.getDate()
+      ));
+      
+      // Adjust for local timezone
+      result = new Date(
+        utcDate.getUTCFullYear(),
+        utcDate.getUTCMonth(),
+        utcDate.getUTCDate()
+      );
+    } else {
+      const gDate = displayDate as GregorianDate;
+      // Create date in UTC to avoid timezone shifts
+      result = new Date(Date.UTC(gDate.year, gDate.month - 1, gDate.day));
+    }
+    
+    console.log("after to greg date", result);
+    return result;
+  },
+  [isEthiopian]
+);
 
   const updatePickerPosition = useCallback(() => {
     if (inputRef.current) {

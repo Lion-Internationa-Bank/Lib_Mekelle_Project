@@ -66,17 +66,56 @@ export const ETHIOPIAN_WEEKDAYS = ['ሰ', 'ማ', 'ረ', 'ሐ', 'አ', 'ቅ', '�
 // Gregorian weekdays (starting with Sunday)
 export const GREGORIAN_WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// ========== TIMEZONE UTILITIES ==========
+
+/**
+ * Format a Date object to YYYY-MM-DD string in local timezone
+ * This preserves the exact date the user selected, avoiding timezone shifts
+ */
+export function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD string to a Date object in local timezone
+ * Creates a date at noon to avoid timezone boundary issues
+ */
+export function parseLocalDate(dateString: string): Date | null {
+  if (!dateString) return null;
+  
+  // Handle YYYY-MM-DD format
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(parts[2], 10);
+    
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      // Create date at noon to avoid timezone issues
+      return new Date(year, month, day, 12, 0, 0);
+    }
+  }
+  
+  // Fallback to standard parsing
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Convert a date to UTC YYYY-MM-DD string (for backend storage)
+ * Use this when you need to send dates to the backend
+ */
+export function formatUTCDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 // ========== CORE CONVERSION FUNCTIONS ==========
 
 /**
  * Convert Gregorian date to Ethiopian date
  */
-// In calendarUtils.ts, update the gregorianToEthiopian function:
-
 export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate {
   let gregYear: number, gregMonth: number, gregDay: number;
-  
-  // console.log("Input date for conversion:", date);
   
   if (date instanceof Date) {
     gregYear = date.getFullYear();
@@ -87,11 +126,6 @@ export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate 
     gregMonth = date.month;
     gregDay = date.day;
   }
-  
-  // console.log(`Gregorian date: ${gregYear}-${gregMonth}-${gregDay}`);
-  
-  // FIXED: Ethiopian calendar is approximately 7-8 years behind Gregorian
-  // The offset is not fixed - it depends on the date relative to Ethiopian New Year
   
   // Ethiopian New Year (Enkutatash) is September 11 in Gregorian calendar
   // (or September 12 in Gregorian leap years)
@@ -107,8 +141,6 @@ export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate 
   if (isBeforeEthNewYear) {
     ethYear = gregYear - 8;
   }
-  
-  // console.log(`Ethiopian year base calculation: ${gregYear} - ${isBeforeEthNewYear ? '8' : '7'} = ${ethYear}`);
   
   // Calculate days from Ethiopian New Year (September 11/12)
   let daysFromNewYear: number;
@@ -142,8 +174,6 @@ export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate 
     }
   }
   
-  // console.log(`Days from Ethiopian New Year: ${daysFromNewYear}`);
-  
   // Calculate month and day
   let ethMonth = Math.floor(daysFromNewYear / 30) + 1;
   let ethDay = (daysFromNewYear % 30) + 1;
@@ -163,8 +193,6 @@ export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate 
     }
   }
   
-  // console.log(`Converted to Ethiopian: ${ethYear}-${ethMonth}-${ethDay}`);
-  
   return {
     year: ethYear,
     month: ethMonth,
@@ -172,45 +200,40 @@ export function gregorianToEthiopian(date: Date | GregorianDate): EthiopianDate 
   };
 }
 
-// Also update isEthiopianLeapYear function to be correct:
+/**
+ * Check if Ethiopian year is a leap year
+ */
 export function isEthiopianLeapYear(year: number): boolean {
   // Correct: Ethiopian leap years occur when year mod 4 equals 3
   return year % 4 === 3;
 }
 
+/**
+ * Convert Ethiopian date to Gregorian date (returns Date object)
+ */
 export function ethiopianToGregorian(ethDate: EthiopianDate): Date {
   const { year, month, day } = ethDate;
   
   // Days from Ethiopian New Year (Meskerem 1)
-  let daysFromNewYear = (month - 1) * 30 + (day - 1);
+  const daysFromNewYear = (month - 1) * 30 + (day - 1);
   
   // Determine Gregorian year
-  // Ethiopian year X runs from Sep 11/12 (Gregorian year X+7/X+8) 
-  // to Sep 10/11 (Gregorian year X+8/X+9)
-  const gregYearBase = year + 7;
+  const potentialGregYear = year + 7;
   
-  // Check if the date falls before Gregorian New Year
-  // Meskerem 1 = September 11 (or 12 in Gregorian leap years)
-  const isGregLeapYear = (gregYearBase % 4 === 0 && gregYearBase % 100 !== 0) || 
-                         (gregYearBase % 400 === 0);
+  // Check if this potential Gregorian year is a leap year
+  const isGregLeapYear = (potentialGregYear % 4 === 0 && potentialGregYear % 100 !== 0) || 
+                         (potentialGregYear % 400 === 0);
   const ethNewYearDay = isGregLeapYear ? 12 : 11;
   
-  // Create base date: Ethiopian New Year in Gregorian calendar
-  const baseDate = new Date(gregYearBase, 8, ethNewYearDay); // September
+  // Create Ethiopian New Year date in UTC
+  const newYearDate = new Date(Date.UTC(potentialGregYear, 8, ethNewYearDay));
   
-  // Add days from Ethiopian New Year
-  const result = new Date(baseDate);
-  result.setDate(baseDate.getDate() + daysFromNewYear);
+  // Add days to get the target date in UTC
+  const result = new Date(newYearDate);
+  result.setUTCDate(newYearDate.getUTCDate() + daysFromNewYear);
   
   return result;
 }
-
-/**
- * Check if Ethiopian year is a leap year
- */
-// export function isEthiopianLeapYear(year: number): boolean {
-//   return year % 4 === 3;
-// }
 
 // ========== VALIDATION FUNCTIONS ==========
 
@@ -335,7 +358,10 @@ export function compitableformatDate(
   }
 }
 
-
+/**
+ * Format date for input display
+ * Handles both Ethiopian and Gregorian dates correctly
+ */
 export function inputFormatDate(
   date: Date | string | GregorianDate | EthiopianDate,
   calendarType: CalendarType,
@@ -346,18 +372,19 @@ export function inputFormatDate(
   let dateToFormat: GregorianDate | EthiopianDate;
   
   if (typeof date === 'string') {
-    // ISO string - always Gregorian
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
+    // Try to parse as local date first
+    const parsedDate = parseLocalDate(date);
+    if (parsedDate) {
+      dateToFormat = {
+        year: parsedDate.getFullYear(),
+        month: parsedDate.getMonth() + 1,
+        day: parsedDate.getDate()
+      };
+    } else {
       return '-';
     }
-    dateToFormat = {
-      year: dateObj.getFullYear(),
-      month: dateObj.getMonth() + 1,
-      day: dateObj.getDate()
-    };
   } else if (date instanceof Date) {
-    // Date object - always Gregorian
+    // Date object - use local date components
     dateToFormat = {
       year: date.getFullYear(),
       month: date.getMonth() + 1,
@@ -409,6 +436,7 @@ export function inputFormatDate(
     }
   }
 }
+
 /**
  * Normalize any date input to GregorianDate object
  * All inputs are assumed to be in Gregorian calendar (backend format)
@@ -421,16 +449,16 @@ function normalizeToGregorian(date: Date | string | GregorianDate): GregorianDat
       day: date.getDate()
     };
   } else if (typeof date === 'string') {
-    // ISO string from backend (always Gregorian)
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      throw new Error(`Invalid date string: ${date}`);
+    // Try to parse as local date first
+    const parsedDate = parseLocalDate(date);
+    if (parsedDate) {
+      return {
+        year: parsedDate.getFullYear(),
+        month: parsedDate.getMonth() + 1,
+        day: parsedDate.getDate()
+      };
     }
-    return {
-      year: dateObj.getFullYear(),
-      month: dateObj.getMonth() + 1,
-      day: dateObj.getDate()
-    };
+    throw new Error(`Invalid date string: ${date}`);
   } else {
     // Already Gregorian date object
     return date;
@@ -484,7 +512,7 @@ export function formatGregorianDateForDisplay(
   }
 }
 
-// ========== BACKEND/FORNTEND DATA FLOW FUNCTIONS ==========
+// ========== BACKEND/FRONTEND DATA FLOW FUNCTIONS ==========
 
 /**
  * Convert Ethiopian date to backend format (Gregorian ISO string)
@@ -492,15 +520,15 @@ export function formatGregorianDateForDisplay(
  */
 export function convertEthiopianToBackendFormat(ethDate: EthiopianDate): string {
   const gregDate = ethiopianToGregorian(ethDate);
-  return gregDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  return formatUTCDate(gregDate);
 }
 
 /**
  * Parse backend date string to Gregorian date object
  */
 export function parseBackendDate(dateString: string): GregorianDate {
-  const dateObj = new Date(dateString);
-  if (isNaN(dateObj.getTime())) {
+  const dateObj = parseLocalDate(dateString);
+  if (!dateObj) {
     throw new Error(`Invalid backend date string: ${dateString}`);
   }
   return {
@@ -825,7 +853,6 @@ export function compareDates(
 
 export default {
   // Core types
-
   
   // Core functions
   gregorianToEthiopian,
@@ -843,6 +870,11 @@ export default {
   // Specialized formatting
   formatEthiopianDateForDisplay,
   formatGregorianDateForDisplay,
+  
+  // Timezone utilities
+  formatLocalDate,
+  parseLocalDate,
+  formatUTCDate,
   
   // Data flow functions
   convertEthiopianToBackendFormat,

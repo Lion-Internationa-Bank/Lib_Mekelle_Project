@@ -1,7 +1,6 @@
 // src/components/Header.tsx
-import React from 'react';
 import { Bell, Search, User } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import CalendarToggle from './CalendarToggle';
 
 interface HeaderProps {

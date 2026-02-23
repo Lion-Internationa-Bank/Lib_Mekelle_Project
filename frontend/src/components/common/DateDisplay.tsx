@@ -1,6 +1,6 @@
 // src/components/DateDisplay.tsx
 import React from 'react';
-import { useCalendar } from '../contexts/CalendarContext';
+import { useCalendar } from '../../contexts/CalendarContext';
 import { 
  
   gregorianToEthiopian,
@@ -9,7 +9,7 @@ import {
   type EthiopianDate,
   getMonthName,
   inputFormatDate
-} from '../utils/calendarUtils';
+} from '../../utils/calendarUtils';
 
 interface DateDisplayProps {
   date: Date | string | GregorianDate | null;

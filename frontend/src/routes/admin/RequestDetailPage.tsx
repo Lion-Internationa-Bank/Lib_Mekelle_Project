@@ -24,6 +24,8 @@ import ParcelRequestDetail from '../../components/request-details/ParcelRequestD
 import OwnerRequestDetail from '../../components/request-details/OwnerRequestDetail';
 import LeaseRequestDetail from '../../components/request-details/LeaseRequestDetail';
 import EncumbranceRequestDetail from '../../components/request-details/EncumbranceRequestDetail';
+import DateDisplay from '../../components/common/DateDisplay';
+
 
 // Dialog Component with Tailwind CSS
 const ActionDialog: React.FC<{
@@ -349,7 +351,14 @@ const RequestDetailPage: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-3 mt-4 text-sm text-gray-600">
-              <span>📅 Created: {request.created_at ? new Date(request.created_at).toLocaleString() : 'N/A'}</span>
+              <span>📅 Created: {request.created_at ?(   <span className="font-medium">
+                <DateDisplay 
+                  date={request.created_at} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
+              </span>) : 'N/A'}</span>
               <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
               <span>👤 By: {request.maker?.full_name || 'Unknown'} ({request.maker?.role?.replace('_', ' ') || 'Unknown'})</span>
               {request.sub_city && (
@@ -424,7 +433,14 @@ const RequestDetailPage: React.FC = () => {
                 <p className="text-red-700">{request.rejection_reason}</p>
                 {request.rejected_at && (
                   <p className="text-sm text-red-600 mt-2">
-                    Rejected on: {new Date(request.rejected_at).toLocaleString()}
+                    Rejected on:    <span className="font-medium">
+                <DateDisplay 
+                  date={request.rejected_at} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
+              </span>
                   </p>
                 )}
               </div>
@@ -440,7 +456,14 @@ const RequestDetailPage: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-green-800 mb-2">Approved</h4>
                 <p className="text-green-700">
-                  {new Date(request.approved_at).toLocaleString()}
+                     <span className="font-medium">
+                <DateDisplay 
+                  date={request.approved_at} 
+                  format="medium"
+                  showCalendarIndicator={true}
+                  showTooltip={true}
+                />
+              </span>
                 </p>
               </div>
             </div>

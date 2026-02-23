@@ -3,7 +3,7 @@ import { useState } from "react";
 import OwnerCard from "../cards/OwnerCard";
 import EditOwnerModal from "../modals/EditOwnerModal";
 import TransferOwnershipModal from "../modals/TransferOwnershipModal";
-import GenericDocsUpload from "../../GenericDocsUpload";
+import GenericDocsUpload from "../../common/GenericDocsUpload";
 import { CreateOwnerModal, OwnerDocsUploadModal } from "../../ownership/OwnershipModals";
 import { createOwner } from "../../../services/parcelApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";

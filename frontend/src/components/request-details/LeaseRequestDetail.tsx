@@ -3,6 +3,7 @@ import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
 import DataDiffViewer from '../common/DataDiffViewer';
 import DocumentList from '../common/DocumentList';
+import DateDisplay from '../common/DateDisplay'; // Import DateDisplay
 
 interface LeaseRequestDetailProps {
   data: any;
@@ -15,6 +16,12 @@ const LeaseRequestDetail: React.FC<LeaseRequestDetailProps> = ({
   actionType, 
   entityId 
 }) => {
+  // Helper function to check if a field is a date field
+  const isDateField = (key: string): boolean => {
+    const dateKeywords = ['date', 'start_date', 'end_date', 'expiry_date', 'contract_date', 'created_at', 'updated_at'];
+    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  };
+
 const renderCreate = () => {
   // Extract data from request_data
   const requestData = data.request_data || data;
@@ -65,24 +72,14 @@ const renderCreate = () => {
     })}`;
   };
 
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  // Remove the old formatDate function - we'll use DateDisplay instead
 
   const renderValue = (key: string, value: any): string => {
     if (value === null || value === undefined) return 'N/A';
     
-    // Handle date fields
-    if (key.toLowerCase().includes('date') && value) {
-      return formatDate(value);
+    // Handle date fields - return empty string as we'll use DateDisplay separately
+    if (isDateField(key) && value) {
+      return ''; // This will be handled by DateDisplay in the render
     }
     
     // Handle amount/payment fields
@@ -94,7 +91,7 @@ const renderCreate = () => {
          key.toLowerCase().includes('installment') ||
          key.toLowerCase().includes('deposit') ||
          key.toLowerCase().includes('principal') ||
-         key.toLowerCase().includes('fee'))) {  // Added 'fee' for new fee fields
+         key.toLowerCase().includes('fee'))) {
       return formatCurrency(value);
     }
     
@@ -198,7 +195,7 @@ const renderCreate = () => {
             </div>
           </div>
 
-          {/* Additional Fees Section - NEW */}
+          {/* Additional Fees Section */}
           {(leaseDetails.demarcation_fee || leaseDetails.engineering_service_fee || leaseDetails.contract_registration_fee) && (
             <div className="mb-6">
               <h5 className="text-xs font-semibold text-[#2a2718] mb-3 uppercase tracking-wider flex items-center gap-2">
@@ -249,7 +246,7 @@ const renderCreate = () => {
             </div>
           )}
 
-          {/* Lease Dates */}
+          {/* Lease Dates - Updated with DateDisplay */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {leaseDetails.contract_date && (
               <div className="bg-[#f0cd6e]/5 p-3 rounded-md border border-[#f0cd6e]">
@@ -257,7 +254,12 @@ const renderCreate = () => {
                   Contract Date
                 </div>
                 <div className="text-base font-semibold text-[#2a2718]">
-                  {formatDate(leaseDetails.contract_date)}
+                  <DateDisplay 
+                    date={leaseDetails.contract_date}
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
                 </div>
               </div>
             )}
@@ -267,7 +269,12 @@ const renderCreate = () => {
                   Start Date
                 </div>
                 <div className="text-base font-semibold text-[#2a2718]">
-                  {formatDate(leaseDetails.start_date)}
+                  <DateDisplay 
+                    date={leaseDetails.start_date}
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
                 </div>
               </div>
             )}
@@ -277,7 +284,12 @@ const renderCreate = () => {
                   Expiry Date
                 </div>
                 <div className="text-base font-semibold text-[#2a2718]">
-                  {formatDate(leaseDetails.expiry_date)}
+                  <DateDisplay 
+                    date={leaseDetails.expiry_date}
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
                 </div>
               </div>
             )}
@@ -351,7 +363,16 @@ const renderCreate = () => {
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 <div className="text-sm font-medium text-[#2a2718] break-words">
-                  {renderValue(key, value)}
+                  {isDateField(key) && value ? (
+                    <DateDisplay 
+                      date={value as string}
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  ) : (
+                    renderValue(key, value)
+                  )}
                 </div>
               </div>
             ))}
@@ -397,11 +418,6 @@ const renderCreate = () => {
           <h4 className="text-sm font-semibold text-[#2a2718] mb-3">Current Lease Details</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(current_data).map(([key, value]) => {
-              let displayValue = value;
-              if (key.includes('date') && value) {
-                displayValue = new Date(value as string).toLocaleDateString();
-              }
-              
               return (
                 <div key={key} className="bg-white p-3 rounded-md border border-[#f0cd6e]">
                   <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
@@ -409,7 +425,16 @@ const renderCreate = () => {
                         .replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
                   <div className="text-sm font-medium text-[#2a2718] break-words">
-                    {String(displayValue)}
+                    {isDateField(key) && value ? (
+                      <DateDisplay 
+                        date={value as string}
+                        format="medium"
+                        showCalendarIndicator={true}
+                        showTooltip={true}
+                      />
+                    ) : (
+                      String(value)
+                    )}
                   </div>
                 </div>
               );
@@ -452,7 +477,18 @@ const renderCreate = () => {
                 .map(([key, value]) => (
                   <div key={key}>
                     <div className="text-xs text-[#2a2718]/70">{key.replace(/_/g, ' ')}</div>
-                    <div className="text-sm font-medium text-[#2a2718]">{String(value)}</div>
+                    <div className="text-sm font-medium text-[#2a2718]">
+                      {isDateField(key) && value ? (
+                        <DateDisplay 
+                          date={value as string}
+                          format="medium"
+                          showCalendarIndicator={true}
+                          showTooltip={true}
+                        />
+                      ) : (
+                        String(value)
+                      )}
+                    </div>
                   </div>
                 ))}
             </div>
