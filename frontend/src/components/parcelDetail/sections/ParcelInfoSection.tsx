@@ -11,6 +11,7 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "sonner";
 import { X,AlertCircle,Plus } from "lucide-react";
+import UniversalDateInput from "../../UniversalDateInput";
 
 type Props = {
   parcel: ParcelDetail;
@@ -96,6 +97,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       setAddingOwner(true);
       
       // Call the API to add owner to parcel
+      console.log("date at handle add exiteing owner",acquiredAt)
       const result = await addOwnerToParcel(parcel.upin, selectedOwner.owner_id, acquiredAt);
       
       // Check if approval is required
@@ -319,70 +321,76 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
         </div>
       )}
 
-      {/* Acquired At Date Modal */}
-      {isSubcityNormal && showAddAcquiredDate && selectedOwner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
-              <button
-                onClick={handleCloseAcquiredDate}
-                className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <p className="text-[#2a2718] mb-6">
-                Adding <span className="font-medium">{selectedOwner.full_name}</span> as co-owner to <br />
-                <span className="font-mono text-[#f0cd6e]">{parcel.upin}</span>
-              </p>
+      
+    {/* Acquired At Date Modal */}
+{isSubcityNormal && showAddAcquiredDate && selectedOwner && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
+        <button
+          onClick={handleCloseAcquiredDate}
+          className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
+        >
+          <X size={20} />
+        </button>
+      </div>
+      
+      <div className="p-6">
+        <p className="text-[#2a2718] mb-6">
+          Adding <span className="font-medium">{selectedOwner.full_name}</span> as co-owner to <br />
+          <span className="font-mono text-[#f0cd6e]">{parcel.upin}</span>
+        </p>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Acquisition Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={acquiredAt}
-                  onChange={(e) => setAcquiredAt(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-                  required
-                  max={new Date().toISOString().split('T')[0]}
-                />
-                <p className="text-xs text-[#2a2718]/70 mt-1">
-                  Date when this owner acquired ownership of the parcel
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={handleAddExistingOwner}
-                  disabled={!acquiredAt || addingOwner}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {addingOwner ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Submit for Approval'
-                  )}
-                </button>
-                <button
-                  onClick={handleCloseAcquiredDate}
-                  className="flex-1 py-2.5 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
-                  disabled={addingOwner}
-                >
-                  Back
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-[#2a2718] mb-2">
+            Acquisition Date <span className="text-red-500">*</span>
+          </label>
+          <UniversalDateInput
+            value={acquiredAt ? new Date(acquiredAt) : null}
+            onChange={(date) => {
+              if (date) {
+                console.log("data form parcle info section:",date)
+                setAcquiredAt(date.toISOString().split('T')[0]);
+              }
+            }}
+            // maxDate={new Date()}
+            required
+            size="md"
+            placeholder="Select acquisition date"
+          />
+          <p className="text-xs text-[#2a2718]/70 mt-1">
+            Date when this owner acquired ownership of the parcel
+          </p>
         </div>
-      )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={handleAddExistingOwner}
+            disabled={!acquiredAt || addingOwner}
+            className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {addingOwner ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Processing...
+              </>
+            ) : (
+              'Submit for Approval'
+            )}
+          </button>
+          <button
+            onClick={handleCloseAcquiredDate}
+            className="flex-1 py-2.5 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
+            disabled={addingOwner}
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Create New Owner Modal */}
       {isSubcityNormal && showCreateOwner && (

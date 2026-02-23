@@ -162,7 +162,7 @@ const SubcityHome = () => {
     <div className="max-w-7xl mx-auto space-y-8 mt-16">
       {/* Quick Action Cards - Sub-city focused (only for SUBCITY_NORMAL) */}
       {isSubcityNormal && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2  gap-6">
           <Link
             to="/parcels/new"
             className="group bg-gradient-to-br from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full"

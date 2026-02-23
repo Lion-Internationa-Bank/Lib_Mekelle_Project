@@ -491,7 +491,7 @@ const displayedValue = useMemo(() => {
 
       {error && (
         <div className="mt-1.5 flex items-start gap-1.5">
-          <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <X className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
           <p className="text-sm text-red-600">{error}</p>
         </div>
       )}

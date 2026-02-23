@@ -166,6 +166,8 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               </span>
             </div>
           </div>
+
+          
           <button
             onClick={onClose}
             className="p-2 hover:bg-[#f0cd6e]/20 rounded-lg transition-colors"
