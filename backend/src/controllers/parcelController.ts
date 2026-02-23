@@ -1096,7 +1096,7 @@ export const getParcelByUpin = async (
             //   orderBy: { payment_date: "desc" },
             // },
           },
-          // orderBy: { fiscal_year: "desc" },
+          orderBy: { fiscal_year: "asc" },
         },
       },
     });

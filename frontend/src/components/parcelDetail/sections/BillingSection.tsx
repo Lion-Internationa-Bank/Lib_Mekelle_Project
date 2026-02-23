@@ -44,9 +44,12 @@ const BillingSection = ({ data }: Props) => {
 
   const ownerName = getOwnerName();
 
-  const handleDownloadPDF = () => {
-    generateBillingPDF(data);
-  };
+const handleGeneratePDF = async () => {
+  console.log('Parcel data:', data);
+  console.log('Owner name:', data.owners?.[0]?.owner?.full_name);
+  console.log('Contains Amharic:', /[\u1200-\u137F]/.test(data.owners?.[0]?.owner?.full_name || ''));
+  await generateBillingPDF(data);
+};
 
   return (
     <div className="space-y-6">
@@ -60,7 +63,7 @@ const BillingSection = ({ data }: Props) => {
         <div className="flex items-center gap-3">
           {billing_records && billing_records.length > 0 && (
             <button
-              onClick={handleDownloadPDF}
+              onClick={handleGeneratePDF}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white rounded-lg transition-colors shadow-sm"
             >
               <Download className="w-4 h-4" />

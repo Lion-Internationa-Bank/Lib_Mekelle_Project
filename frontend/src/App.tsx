@@ -9,7 +9,6 @@ import CityAdminHome from './routes/admin/CityAdminHome';
 import SubCityAdminHome from './routes/admin/SubCityAdminHome';
 import SubcityHome from './routes/subcity/SubcityHome';
 import RevenueHome from './routes/revenue/RevenueHome';
-import ParcelWizard from './routes/subcity/ParcelWizard';
 import ParcelDetailPage from './routes/ParcelDetailPage';
 import OwnershipPage from './routes/subcity/OwnershipPage';
 import SubCitiesPage from './routes/admin/SubCitiesPage';
@@ -18,11 +17,10 @@ import UserManagementPage from './routes/admin/UserManagementPage';
 import { CalendarProvider } from './contexts/CalendarContext';
 import RateConfigsPage from './routes/admin/RateConfigsPage';
 import { WizardProvider } from './contexts/WizardContext';
-import ParcelWizardV2 from './components/wizard/ParcelWizard';
+import ParcelWizard from './components/wizard/ParcelWizard';
 import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
-import ParcelWizardV3 from './components/wizard/ParcleWizardV2';
 import ExcelUploadPage from './routes/admin/ExcelUploadPage';
 
 import { ReportsRoutes } from './routes/reports'; // Import the ReportsRoutes component
@@ -47,9 +45,9 @@ const App = () => {
             <Route path="/reports/*" element={<ReportsRoutes />} />
 
             {/* Common protected routes */}
-            <Route path="/parcels/new" element={<ParcelWizardV2 />} />
+            <Route path="/parcels/new" element={<ParcelWizard />} />
             <Route path="/sessions" element={<UserSessionsPage />} />
-            <Route path="/wizard/:sessionId" element={<ParcelWizardV2 />} /> 
+            <Route path="/wizard/:sessionId" element={<ParcelWizard />} /> 
             <Route path="/ownership" element={<OwnershipPage />} />
             <Route path="/users" element={<UserManagementPage />} />
             <Route path="/sub-cities" element={<SubCitiesPage />} />
