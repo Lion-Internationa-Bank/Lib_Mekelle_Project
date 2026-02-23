@@ -224,17 +224,15 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
       where: {
         OR: [
           { upin },
-          { file_number },
         ],
         is_deleted: false,
       },
     });
 
     if (existingParcel) {
-      const conflictField = existingParcel.upin === upin ? 'UPIN' : 'file_number';
       return res.status(409).json({
         success: false,
-        message: `${conflictField} already exists`,
+        message: `${existingParcel.upin} already exists`,
       });
     }
 
@@ -421,22 +419,22 @@ export const updateParcel = async (req: AuthRequest, res: Response) => {
           }
         }
         
-        if (key === 'file_number' && newValue && newValue !== currentParcel.file_number) {
-          const existingFileNumber = await prisma.land_parcels.findFirst({
-            where: {
-              file_number: newValue,
-              is_deleted: false,
-              NOT: { upin }
-            },
-          });
+        // if (key === 'file_number' && newValue && newValue !== currentParcel.file_number) {
+        //   const existingFileNumber = await prisma.land_parcels.findFirst({
+        //     where: {
+        //       file_number: newValue,
+        //       is_deleted: false,
+        //       NOT: { upin }
+        //     },
+        //   });
           
-          if (existingFileNumber) {
-            return res.status(409).json({
-              success: false,
-              message: 'File number already exists',
-            });
-          }
-        }
+        //   if (existingFileNumber) {
+        //     return res.status(409).json({
+        //       success: false,
+        //       message: 'File number already exists',
+        //     });
+        //   }
+        // }
         
         updates[key] = newValue;
         changesForAudit[key] = {

@@ -213,20 +213,18 @@ async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
       // 1. Create parcel (unchanged)
       const parcelData = data.parcel;
       
-      // Check for duplicate UPIN or file_number
+      // Check for duplicate UPIN 
       const existingParcel = await tx.land_parcels.findFirst({
         where: {
           OR: [
             { upin: parcelData.upin },
-            { file_number: parcelData.file_number },
           ],
           is_deleted: false,
         },
       });
 
       if (existingParcel) {
-        const conflictField = existingParcel.upin === parcelData.upin ? 'UPIN' : 'file_number';
-        throw new Error(`${conflictField} already exists`);
+        throw new Error(`${existingParcel.upin} already exists`);
       }
 
       // Validate required fields
@@ -725,15 +723,13 @@ private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData,
         where: {
           OR: [
             { upin: data.upin },
-            { file_number: data.file_number },
           ],
           is_deleted: false,
         },
       });
 
       if (existingParcel) {
-        const conflictField = existingParcel.upin === data.upin ? 'UPIN' : 'file_number';
-        throw new Error(`${conflictField} already exists`);
+        throw new Error(`${existingParcel.upin} already exists`);
       }
 
       // Create parcel

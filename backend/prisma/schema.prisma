@@ -192,7 +192,7 @@ model audit_logs {
 
 model land_parcels {
   upin            String                   @id @db.VarChar(50)
-  file_number     String                   @unique @db.VarChar(100)
+  file_number     String                   @db.VarChar(100)
   tabia           String?                  @db.VarChar(100)
   ketena          String?                  @db.VarChar(50)
   block           String?                  @db.VarChar(50)
