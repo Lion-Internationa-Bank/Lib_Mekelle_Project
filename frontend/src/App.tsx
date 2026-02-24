@@ -68,7 +68,7 @@ const App = () => {
   );
 };
 
-// Role-based home page (unchanged, minor cleanup)
+// Role-based home page 
 const RoleBasedHome = () => {
   const { user, isLoading } = useAuth();
   if (isLoading) {
