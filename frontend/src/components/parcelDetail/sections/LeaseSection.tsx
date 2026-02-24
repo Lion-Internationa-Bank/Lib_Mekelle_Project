@@ -4,7 +4,7 @@ import LeaseCard from "../cards/LeaseCard";
 import EditLeaseModal from "../modals/EditLeaseModal";
 import CreateLeaseModal from "../modals/CreateLeaseModal";
 import GenericDocsUpload from "../../common/GenericDocsUpload";
-import ApprovalRequestDocsModal from "../../ApprovalRequestDocsModal";
+import ApprovalRequestDocsModal from "../../common/ApprovalRequestDocsModal";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "sonner";

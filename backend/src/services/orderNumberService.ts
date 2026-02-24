@@ -1,6 +1,6 @@
 // src/services/orderNumberService.ts
 import prisma from '../config/prisma.ts';
-import { Prisma } from '@prisma/client';
+
 
 export class OrderNumberService {
   private static instance: OrderNumberService;

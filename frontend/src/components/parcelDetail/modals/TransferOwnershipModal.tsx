@@ -4,7 +4,7 @@ import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, Fil
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
 import GenericDocsUpload from "../../common/GenericDocsUpload";
-import ApprovalRequestDocsModal from "../../../components/ApprovalRequestDocsModal";
+import ApprovalRequestDocsModal from "../../../components/common/ApprovalRequestDocsModal";
 import { toast } from 'sonner';
 import { useAuth } from '../../../contexts/AuthContext';
 

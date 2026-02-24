@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
 import GenericDocsUpload from "../../common/GenericDocsUpload";
-import ApprovalRequestDocsModal from "../../ApprovalRequestDocsModal";
+import ApprovalRequestDocsModal from "../../common/ApprovalRequestDocsModal";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 

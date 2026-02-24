@@ -16,7 +16,7 @@ import {
   EditOwnerModal,
   DeleteOwnerModal,
 } from "../../components/ownership/OwnershipModals";
-import ApprovalRequestDocsModal from "../../components/ApprovalRequestDocsModal";
+import ApprovalRequestDocsModal from "../../components/common/ApprovalRequestDocsModal";
 import { ZodError } from "zod";
 import {
   CreateOwnerOnlySchema,

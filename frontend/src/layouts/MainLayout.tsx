@@ -1,15 +1,14 @@
 // src/layouts/MainLayout.tsx
 import { Outlet } from 'react-router-dom';
 import Header from '../components/common/Header';
-import Sidebar from '../components/Sidebar';
-import { CalendarProvider } from '../contexts/CalendarContext';
+import Sidebar from '../components/common/Sidebar';
 import { useState } from 'react';
 
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <CalendarProvider>
+ 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col">
       {/* Header - always on top */}
       <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
@@ -39,7 +38,7 @@ const MainLayout = () => {
         </main>
       </div>
     </div>
-    </CalendarProvider>
+   
   );
 };
 

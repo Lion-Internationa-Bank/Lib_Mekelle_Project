@@ -13,6 +13,7 @@ import wizardRoutes from './wizardRoutes.ts';
 import docApproval from './approvalDocuments.ts'
 import bankRoutes from './bankRoutes.ts';
 import billRoutes from './reportRoutes.ts';
+import cronRoutes from './cronRoutes.ts'
 
 const router: Router = express.Router();
 
@@ -28,6 +29,7 @@ router.use('/wizard', wizardRoutes);
 router.use('/doc-approval',docApproval)
 router.use('/reports', billRoutes);
 router.use('/bank', bankRoutes); 
+router.use('/cron', cronRoutes);
 
 
 

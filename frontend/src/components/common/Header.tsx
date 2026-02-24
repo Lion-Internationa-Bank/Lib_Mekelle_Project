@@ -56,10 +56,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
             {/* Utility Group: Calendar & Notifications */}
             <div className="flex items-center gap-1.5 pr-2 sm:pr-4 border-r border-[#f0cd6e]">
               <CalendarToggle />
-              <button className="p-2 text-[#6d5f35] hover:bg-[#f0cd6e]/20 rounded-lg relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+           
             </div>
 
             {/* User Account */}

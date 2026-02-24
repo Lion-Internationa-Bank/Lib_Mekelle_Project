@@ -3,13 +3,16 @@ import http from 'http';
 import app from './src/app.ts';
 import prisma from "./src/config/prisma.ts";
 import { seedInitialAdmins, seedOnlyConfigs } from './src/seed/initialAdmins.ts';
+import { cronScheduler } from './src/cron/index.ts';
 
 const PORT = process.env.PORT || 5000;
 const SKIP_ADMIN_SEED = process.env.SKIP_ADMIN_SEED === 'true';
 const SKIP_CONFIG_SEED = process.env.SKIP_CONFIG_SEED === 'true';
+const ENABLE_CRON_JOBS = process.env.ENABLE_CRON_JOBS !== 'false'; // Enabled by default
 
 const server = http.createServer(app);
-console.log("working direc",process.cwd())
+console.log("working direc", process.cwd());
+
 const startServer = async () => {
   try {
     // Test DB connection
@@ -29,6 +32,14 @@ const startServer = async () => {
       await seedInitialAdmins();
     } else {
       console.log('⏭️ Skipping admin seed (SKIP_ADMIN_SEED=true)');
+    }
+    
+    // Start cron jobs if enabled
+    if (ENABLE_CRON_JOBS) {
+      console.log('⏰ Starting cron scheduler...');
+      await cronScheduler.startAllTasks();
+    } else {
+      console.log('⏭️ Cron jobs disabled (ENABLE_CRON_JOBS=false)');
     }
     
     // Start server
@@ -59,6 +70,9 @@ process.on('SIGINT', async () => {
   console.log('\n📴 Shutting down gracefully...');
   
   try {
+    // Stop cron jobs
+    cronScheduler.stopAllTasks();
+    
     await prisma.$disconnect();
     console.log('✅ Database disconnected');
     
@@ -76,6 +90,9 @@ process.on('SIGTERM', async () => {
   console.log('\n📴 Received SIGTERM, shutting down...');
   
   try {
+    // Stop cron jobs
+    cronScheduler.stopAllTasks();
+    
     await prisma.$disconnect();
     console.log('✅ Database disconnected');
     
