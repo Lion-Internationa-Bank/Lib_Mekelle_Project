@@ -1,5 +1,5 @@
 // src/validation/schemas.ts
-import { optional, z } from "zod";
+import {  z } from "zod";
 
 const UPIN_REGEX = /^[A-Za-z0-9\-_]+$/;
 
@@ -17,7 +17,7 @@ export const ParcelFormSchema = z.object({
   tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
   ketena: z.string().min(1, { message: "Ketena is required" }),
   block: z.string().min(1, { message: "Block is required" }),
-
+ tender: z.string().optional(),
   total_area_m2: z.preprocess(
     (val) => {
       if (val === "" || val === null || val === undefined) return NaN;
@@ -342,6 +342,7 @@ export const EditParcelFormSchema = z.object({
   tabia: z.string().optional(),
   ketena: z.string().optional(),
   block: z.string().optional(),
+  tender: z.string().optional(),
   total_area_m2: z.number().positive().optional(),
   land_use: z.string().optional(),
   land_grade: z.number().int().positive().optional(),
@@ -381,15 +382,7 @@ export const EditOwnerFormSchema = z
 
 export type EditOwnerFormData = z.infer<typeof EditOwnerFormSchema>;
 
-// 3) Update owner share ratio (UpdateParcelOwnerShareSchema.body)
-export const EditShareFormSchema = z.object({
-  share_ratio: z.coerce
-    .number()
-    .gt(0, { message: "Share ratio must be greater than 0" })
-    .lte(1, { message: "Share ratio cannot exceed 1.0 (100%)" }),
-});
 
-export type EditShareFormData = z.infer<typeof EditShareFormSchema>;
 
 // 4) Transfer ownership (TransferOwnershipSchema.body)
 export const TransferOwnershipFormSchema = z.object({

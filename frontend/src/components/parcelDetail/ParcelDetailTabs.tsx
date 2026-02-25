@@ -1,6 +1,6 @@
 // src/components/parcelDetail/ParcelDetailTabs.tsx
 
-type DetailTab = "parcel" | "lease" | "encumbrances" | "buildings" | "billing" | "history"; // ← Added "history"
+type DetailTab = "parcel" | "lease" | "encumbrances" | "buildings" | "billing" | "history";
 
 type Props = {
   tab: DetailTab;

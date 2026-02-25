@@ -1,10 +1,9 @@
 // src/App.tsx
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, replace } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './routes/LandingPage';
-import LoginPage from './routes/LoginPage';
 import CityAdminHome from './routes/admin/CityAdminHome';
 import SubCityAdminHome from './routes/admin/SubCityAdminHome';
 import SubcityHome from './routes/subcity/SubcityHome';
@@ -34,9 +33,7 @@ const App = () => {
     <CalendarProvider>
       <WizardProvider>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-
+          <Route path="/" element={<LandingPage /> } />
           {/* Protected routes with MainLayout */}
           <Route element={<MainLayout />}>
             <Route path="/home" element={<RoleBasedHome />} />
@@ -75,7 +72,7 @@ const RoleBasedHome = () => {
     return <div>Loading...</div>; 
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   switch (user.role) {
     case 'CITY_ADMIN':

@@ -157,7 +157,7 @@ const SubCitiesPage = () => {
 
   if (user?.role !== 'CITY_ADMIN') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-0-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-[#2a2718] mb-2">Access Denied</h2>
@@ -169,7 +169,7 @@ const SubCitiesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-0-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -192,7 +192,7 @@ const SubCitiesPage = () => {
                 resetForm();
                 setShowForm(!showForm);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
             >
               {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               {showForm ? 'Cancel' : 'Add Sub-city'}
@@ -205,7 +205,7 @@ const SubCitiesPage = () => {
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-fadeIn">
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 text-red-500 mr-3 shrink-0" />
                 <p className="text-red-700">{error}</p>
               </div>
             </div>
@@ -214,7 +214,7 @@ const SubCitiesPage = () => {
           {success && (
             <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg animate-fadeIn">
               <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-green-500 mr-3 shrink-0" />
                 <p className="text-green-700">{success}</p>
               </div>
             </div>
@@ -224,7 +224,7 @@ const SubCitiesPage = () => {
         {/* Create/Edit Form */}
         {showForm && (
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn border border-[#f0cd6e]">
-            <div className="border-b border-[#f0cd6e] px-6 py-5 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
+            <div className="border-b border-[#f0cd6e] px-6 py-5 bg-linear-0-to-r from-[#f0cd6e]/5 to-white">
               <h2 className="text-xl font-bold text-[#2a2718] flex items-center gap-3">
                 {editingId ? (
                   <>
@@ -243,7 +243,7 @@ const SubCitiesPage = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
+                  <label className=" text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
                     Sub-city Name
                     <span className="text-red-500">*</span>
@@ -260,7 +260,7 @@ const SubCitiesPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
+                  <label className=" text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <Info className="w-4 h-4" />
                     Description
                     <span className="text-[#2a2718]/70 text-sm font-normal">(optional)</span>
@@ -268,7 +268,7 @@ const SubCitiesPage = () => {
                   <textarea
                     value={form.description || ''}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all min-h-[100px] resize-none placeholder:text-[#2a2718]/40"
+                    className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all min-h-25 resize-none placeholder:text-[#2a2718]/40"
                     placeholder="Brief description about this sub-city..."
                     rows={3}
                   />
@@ -280,7 +280,7 @@ const SubCitiesPage = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md flex items-center justify-center gap-2 font-medium"
+                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
                 >
                   {saving ? (
                     <>
@@ -357,7 +357,7 @@ const SubCitiesPage = () => {
             {!searchTerm && (
               <button
                 onClick={() => setShowForm(true)}
-                className="px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2 mx-auto"
+                className="px-6 py-3 bg-linear-0-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-5 h-5" />
                 Add Your First Sub-city
@@ -367,7 +367,7 @@ const SubCitiesPage = () => {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#f0cd6e]">
             {/* Table Header */}
-            <div className="border-b border-[#f0cd6e] px-6 py-4 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
+            <div className="border-b border-[#f0cd6e] px-6 py-4 bg-linear-0-to-r from-[#f0cd6e]/5 to-white">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
                   <Building2 className="w-5 h-5" />

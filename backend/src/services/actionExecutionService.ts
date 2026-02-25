@@ -25,6 +25,7 @@ interface CreateParcelData {
   land_use?: string;
   land_grade?: number;
   tenure_type?: string;
+  tender?:string;
   boundary_coords?: any;
   boundary_north?: string;
   boundary_south?: string;
@@ -245,6 +246,7 @@ async executeWizard(tx: any, data: WizardExecutionData, approverId: string) {
           land_use: parcelData.land_use,
           land_grade: parcelData.land_grade || 1.0,
           tenure_type: parcelData.tenure_type || 'OLD_POSSESSION',
+          tender: parcelData.tender,
           boundary_coords: parcelData.boundary_coords,
           boundary_north: parcelData.boundary_north,
           boundary_south: parcelData.boundary_south,
@@ -745,6 +747,7 @@ private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData,
           land_use: data.land_use,
           land_grade: data.land_grade || 1.0,
           tenure_type: data.tenure_type || 'OLD_POSSESSION',
+          tender:data.tender,
           boundary_coords: data.boundary_coords,
           boundary_north: data.boundary_north,
           boundary_south: data.boundary_south,
@@ -771,6 +774,7 @@ private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData,
             sub_city_id: parcel.sub_city_id,
             total_area_m2: parcel.total_area_m2,
             land_use: parcel.land_use,
+            tender:parcel.tender,
             tenure_type: parcel.tenure_type,
             actor_id: approverId,
             actor_role: 'APPROVER',

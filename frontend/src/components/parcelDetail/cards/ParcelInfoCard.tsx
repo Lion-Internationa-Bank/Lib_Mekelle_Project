@@ -119,6 +119,12 @@ export default function ParcelInfoCard({
                 {Number(data.total_area_m2).toLocaleString()} m²
               </dd>
             </div>
+             <div className="flex justify-between items-baseline">
+              <dt className="text-[#2a2718]/70 font-medium w-32">Tender</dt>
+              <dd className="text-[#2a2718] font-normal flex-1 text-right">
+                {data.tender || "—"}
+              </dd>
+            </div>
           </dl>
         </div>
 

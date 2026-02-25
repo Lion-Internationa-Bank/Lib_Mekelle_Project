@@ -48,6 +48,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
       land_use: parcel.land_use || undefined,
       land_grade: Number(parcel.land_grade) ?? undefined,
       tenure_type: parcel.tenure_type || undefined,
+      tender:parcel.tender || undefined,
       boundary_north: parcel.boundary_north || "",
       boundary_east: parcel.boundary_east || "",
       boundary_south: parcel.boundary_south || "",
@@ -268,6 +269,21 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   </option>
                 ))}
               </select>
+            </div>
+            
+            {/* Tender */}
+            <div>
+              <label className="block text-sm font-medium text-[#2a2718] mb-1">
+                Tender
+              </label>
+              <input
+                type="text"
+                value={form.tender ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tender: e.target.value || undefined }))
+                }
+                className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
+              />
             </div>
 
             {/* NEW: Boundary Fields - All Optional */}

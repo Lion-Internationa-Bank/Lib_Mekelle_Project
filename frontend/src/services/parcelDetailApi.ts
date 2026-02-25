@@ -2,7 +2,6 @@
 import type {
   EditParcelFormData,
   EditOwnerFormData,
-  EditShareFormData,
   TransferOwnershipFormData,
   EditLeaseFormData,
   EncumbranceFormData,
@@ -139,6 +138,7 @@ export interface ParcelDetail {
   land_use: string;
   land_grade: string;
   tenure_type: string;
+  tender: string;
   boundary_coords: string | null;
   boundary_north:string| null;
   boundary_south: string | null,

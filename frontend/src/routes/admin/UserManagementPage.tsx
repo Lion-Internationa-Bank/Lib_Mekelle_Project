@@ -70,10 +70,8 @@ const UserManagementPage = () => {
       fetchUsers();
       setSuspendModal(null);
       toast.success(`User ${suspend ? 'suspended' : 'activated'} successfully`)
-      // setSuccessMessage(`User ${suspend ? 'suspended' : 'activated'} successfully`);
     } else {
       toast.error(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`)
-      // setError(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`);
     }
   };
 
@@ -195,7 +193,7 @@ const UserManagementPage = () => {
           </button>
           <button 
             onClick={() => setAddUserModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add User

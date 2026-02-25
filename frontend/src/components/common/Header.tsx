@@ -1,5 +1,5 @@
 // src/components/Header.tsx
-import { Bell, Search, User } from 'lucide-react';
+import {  Search, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CalendarToggle from './CalendarToggle';
 

@@ -63,6 +63,7 @@ export const CreateParcelSchema = z.object({
       }),
 
     file_number: z.string().trim().min(1, { message: 'File number cannot be empty' }).optional(),
+     tender: z.string().trim().optional(),
     tabia: z
       .string()
       .trim()
@@ -103,6 +104,7 @@ export const UpdateParcelSchema = z.object({
       sub_city: z.string().trim().min(1).optional(),
       tabia: z.string().trim().min(1).optional(),
       ketena: z.string().trim().optional(),
+      tender: z.string().trim().optional(),
       block: z.string().trim().optional(),
       total_area_m2: z.coerce.number().positive().optional(),
       land_use: z.string().trim().min(1).optional(),

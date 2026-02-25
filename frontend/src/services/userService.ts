@@ -12,6 +12,7 @@ export type User = {
   role: string;
   sub_city_id: string | null;
   is_active: boolean;
+  sub_city_name:string;
 };
 
 export type UserCreateInput = {

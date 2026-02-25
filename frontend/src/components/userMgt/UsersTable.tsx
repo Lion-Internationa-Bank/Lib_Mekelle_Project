@@ -68,7 +68,7 @@ const UsersTable = ({
                     {u.sub_city_id ? (
                       <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f0cd6e]/10 text-[#2a2718] text-sm border border-[#f0cd6e]">
                         <Building className="w-3 h-3" />
-                        {u.sub_city_id.substring(0, 8)}...
+                        {u.sub_city_name}
                       </span>
                     ) : (
                       <span className="text-[#2a2718]/50 text-sm">N/A</span>

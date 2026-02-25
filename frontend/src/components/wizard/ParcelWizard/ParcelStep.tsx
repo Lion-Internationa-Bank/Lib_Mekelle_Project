@@ -35,6 +35,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
       total_area_m2: 0,
       land_use: "",
       land_grade: 1.0,
+      tender:"",
       tenure_type: "",
       boundary_coords: "",
       boundary_north: "",
@@ -299,6 +300,20 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
             <p className="mt-1 text-sm text-red-600">
               {errors.tenure_type.message}
             </p>
+          )}
+        </div>
+             {/* Tender */}
+        <div>
+          <label className="block text-sm font-semibold text-[#2a2718] mb-2">
+            Tender *
+          </label>
+          <input
+            {...register("tender")}
+            className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+            placeholder="e.g. tender 01"
+          />
+          {errors.tender && (
+            <p className="mt-1 text-sm text-red-600">{errors.tender.message}</p>
           )}
         </div>
 

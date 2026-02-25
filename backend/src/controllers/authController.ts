@@ -212,10 +212,25 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       role: true,
       sub_city_id: true,
       is_active: true,
+      sub_city:{
+        select:{
+          name:true,
+        }
+      }
     },
   });
+  const adjustedUsers = users.map(user=> ({
+    user_id:user.user_id,
+    username:user.username,
+    full_name:user.full_name,
+    role:user.role,
+    sub_city_id:user.sub_city_id,
+    sub_city_name:user.sub_city?.name,
+    is_active:user.is_active
 
-  res.json({ users });
+  }))
+              
+  res.json( {"users":adjustedUsers} );
 };
 
 // PATCH /auth/users/:id/suspend
