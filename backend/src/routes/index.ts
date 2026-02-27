@@ -14,6 +14,7 @@ import docApproval from './approvalDocuments.ts'
 import bankRoutes from './bankRoutes.ts';
 import billRoutes from './reportRoutes.ts';
 import cronRoutes from './cronRoutes.ts'
+import parcelReportRoutes from './parcelReportRoutes.ts'
 
 const router: Router = express.Router();
 
@@ -30,6 +31,7 @@ router.use('/doc-approval',docApproval)
 router.use('/reports', billRoutes);
 router.use('/bank', bankRoutes); 
 router.use('/cron', cronRoutes);
+router.use('/parcels/reports',parcelReportRoutes)
 
 
 

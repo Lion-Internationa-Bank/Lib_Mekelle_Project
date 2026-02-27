@@ -43,6 +43,7 @@ export interface AuthRequest<
     maker_id?:string;
     from_date?:string;
     to_date?:string;
+    type?: string ;
     
   }
 > extends Request<P, ResBody, ReqBody, ReqQuery> {
