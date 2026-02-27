@@ -23,7 +23,7 @@ export class CronController {
   // Manually run a specific cron task
   static async runTask(req: Request, res: Response) {
     try {
-      const { taskName } = req.params;
+      const taskName = req.params.taskName as string;
       
       // Validate task name
       const validTasks = ['billStatusUpdate', 'penaltyCalculation', 'interestCalculation', 'leaseStatusUpdate'];
