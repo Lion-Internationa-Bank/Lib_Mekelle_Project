@@ -85,21 +85,21 @@ const menuItems: MenuItem[] = [
 },
 ];
 
-// Define available reports with role-based visibility
+// Update the reports array in Sidebar.tsx
 const reports: ReportItem[] = [
   {
     id: 'bills',
     label: 'Bills Report',
     icon: '💰',
     href: '/reports/bills',
-    description: 'View and download bills with filters',
+    description: 'View and download bills',
   },
   {
-    id: 'payments',
-    label: 'Payments Report',
-    icon: '💳',
-    href: '/reports/payments',
-    description: 'Track all payments made',
+    id: 'encumbrances',
+    label: 'Encumbrances',
+    icon: '🔒',
+    href: '/reports/encumbrances',
+    description: 'View encumbrances with date filters',
   },
   {
     id: 'parcels',
@@ -109,18 +109,25 @@ const reports: ReportItem[] = [
     description: 'Land parcels and their status',
   },
   {
-    id: 'owners',
-    label: 'Owners Report',
+    id: 'owners-multiple',
+    label: 'Multiple Parcels Owners',
     icon: '👥',
-    href: '/reports/owners',
-    description: 'Property owners information',
+    href: '/reports/owners-multiple',
+    description: 'Owners with >1 parcel',
   },
   {
-    id: 'leases',
-    label: 'Leases Report',
-    icon: '📄',
-    href: '/reports/leases',
-    description: 'Active and expired leases',
+    id: 'lease-installments',
+    label: 'Lease Installments',
+    icon: '📊',
+    href: '/reports/lease-installments',
+    description: 'Filter by installment range',
+  },
+  {
+    id: 'payments',
+    label: 'Payments Report',
+    icon: '💳',
+    href: '/reports/payments',
+    description: 'Track all payments',
   },
   {
     id: 'revenue',
@@ -131,14 +138,14 @@ const reports: ReportItem[] = [
   },
 ];
 
-// Define which reports are visible for each role
+// Update visibility by role
 const reportVisibilityByRole: Record<string, string[]> = {
-  CITY_ADMIN: ['bills', 'payments', 'parcels', 'owners', 'leases', 'revenue'],
+  CITY_ADMIN: ['bills', 'encumbrances', 'parcels', 'owners-multiple', 'lease-installments', 'payments', 'revenue'],
   REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
-  SUBCITY_ADMIN: ['bills', 'parcels', 'owners', 'leases'],
-  SUBCITY_NORMAL: [], // No reports for normal users
-  SUBCITY_AUDITOR: [], // No reports for auditors
-  REVENUE_USER: [], // No reports for revenue users
+  SUBCITY_ADMIN: ['bills', 'encumbrances', 'parcels', 'owners-multiple', 'lease-installments'],
+  SUBCITY_NORMAL: [],
+  SUBCITY_AUDITOR: [],
+  REVENUE_USER: [],
 };
 
 const Sidebar = () => {

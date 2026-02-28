@@ -10,84 +10,88 @@ import { Prisma } from '../generated/prisma/client.ts';
 
 
 export class ParcelService {
-  static async getEncumbrances(
-    query: GetEncumbrancesQuery
-  ): Promise<any> {
-    const { from_date, to_date, status, type } = query;
+static async getEncumbrances(
+  query: GetEncumbrancesQuery
+): Promise<any> {
+  const { from_date, to_date, status, type } = query;
 
-    // Build where clause
-    const where: any = {
-      is_deleted: false
-    };
+  const where: any = {
+    is_deleted: false,
+  };
 
-    // Date range filter
-    if (from_date || to_date) {
-      where.registration_date = {};
-      if (from_date) where.registration_date.gte = from_date;
-      if (to_date) where.registration_date.lte = to_date;
+  // Date range filter – convert to full ISO DateTime
+  if (from_date || to_date) {
+    where.registration_date = {};
+
+    if (from_date) {
+      // Start of the day (midnight)
+      where.registration_date.gte = `${from_date}T00:00:00.000Z`; // or without Z if you want local time
+      // Alternative: use new Date(from_date).toISOString() — but beware of timezone shift
     }
 
-    // Status filter
-    if (status) {
-      where.status = status;
+    if (to_date) {
+      // End of the day (just before midnight next day)
+      where.registration_date.lte = `${to_date}T23:59:59.999Z`;
+      // Or for inclusive end-of-day: new Date(to_date + 'T23:59:59.999Z')
     }
-
-    // Type filter
-    if (type) {
-      where.type = type;
-    }
-
-    // Fetch encumbrances with related data
-    const encumbrances = await prisma.encumbrances.findMany({
-      where,
-      select: {
-        encumbrance_id:true,
-        issuing_entity:true,
-        type:true,
-        status:true,
-        reference_number:true,
-        registration_date:true,
-         land_parcel: {
-          select: {
-            upin: true,
-            file_number: true,
-            tabia: true,
-            ketena: true,
-            block: true,
-            total_area_m2: true,
-            land_use: true,
-            tenure_type: true,
-            sub_city: {
-              select: {
-                name: true
-              }
-            },
-           owners:{
-            select:{
-             owner :{
-                select:{
-                    full_name:true,
-                    phone_number:true,
-                    national_id:true,
-                    tin_number:true,
-                }
-             }
-            }
-           }
-          }
-        },
-       
-      },
-      orderBy: {
-        registration_date: 'desc'
-      },
-      
-    });
-
-    return {
-      data: encumbrances,
-    };
   }
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (type) {
+    where.type = type;
+  }
+
+  const encumbrances = await prisma.encumbrances.findMany({
+    where,
+    select: {
+      encumbrance_id: true,
+      issuing_entity: true,
+      type: true,
+      status: true,
+      reference_number: true,
+      registration_date: true,
+      land_parcel: {
+        select: {
+          upin: true,
+          file_number: true,
+          tabia: true,
+          ketena: true,
+          block: true,
+          total_area_m2: true,
+          land_use: true,
+          tenure_type: true,
+          sub_city: {
+            select: {
+              name: true,
+            },
+          },
+          owners: {
+            select: {
+              owner: {
+                select: {
+                  full_name: true,
+                  phone_number: true,
+                  national_id: true,
+                  tin_number: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      registration_date: 'desc',
+    },
+  });
+
+  return {
+    data: encumbrances,
+  };
+}
 
   static async getLandParcels(
     query: GetLandParcelsQuery,
@@ -153,11 +157,13 @@ export class ParcelService {
         total_area_m2:true,
         land_use:true,
         land_grade:true,
+        tenure_type:true,
         tender:true,
         boundary_east:true,
         boundary_north:true,
         boundary_south:true,
         boundary_west:true,
+        status:true,
         sub_city: {
           select: {
             name: true

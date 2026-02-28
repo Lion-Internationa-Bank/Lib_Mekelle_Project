@@ -1,14 +1,16 @@
 import { z } from 'zod';
 
 // Schema for encumbrances with date filter
+
+
 export const GetEncumbrancesSchema = z.object({
   query: z.object({
     from_date: z.coerce
       .date()
-      .transform(date => date ? new Date(date) : undefined),
+      .transform(date => date.toISOString()), // Returns YYYY-MM-DDTHH:mm:ss.sssZ
     to_date: z.coerce
       .date()
-      .transform(date => date ? new Date(date) : undefined),
+      .transform(date => date.toISOString()),
     status: z.enum(['ACTIVE', 'RELEASED']).optional(),
     type: z.string().optional()
   }),
