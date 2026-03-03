@@ -337,7 +337,7 @@ static async getLeaseAnnualInstallmentRange(
         sc.name as sub_city_name,
         
         -- Lease information (including annual installment)
-        la.annual_installment,
+        la.annual_installment,start_date,expiry_date,
         la.status as lease_status,
         
         -- Owner information (all owners)

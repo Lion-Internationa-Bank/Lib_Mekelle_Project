@@ -7,14 +7,18 @@ import {
   FilterActions
 } from '../../components/reports/filters/BaseFilters';
 import { reportService } from '../../services/reportService';
-import type{ LeaseInstallmentItem } from '../../types/reports';
+import { getSubCities } from '../../services/cityAdminService';
+import type { LeaseInstallmentItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
+import { LeaseInstallmentExport } from '../../components/reports/LeaseInstallmentExport';
 
 export const LeaseInstallmentRangePage: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<LeaseInstallmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [subCities, setSubCities] = useState<Array<{ sub_city_id: string; name: string }>>([]);
   
   const [filters, setFilters] = useState({
     subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
@@ -25,6 +29,21 @@ export const LeaseInstallmentRangePage: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const activeFilterCount = Object.values(filters).filter(v => v && v !== '' && v !== 0 && v !== 1000000).length;
+
+  // Load sub-cities for admin
+  useEffect(() => {
+    if (user?.role === 'CITY_ADMIN') {
+      const fetchSubCities = async () => {
+        try {
+          const response = await getSubCities();
+          setSubCities(response.data?.sub_cities || []);
+        } catch (error) {
+          console.error('Error fetching sub-cities:', error);
+        }
+      };
+      fetchSubCities();
+    }
+  }, [user]);
 
   // Auto-fetch data on component mount
   useEffect(() => {
@@ -58,16 +77,6 @@ export const LeaseInstallmentRangePage: React.FC = () => {
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
-    }
-  };
-
-  const handleExport = async () => {
-    if (!validateFilters()) return;
-    
-    try {
-      await reportService.exportLeaseInstallmentRangeReport(filters);
-    } catch (error) {
-      console.error('Error exporting lease data:', error);
     }
   };
 
@@ -179,13 +188,14 @@ export const LeaseInstallmentRangePage: React.FC = () => {
       description="View land parcels within a specific annual installment range"
       filterCount={activeFilterCount}
       onRefresh={fetchData}
-      isLoading={isLoading}
+      isLoading={isLoading || isExporting}
       filters={
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SubCityFilter
               value={filters.subCityId}
               onChange={(v) => handleFilterChange('subCityId', v)}
+              subCities={subCities} // Pass subCities to the filter
             />
           </div>
 
@@ -212,10 +222,18 @@ export const LeaseInstallmentRangePage: React.FC = () => {
               min: 0, 
               max: 1000000 
             })}
-            onExport={handleExport}
-            isLoading={isLoading}
+            onExport={null}
+            isLoading={isLoading || isExporting}
             activeFilterCount={activeFilterCount}
-          />
+          >
+            <LeaseInstallmentExport
+              data={data}
+              filters={filters}
+              onExportStart={() => setIsExporting(true)}
+              onExportComplete={() => setIsExporting(false)}
+              onExportError={() => setIsExporting(false)}
+            />
+          </FilterActions>
         </div>
       }
     >

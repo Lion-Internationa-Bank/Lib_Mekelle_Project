@@ -5,7 +5,9 @@ import {
   SubCityFilter,
   FilterActions
 } from '../../components/reports/filters/BaseFilters';
+import { OwnersMultipleParcelsExport } from '../../components/reports/OwnersMultipleParcelsExport';
 import { reportService } from '../../services/reportService';
+import { getSubCities } from '../../services/cityAdminService';
 import type { OwnerMultipleParcelsItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -14,6 +16,8 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
   const [data, setData] = useState<OwnerMultipleParcelsItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [subCities, setSubCities] = useState<Array<{ sub_city_id: string; name: string }>>([]);
   
   const [filters, setFilters] = useState({
     subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
@@ -21,6 +25,21 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
   });
 
   const activeFilterCount = Object.values(filters).filter(v => v && v !== '').length;
+
+  // Load sub-cities for admin
+  useEffect(() => {
+    if (user?.role === 'CITY_ADMIN') {
+      const fetchSubCities = async () => {
+        try {
+          const response = await getSubCities();
+          setSubCities(response.data?.sub_cities || []);
+        } catch (error) {
+          console.error('Error fetching sub-cities:', error);
+        }
+      };
+      fetchSubCities();
+    }
+  }, [user]);
 
   // Auto-fetch data on component mount
   useEffect(() => {
@@ -43,14 +62,6 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      await reportService.exportOwnersMultipleParcelsReport(filters);
-    } catch (error) {
-      console.error('Error exporting owners:', error);
     }
   };
 
@@ -83,38 +94,31 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
       key: 'parcel_count',
       header: 'Parcel Count',
       render: (item) => (
-  <div className="flex flex-col gap-3 p-2">
-    {/* Header Badge */}
-    <div>
-      <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold tracking-wide">
-        {item.parcel_count} parcels
-      </span>
-    </div>
-
-    {/* Parcels List */}
-    <div className="flex flex-col gap-2">
-      {item.parcels.map((parcel, index) => (
-        <div 
-          key={index} 
-          className="p-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors"
-        >
-          {/* UPIN - Bold and Prominent */}
-          <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-gray-400 text-xs font-normal">UPIN:</span>
-            {parcel.upin}
+        <div className="flex flex-col gap-3 p-2">
+          <div>
+            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold tracking-wide">
+              {item.parcel_count} parcels
+            </span>
           </div>
-          
-          {/* Details - Muted and smaller */}
-          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-            <span className="bg-gray-200 h-1 w-1 rounded-full"></span>
-            {[parcel.file_number, `${parcel.total_area_m2} m²`].filter(Boolean).join(" • ")}
+          <div className="flex flex-col gap-2">
+            {item.parcels.map((parcel, index) => (
+              <div 
+                key={index} 
+                className="p-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors"
+              >
+                <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-gray-400 text-xs font-normal">UPIN:</span>
+                  {parcel.upin}
+                </div>
+                <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                  <span className="bg-gray-200 h-1 w-1 rounded-full"></span>
+                  {[parcel.file_number, `${parcel.total_area_m2} m²`].filter(Boolean).join(" • ")}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-)
-
+      )
     }
   ];
 
@@ -149,13 +153,14 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
       description="View property owners who own more than one land parcel"
       filterCount={activeFilterCount}
       onRefresh={fetchData}
-      isLoading={isLoading}
+      isLoading={isLoading || isExporting}
       filters={
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SubCityFilter
               value={filters.subCityId}
               onChange={(v) => handleFilterChange('subCityId', v)}
+              subCities={subCities} // Pass subCities to the filter
             />
             
             <div className="space-y-1">
@@ -176,10 +181,18 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
               subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '', 
               minParcels: 2 
             })}
-            onExport={handleExport}
-            isLoading={isLoading}
+            onExport={null}
+            isLoading={isLoading || isExporting}
             activeFilterCount={activeFilterCount}
-          />
+          >
+            <OwnersMultipleParcelsExport
+              data={data}
+              filters={filters}
+              onExportStart={() => setIsExporting(true)}
+              onExportComplete={() => setIsExporting(false)}
+              onExportError={() => setIsExporting(false)}
+            />
+          </FilterActions>
         </div>
       }
     >
