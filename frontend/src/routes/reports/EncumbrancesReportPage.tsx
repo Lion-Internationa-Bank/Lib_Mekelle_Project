@@ -1,12 +1,14 @@
+// EncumbrancesReportPage.tsx
 import React, { useState, useEffect } from 'react';
 import { ReportsLayout } from '../../components/reports/ReportsLayout';
-import { BaseTable,type Column, ExpandableRow } from '../../components/reports/tables/BaseTable';
+import { BaseTable, type Column, ExpandableRow } from '../../components/reports/tables/BaseTable';
 import {
   SubCityFilter,
   DateRangeFilter,
   StatusFilter,
   FilterActions
 } from '../../components/reports/filters/BaseFilters';
+import { EncumbrancesExport } from '../../components/reports/EncumbrancesExport'; // Import the new component
 import { reportService } from '../../services/reportService';
 import { getSubCities } from '../../services/cityAdminService';
 import type { EncumbranceReportItem } from '../../types/reports';
@@ -16,6 +18,7 @@ export const EncumbrancesReportPage: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<EncumbranceReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [subCities, setSubCities] = useState<Array<{ sub_city_id: string; name: string }>>([]);
   
@@ -33,11 +36,9 @@ export const EncumbrancesReportPage: React.FC = () => {
   // Load sub-cities for admin
   useEffect(() => {
     if (user?.role === 'CITY_ADMIN') {
-      // Fetch sub-cities from your API
       const fetchSubCities = async () => {
         try {
           const response = await getSubCities();
-          console.log("sub city",response)
           setSubCities(response.data?.sub_cities);
         } catch (error) {
           console.error('Error fetching sub-cities:', error);
@@ -50,7 +51,7 @@ export const EncumbrancesReportPage: React.FC = () => {
   // Auto-fetch data on component mount
   useEffect(() => {
     fetchData();
-  }, []); // Empty dependency array = runs once on mount
+  }, []);
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -60,7 +61,6 @@ export const EncumbrancesReportPage: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await reportService.getEncumbrancesReport(filters);
-      console.log("response from encumbrance data ",response)
       if (response.success) {
         setData(response.data);
       }
@@ -69,14 +69,6 @@ export const EncumbrancesReportPage: React.FC = () => {
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      await reportService.exportEncumbrancesReport(filters);
-    } catch (error) {
-      console.error('Error exporting encumbrances:', error);
     }
   };
 
@@ -106,30 +98,27 @@ export const EncumbrancesReportPage: React.FC = () => {
       )
     },
     {
-    key:'owners',
-    header:'Owners',
-    render:(item) => (
-  <> 
-    <div className="font-bold mb-2">
-      {item.land_parcel.owners?.length || 0} Owners
-    </div>
-
-    {item.land_parcel.owners?.map((ownerWrapper, index) => (
-      <div key={index} className="mb-4"> 
-        <div className="text-sm font-medium">
-          {ownerWrapper.owner.full_name}
-        </div>
-
-        <div className="text-xs text-gray-500">
-          {[ownerWrapper.owner.phone_number]
-            .filter(Boolean) 
-            .join(" | ")}
-        </div>
-      </div>
-    ))}
-  </>
-)
-
+      key: 'owners',
+      header: 'Owners',
+      render: (item) => (
+        <> 
+          <div className="font-bold mb-2">
+            {item.land_parcel.owners?.length || 0} Owners
+          </div>
+          {item.land_parcel.owners?.map((ownerWrapper, index) => (
+            <div key={index} className="mb-4"> 
+              <div className="text-sm font-medium">
+                {ownerWrapper.owner.full_name}
+              </div>
+              <div className="text-xs text-gray-500">
+                {[ownerWrapper.owner.phone_number]
+                  .filter(Boolean) 
+                  .join(" | ")}
+              </div>
+            </div>
+          ))}
+        </>
+      )
     },
     {
       key: 'issuing_entity',
@@ -174,7 +163,7 @@ export const EncumbrancesReportPage: React.FC = () => {
       description="View and filter encumbrances with optional date range"
       filterCount={activeFilterCount}
       onRefresh={fetchData}
-      isLoading={isLoading}
+      isLoading={isLoading || isExporting}
       filters={
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -222,10 +211,19 @@ export const EncumbrancesReportPage: React.FC = () => {
               status: '', 
               type: '' 
             })}
-            onExport={handleExport}
+            onExport={null} // Remove the old export handler
             isLoading={isLoading}
             activeFilterCount={activeFilterCount}
-          />
+          >
+            {/* Add the new export component as a child */}
+            <EncumbrancesExport
+              data={data}
+              filters={filters}
+              onExportStart={() => setIsExporting(true)}
+              onExportComplete={() => setIsExporting(false)}
+              onExportError={() => setIsExporting(false)}
+            />
+          </FilterActions>
         </div>
       }
     >

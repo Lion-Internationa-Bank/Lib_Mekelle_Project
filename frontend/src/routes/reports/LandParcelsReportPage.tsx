@@ -11,8 +11,9 @@ import { reportService } from '../../services/reportService';
 import { getSubCities,getConfig } from '../../services/cityAdminService';
 import type { LandParcelReportItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
+import { LandParcelsExport } from '../../components/reports/LandParcelsExport';
 
-// Status options (hardcoded as they're enum values)
+// Status options 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Active' },
   { value: 'RETIRED', label: 'Retired' },
@@ -35,6 +36,7 @@ export const LandParcelsReportPage: React.FC = () => {
   const [landUseOptions, setLandUseOptions] = useState<ConfigOption[]>([]);
   const [tenureTypeOptions, setTenureTypeOptions] = useState<ConfigOption[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -425,25 +427,33 @@ export const LandParcelsReportPage: React.FC = () => {
             disabled={isLoadingOptions}
           />
 
-          <FilterActions
-            onApply={fetchData}
-            onClear={() => setFilters({
-              subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
-              landUse: '',
-              tenureType: '',
-              tabia: '',
-              ketena: '',
-              block: '',
-              minArea: undefined,
-              maxArea: undefined,
-              landGrade: undefined,
-              status: '',
-              tender: ''
-            })}
-            onExport={handleExport}
-            isLoading={isLoading || isLoadingOptions}
-            activeFilterCount={activeFilterCount}
-          />
+       <FilterActions
+  onApply={fetchData}
+  onClear={() => setFilters({
+    subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
+    landUse: '',
+    tenureType: '',
+    tabia: '',
+    ketena: '',
+    block: '',
+    minArea: undefined,
+    maxArea: undefined,
+    landGrade: undefined,
+    status: '',
+    tender: ''
+  })}
+  onExport={null} // Remove the old export handler
+  isLoading={isLoading || isLoadingOptions || isExporting}
+  activeFilterCount={activeFilterCount}
+>
+  <LandParcelsExport
+    data={data}
+    filters={filters}
+    onExportStart={() => setIsExporting(true)}
+    onExportComplete={() => setIsExporting(false)}
+    onExportError={() => setIsExporting(false)}
+  />
+</FilterActions>
         </div>
       }
     >

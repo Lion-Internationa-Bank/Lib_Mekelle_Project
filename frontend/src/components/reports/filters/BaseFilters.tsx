@@ -142,10 +142,11 @@ export const StatusFilter: React.FC<{
 export const FilterActions: React.FC<{
   onApply: () => void;
   onClear: () => void;
-  onExport?: () => void;
+  onExport?: (() => void) | null;
   isLoading?: boolean;
   activeFilterCount?: number;
-}> = ({ onApply, onClear, onExport, isLoading = false, activeFilterCount = 0 }) => {
+  children?: React.ReactNode;
+}> = ({ onApply, onClear, onExport, isLoading = false, activeFilterCount = 0, children }) => {
   return (
     <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
       <button
@@ -162,6 +163,8 @@ export const FilterActions: React.FC<{
       >
         Clear
       </button>
+      
+      {/* Use either the onExport prop or children for export functionality */}
       {onExport && (
         <button
           onClick={onExport}
@@ -171,6 +174,9 @@ export const FilterActions: React.FC<{
           Export to Excel
         </button>
       )}
+      
+      {children}
+      
       {activeFilterCount > 0 && (
         <span className="text-xs text-gray-500">
           {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''}

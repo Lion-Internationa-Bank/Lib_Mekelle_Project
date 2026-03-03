@@ -87,3 +87,10 @@ ehthumbs.db
 Desktop.ini
 
 
+backend/cert.pem
+backend/key.pem
+frontend/localhost+3-key.pem
+frontend/localhost+3.pem
+
+
+
