@@ -7,7 +7,9 @@ import type{
   EncumbranceReportItem,
   LandParcelReportItem,
   OwnerMultipleParcelsItem,
-  LeaseInstallmentItem
+  LeaseInstallmentItem,
+  BillReportItem,
+  BillReportFilters
 } from '../types/reports';
 
 class ReportService {
@@ -165,6 +167,10 @@ class ReportService {
   async exportLeaseInstallmentRangeReport(filters: LeaseInstallmentRangeFilters): Promise<void> {
     return this.exportReport('/parcels/leases/installment-range', filters, `lease_installments_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
+
+  async getBillsReport(filters: BillReportFilters): Promise<ApiResponse<BillReportItem[]>> {
+  return this.fetchReport<BillReportItem[]>('/bills', filters);
+}
 }
 
 // Create and export a singleton instance

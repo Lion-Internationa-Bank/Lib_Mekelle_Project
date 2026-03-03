@@ -229,6 +229,7 @@ export const LeaseInstallmentRangePage: React.FC = () => {
             <LeaseInstallmentExport
               data={data}
               filters={filters}
+              subCities={subCities}
               onExportStart={() => setIsExporting(true)}
               onExportComplete={() => setIsExporting(false)}
               onExportError={() => setIsExporting(false)}

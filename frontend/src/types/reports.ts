@@ -219,3 +219,32 @@ export interface LandParcelsReportFilters extends BaseReportFilters {
   status?: 'ACTIVE' | 'RETIRED' | 'PENDING';
   tender?: string;
 }
+
+
+// src/types/reports.ts
+
+// Add Bill Report Item type
+export interface BillReportItem {
+  upin: string;
+  installment_number: number;
+  fiscal_year: string | null;
+  base_payment: number;
+  amount_due: number;
+  due_date: string;
+  payment_status: 'PAID' | 'UNPAID' | 'OVERDUE' | 'PARTIAL';
+  interest_amount: number | null;
+  interest_rate_used: number | null;
+  penalty_amount: number | null;
+  penalty_rate_used: number | null;
+  full_name: string;
+  phone_number: string;
+  subcity_name: string;
+}
+
+// Add Bill filter types
+export interface BillReportFilters {
+  subcityId?: string;
+  fromDate?: string;
+  toDate?: string;
+  status?: string;
+}

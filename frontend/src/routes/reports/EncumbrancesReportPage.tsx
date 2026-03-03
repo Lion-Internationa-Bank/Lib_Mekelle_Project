@@ -39,7 +39,7 @@ export const EncumbrancesReportPage: React.FC = () => {
       const fetchSubCities = async () => {
         try {
           const response = await getSubCities();
-          setSubCities(response.data?.sub_cities);
+          setSubCities(response.data?.sub_cities || []);
         } catch (error) {
           console.error('Error fetching sub-cities:', error);
         }
@@ -219,6 +219,7 @@ export const EncumbrancesReportPage: React.FC = () => {
             <EncumbrancesExport
               data={data}
               filters={filters}
+              subCities={subCities}
               onExportStart={() => setIsExporting(true)}
               onExportComplete={() => setIsExporting(false)}
               onExportError={() => setIsExporting(false)}

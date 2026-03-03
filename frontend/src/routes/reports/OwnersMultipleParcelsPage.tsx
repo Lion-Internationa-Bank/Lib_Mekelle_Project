@@ -188,6 +188,7 @@ export const OwnersMultipleParcelsPage: React.FC = () => {
             <OwnersMultipleParcelsExport
               data={data}
               filters={filters}
+              subCities={subCities}
               onExportStart={() => setIsExporting(true)}
               onExportComplete={() => setIsExporting(false)}
               onExportError={() => setIsExporting(false)}

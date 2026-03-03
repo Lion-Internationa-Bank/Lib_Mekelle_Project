@@ -7,8 +7,29 @@ import {
 } from '../validation/parcelReportSchemas.ts';
 import { Prisma } from '../generated/prisma/client.ts';
 
+interface BillData {
+  upin: string;
+  installment_number: number | null;
+  fiscal_year: number;
+  base_payment: any | null;
+  amount_due: any;
+  due_date: Date | null;
+  payment_status: string;
+  interest_amount: any;
+  interest_rate_used: any | null;
+  penalty_amount: any | null;
+  penalty_rate_used: any | null;
+  full_name: string;
+  phone_number: string;
+  subcity_name?: string;
+}
 
-
+interface BillFilterOptions {
+  subcityId?: string;
+  status?: 'PAID' | 'UNPAID' | 'OVERDUE';
+  fromDate?: string;
+  toDate?: string;
+}
 export class ParcelService {
 static async getEncumbrances(
   query: GetEncumbrancesQuery
@@ -426,4 +447,82 @@ static async getLeaseAnnualInstallmentRange(
     throw error;
   }
 }
+
+  static async getFilteredBills(filters: BillFilterOptions): Promise<BillData[]> {
+    // Build where clause manually
+    const whereClause: any = {};
+    
+    // Apply subcity filter
+    if (filters.subcityId) {
+      whereClause.parcel = {
+        sub_city_id: filters.subcityId
+      };
+    }
+    
+    // Apply status filter
+    if (filters.status) {
+      whereClause.payment_status = filters.status;
+    }
+    
+    // Apply date range filter on due_date
+    if (filters.fromDate || filters.toDate) {
+      whereClause.due_date = {};
+      
+      if (filters.fromDate) {
+        whereClause.due_date.gte = new Date(filters.fromDate);
+      }
+      
+      if (filters.toDate) {
+        whereClause.due_date.lte = new Date(filters.toDate);
+      }
+    }
+    
+    const bills = await prisma.billing_records.findMany({
+      where: whereClause,
+      include: {
+        parcel: {
+          include: {
+            sub_city: true,
+            owners: {
+              where: {
+                is_active: true
+              },
+              include: {
+                owner: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { due_date: 'asc' },
+        { upin: 'asc' }
+      ]
+    });
+    
+    // Transform data to flat structure
+    return bills.map(bill => {
+      // Get the first active owner (or handle multiple owners as needed)
+      const activeOwner = bill.parcel.owners.find((po: any) => po.is_active);
+      
+      return {
+        upin: bill.upin,
+        installment_number: bill.installment_number,
+        fiscal_year: bill.fiscal_year,
+        base_payment: bill.base_payment,
+        amount_due: bill.amount_due,
+        due_date: bill.due_date,
+        payment_status: bill.payment_status,
+        interest_amount: bill.interest_amount,
+        interest_rate_used: bill.interest_rate_used,
+        penalty_amount: bill.penalty_amount,
+        penalty_rate_used: bill.penalty_rate_used,
+        full_name: activeOwner?.owner?.full_name || 'N/A',
+        phone_number: activeOwner?.owner?.phone_number || 'N/A',
+        subcity_name: bill.parcel.sub_city?.name || 'N/A'
+      };
+    });
+  }
+
+
 }

@@ -7,6 +7,7 @@ import type { EncumbranceReportItem } from '../../types/reports';
 interface EncumbrancesExportProps {
   data: EncumbranceReportItem[];
   filters: Record<string, any>;
+  subCities?: Array<{ sub_city_id: string; name: string }>;
   fileName?: string;
   onExportStart?: () => void;
   onExportComplete?: () => void;
@@ -18,6 +19,7 @@ export const EncumbrancesExport: React.FC<EncumbrancesExportProps> = ({
   data,
   filters,
   fileName,
+  subCities,
   onExportStart,
   onExportComplete,
   onExportError,
@@ -98,7 +100,9 @@ export const EncumbrancesExport: React.FC<EncumbrancesExportProps> = ({
       ['Date Range:', filters.from_date && filters.to_date 
         ? `${filters.from_date} to ${filters.to_date}`
         : 'All Dates'],
-      ['Sub City:', filters.subCityId || 'All Sub Cities'],
+       ['Sub City:', filters.subCityId && data.length > 0
+    ? data[0]?.sub_city?.name || filters.subCityId
+    : 'All Sub Cities'],
       ['Status Filter:', filters.status || 'All Statuses'],
       ['Type Filter:', filters.type || 'All Types']
     ];

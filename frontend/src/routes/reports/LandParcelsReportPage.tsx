@@ -449,6 +449,7 @@ export const LandParcelsReportPage: React.FC = () => {
   <LandParcelsExport
     data={data}
     filters={filters}
+    subCities={subCities}
     onExportStart={() => setIsExporting(true)}
     onExportComplete={() => setIsExporting(false)}
     onExportError={() => setIsExporting(false)}

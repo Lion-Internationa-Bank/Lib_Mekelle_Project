@@ -7,7 +7,7 @@ import {
   GetEncumbrancesSchema,
   GetLandParcelsSchema,
   GetOwnersWithMultipleParcelsSchema,
- GetLeaseAnnualInstallmentRangeSchema
+ GetLeaseAnnualInstallmentRangeSchema,
 } from '../validation/parcelReportSchemas.ts';
 
 const router = express.Router();
@@ -42,6 +42,13 @@ router.get('/annual_payment',
   authorize(['CITY_ADMIN', 'SUBCITY_ADMIN', 'SUBCITY_NORMAL', 'REVENUE_ADMIN', 'REVENUE_USER']),
   validateRequest(GetLeaseAnnualInstallmentRangeSchema),
   ParcelController.getLeaseAnnualInstallmentRange
+);
+
+router.get('/bills',
+  authenticate,
+  authorize(['CITY_ADMIN', 'SUBCITY_ADMIN', 'SUBCITY_NORMAL', 'REVENUE_ADMIN', 'REVENUE_USER']),
+  // validateRequest(GetLeaseAnnualInstallmentRangeSchema),
+  ParcelController.getFilteredBills
 );
 
 export default router;

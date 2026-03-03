@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ReportsLayout } from '../../components/reports/ReportsLayout';
 
 // Import report pages
-import { BillsReportPage } from './BillsReportPage';
+import { BillsReportPage } from './BillsReportPageV1';
 import { EncumbrancesReportPage } from './EncumbrancesReportPage';
 import { LandParcelsReportPage } from './LandParcelsReportPage';
 import { OwnersMultipleParcelsPage } from './OwnersMultipleParcelsPage';
