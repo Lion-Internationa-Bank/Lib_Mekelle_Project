@@ -17,16 +17,30 @@ const adminsToSeed: AdminConfig[] = [
   {
     username: 'cityadmin',
     passwordEnv: 'CITY_ADMIN_PASSWORD',
-    fallbackPassword: 'CityAdmin123!',
+    fallbackPassword: 'password123',
     full_name: 'City Administrator',
     role: 'CITY_ADMIN',
   },
   {
+    username: 'cityapprover',
+    passwordEnv: 'CITY_APPROVER_PASSWORD',
+    fallbackPassword: 'password123',
+    full_name: 'City Approver',
+    role: 'CITY_APPROVER',
+  },
+  {
     username: 'revenueadmin',
     passwordEnv: 'REVENUE_ADMIN_PASSWORD',
-    fallbackPassword: 'RevenueAdmin123!',
+    fallbackPassword: 'password123',
     full_name: 'Revenue Administrator',
     role: 'REVENUE_ADMIN',
+  },
+  {
+    username: 'revenueapprover',
+    passwordEnv: 'REVENUE_APPROVER_PASSWORD',
+    fallbackPassword: 'password123',
+    full_name: 'Revenue Approver',
+    role: 'REVENUE_APPROVER',
   },
 ];
 

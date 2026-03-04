@@ -1,17 +1,41 @@
 // src/components/admin/SuspendActivateModal.tsx
-import { UserX, UserCheck } from 'lucide-react';
+import { UserX, UserCheck, Clock } from 'lucide-react';
 import type { User } from '../../services/userService';
+import { useState } from 'react';
 
 interface SuspendActivateModalProps {
   isOpen: boolean;
   user: User | null;
   suspend: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
+  isSubmitting?: boolean;
 }
 
-const SuspendActivateModal = ({ isOpen, user, suspend, onClose, onConfirm }: SuspendActivateModalProps) => {
+const SuspendActivateModal = ({ 
+  isOpen, 
+  user, 
+  suspend, 
+  onClose, 
+  onConfirm,
+  isSubmitting = false 
+}: SuspendActivateModalProps) => {
+  const [reason, setReason] = useState('');
+
   if (!isOpen || !user) return null;
+
+  const handleConfirm = async () => {
+    await onConfirm();
+    setReason('');
+  };
+
+  const handleClose = () => {
+    setReason('');
+    onClose();
+  };
+
+  // Determine if action requires approval based on user role
+  const requiresApproval = ['CITY_APPROVER', 'SUBCITY_APPROVER', 'REVENUE_APPROVER'].includes(user.role);
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -25,33 +49,78 @@ const SuspendActivateModal = ({ isOpen, user, suspend, onClose, onConfirm }: Sus
             <UserCheck className="w-6 h-6 text-green-600" />
           )}
         </div>
+        
         <h3 className="text-xl font-bold text-[#2a2718] mb-2">
           {suspend ? 'Suspend User' : 'Activate User'}
         </h3>
+        
         <p className="text-[#2a2718]/70 mb-2">
           Are you sure you want to {suspend ? 'suspend' : 'activate'} <span className="font-semibold">{user.full_name}</span>?
         </p>
-        <p className="text-sm text-[#2a2718]/70 mb-6">
-          {suspend
-            ? 'This user will lose access to the system until activated again.'
-            : 'This user will regain access to the system.'}
-        </p>
+
+        {/* Reason input for all actions */}
+        <div className="mb-4">
+          <label htmlFor="reason" className="block text-sm font-medium text-[#2a2718]/70 mb-1">
+            Reason for this action {requiresApproval ? '(required)' : '(optional)'}
+          </label>
+          <textarea
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={requiresApproval 
+              ? "Please provide a reason for this action..." 
+              : "Optional reason for this action..."
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent"
+            rows={3}
+            disabled={isSubmitting}
+            required={requiresApproval}
+          />
+        </div>
+
+        {requiresApproval && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-amber-700 font-medium">
+                  This action requires approval
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Your request will be sent for review by an approver. You'll be notified once it's processed.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
-            onClick={onClose}
-            className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e]"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className={`flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors ${
+            onClick={handleConfirm}
+            disabled={isSubmitting || (requiresApproval && !reason.trim())}
+            className={`flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2 ${
               suspend
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
+                ? 'bg-red-600 hover:bg-red-700 disabled:bg-red-300'
+                : 'bg-green-600 hover:bg-green-700 disabled:bg-green-300'
+            } disabled:cursor-not-allowed`}
           >
-            {suspend ? 'Suspend User' : 'Activate User'}
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              requiresApproval 
+                ? `Request ${suspend ? 'Suspension' : 'Activation'}`
+                : `${suspend ? 'Suspend' : 'Activate'} User`
+            )}
           </button>
         </div>
       </div>

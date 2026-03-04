@@ -1,16 +1,30 @@
 // src/components/admin/DeleteUserModal.tsx
-import { Trash2, AlertCircle } from 'lucide-react';
-import type { User } from '../../services/userService';
+import { Trash2, AlertCircle, Clock } from 'lucide-react';
+import type { User, ApprovalRequestResponse } from '../../services/userService';
+import { useState } from 'react';
 
 interface DeleteUserModalProps {
   isOpen: boolean;
   user: User | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
+  isSubmitting?: boolean;
 }
 
-const DeleteUserModal = ({ isOpen, user, onClose, onConfirm }: DeleteUserModalProps) => {
+const DeleteUserModal = ({ isOpen, user, onClose, onConfirm, isSubmitting = false }: DeleteUserModalProps) => {
+  const [reason, setReason] = useState('');
+
   if (!isOpen || !user) return null;
+
+  const handleConfirm = async () => {
+    await onConfirm();
+    setReason('');
+  };
+
+  const handleClose = () => {
+    setReason('');
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -22,27 +36,58 @@ const DeleteUserModal = ({ isOpen, user, onClose, onConfirm }: DeleteUserModalPr
         <p className="text-[#2a2718]/70 mb-2">
           Are you sure you want to delete <span className="font-semibold">{user.full_name}</span>?
         </p>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-          <p className="text-sm text-red-700 font-medium flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            This action cannot be undone
-          </p>
-          <p className="text-xs text-red-600 mt-1">
-            All user data will be permanently removed from the system.
-          </p>
+        
+        {/* Reason input for approval workflow */}
+        <div className="mb-4">
+          <label htmlFor="reason" className="block text-sm font-medium text-[#2a2718]/70 mb-1">
+            Reason for deletion (optional)
+          </label>
+          <textarea
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Please provide a reason for this deletion..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent"
+            rows={3}
+            disabled={isSubmitting}
+          />
         </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-2">
+            <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-amber-700 font-medium">
+                This action requires approval
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                Your request will be sent for review by an approver. You'll be notified once it's processed.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button
-            onClick={onClose}
-            className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e]"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+            onClick={handleConfirm}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Delete Permanently
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Request Deletion'
+            )}
           </button>
         </div>
       </div>

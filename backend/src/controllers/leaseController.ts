@@ -5,6 +5,7 @@ import { AuditAction } from '../generated/prisma/enums.ts';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { AuditService } from '../services/auditService.ts';
 import { type AuthRequest } from '../middlewares/authMiddleware.ts';
+import { UserRole } from '../generated/prisma/enums.ts';
 
 
 // Initialize services
@@ -109,6 +110,7 @@ export const createLease = async (
       entityType: 'LEASE_AGREEMENTS',
       entityId, // Temporary ID, will be replaced with actual lease_id after approval
       actionType: 'CREATE',
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         lease_details: {
           upin,
@@ -459,6 +461,7 @@ export const updateLease = async (
       entityType: 'LEASE_AGREEMENTS',
       entityId: lease_id,
       actionType: 'UPDATE',
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         // ONLY the changed fields
         changes: changesForRequest,
@@ -617,6 +620,7 @@ export const deleteLease = async (req: AuthRequest, res: Response) => {
       entityType: 'LEASE_AGREEMENTS',
       entityId: lease_id,
       actionType: 'DELETE',
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         reason: req.body.reason,
         lease_details: {

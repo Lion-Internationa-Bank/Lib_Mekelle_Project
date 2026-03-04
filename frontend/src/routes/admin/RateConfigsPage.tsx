@@ -31,12 +31,12 @@ import { toast } from "sonner";
 const RATE_TYPES = [
   "LEASE_INTEREST_RATE",
   "PENALTY_RATE",
-  "PENALTY_CONSTRUCTION_DELAY",
-  "GRADE_FACTOR_MULTIPLIER",
-  "ANNUAL_ESCALATION_RATE",
-  "DOWN_PAYMENT_INTEREST",
-  "LATE_PAYMENT_GRACE_DAYS",
-  "BANK_REFERENCE_RATE",
+  // "PENALTY_CONSTRUCTION_DELAY",
+  // "GRADE_FACTOR_MULTIPLIER",
+  // "ANNUAL_ESCALATION_RATE",
+  // "DOWN_PAYMENT_INTEREST",
+  // "LATE_PAYMENT_GRACE_DAYS",
+  // "BANK_REFERENCE_RATE",
 ] as const;
 
 type RateType = (typeof RATE_TYPES)[number];
@@ -56,30 +56,30 @@ const rateMeta: Record<
     label: "Penalty Rate",
     desc: "Penalty rate for late payments or violations (%)",
   },
-  PENALTY_CONSTRUCTION_DELAY: {
-    label: "Construction Delay Penalty",
-    desc: "Penalty rate for construction delays",
-  },
-  GRADE_FACTOR_MULTIPLIER: {
-    label: "Grade Factor Multiplier",
-    desc: "Multiplier factor based on land/building grade",
-  },
-  ANNUAL_ESCALATION_RATE: {
-    label: "Annual Escalation Rate",
-    desc: "Yearly escalation rate for lease or tax (%)",
-  },
-  DOWN_PAYMENT_INTEREST: {
-    label: "Down Payment Interest",
-    desc: "Interest rate applied on down payment (%)",
-  },
-  LATE_PAYMENT_GRACE_DAYS: {
-    label: "Late Payment Grace Days",
-    desc: "Number of days before late payment penalty applies",
-  },
-  BANK_REFERENCE_RATE: {
-    label: "Bank Reference Rate",
-    desc: "Reference interest rate from central bank (%)",
-  },
+  // PENALTY_CONSTRUCTION_DELAY: {
+  //   label: "Construction Delay Penalty",
+  //   desc: "Penalty rate for construction delays",
+  // },
+  // GRADE_FACTOR_MULTIPLIER: {
+  //   label: "Grade Factor Multiplier",
+  //   desc: "Multiplier factor based on land/building grade",
+  // },
+  // ANNUAL_ESCALATION_RATE: {
+  //   label: "Annual Escalation Rate",
+  //   desc: "Yearly escalation rate for lease or tax (%)",
+  // },
+  // DOWN_PAYMENT_INTEREST: {
+  //   label: "Down Payment Interest",
+  //   desc: "Interest rate applied on down payment (%)",
+  // },
+  // LATE_PAYMENT_GRACE_DAYS: {
+  //   label: "Late Payment Grace Days",
+  //   desc: "Number of days before late payment penalty applies",
+  // },
+  // BANK_REFERENCE_RATE: {
+  //   label: "Bank Reference Rate",
+  //   desc: "Reference interest rate from central bank (%)",
+  // },
 };
 
 type FormMode = "view" | "edit-existing" | "create-new";
@@ -122,9 +122,9 @@ const RateConfigsPage: React.FC = () => {
       </div>
     );
   }
-
-  const isPercentageType = (type: RateType) =>
-    type !== "LATE_PAYMENT_GRACE_DAYS";
+ const isPercentageType:Boolean = true
+  // const isPercentageType = (type: RateType) =>
+  //   type !== "LATE_PAYMENT_GRACE_DAYs";
 
   // Format rate for display (convert decimal to percentage with 2 decimal places)
   const formatRateForDisplay = (decimalValue: number): string => {
@@ -149,7 +149,7 @@ const RateConfigsPage: React.FC = () => {
 
         // Backend stores 0–1; UI shows percent with 2 decimal places except for grace days
         const raw = r.value ?? 0;
-        const uiValue = isPercentageType(type) ? formatRateForDisplay(raw) : raw.toString();
+        const uiValue = isPercentageType ? formatRateForDisplay(raw) : raw.toString();
         setValue(uiValue);
 
         setSource(r.source || "");
@@ -647,7 +647,7 @@ const handleSave = async () => {
                             setFormMode("view");
                             if (currentRate) {
                               const raw = currentRate.value ?? 0;
-                              const uiValue = isPercentageType(selectedRateType)
+                              const uiValue = isPercentageType
                                 ? formatRateForDisplay(raw)
                                 : raw.toString();
                               setValue(uiValue);
@@ -722,7 +722,7 @@ const handleSave = async () => {
                     <tbody>
                       {history.map((h, idx) => {
                         const raw = h.value ?? 0;
-                        const uiValue = isPercentageType(selectedRateType)
+                        const uiValue = isPercentageType
                           ? formatRateForDisplay(raw)
                           : raw.toString();
                         return (

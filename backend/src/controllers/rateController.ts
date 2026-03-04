@@ -2,13 +2,21 @@
 import type { Request, Response } from "express";
 import prisma from "../config/prisma.ts";
 import type { AuthRequest } from "../middlewares/authMiddleware.ts";
+import { MakerCheckerService } from '../services/makerCheckerService.ts';
+import { AuditService } from '../services/auditService.ts';
 import { 
   UserRole, 
   AuditAction, 
+  ActionType,
+  EntityType,
   ConfigCategory, 
   PaymentStatus, 
   EncumbranceStatus 
 } from '../generated/prisma/enums.ts';
+
+// Initialize services
+const auditService = new AuditService();
+const makerCheckerService = new MakerCheckerService(auditService);
 
 type RateType =
   | "LEASE_INTEREST_RATE"
@@ -21,10 +29,9 @@ type RateType =
   | "BANK_REFERENCE_RATE";
 
 /**
- * GET /api/rates/:type/current?at=2026-01-17T00:00:00Z
+ * GET /api/rates/:type/current
+ * Returns only the rate that is active *now* for this type.
  */
-// GET /api/rates/:type/current
-// Returns only the rate that is active *now* for this type.
 export const getCurrentRate = async (req: Request, res: Response) => {
   const { type } = req.params as { type: RateType };
   const now = new Date();
@@ -68,11 +75,9 @@ export const getCurrentRate = async (req: Request, res: Response) => {
   }
 };
 
-
 /**
  * POST /api/rates/:type
- * Create NEW rate row for (rate_type, effective_from).
- * Fails if that composite key already exists.
+ * Create NEW rate row through maker-checker
  */
 export const createRate = async (req: AuthRequest, res: Response) => {
   const { type } = req.params as { type: RateType };
@@ -84,44 +89,35 @@ export const createRate = async (req: AuthRequest, res: Response) => {
   };
 
   const actor = req.user!;
-  const userId = actor.user_id;
 
+  // Validation
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "Value must be a finite number" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "Value must be a finite number" 
+    });
   }
 
-  // enforce 0 <= value <= 1
   if (value < 0 || value > 1) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "Value must be between 0 and 1 (inclusive)" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "Value must be between 0 and 1 (inclusive)" 
+    });
   }
 
   if (!effective_from) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "effective_from is required" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "effective_from is required" 
+    });
   }
 
   const fromDate = new Date(effective_from);
   if (Number.isNaN(fromDate.getTime())) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "Invalid effective_from; must be ISO date string" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "Invalid effective_from; must be ISO date string" 
+    });
   }
 
   let untilDate: Date | null = null;
@@ -137,6 +133,7 @@ export const createRate = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    // Check for duplicate
     const existing = await prisma.rate_configurations.findUnique({
       where: {
         rate_type_effective_from: {
@@ -149,128 +146,51 @@ export const createRate = async (req: AuthRequest, res: Response) => {
     if (existing) {
       return res.status(409).json({
         success: false,
-        message: "Rate with this type and effective_from already exists. Use UPDATE endpoint instead.",
+        message: "Rate with this type and effective_from already exists.",
       });
     }
 
-    const created = await prisma.$transaction(async (tx) => {
-      // Find previous active rate
-      const previousActive = await tx.rate_configurations.findFirst({
-        where: {
-          rate_type: type,
-          is_active: true,
-          effective_from: { lt: fromDate },
-        },
-        orderBy: { effective_from: "desc" },
-      });
+    // Prepare request data
+    const requestData = {
+      rate_type: type,
+      value,
+      source: source?.trim() || null,
+      effective_from: fromDate,
+      effective_until: untilDate,
+      created_by: actor.user_id,
+      is_active: true,
+    };
 
-      let previousRateUpdate = null;
-
-      // Deactivate previous rate if exists
-      if (previousActive) {
-        previousRateUpdate = await tx.rate_configurations.update({
-          where: { id: previousActive.id },
-          data: {
-            effective_until: fromDate,
-            is_active: false,
-            updated_at: new Date(),
-          },
-        });
-      }
-
-      // Create new rate
-      const newRate = await tx.rate_configurations.create({
-        data: {
-          rate_type: type,
-          value,
-          source: source?.trim() || null,
-          effective_from: fromDate,
-          effective_until: untilDate,
-          created_by: userId,
-          is_active: true,
-        },
-      });
-
-      // Create audit log for rate creation
-      await tx.audit_logs.create({
-        data: {
-          user_id: userId,
-          action_type: AuditAction.CREATE,
-          entity_type: 'rate_configurations',
-          entity_id: newRate.id,
-          changes: {
-            action: 'create_rate',
-            rate_type: type,
-            value,
-            source: source?.trim() || null,
-            effective_from: fromDate,
-            effective_until: untilDate,
-            previous_active_rate: previousActive ? {
-              id: previousActive.id,
-              value: previousActive.value,
-              effective_from: previousActive.effective_from,
-              effective_until: previousActive.effective_until,
-            } : null,
-            previous_rate_updated: previousRateUpdate ? {
-              new_effective_until: previousRateUpdate.effective_until,
-              new_is_active: previousRateUpdate.is_active,
-            } : null,
-            actor_id: actor.user_id,
-            actor_role: actor.role,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: req.ip || req.socket.remoteAddress,
-        },
-      });
-
-      // Create config change audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: userId,
-          action_type: AuditAction.CONFIG_CHANGE,
-          entity_type: 'rate_configurations',
-          entity_id: newRate.id,
-          changes: {
-            action: 'rate_configuration_created',
-            rate_type: type,
-            value,
-            effective_from: fromDate,
-            actor_id: actor.user_id,
-            actor_role: actor.role,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: req.ip || req.socket.remoteAddress,
-        },
-      });
-
-      return newRate;
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.RATE_CONFIGURATION,
+      entityId: 'pending',
+      actionType: ActionType.CREATE,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Rates are city-level
+      comments: `Create new ${type} rate: ${value} effective from ${effective_from}`
     });
 
-    return res.status(201).json({
+    return res.status(202).json({
       success: true,
-      message: "Rate created successfully",
+      message: 'Rate creation request submitted for approval',
       data: {
-        id: created.id,
-        rate_type: created.rate_type,
-        value: created.value,
-        source: created.source,
-        effective_from: created.effective_from,
-        effective_until: created.effective_until,
-        is_active: created.is_active,
-        created_at: created.created_at,
-        updated_at: created.updated_at,
-        created_by: created.created_by,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.RATE_CONFIGURATION,
+        action: ActionType.CREATE,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
   } catch (error: any) {
     console.error("Create rate error:", error);
     
-    if (error.code === 'P2002') {
+    if (error.message.includes('already exists')) {
       return res.status(409).json({
         success: false,
-        message: "Rate with this type and effective_from already exists",
+        message: error.message,
       });
     }
     
@@ -281,9 +201,10 @@ export const createRate = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
 /**
  * PUT /api/rates/:type
- * Update existing ACTIVE row for (rate_type, effective_from).
+ * Update existing rate through maker-checker
  */
 export const updateRate = async (req: AuthRequest, res: Response) => {
   const { type } = req.params as { type: RateType };
@@ -294,32 +215,36 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
     effective_until?: string | null;
   };
 
-  const userId = req.user?.user_id;
+  const actor = req.user!;
 
-  // Validation for value (0 <= value <= 1)
+  // Validation
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return res
-      .status(400)
-      .json({ message: "Value must be a finite number" });
+    return res.status(400).json({ 
+      success: false,
+      message: "Value must be a finite number" 
+    });
   }
 
   if (value < 0 || value > 1) {
-    return res
-      .status(400)
-      .json({ message: "Value must be between 0 and 1 (inclusive)" });
+    return res.status(400).json({ 
+      success: false,
+      message: "Value must be between 0 and 1 (inclusive)" 
+    });
   }
 
   if (!effective_from) {
-    return res
-      .status(400)
-      .json({ message: "effective_from is required" });
+    return res.status(400).json({ 
+      success: false,
+      message: "effective_from is required" 
+    });
   }
 
   const fromDate = new Date(effective_from);
   if (Number.isNaN(fromDate.getTime())) {
-    return res
-      .status(400)
-      .json({ message: "Invalid effective_from; must be ISO date string" });
+    return res.status(400).json({ 
+      success: false,
+      message: "Invalid effective_from; must be ISO date string" 
+    });
   }
 
   let untilDate: Date | null = null;
@@ -327,6 +252,7 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
     const d = new Date(effective_until);
     if (Number.isNaN(d.getTime())) {
       return res.status(400).json({
+        success: false,
         message: "Invalid effective_until; must be ISO date string or null",
       });
     }
@@ -334,159 +260,100 @@ export const updateRate = async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    // Find the active rate for this type (only one should be active at a time)
+    // Find the rate to update
     const existing = await prisma.rate_configurations.findFirst({
       where: {
         rate_type: type,
-        is_active: true,
+        effective_from: fromDate,
       },
     });
 
     if (!existing) {
-      return res
-        .status(404)
-        .json({ message: "No active rate found for this type" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Rate not found for this type and effective_from" 
+      });
     }
 
-    // Check if the new effective_from date is different from the current one
-    const isEffectiveFromChanging = fromDate.getTime() !== existing.effective_from.getTime();
-    
-    // If changing effective_from, check for duplicates
-    if (isEffectiveFromChanging) {
-      const duplicateCheck = await prisma.rate_configurations.findFirst({
-        where: {
-          rate_type: type,
-          effective_from: fromDate,
-          NOT: {
-            id: existing.id, // Exclude current record
-          },
-        },
-      });
-
-      if (duplicateCheck) {
-        return res.status(400).json({
-          message: "A rate with this effective_from date already exists for this type",
-        });
+    // Prepare request data
+    const requestData = {
+      rate_id: existing.id,
+      rate_type: type,
+      value,
+      source: source?.trim() || null,
+      effective_from: fromDate,
+      effective_until: untilDate,
+      previous_values: {
+        value: existing.value,
+        source: existing.source,
+        effective_until: existing.effective_until,
       }
-    }
+    };
 
-    // If updating to a new effective_from date, we need to check if it creates overlaps
-    if (isEffectiveFromChanging) {
-      // Find the rate that should come before this one (with latest effective_from < new effective_from)
-      const previousRate = await prisma.rate_configurations.findFirst({
-        where: {
-          rate_type: type,
-          effective_from: {
-            lt: fromDate,
-          },
-        },
-        orderBy: {
-          effective_from: 'desc',
-        },
-      });
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.RATE_CONFIGURATION,
+      entityId: existing.id,
+      actionType: ActionType.UPDATE,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Rates are city-level
+      comments: `Update ${type} rate from ${existing.value} to ${value}`
+    });
 
-      // Find the rate that should come after this one (with earliest effective_from > new effective_from)
-      const nextRate = await prisma.rate_configurations.findFirst({
-        where: {
-          rate_type: type,
-          effective_from: {
-            gt: fromDate,
-          },
-          is_active: false, // Looking for inactive rates that might be in sequence
-        },
-        orderBy: {
-          effective_from: 'asc',
-        },
-      });
-
-      // Check for gaps or overlaps in the timeline
-      if (previousRate && previousRate.effective_until) {
-        const prevUntil = previousRate.effective_until.getTime();
-        if (prevUntil > fromDate.getTime()) {
-          return res.status(400).json({
-            message: "New effective_from creates overlap with previous rate period",
-          });
-        }
-      }
-
-      if (nextRate && untilDate) {
-        const nextFrom = nextRate.effective_from.getTime();
-        const newUntil = untilDate.getTime();
-        if (newUntil > nextFrom) {
-          return res.status(400).json({
-            message: "New effective_until creates overlap with next rate period",
-          });
-        }
-      }
-    }
-
-    // Update the rate with new data
-    const updated = await prisma.rate_configurations.update({
-      where: {
-        id: existing.id, // Use ID instead of composite key
-      },
+    return res.status(202).json({
+      success: true,
+      message: 'Rate update request submitted for approval',
       data: {
-        value,
-        source: source?.trim() || null,
-        effective_from: fromDate,
-        effective_until: untilDate,
-        updated_at: new Date(),
-        created_by: userId ?? existing.created_by,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.RATE_CONFIGURATION,
+        action: ActionType.UPDATE,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
-
-    return res.json({
-      message: "Rate updated successfully",
-      rate: {
-        id: updated.id,
-        rate_type: updated.rate_type,
-        value: updated.value,
-        source: updated.source,
-        effective_from: updated.effective_from,
-        effective_until: updated.effective_until,
-        is_active: updated.is_active,
-        created_at: updated.created_at,
-        updated_at: updated.updated_at,
-        created_by: updated.created_by,
-      },
-    });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Update rate error:", error);
-    return res.status(500).json({ message: "Failed to update rate" });
+    
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to update rate",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
 /**
  * PATCH /api/rates/:type/deactivate
- * Body: { effective_from: string }
- * Marks a specific row as inactive (soft deactivation).
+ * Deactivate a rate through maker-checker
  */
 export const deactivateRate = async (req: AuthRequest, res: Response) => {
   const { type } = req.params as { type: RateType };
-  const { effective_from } = req.body as { effective_from: string };
+  const { effective_from, reason } = req.body as { 
+    effective_from: string;
+    reason?: string;
+  };
 
   const actor = req.user!;
 
   if (!effective_from) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "effective_from is required" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "effective_from is required" 
+    });
   }
 
   const fromDate = new Date(effective_from);
   if (Number.isNaN(fromDate.getTime())) {
-    return res
-      .status(400)
-      .json({ 
-        success: false,
-        message: "Invalid effective_from; must be ISO date string" 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: "Invalid effective_from; must be ISO date string" 
+    });
   }
 
   try {
+    // Find the rate to deactivate
     const existing = await prisma.rate_configurations.findUnique({
       where: {
         rate_type_effective_from: {
@@ -497,112 +364,51 @@ export const deactivateRate = async (req: AuthRequest, res: Response) => {
     });
 
     if (!existing) {
-      return res
-        .status(404)
-        .json({ 
-          success: false,
-          message: "Rate not found for this type and effective_from" 
-        });
+      return res.status(404).json({ 
+        success: false,
+        message: "Rate not found for this type and effective_from" 
+      });
     }
 
     if (!existing.is_active) {
-      return res
-        .status(400)
-        .json({ 
-          success: false,
-          message: "Rate is already inactive" 
-        });
+      return res.status(400).json({ 
+        success: false,
+        message: "Rate is already inactive" 
+      });
     }
 
-    // Check if there's an active rate after this one
-    const nextActiveRate = await prisma.rate_configurations.findFirst({
-      where: {
-        rate_type: type,
-        is_active: true,
-        effective_from: { gt: fromDate },
-      },
-      orderBy: { effective_from: "asc" },
+    // Prepare request data
+    const requestData = {
+      rate_id: existing.id,
+      rate_type: type,
+      value: existing.value,
+      effective_from: existing.effective_from,
+      effective_until: existing.effective_until,
+      reason: reason || 'Rate deactivation requested'
+    };
+
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.RATE_CONFIGURATION,
+      entityId: existing.id,
+      actionType: ActionType.DELETE, // Using DELETE action for deactivation
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Rates are city-level
+      comments: reason || `Deactivate ${type} rate effective ${effective_from}`
     });
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const deactivatedRate = await tx.rate_configurations.update({
-        where: {
-          rate_type_effective_from: {
-            rate_type: type,
-            effective_from: fromDate,
-          },
-        },
-        data: {
-          is_active: false,
-          updated_at: new Date(),
-        },
-      });
-
-      // Create audit log for rate deactivation
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor.user_id,
-          action_type: AuditAction.UPDATE,
-          entity_type: 'rate_configurations',
-          entity_id: existing.id,
-          changes: {
-            action: 'deactivate_rate',
-            rate_type: type,
-            value: existing.value,
-            effective_from: existing.effective_from,
-            effective_until: existing.effective_until,
-            previous_status: 'ACTIVE',
-            new_status: 'INACTIVE',
-            next_active_rate_exists: !!nextActiveRate,
-            next_active_rate: nextActiveRate ? {
-              effective_from: nextActiveRate.effective_from,
-              value: nextActiveRate.value,
-            } : null,
-            actor_id: actor.user_id,
-            actor_role: actor.role,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: req.ip || req.socket.remoteAddress,
-        },
-      });
-
-      // Create config change audit log
-      await tx.audit_logs.create({
-        data: {
-          user_id: actor.user_id,
-          action_type: AuditAction.CONFIG_CHANGE,
-          entity_type: 'rate_configurations',
-          entity_id: existing.id,
-          changes: {
-            action: 'rate_configuration_deactivated',
-            rate_type: type,
-            actor_id: actor.user_id,
-            actor_role: actor.role,
-            timestamp: new Date().toISOString(),
-          },
-          timestamp: new Date(),
-          ip_address: req.ip || req.socket.remoteAddress,
-        },
-      });
-
-      return deactivatedRate;
-    });
-
-    return res.json({
+    return res.status(202).json({
       success: true,
-      message: "Rate deactivated successfully",
+      message: 'Rate deactivation request submitted for approval',
       data: {
-        id: updated.id,
-        rate_type: updated.rate_type,
-        value: updated.value,
-        source: updated.source,
-        effective_from: updated.effective_from,
-        effective_until: updated.effective_until,
-        is_active: updated.is_active,
-        created_at: updated.created_at,
-        updated_at: updated.updated_at,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.RATE_CONFIGURATION,
+        action: ActionType.DELETE,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
   } catch (error: any) {
     console.error("Deactivate rate error:", error);

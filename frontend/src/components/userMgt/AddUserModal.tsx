@@ -1,6 +1,6 @@
 // src/components/admin/AddUserModal.tsx
 import { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, Building } from 'lucide-react';
+import { X, Eye, EyeOff, Building, Clock } from 'lucide-react';
 import type { UserCreateInput } from '../../services/userService';
 import { getSubCities, type SubCity } from '../../services/cityAdminService';
 
@@ -24,6 +24,13 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
   const [subCities, setSubCities] = useState<SubCity[]>([]);
   const [loadingSubCities, setLoadingSubCities] = useState(false);
   const [subCitiesError, setSubCitiesError] = useState('');
+
+  // Check if selected role requires approval
+  const requiresApproval = (role: string): boolean => {
+    return ['CITY_APPROVER', 'SUBCITY_APPROVER', 'REVENUE_APPROVER'].includes(role);
+  };
+
+  const selectedRoleRequiresApproval = requiresApproval(formData.role);
 
   // Load sub-cities when modal opens and current user is CITY_ADMIN
   useEffect(() => {
@@ -56,11 +63,11 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     
     switch (currentUser.role) {
       case 'CITY_ADMIN':
-        return ['SUBCITY_ADMIN'];
+        return ['SUBCITY_ADMIN','SUBCITY_APPROVER'];
       case 'SUBCITY_ADMIN':
         return ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'];
       case 'REVENUE_ADMIN':
-        return ['REVENUE_USER'];
+        return ['REVENUE_USER',];
       default:
         return [];
     }
@@ -69,17 +76,20 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
       'CITY_ADMIN': 'City Admin',
+      'CITY_APPROVER': 'City Approver',
       'SUBCITY_ADMIN': 'Sub-city Admin',
-      'REVENUE_ADMIN': 'Revenue Admin',
-      'REVENUE_USER': 'Revenue User',
+      'SUBCITY_APPROVER': 'Sub-city Approver',
       'SUBCITY_NORMAL': 'Sub-city Normal',
       'SUBCITY_AUDITOR': 'Sub-city Auditor',
+      'REVENUE_ADMIN': 'Revenue Admin',
+      'REVENUE_APPROVER': 'Revenue Approver',
+      'REVENUE_USER': 'Revenue User',
     };
     return roleMap[role] || role.replace('_', ' ');
   };
 
   const shouldShowSubCityField = (role: string) => {
-    return ['SUBCITY_ADMIN', 'SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(role);
+    return ['SUBCITY_ADMIN', 'SUBCITY_APPROVER', 'SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(role);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,11 +120,11 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
   const renderSubCityField = () => {
     if (!shouldShowSubCityField(formData.role)) return null;
 
-    // SUBCITY_ADMIN creating NORMAL/AUDITOR users - show their own sub-city
+    // SUBCITY_ADMIN creating NORMAL/AUDITOR/APPROVER users - show their own sub-city
     if (currentUser?.role === 'SUBCITY_ADMIN') {
       return (
         <div>
-          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city ID *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city *</label>
           <div className="flex items-center gap-2 p-2 bg-[#f0cd6e]/10 rounded-xl border border-[#f0cd6e]">
             <Building className="w-4 h-4 text-[#2a2718]" />
             <span className="text-[#2a2718]">{currentUser.sub_city_id}</span>
@@ -127,8 +137,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
       );
     }
 
-    // CITY_ADMIN creating SUBCITY_ADMIN - show dropdown
-    if (currentUser?.role === 'CITY_ADMIN' && formData.role === 'SUBCITY_ADMIN') {
+    // CITY_ADMIN creating SUBCITY_ADMIN or SUBCITY_APPROVER - show dropdown
+    if (currentUser?.role === 'CITY_ADMIN' && ['SUBCITY_ADMIN', 'SUBCITY_APPROVER'].includes(formData.role)) {
       return (
         <div>
           <label className="block text-sm font-medium text-[#2a2718] mb-1">Select Sub-city *</label>
@@ -167,7 +177,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             </select>
           )}
           <p className="text-xs text-[#2a2718]/70 mt-1">
-            Select the sub-city this admin will manage
+            Select the sub-city this user will manage
           </p>
         </div>
       );
@@ -177,7 +187,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'CITY_ADMIN' && ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(formData.role)) {
       return (
         <div>
-          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city ID *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city *</label>
           <input
             type="text"
             value={formData.sub_city_id || ''}
@@ -212,6 +222,23 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
           </button>
         </div>
 
+        {/* Approval Banner */}
+        {selectedRoleRequiresApproval && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-amber-700 font-medium">
+                  This user creation requires approval
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Your request will be sent for review by an approver. The user will be created after approval.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">Full Name *</label>
@@ -221,6 +248,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
+              disabled={creatingUser}
             />
           </div>
 
@@ -232,6 +260,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               onChange={(e) => setFormData({...formData, username: e.target.value})}
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
+              disabled={creatingUser}
             />
           </div>
 
@@ -245,6 +274,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
                 className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] pr-10"
                 required
                 minLength={6}
+                disabled={creatingUser}
               />
               <button
                 type="button"
@@ -263,6 +293,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               value={formData.role}
               onChange={(e) => handleRoleChange(e.target.value)}
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white"
+              disabled={creatingUser}
             >
               {getCreatableRoles().map(role => (
                 <option key={role} value={role}>
@@ -278,16 +309,24 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e]"
+              disabled={creatingUser}
+              className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={creatingUser || (shouldShowSubCityField(formData.role) && !formData.sub_city_id)}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {creatingUser ? 'Creating...' : 'Create User'}
+              {creatingUser ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {selectedRoleRequiresApproval ? 'Submitting...' : 'Creating...'}
+                </>
+              ) : (
+                selectedRoleRequiresApproval ? 'Submit for Approval' : 'Create User'
+              )}
             </button>
           </div>
         </form>

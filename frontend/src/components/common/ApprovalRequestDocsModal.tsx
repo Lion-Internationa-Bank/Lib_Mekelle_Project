@@ -179,7 +179,7 @@ const ApprovalRequestDocsModal: React.FC<ApprovalRequestDocsModalProps> = ({
             
             <button
               onClick={handleComplete}
-              className="px-6 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+              className="px-6 py-2 bg-lienar-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors font-medium flex items-center gap-2"
             >
               Complete
               <span className="text-lg">→</span>

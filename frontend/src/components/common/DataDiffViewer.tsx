@@ -80,7 +80,7 @@ const DataDiffViewer: React.FC<DataDiffViewerProps> = ({
                 <div className="text-xs text-red-700 font-medium mb-1">
                   Original:
                 </div>
-                <div className="break-words text-[#2a2718]">
+                <div className="wrap-break-word text-[#2a2718]">
                   {formatValue(diff.from)}
                 </div>
               </div>

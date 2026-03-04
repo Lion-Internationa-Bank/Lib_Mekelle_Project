@@ -27,6 +27,21 @@ export type UserSuspendInput = {
   suspend: boolean;
 };
 
+
+export interface ApprovalRequestResponse {
+  request_id: string;
+  status: string;
+  entity_type: string;
+  action: string;
+}
+
+export type UserOperationResult = User | ApprovalRequestResponse;
+
+// Type guard to check if response is approval request
+export const isApprovalRequest = (data: any): data is ApprovalRequestResponse => {
+  return data && 'request_id' in data && 'status' in data && 'entity_type' in data;
+};
+
 // ====================
 // API Calls
 // ====================

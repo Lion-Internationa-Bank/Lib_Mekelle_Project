@@ -39,7 +39,7 @@ const menuItems: MenuItem[] = [
     label: 'Pending Requests',
     icon: '⏳',
     href: '/pending-requests',
-    allowedRoles: ['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_NORMAL'],
+    allowedRoles: ['SUBCITY_APPROVER','CITY_APPROVER','REVENUE_APPROVER','CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN','SUBCITY_NORMAL'],
   },
   {
     id: 'ownership',
@@ -74,7 +74,7 @@ const menuItems: MenuItem[] = [
     label: 'Configurations',
     icon: '⚙️',
     href: '/configs',
-    allowedRoles: ['CITY_ADMIN', 'REVENUE_ADMIN'],
+    allowedRoles: ['CITY_ADMIN'],
   },
   {
   id: 'upload-excel',
@@ -140,12 +140,12 @@ const reports: ReportItem[] = [
 
 // Update visibility by role
 const reportVisibilityByRole: Record<string, string[]> = {
-  CITY_ADMIN: ['bills', 'encumbrances', 'parcels', 'owners-multiple', 'lease-installments', 'payments', 'revenue'],
+  CITY_ADMIN: [ 'encumbrances', 'parcels', 'owners-multiple', 'payments', ],
   REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
-  SUBCITY_ADMIN: ['bills', 'encumbrances', 'parcels', 'owners-multiple', 'lease-installments'],
-  SUBCITY_NORMAL: [],
-  SUBCITY_AUDITOR: [],
-  REVENUE_USER: [],
+  SUBCITY_ADMIN: ['encumbrances', 'parcels', 'owners-multiple'],
+  SUBCITY_NORMAL: ['encumbrances', 'parcels', 'owners-multiple', ],
+  SUBCITY_AUDITOR: ['encumbrances', 'parcels', 'owners-multiple', ],
+  REVENUE_USER: ['bills', 'payments', 'revenue'],
 };
 
 const Sidebar = () => {
@@ -183,7 +183,7 @@ const Sidebar = () => {
   );
 
   // Check if user has access to reports
-  const canAccessReports = user?.role && ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN'].includes(user.role);
+  const canAccessReports = user?.role && ['CITY_ADMIN', 'REVENUE_ADMIN', 'SUBCITY_ADMIN','REVENUE_USER','SUBCITY_NORMAL','SUBCITY_AUDITOR'].includes(user.role);
 
   return (
     <aside className="w-64 bg-white/90 backdrop-blur-xl shadow-2xl border-r border-[#f0cd6e]/50 h-screen sticky top-0 z-40 flex flex-col overflow-hidden">
@@ -195,7 +195,7 @@ const Sidebar = () => {
             to={item.href}
             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
               activeMenu === item.id
-                ? 'bg-gradient-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
+                ? 'bg-linear-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
                 : 'text-[#2a2718] hover:bg-[#f0cd6e]/20'
             }`}
           >
@@ -211,7 +211,7 @@ const Sidebar = () => {
               onClick={() => setIsReportsOpen(!isReportsOpen)}
               className={`w-full flex items-center justify-between space-x-3 px-4 py-3 rounded-xl transition-all ${
                 activeMenu === 'reports'
-                  ? 'bg-gradient-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
+                  ? 'bg-linear-to-r from-[#a68f4e] to-[#6d5f35] text-white shadow-lg'
                   : 'text-[#2a2718] hover:bg-[#f0cd6e]/20'
               }`}
             >

@@ -6,8 +6,10 @@ import {
   suspendUser,
   deleteUser,
   createUser,
-  type User as UserType ,
+  type User as UserType,
   type UserCreateInput,
+  type ApprovalRequestResponse,
+  isApprovalRequest
 } from '../../services/userService';
 import { Plus, RefreshCw, AlertCircle, User, Shield, Building, TrendingUp, Eye } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,7 +22,7 @@ import AddUserModal from '../../components/userMgt/AddUserModal';
 import SuspendActivateModal from '../../components/userMgt/SuspendActivateModal';
 import DeleteUserModal from '../../components/userMgt/DeleteUserModal';
 import MessageAlert from '../../components/common/MessageAlert';
-
+import ApprovalPendingModal from '../../components/userMgt/ApprovalPendingModal';
 
 const UserManagementPage = () => {
   const { user: currentUser } = useAuth();
@@ -28,6 +30,7 @@ const UserManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [pendingApproval, setPendingApproval] = useState<ApprovalRequestResponse | null>(null);
 
   // Modals
   const [suspendModal, setSuspendModal] = useState<{ user: UserType; suspend: boolean } | null>(null);
@@ -65,28 +68,42 @@ const UserManagementPage = () => {
     if (!suspendModal) return;
     const { user, suspend } = suspendModal;
 
-    const res = await suspendUser(user.user_id, suspend);
+    const res = await suspendUser(user.user_id, suspend, 'User management action');
+    
     if (res.success) {
-      fetchUsers();
+      if (res.data && isApprovalRequest(res.data)) {
+        // Show approval pending modal
+        setPendingApproval(res.data);
+        toast.info('Approval request submitted');
+      } else {
+        // Direct success
+        fetchUsers();
+        toast.success(`User ${suspend ? 'suspended' : 'activated'} successfully`);
+      }
       setSuspendModal(null);
-      toast.success(`User ${suspend ? 'suspended' : 'activated'} successfully`)
     } else {
-      toast.error(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`)
+      toast.error(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteModal) return;
 
-    const res = await deleteUser(deleteModal.user_id);
+    const res = await deleteUser(deleteModal.user_id, 'User deletion requested');
+    
     if (res.success) {
-      fetchUsers();
+      if (res.data && isApprovalRequest(res.data)) {
+        // Show approval pending modal
+        setPendingApproval(res.data);
+        toast.info('Deletion request submitted for approval');
+      } else {
+        // Direct success (though delete always requires approval)
+        fetchUsers();
+        toast.success('User deleted successfully');
+      }
       setDeleteModal(null);
-      toast.success('User deleted successfully')
-      // setSuccessMessage('User deleted successfully');
     } else {
-      toast.error(res.error || 'Failed to delete user')
-      // setError(res.error || 'Failed to delete user');
+      toast.error(res.error || 'Failed to delete user');
     }
   };
 
@@ -96,18 +113,24 @@ const UserManagementPage = () => {
 
     try {
       const res = await createUser(userData);
+      
       if (res.success) {
-        fetchUsers();
-        setAddUserModal(false);
-        toast.success('User created successfully')
-        // setSuccessMessage('User created successfully');
+        if (res.data && isApprovalRequest(res.data)) {
+          // Show approval pending modal
+          setPendingApproval(res.data);
+          toast.info('User creation request submitted for approval');
+          setAddUserModal(false);
+        } else {
+          // Direct creation
+          fetchUsers();
+          setAddUserModal(false);
+          toast.success('User created successfully');
+        }
       } else {
-
         setError(res.error || 'Failed to create user');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create user')
-      // setError(err.message || 'Failed to create user');
+      toast.error(err.message || 'Failed to create user');
     } finally {
       setCreatingUser(false);
     }
@@ -132,8 +155,11 @@ const UserManagementPage = () => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'CITY_ADMIN': return <Shield className="w-4 h-4" />;
+      case 'CITY_APPROVER': return <Shield className="w-4 h-4 text-yellow-600" />;
       case 'SUBCITY_ADMIN': return <Building className="w-4 h-4" />;
+      case 'SUBCITY_APPROVER': return <Building className="w-4 h-4 text-yellow-600" />;
       case 'REVENUE_ADMIN': return <TrendingUp className="w-4 h-4" />;
+      case 'REVENUE_APPROVER': return <TrendingUp className="w-4 h-4 text-yellow-600" />;
       case 'REVENUE_USER': return <TrendingUp className="w-4 h-4" />;
       case 'SUBCITY_NORMAL': return <User className="w-4 h-4" />;
       case 'SUBCITY_AUDITOR': return <Eye className="w-4 h-4" />;
@@ -145,23 +171,29 @@ const UserManagementPage = () => {
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
       'CITY_ADMIN': 'City Admin',
+      'CITY_APPROVER': 'City Approver',
       'SUBCITY_ADMIN': 'Sub-city Admin',
-      'REVENUE_ADMIN': 'Revenue Admin',
-      'REVENUE_USER': 'Revenue User',
+      'SUBCITY_APPROVER': 'Sub-city Approver',
       'SUBCITY_NORMAL': 'Sub-city Normal',
       'SUBCITY_AUDITOR': 'Sub-city Auditor',
+      'REVENUE_ADMIN': 'Revenue Admin',
+      'REVENUE_APPROVER': 'Revenue Approver',
+      'REVENUE_USER': 'Revenue User',
     };
-    return roleMap[role] || role.replace('_', ' ');
+    return roleMap[role] || role.replace(/_/g, ' ');
   };
 
   // Dynamic page title based on role
   const pageTitle = {
     CITY_ADMIN: 'Manage Sub-city Admins',
+    CITY_APPROVER: 'Approve User Requests',
     SUBCITY_ADMIN: 'Manage Sub-city Users',
+    SUBCITY_APPROVER: 'Approve Sub-city User Requests',
     REVENUE_ADMIN: 'Manage Revenue Users',
+    REVENUE_APPROVER: 'Approve Revenue User Requests',
   }[currentUser?.role || ''] || 'User Management';
 
-  if (!currentUser || !['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'].includes(currentUser.role)) {
+  if (!currentUser || !['CITY_ADMIN', 'CITY_APPROVER', 'SUBCITY_ADMIN', 'SUBCITY_APPROVER', 'REVENUE_ADMIN', 'REVENUE_APPROVER'].includes(currentUser.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
@@ -191,13 +223,15 @@ const UserManagementPage = () => {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <button 
-            onClick={() => setAddUserModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add User
-          </button>
+          {currentUser.role.includes('ADMIN') && (
+            <button 
+              onClick={() => setAddUserModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add User
+            </button>
+          )}
         </div>
       </div>
 
@@ -276,6 +310,13 @@ const UserManagementPage = () => {
         user={deleteModal}
         onClose={() => setDeleteModal(null)}
         onConfirm={handleDelete}
+      />
+
+      {/* Approval Pending Modal */}
+      <ApprovalPendingModal
+        isOpen={!!pendingApproval}
+        request={pendingApproval}
+        onClose={() => setPendingApproval(null)}
       />
     </div>
   );

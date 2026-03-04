@@ -2719,6 +2719,685 @@ async executeCreateEncumbrance(
     }
   }
 
+
+
+
+  // user 
+
+
+  async executeCreateUser(tx: any, data: any, approverId: string) {
+  // Implementation for creating a user
+  const user = await tx.users.create({
+    data: {
+      username: data.username,
+      password_hash: data.password_hash,
+      full_name: data.full_name,
+      role: data.role,
+      sub_city_id: data.sub_city_id || null,
+      is_active: true,
+      is_deleted: false,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+  });
+  
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: 'CREATE',
+      entity_type: 'users',
+      entity_id: user.user_id,
+      changes: {
+        action: 'execute_create_user',
+        username: user.username,
+        role: user.role,
+        approver_id: approverId
+      },
+      timestamp: new Date()
+    }
+  });
+  
+  return user;
+}
+
+async executeUpdateUser(tx: any, userId: string, data: any, approverId: string) {
+  // Implementation for updating a user
+  const user = await tx.users.update({
+    where: { user_id: userId },
+    data: {
+      ...data,
+      updated_at: new Date()
+    }
+  });
+  
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: 'UPDATE',
+      entity_type: 'users',
+      entity_id: userId,
+      changes: {
+        action: 'execute_update_user',
+        updates: data,
+        approver_id: approverId
+      },
+      timestamp: new Date()
+    }
+  });
+  
+  return user;
+}
+
+async executeDeleteUser(tx: any, userId: string, data: any, approverId: string) {
+  // Soft delete user
+  const user = await tx.users.update({
+    where: { user_id: userId },
+    data: {
+      is_deleted: true,
+      deleted_at: new Date(),
+      is_active: false,
+      updated_at: new Date()
+    }
+  });
+  
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: 'DELETE',
+      entity_type: 'users',
+      entity_id: userId,
+      changes: {
+        action: 'execute_delete_user',
+        username: user.username,
+        reason: data.reason,
+        approver_id: approverId
+      },
+      timestamp: new Date()
+    }
+  });
+  
+  return user;
+}
+
+async executeSuspendUser(tx: any, userId: string, data: any, approverId: string) {
+  // Suspend user
+  const user = await tx.users.update({
+    where: { user_id: userId },
+    data: {
+      is_active: false,
+      updated_at: new Date()
+    }
+  });
+  
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: 'UPDATE',
+      entity_type: 'users',
+      entity_id: userId,
+      changes: {
+        action: 'execute_suspend_user',
+        username: user.username,
+        reason: data.reason,
+        approver_id: approverId
+      },
+      timestamp: new Date()
+    }
+  });
+  
+  return user;
+}
+
+async executeActivateUser(tx: any, userId: string, data: any, approverId: string) {
+  // Activate user
+  const user = await tx.users.update({
+    where: { user_id: userId },
+    data: {
+      is_active: true,
+      updated_at: new Date()
+    }
+  });
+  
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: 'UPDATE',
+      entity_type: 'users',
+      entity_id: userId,
+      changes: {
+        action: 'execute_activate_user',
+        username: user.username,
+        reason: data.reason,
+        approver_id: approverId
+      },
+      timestamp: new Date()
+    }
+  });
+  
+  return user;
+}
+
+
+
+
+//RATE configuration
+
+async executeCreateRateConfiguration(tx: any, data: any, approverId: string) {
+  const { rate_type, value, source, effective_from, effective_until } = data;
+  
+  // Find previous active rate
+  const previousActive = await tx.rate_configurations.findFirst({
+    where: {
+      rate_type: rate_type,
+      is_active: true,
+      effective_from: { lt: new Date(effective_from) },
+    },
+    orderBy: { effective_from: "desc" },
+  });
+
+  let previousRateUpdate = null;
+
+  // Deactivate previous rate if exists
+  if (previousActive) {
+    previousRateUpdate = await tx.rate_configurations.update({
+      where: { id: previousActive.id },
+      data: {
+        effective_until: new Date(effective_from),
+        is_active: false,
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  // Create new rate
+  const newRate = await tx.rate_configurations.create({
+    data: {
+      rate_type,
+      value,
+      source: source?.trim() || null,
+      effective_from: new Date(effective_from),
+      effective_until: effective_until ? new Date(effective_until) : null,
+      created_by: approverId,
+      is_active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  // Create audit log for rate creation
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.CREATE,
+      entity_type: 'rate_configurations',
+      entity_id: newRate.id,
+      changes: {
+        action: 'execute_create_rate',
+        rate_type,
+        value,
+        source: source?.trim() || null,
+        effective_from: new Date(effective_from),
+        effective_until: effective_until ? new Date(effective_until) : null,
+        previous_active_rate: previousActive ? {
+          id: previousActive.id,
+          value: previousActive.value,
+          effective_from: previousActive.effective_from,
+          effective_until: previousActive.effective_until,
+        } : null,
+        approver_id: approverId,
+        timestamp: new Date().toISOString(),
+      },
+      timestamp: new Date(),
+    },
+  });
+
+  return newRate;
+}
+
+async executeUpdateRateConfiguration(tx: any, rateId: string, data: any, approverId: string) {
+  const { value, source, effective_from, effective_until } = data;
+  
+  // Get current rate
+  const currentRate = await tx.rate_configurations.findUnique({
+    where: { id: rateId }
+  });
+
+  if (!currentRate) {
+    throw new Error('Rate configuration not found');
+  }
+
+  const fromDate = new Date(effective_from);
+  const untilDate = effective_until ? new Date(effective_until) : null;
+
+  // Check if effective_from is changing
+  const isEffectiveFromChanging = fromDate.getTime() !== currentRate.effective_from.getTime();
+  
+  // If changing effective_from, handle timeline adjustments
+  if (isEffectiveFromChanging) {
+    // Find the rate that should come before this one
+    const previousRate = await tx.rate_configurations.findFirst({
+      where: {
+        rate_type: currentRate.rate_type,
+        effective_from: {
+          lt: fromDate,
+        },
+        NOT: {
+          id: rateId,
+        },
+      },
+      orderBy: {
+        effective_from: 'desc',
+      },
+    });
+
+    // Find the rate that should come after this one
+    const nextRate = await tx.rate_configurations.findFirst({
+      where: {
+        rate_type: currentRate.rate_type,
+        effective_from: {
+          gt: fromDate,
+        },
+        NOT: {
+          id: rateId,
+        },
+      },
+      orderBy: {
+        effective_from: 'asc',
+      },
+    });
+
+    // Update previous rate's effective_until if needed
+    if (previousRate && previousRate.is_active) {
+      await tx.rate_configurations.update({
+        where: { id: previousRate.id },
+        data: {
+          effective_until: fromDate,
+          updated_at: new Date(),
+        },
+      });
+    }
+
+    // Update this rate's dates
+    const updatedRate = await tx.rate_configurations.update({
+      where: { id: rateId },
+      data: {
+        value,
+        source: source?.trim() || null,
+        effective_from: fromDate,
+        effective_until: untilDate,
+        updated_at: new Date(),
+      },
+    });
+
+    // Update next rate's effective_from if needed (but that would be a separate change)
+    
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'rate_configurations',
+        entity_id: rateId,
+        changes: {
+          action: 'execute_update_rate',
+          previous: {
+            value: currentRate.value,
+            source: currentRate.source,
+            effective_from: currentRate.effective_from,
+            effective_until: currentRate.effective_until,
+          },
+          current: {
+            value,
+            source: source?.trim() || null,
+            effective_from: fromDate,
+            effective_until: untilDate,
+          },
+          previous_rate_updated: previousRate ? {
+            id: previousRate.id,
+            new_effective_until: fromDate,
+          } : null,
+          approver_id: approverId,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+      },
+    });
+
+    return updatedRate;
+  } else {
+    // Simple update without date changes
+    const updatedRate = await tx.rate_configurations.update({
+      where: { id: rateId },
+      data: {
+        value,
+        source: source?.trim() || null,
+        effective_until: untilDate,
+        updated_at: new Date(),
+      },
+    });
+
+    // Create audit log
+    await tx.audit_logs.create({
+      data: {
+        user_id: approverId,
+        action_type: AuditAction.UPDATE,
+        entity_type: 'rate_configurations',
+        entity_id: rateId,
+        changes: {
+          action: 'execute_update_rate',
+          previous: {
+            value: currentRate.value,
+            source: currentRate.source,
+            effective_until: currentRate.effective_until,
+          },
+          current: {
+            value,
+            source: source?.trim() || null,
+            effective_until: untilDate,
+          },
+          approver_id: approverId,
+          timestamp: new Date().toISOString(),
+        },
+        timestamp: new Date(),
+      },
+    });
+
+    return updatedRate;
+  }
+}
+
+
+async executeDeactivateRateConfiguration(tx: any, rateId: string, data: any, approverId: string) {
+  // Deactivate specific rate
+  const deactivatedRate = await tx.rate_configurations.update({
+    where: { id: rateId },
+    data: {
+      is_active: false,
+      updated_at: new Date(),
+    },
+  });
+
+  // Find the next rate that should become active (if any)
+  const nextRate = await tx.rate_configurations.findFirst({
+    where: {
+      rate_type: deactivatedRate.rate_type,
+      effective_from: { gt: deactivatedRate.effective_from },
+      is_active: false,
+    },
+    orderBy: { effective_from: "asc" },
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.UPDATE,
+      entity_type: 'rate_configurations',
+      entity_id: rateId,
+      changes: {
+        action: 'execute_deactivate_rate',
+        rate_type: deactivatedRate.rate_type,
+        value: deactivatedRate.value,
+        effective_from: deactivatedRate.effective_from,
+        previous_status: 'ACTIVE',
+        new_status: 'INACTIVE',
+        reason: data.reason || 'Rate deactivated',
+        next_active_rate: nextRate ? {
+          id: nextRate.id,
+          effective_from: nextRate.effective_from,
+          value: nextRate.value,
+        } : null,
+        approver_id: approverId,
+        timestamp: new Date().toISOString(),
+      },
+      timestamp: new Date(),
+    },
+  });
+
+  return deactivatedRate;
+}
+
+
+
+
+
+
+// Configuration execution methods
+async executeCreateConfiguration(tx: any, data: any, approverId: string) {
+  const { key, category, options, description, is_active } = data;
+  
+  const config = await tx.configurations.create({
+    data: {
+      key,
+      value: options,
+      category,
+      description,
+      is_active,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.CREATE,
+      entity_type: 'configurations',
+      entity_id: config.config_id,
+      changes: {
+        action: 'execute_create_configuration',
+        key: config.key,
+        category: config.category,
+        value: config.value,
+        description: config.description,
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return config;
+}
+
+async executeUpdateConfiguration(tx: any, configId: string, data: any, approverId: string) {
+  const { options, description, is_active, previous_values } = data;
+  
+  const config = await tx.configurations.update({
+    where: { config_id: configId },
+    data: {
+      value: options,
+      description: description !== undefined ? description : undefined,
+      is_active: is_active !== undefined ? is_active : undefined,
+      updated_at: new Date()
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.UPDATE,
+      entity_type: 'configurations',
+      entity_id: configId,
+      changes: {
+        action: 'execute_update_configuration',
+        key: config.key,
+        previous_value: previous_values?.value,
+        new_value: config.value,
+        previous_description: previous_values?.description,
+        new_description: config.description,
+        previous_is_active: previous_values?.is_active,
+        new_is_active: config.is_active,
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  // Create config change audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.CONFIG_CHANGE,
+      entity_type: 'configurations',
+      entity_id: configId,
+      changes: {
+        action: 'configuration_updated',
+        key: config.key,
+        category: config.category,
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return config;
+}
+
+async executeDeleteConfiguration(tx: any, configId: string, data: any, approverId: string) {
+  const config = await tx.configurations.update({
+    where: { config_id: configId },
+    data: {
+      is_deleted: true,
+      deleted_at: new Date(),
+      updated_at: new Date()
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.DELETE,
+      entity_type: 'configurations',
+      entity_id: configId,
+      changes: {
+        action: 'execute_delete_configuration',
+        key: config.key,
+        reason: data.reason || 'Configuration deleted',
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return config;
+}
+
+
+
+// SUBCITY 
+// Sub-city execution methods
+async executeCreateSubCity(tx: any, data: any, approverId: string) {
+  const { name, description } = data;
+  
+  const subCity = await tx.sub_cities.create({
+    data: {
+      name,
+      description: description || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.CREATE,
+      entity_type: 'sub_cities',
+      entity_id: subCity.sub_city_id,
+      changes: {
+        action: 'execute_create_subcity',
+        name: subCity.name,
+        description: subCity.description,
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return subCity;
+}
+
+async executeUpdateSubCity(tx: any, subCityId: string, data: any, approverId: string) {
+  const { name, description, previous_values } = data;
+  
+  const subCity = await tx.sub_cities.update({
+    where: { sub_city_id: subCityId },
+    data: {
+      name,
+      description,
+      updated_at: new Date()
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.UPDATE,
+      entity_type: 'sub_cities',
+      entity_id: subCityId,
+      changes: {
+        action: 'execute_update_subcity',
+        previous_name: previous_values?.name,
+        new_name: subCity.name,
+        previous_description: previous_values?.description,
+        new_description: subCity.description,
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return subCity;
+}
+
+async executeDeleteSubCity(tx: any, subCityId: string, data: any, approverId: string) {
+  const { name, dependencies, reason } = data;
+  
+  // Soft delete with name modification to allow reuse
+  const subCity = await tx.sub_cities.update({
+    where: { sub_city_id: subCityId },
+    data: {
+      is_deleted: true,
+      deleted_at: new Date(),
+      updated_at: new Date(),
+      name: `${name}_deleted_${Date.now()}`
+    }
+  });
+
+  // Create audit log
+  await tx.audit_logs.create({
+    data: {
+      user_id: approverId,
+      action_type: AuditAction.DELETE,
+      entity_type: 'sub_cities',
+      entity_id: subCityId,
+      changes: {
+        action: 'execute_delete_subcity',
+        original_name: name,
+        new_name: subCity.name,
+        dependencies: dependencies,
+        reason: reason || 'Sub-city deleted',
+        approver_id: approverId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date()
+    }
+  });
+
+  return subCity;
+}
   // ========== MAIN EXECUTOR (Updated to include Wizard) ==========
 
   async executeAction(
@@ -2798,6 +3477,59 @@ async executeCreateEncumbrance(
             default:
               throw new Error(`Unsupported action for ENCUMBRANCES: ${actionType}`);
           }
+           case 'USERS':
+        switch (actionType) {
+          case 'CREATE':
+            return await this.executeCreateUser(tx, executionParams, approverId);
+          case 'UPDATE':
+            return await this.executeUpdateUser(tx, entityId, requestData, approverId);
+          case 'DELETE':
+            return await this.executeDeleteUser(tx, entityId, requestData, approverId);
+          case 'SUSPEND':
+            return await this.executeSuspendUser(tx, entityId, executionParams, approverId);
+          case 'ACTIVATE':
+            return await this.executeActivateUser(tx, entityId, executionParams, approverId);
+          default:
+            throw new Error(`Unsupported action for USERS: ${actionType}`);
+        }
+
+
+         case 'RATE_CONFIGURATION':
+        switch (actionType) {
+          case 'CREATE':
+            return await this.executeCreateRateConfiguration(tx, executionParams, approverId);
+          case 'UPDATE':
+            return await this.executeUpdateRateConfiguration(tx, entityId, requestData, approverId);
+          case 'DEACTIVATE':
+            return await this.executeDeactivateRateConfiguration(tx, entityId, executionParams, approverId);
+          default:
+            throw new Error(`Unsupported action for RATE_CONFIGURATION: ${actionType}`);
+        }
+      case 'CONFIGURATIONS':
+        switch (actionType) {
+          case 'CREATE':
+            return await this.executeCreateConfiguration(tx, executionParams, approverId);
+          case 'UPDATE':
+            return await this.executeUpdateConfiguration(tx, entityId, requestData, approverId);
+          case 'DELETE':
+            return await this.executeDeleteConfiguration(tx, entityId, requestData, approverId);
+          default:
+            throw new Error(`Unsupported action for CONFIGURATIONS: ${actionType}`);
+        }
+
+      case 'SUBCITY':
+        switch (actionType) {
+          case 'CREATE':
+            return await this.executeCreateSubCity(tx, executionParams, approverId);
+          case 'UPDATE':
+            return await this.executeUpdateSubCity(tx, entityId, requestData, approverId);
+          case 'DELETE':
+            return await this.executeDeleteSubCity(tx, entityId, requestData, approverId);
+          default:
+            throw new Error(`Unsupported action for SUBCITY: ${actionType}`);
+        }
+
+
 
         default:
           throw new Error(`Unsupported entity type: ${entityType}`);

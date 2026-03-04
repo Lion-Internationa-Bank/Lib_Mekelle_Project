@@ -446,7 +446,7 @@ enum SessionStatus {
   MERGED
   FAILED
 }
-
+ 
 enum EntityType {
   WIZARD_SESSION
   LAND_PARCELS
@@ -455,6 +455,10 @@ enum EntityType {
   ENCUMBRANCES
   APPROVAL_REQUEST
   REVENUE
+  USERS
+  CONFIGURATIONS
+  RATE_CONFIGURATION
+  SUBCITY
 }
 
 enum ActionType {
@@ -467,6 +471,8 @@ enum ActionType {
   TERMINATE
   EXTEND
   ADD_OWNER
+  SUSPEND
+  ACTIVATE
 }
 
 enum RequestStatus {
@@ -488,11 +494,16 @@ enum ApprovalAction {
 
 enum UserRole {
   CITY_ADMIN
+  CITY_APPROVER
+
+  SUBCITY_ADMIN
+  SUBCITY_APPROVER
   SUBCITY_NORMAL
   SUBCITY_AUDITOR
+  
   REVENUE_ADMIN
+  REVENUE_APPROVER
   REVENUE_USER
-  SUBCITY_ADMIN
 }
 
 enum RateType {

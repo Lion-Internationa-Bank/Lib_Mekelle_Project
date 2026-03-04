@@ -7,7 +7,7 @@ import LandingPage from './routes/LandingPage';
 import CityAdminHome from './routes/admin/CityAdminHome';
 import SubCityAdminHome from './routes/admin/SubCityAdminHome';
 import SubcityHome from './routes/subcity/SubcityHome';
-import RevenueHome from './routes/revenue/RevenueHome';
+import RevenueAdminHome from './routes/revenue/RevenueHome';
 import ParcelDetailPage from './routes/ParcelDetailPage';
 import OwnershipPage from './routes/subcity/OwnershipPage';
 import SubCitiesPage from './routes/admin/SubCitiesPage';
@@ -21,6 +21,9 @@ import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
 import ExcelUploadPage from './routes/admin/ExcelUploadPage';
+import CityApproverHome from './routes/approver/CityApprover';
+import SubCityApproverHome from './routes/approver/SubCityApprover';
+import RevenueApproverHome from './routes/approver/RevenueApprover';
 
 import { ReportsRoutes } from './routes/reports'; // Import the ReportsRoutes component
 
@@ -84,7 +87,12 @@ const RoleBasedHome = () => {
     case 'REVENUE_USER':
       return <SubcityHome />;
     case 'REVENUE_ADMIN':
-      return <RevenueHome />;
+      return <RevenueAdminHome />;
+      case 'CITY_APPROVER':
+      case 'SUBCITY_APPROVER':
+      case 'REVENUE_APPROVER':
+      return <PendingRequestsPage />;
+      
     default:
       return <div>Unknown role</div>;
   }

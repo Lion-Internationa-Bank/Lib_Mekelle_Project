@@ -2,7 +2,8 @@ import type { Request, Response } from 'express';
 import prisma from '../config/prisma.ts';
 import { 
   AuditAction, EntityType,
-  ActionType
+  ActionType,
+  UserRole
 } from '../generated/prisma/enums.ts';
 import {type AuthRequest, } from '../middlewares/authMiddleware.ts';
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
@@ -240,6 +241,7 @@ export const onlyCreateOwner = async (req: AuthRequest, res: Response) => {
       entityType: EntityType.OWNERS,
       entityId: 'NEW', // Will be generated after approval
       actionType: ActionType.CREATE,
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         full_name,
         national_id,
@@ -450,6 +452,7 @@ export const updateOwner = async (req: AuthRequest, res: Response) => {
       entityType: EntityType.OWNERS,
       entityId: owner_id,
       actionType: ActionType.UPDATE,
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         changes: updates,
         current_data: {
@@ -616,6 +619,7 @@ export const deleteOwner = async (req: AuthRequest<{ owner_id: string }>, res: R
       entityType: EntityType.OWNERS,
       entityId: owner_id,
       actionType: ActionType.DELETE,
+      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         reason: comments || 'Owner deletion requested',
         current_data: {

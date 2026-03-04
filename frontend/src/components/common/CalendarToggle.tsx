@@ -17,7 +17,7 @@ const CalendarToggle: React.FC = () => {
       
       {/* Small Badge for Context */}
       <span 
-        className="absolute -bottom-1 -right-1 flex items-center justify-center px-1 min-w-[1.25rem] h-4 text-[10px] font-bold text-white rounded-full border border-white"
+        className="absolute -bottom-1 -right-1 flex items-center justify-center px-1 min-w-5 h-4 text-[10px] font-bold text-white rounded-full border border-white"
         style={{ backgroundColor: '#040707' }}
       >
         {isEthiopian ? 'ዓ/ም' : 'GC'}

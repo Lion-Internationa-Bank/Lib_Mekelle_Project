@@ -1,8 +1,14 @@
 // src/controllers/configController.ts
 import { type Request, type Response } from 'express';
 import prisma from '../config/prisma.ts';
-import { ConfigCategory ,AuditAction} from '../generated/prisma/enums.ts';
-import {type AuthRequest  } from '../middlewares/authMiddleware.ts';
+import { ConfigCategory, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.ts';
+import { type AuthRequest } from '../middlewares/authMiddleware.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.ts';
+import { AuditService } from '../services/auditService.ts';
+
+// Initialize services
+const auditService = new AuditService();
+const makerCheckerService = new MakerCheckerService(auditService);
 
 const CONFIG_KEYS: Record<ConfigCategory, string> = {
   LAND_TENURE: 'land_tenure_options',
@@ -43,8 +49,7 @@ export const getConfig = async (req: Request<{ category: ConfigCategory }>, res:
   });
 };
 
-// POST /api/v1/city-admin/configs/:category
-
+// POST /api/v1/city-admin/configs/:category - with maker-checker
 export const createOrUpdateConfig = async (
   req: AuthRequest & { params: { category: ConfigCategory } },
   res: Response
@@ -53,7 +58,7 @@ export const createOrUpdateConfig = async (
   const { options, description, is_active } = req.body;
   const actor = req.user!;
 
-  const key = CONFIG_KEYS[category]; 
+  const key = CONFIG_KEYS[category];
 
   if (!key) {
     return res.status(400).json({ 
@@ -71,70 +76,53 @@ export const createOrUpdateConfig = async (
       }
     });
 
-    const updated = await prisma.configurations.upsert({
-      where: { key },
-      update: {
-        value: options,
-        description: description !== undefined ? description : undefined,
-        is_active: is_active !== undefined ? is_active : undefined,
-        updated_at: new Date(),
-      },
-      create: {
-        key,
-        value: options,
-        category,
-        description: description || null,
-        is_active: is_active !== undefined ? is_active : true,
-      },
+    // Prepare request data
+    const requestData = {
+      key,
+      category,
+      options,
+      description: description || null,
+      is_active: is_active !== undefined ? is_active : true,
+      previous_values: existingConfig ? {
+        value: existingConfig.value,
+        description: existingConfig.description,
+        is_active: existingConfig.is_active,
+      } : null
+    };
+
+    // Determine action type
+    const actionType = existingConfig ? ActionType.UPDATE : ActionType.CREATE;
+
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.CONFIGURATIONS,
+      entityId: existingConfig?.config_id || 'pending',
+      actionType,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Configurations are city-level
+      comments: `${actionType === ActionType.CREATE ? 'Create' : 'Update'} ${category} configuration`
     });
 
-    // Create audit log for config change
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor.user_id,
-        action_type: AuditAction.CONFIG_CHANGE,
-        entity_type: 'configurations',
-        entity_id: updated.config_id,
-        changes: {
-          action: existingConfig ? 'update_config' : 'create_config',
-          category,
-          key,
-          previous_value: existingConfig?.value || null,
-          new_value: options,
-          previous_description: existingConfig?.description || null,
-          new_description: description || null,
-          previous_is_active: existingConfig?.is_active || null,
-          new_is_active: is_active !== undefined ? is_active : updated.is_active,
-          actor_id: actor.user_id,
-          actor_role: actor.role,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
-      },
-    });
-
-    res.status(200).json({
+    return res.status(202).json({
       success: true,
-      message: `Configuration ${existingConfig ? 'updated' : 'created'} successfully`,
+      message: `Configuration ${actionType === ActionType.CREATE ? 'creation' : 'update'} request submitted for approval`,
       data: {
-        config_id: updated.config_id,
-        category: updated.category,
-        key: updated.key,
-        value: updated.value,
-        description: updated.description,
-        is_active: updated.is_active,
-        created_at: updated.created_at,
-        updated_at: updated.updated_at,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.CONFIGURATIONS,
+        action: actionType,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
   } catch (error: any) {
     console.error('Config update error:', error);
     
-    if (error.code === 'P2002') {
+    if (error.message.includes('already exists')) {
       return res.status(409).json({
         success: false,
-        message: 'Configuration key already exists'
+        message: error.message
       });
     }
     
@@ -145,7 +133,8 @@ export const createOrUpdateConfig = async (
     });
   }
 };
-// Sub-city Controllers
+
+// Sub-city Controllers - with maker-checker
 
 // GET /api/v1/city-admin/sub-cities
 export const getSubCities = async (_req: AuthRequest, res: Response) => {
@@ -163,7 +152,7 @@ export const getSubCities = async (_req: AuthRequest, res: Response) => {
   res.json({ sub_cities: subCities });
 };
 
-// POST /api/v1/city-admin/sub-cities
+// POST /api/v1/city-admin/sub-cities - with maker-checker
 export const createSubCity = async (req: AuthRequest, res: Response) => {
   const { name, description } = req.body;
   const actor = req.user!;
@@ -176,52 +165,57 @@ export const createSubCity = async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const subCity = await prisma.sub_cities.create({
-      data: {
+    // Check for duplicate name
+    const existing = await prisma.sub_cities.findFirst({
+      where: {
         name,
-        description: description || null,
-      },
+        is_deleted: false
+      }
     });
 
-    // Create audit log for sub-city creation
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor.user_id,
-        action_type: AuditAction.CREATE,
-        entity_type: 'sub_cities',
-        entity_id: subCity.sub_city_id,
-        changes: {
-          action: 'create_sub_city',
-          name: subCity.name,
-          description: subCity.description,
-          actor_id: actor.user_id,
-          actor_role: actor.role,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
-      },
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: 'Sub-city name already exists'
+      });
+    }
+
+    // Prepare request data
+    const requestData = {
+      name,
+      description: description || null,
+    };
+
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.SUBCITY,
+      entityId: 'pending',
+      actionType: ActionType.CREATE,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Sub-cities are city-level
+      comments: `Create new sub-city: ${name}`
     });
 
-    res.status(201).json({
+    return res.status(202).json({
       success: true,
-      message: 'Sub-city created successfully',
+      message: 'Sub-city creation request submitted for approval',
       data: {
-        sub_city_id: subCity.sub_city_id,
-        name: subCity.name,
-        description: subCity.description,
-        created_at: subCity.created_at,
-        updated_at: subCity.updated_at,
-        is_deleted: subCity.is_deleted,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.SUBCITY,
+        action: ActionType.CREATE,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
   } catch (error: any) {
     console.error('Create sub-city error:', error);
     
-    if (error.code === 'P2002') {
+    if (error.message.includes('already exists')) {
       return res.status(409).json({
         success: false,
-        message: 'Sub-city name already exists'
+        message: error.message
       });
     }
     
@@ -233,7 +227,7 @@ export const createSubCity = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// PATCH /api/v1/city-admin/sub-cities/:id
+// PATCH /api/v1/city-admin/sub-cities/:id - with maker-checker
 export const updateSubCity = async (req: AuthRequest & { params: { id: string } }, res: Response) => {
   const { id } = req.params;
   const { name, description } = req.body;
@@ -247,7 +241,7 @@ export const updateSubCity = async (req: AuthRequest & { params: { id: string } 
   }
 
   try {
-    // Get current sub-city data for audit log
+    // Get current sub-city data
     const currentSubCity = await prisma.sub_cities.findUnique({
       where: { 
         sub_city_id: id,
@@ -262,52 +256,59 @@ export const updateSubCity = async (req: AuthRequest & { params: { id: string } 
       });
     }
 
-    const updated = await prisma.sub_cities.update({
-      where: { 
-        sub_city_id: id,
-        is_deleted: false 
-      },
-      data: {
-        name: name || undefined,
-        description: description !== undefined ? description : undefined,
-        updated_at: new Date(),
-      },
+    // Check for duplicate name if name is being changed
+    if (name && name !== currentSubCity.name) {
+      const existing = await prisma.sub_cities.findFirst({
+        where: {
+          name,
+          is_deleted: false,
+          NOT: {
+            sub_city_id: id
+          }
+        }
+      });
+
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: 'Sub-city name already exists'
+        });
+      }
+    }
+
+    // Prepare request data
+    const requestData = {
+      sub_city_id: id,
+      name: name || currentSubCity.name,
+      description: description !== undefined ? description : currentSubCity.description,
+      previous_values: {
+        name: currentSubCity.name,
+        description: currentSubCity.description,
+      }
+    };
+
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.SUBCITY,
+      entityId: id,
+      actionType: ActionType.UPDATE,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Sub-cities are city-level
+      comments: `Update sub-city: ${currentSubCity.name}`
     });
 
-    // Create audit log for sub-city update
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor.user_id,
-        action_type: AuditAction.UPDATE,
-        entity_type: 'sub_cities',
-        entity_id: updated.sub_city_id,
-        changes: {
-          action: 'update_sub_city',
-          previous_name: currentSubCity.name,
-          new_name: updated.name,
-          previous_description: currentSubCity.description,
-          new_description: updated.description,
-          actor_id: actor.user_id,
-          actor_role: actor.role,
-          
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
-      },
-    });
-
-    res.json({
+    return res.status(202).json({
       success: true,
-      message: 'Sub-city updated successfully',
+      message: 'Sub-city update request submitted for approval',
       data: {
-        sub_city_id: updated.sub_city_id,
-        name: updated.name,
-        description: updated.description,
-        created_at: updated.created_at,
-        updated_at: updated.updated_at,
-        is_deleted: updated.is_deleted,
-      },
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.SUBCITY,
+        action: ActionType.UPDATE,
+        approver_role: result.approvalRequest?.approver_role,
+      }
     });
   } catch (error: any) {
     console.error('Update sub-city error:', error);
@@ -319,13 +320,6 @@ export const updateSubCity = async (req: AuthRequest & { params: { id: string } 
       });
     }
     
-    if (error.code === 'P2002') {
-      return res.status(409).json({
-        success: false,
-        message: 'Sub-city name already exists'
-      });
-    }
-    
     res.status(500).json({
       success: false,
       message: 'Failed to update sub-city',
@@ -334,10 +328,11 @@ export const updateSubCity = async (req: AuthRequest & { params: { id: string } 
   }
 };
 
-// DELETE /api/v1/city-admin/sub-cities/:id (soft delete)
+// DELETE /api/v1/city-admin/sub-cities/:id (soft delete) - with maker-checker
 export const deleteSubCity = async (req: AuthRequest & { params: { id: string } }, res: Response) => {
   const { id } = req.params;
   const actor = req.user!;
+  const { reason } = req.body;
 
   if (!id) {
     return res.status(400).json({
@@ -347,7 +342,7 @@ export const deleteSubCity = async (req: AuthRequest & { params: { id: string } 
   }
 
   try {
-    // Get current sub-city data for audit log
+    // Get current sub-city data
     const currentSubCity = await prisma.sub_cities.findUnique({
       where: { 
         sub_city_id: id,
@@ -362,7 +357,7 @@ export const deleteSubCity = async (req: AuthRequest & { params: { id: string } 
       });
     }
 
-    // Check if there are active users in this sub-city
+    // Check dependencies
     const activeUsers = await prisma.users.count({
       where: {
         sub_city_id: id,
@@ -371,14 +366,6 @@ export const deleteSubCity = async (req: AuthRequest & { params: { id: string } 
       }
     });
 
-    if (activeUsers > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot delete sub-city with ${activeUsers} active user(s). Deactivate or transfer users first.`
-      });
-    }
-
-    // Check if there are land parcels in this sub-city
     const landParcels = await prisma.land_parcels.count({
       where: {
         sub_city_id: id,
@@ -386,56 +373,48 @@ export const deleteSubCity = async (req: AuthRequest & { params: { id: string } 
       }
     });
 
-    if (landParcels > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot delete sub-city with ${landParcels} land parcel(s). Transfer parcels first.`
-      });
-    }
-
-    const deletedSubCity = await prisma.sub_cities.update({
-      where: { sub_city_id: id },
-      data: {
-        is_deleted: true,
-        deleted_at: new Date(),
-        updated_at: new Date(),
-        name: `${currentSubCity.name}_deleted_${Date.now()}`, // Modify name to allow reuse
-      },
+    const approvalRequests = await prisma.approval_requests.count({
+      where: {
+        sub_city_id: id,
+        status: 'PENDING',
+        is_deleted: false
+      }
     });
 
-    // Create audit log for sub-city deletion
-    await prisma.audit_logs.create({
-      data: {
-        user_id: actor.user_id,
-        action_type: AuditAction.DELETE,
-        entity_type: 'sub_cities',
-        entity_id: deletedSubCity.sub_city_id,
-        changes: {
-          action: 'soft_delete_sub_city',
-          original_name: currentSubCity.name,
-          new_name: deletedSubCity.name,
-          description: currentSubCity.description,
-          actor_id: actor.user_id,
-          actor_role: actor.role,
-          active_users_count: activeUsers,
-          land_parcels_count: landParcels,
-          deleted_at: deletedSubCity.deleted_at,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date(),
-        ip_address: req.ip || req.socket.remoteAddress,
+    // Prepare request data with dependency info
+    const requestData = {
+      sub_city_id: id,
+      name: currentSubCity.name,
+      description: currentSubCity.description,
+      dependencies: {
+        active_users: activeUsers,
+        land_parcels: landParcels,
+        pending_approvals: approvalRequests
       },
+      reason: reason || 'Sub-city deletion requested'
+    };
+
+    // Create approval request
+    const result = await makerCheckerService.createApprovalRequest({
+      entityType: EntityType.SUBCITY,
+      entityId: id,
+      actionType: ActionType.DELETE,
+      requestData,
+      makerId: actor.user_id,
+      makerRole: actor.role,
+      subCityId: null, // Sub-cities are city-level
+      comments: reason || `Delete sub-city: ${currentSubCity.name}`
     });
 
-    res.json({
+    return res.status(202).json({
       success: true,
-      message: 'Sub-city soft deleted successfully',
+      message: 'Sub-city deletion request submitted for approval',
       data: {
-        sub_city_id: deletedSubCity.sub_city_id,
-        original_name: currentSubCity.name,
-        new_name: deletedSubCity.name,
-        deleted_at: deletedSubCity.deleted_at,
-        is_deleted: deletedSubCity.is_deleted,
+        request_id: result.approvalRequest?.request_id,
+        status: result.approvalRequest?.status,
+        entity_type: EntityType.SUBCITY,
+        action: ActionType.DELETE,
+        approver_role: result.approvalRequest?.approver_role,
       }
     });
   } catch (error: any) {

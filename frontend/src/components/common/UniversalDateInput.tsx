@@ -527,7 +527,7 @@ const displayedValue = useMemo(() => {
             style={getAdjustedPickerStyle()}
           >
             {/* Picker Header */}
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="p-4 border-b border-gray-200 bg-linear-to-r from-gray-50 to-white">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <button
@@ -553,7 +553,7 @@ const displayedValue = useMemo(() => {
                       else if (viewMode === "months") setViewMode("years");
                       else setViewMode("days");
                     }}
-                    className="font-semibold text-gray-900 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 min-w-[140px] text-center"
+                    className="font-semibold text-gray-900 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 min-w-35 text-center"
                   >
                     {viewMode === "days" && (
                       <>
@@ -594,7 +594,7 @@ const displayedValue = useMemo(() => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                  <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-gray-100  rounded">
                     {isEthiopian ? "ዓ/ም" : "GC"}
                   </span>
                   <button
@@ -622,7 +622,7 @@ const displayedValue = useMemo(() => {
             </div>
 
             {/* Picker Body */}
-            <div className="p-4 max-h-[360px] overflow-y-auto">
+            <div className="p-4 max-h-90 overflow-y-auto">
               {viewMode === "days" && (
                 <>
                   <div className="grid grid-cols-7 gap-1 mb-2">
@@ -665,7 +665,7 @@ const displayedValue = useMemo(() => {
                             p-2 rounded-lg text-sm font-medium transition-all
                             ${
                               isSelected
-                                ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105"
+                                ? "bg-linear-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105"
                                 : isDisabled
                                 ? "text-gray-300 cursor-not-allowed"
                                 : "hover:bg-gray-100 text-gray-700 hover:scale-105"

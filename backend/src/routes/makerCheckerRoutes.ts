@@ -43,20 +43,20 @@ router.get('/makers/:maker_id/pending-requests',
 
 // Get pending requests (for approvers)
 router.get('/requests', 
-  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN']),
+  authorize(['SUBCITY_APPROVER', 'CITY_APPROVER', 'REVENUE_APPROVER']),
   validateRequest(validateApproverPendingRequestsQuery),
   (req, res) => makerCheckerController.getPendingRequests(req, res)
 );
 
 // Get request details
 router.get('/requests/:request_id',
-  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN','SUBCITY_NORMAL']),
+  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN','SUBCITY_NORMAL','SUBCITY_APPROVER', 'CITY_APPROVER', 'REVENUE_APPROVER']),
   (req, res) => makerCheckerController.getRequestDetails(req, res)
 );
 
 // Approve request
 router.post('/requests/:request_id/approve',
-  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN']),
+  authorize(['SUBCITY_APPROVER', 'CITY_APPROVER', 'REVENUE_APPROVER']),
   canApproveRequest,
   validateRequest(approveRequestSchema),
   (req, res) => makerCheckerController.approveRequest(req, res)
@@ -64,7 +64,7 @@ router.post('/requests/:request_id/approve',
 
 // Reject request
 router.post('/requests/:request_id/reject',
-  authorize(['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN']),
+  authorize(['SUBCITY_APPROVER', 'CITY_APPROVER', 'REVENUE_APPROVER']),
   canApproveRequest,
   validateRequest(rejectRequestSchema),
   (req, res) => makerCheckerController.rejectRequest(req, res)

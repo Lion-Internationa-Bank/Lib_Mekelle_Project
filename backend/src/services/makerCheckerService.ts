@@ -8,6 +8,7 @@ export interface CreateApprovalRequestParams {
   entityType: EntityType;
   entityId: string;
   actionType: ActionType;
+  approver_role:UserRole;
   requestData: any;
   makerId: string;
   makerRole: UserRole;
@@ -70,107 +71,92 @@ export class MakerCheckerService {
     this.actionExecutionService = new ActionExecutionService();
   }
 
-   async createApprovalRequest(params: CreateApprovalRequestParams): Promise<ApprovalResult> {
-    return await this.prisma.$transaction(async (tx) => {
-      // Determine approver role based on entity type
-      const approverRole = this.getApproverRole(params.entityType, params.makerRole);
-      
-      // If maker is approver themselves, execute immediately
-      if (params.makerRole === approverRole) {
-        const result = await this.executeImmediately(params, tx);
-        return {
-          success: true,
-          requiresApproval: false,
-          immediateResult: result
-        };
+async createApprovalRequest(params: CreateApprovalRequestParams): Promise<ApprovalResult> {
+  return await this.prisma.$transaction(async (tx) => {
+    // Determine approver role based on entity type
+    const approverRole = this.getApproverRole(params.entityType, params.makerRole);
+    
+    // REMOVED: Immediate execution logic
+    // All requests now go through approval process
+    
+    // Check for duplicate pending request
+    const existing = await tx.approval_requests.findFirst({
+      where: {
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        action_type: params.actionType,
+        status: 'PENDING',
+        is_deleted: false
       }
-
-      // Check for duplicate pending request
-      const existing = await tx.approval_requests.findFirst({
-        where: {
-          entity_type: params.entityType,
-          entity_id: params.entityId,
-          action_type: params.actionType,
-          status: 'PENDING',
-          is_deleted: false
-        }
-      });
-
-      if (existing) {
-        throw new Error('A pending approval request already exists for this entity');
-      }
-
-      // Prepare request data with documents array
-      const requestDataWithDocs = {
-        ...params.requestData,
-        documents: [], // Initialize empty documents array
-        // metadata: {
-        //   created_by: params.makerId,
-        //   created_by_role: params.makerRole,
-        //   sub_city_id: params.subCityId,
-        //   created_at: new Date().toISOString(),
-        //   requires_approval: true,
-        //   approver_role: approverRole
-        // }
-      };
-
-      // Create approval request
-      const approvalRequest = await tx.approval_requests.create({
-        data: {
-          entity_type: params.entityType,
-          entity_id: params.entityId,
-          action_type: params.actionType,
-          request_data: requestDataWithDocs,
-          status: 'PENDING',
-          maker_id: params.makerId,
-          maker_role: params.makerRole,
-          approver_role: approverRole,
-          sub_city_id: params.subCityId,
-          comments: params.comments,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      });
-
-      // Create initial approval log
-      await tx.approval_logs.create({
-        data: {
-          request_id: approvalRequest.request_id,
-          action: 'CREATE',
-          performed_by: params.makerId,
-          performed_by_role: params.makerRole,
-          previous_status: null,
-          new_status: 'PENDING',
-          comments: params.comments,
-          created_at: new Date()
-        }
-      });
-
-      // Audit the request creation
-      await this.auditService.log({
-        userId: params.makerId,
-        action: AuditAction.CREATE,
-        entityType: 'APPROVAL_REQUEST',
-        entityId: approvalRequest.request_id,
-        changes: {
-          entity_type: params.entityType,
-          entity_id: params.entityId,
-          action_type: params.actionType,
-          maker_id: params.makerId,
-          maker_role: params.makerRole,
-          approver_role: approverRole,
-          has_documents: false // Initially no documents
-        },
-        ipAddress: 'SYSTEM'
-      });
-
-      return {
-        success: true,
-        requiresApproval: true,
-        approvalRequest
-      };
     });
-  }
+
+    if (existing) {
+      throw new Error('A pending approval request already exists for this entity');
+    }
+
+    // Prepare request data with documents array
+    const requestDataWithDocs = {
+      ...params.requestData,
+      documents: [], // Initialize empty documents array
+    };
+
+    // Create approval request
+    const approvalRequest = await tx.approval_requests.create({
+      data: {
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        action_type: params.actionType,
+        request_data: requestDataWithDocs,
+        status: 'PENDING',
+        maker_id: params.makerId,
+        maker_role: params.makerRole,
+        approver_role: approverRole,
+        sub_city_id: params.subCityId,
+        comments: params.comments,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    });
+
+    // Create initial approval log
+    await tx.approval_logs.create({
+      data: {
+        request_id: approvalRequest.request_id,
+        action: 'CREATE',
+        performed_by: params.makerId,
+        performed_by_role: params.makerRole,
+        previous_status: null,
+        new_status: 'PENDING',
+        comments: params.comments,
+        created_at: new Date()
+      }
+    });
+
+    // Audit the request creation
+    await this.auditService.log({
+      userId: params.makerId,
+      action: AuditAction.CREATE,
+      entityType: 'APPROVAL_REQUEST',
+      entityId: approvalRequest.request_id,
+      changes: {
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        action_type: params.actionType,
+        maker_id: params.makerId,
+        maker_role: params.makerRole,
+        approver_role: approverRole,
+        has_documents: false // Initially no documents
+      },
+      ipAddress: 'SYSTEM'
+    });
+
+    return {
+      success: true,
+      requiresApproval: true,
+      approvalRequest
+    };
+  });
+}
 
    private async executeImmediately(params: CreateApprovalRequestParams, tx: any): Promise<any> {
     // Prepare data for immediate execution
@@ -244,28 +230,118 @@ export class MakerCheckerService {
     throw new Error(`Immediate execution not supported for ${params.entityType} ${params.actionType}`);
   }
 
+private getApproverRole(entityType: string, makerRole: UserRole): UserRole {
+  // Define approval hierarchy based on entity type and maker role
+  const approvalRules: Record<string, Record<string, UserRole>> = {
+    // Wizard Sessions - Sub-city level
+    'WIZARD_SESSION': {
+      'SUBCITY_NORMAL': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_AUDITOR': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER, // Admin actions need approver
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER // Self-approval not allowed
+    },
+    
+    // Land Parcels - Sub-city level
+    'LAND_PARCELS': {
+      'SUBCITY_NORMAL': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_AUDITOR': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER
+    },
+    
+    // Owners - Sub-city level
+    'OWNERS': {
+      'SUBCITY_NORMAL': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_AUDITOR': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER
+    },
+    
+    // Lease Agreements - Sub-city level (but revenue related)
+    'LEASE_AGREEMENTS': {
+      'SUBCITY_NORMAL': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_AUDITOR': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER
+    },
+    
+    // Encumbrances - Sub-city level
+    'ENCUMBRANCES': {
+      'SUBCITY_NORMAL': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_AUDITOR': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER
+    },
+    
+    // Users - Multi-level based on maker role
+    'USERS': {
+      // City Admin creates Sub-city Admin/Approver -> needs City Approver
+      'CITY_ADMIN': UserRole.CITY_APPROVER,
+      
+      // Sub-city Admin creates Normal/Auditor/Approver -> needs Sub-city Approver
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      
+      // Revenue Admin creates Revenue User -> needs Revenue Approver
+      'REVENUE_ADMIN': UserRole.REVENUE_APPROVER,
+      
+      // Approvers cannot create users, but if they somehow try, they need their own approver
+      'CITY_APPROVER': UserRole.CITY_APPROVER,
+      'SUBCITY_APPROVER': UserRole.SUBCITY_APPROVER,
+      'REVENUE_APPROVER': UserRole.REVENUE_APPROVER
+    },
+    
+    // Revenue - Revenue level
+    'REVENUE': {
+      'REVENUE_USER': UserRole.REVENUE_APPROVER,
+      'REVENUE_ADMIN': UserRole.REVENUE_APPROVER,
+      'REVENUE_APPROVER': UserRole.REVENUE_APPROVER
+    },
+    
+    // Configurations - City level
+    'CONFIGURATIONS': {
+      'CITY_ADMIN': UserRole.CITY_APPROVER,
+      'CITY_APPROVER': UserRole.CITY_APPROVER
+    },
+    
+    // Rate Configurations - Revenue level
+    'RATE_CONFIGURATION': {
+      'REVENUE_ADMIN': UserRole.REVENUE_APPROVER,
+      'REVENUE_APPROVER': UserRole.REVENUE_APPROVER
+    },
+    
+    // Sub-cities - City level
+    'SUBCITY': {
+      'CITY_ADMIN': UserRole.CITY_APPROVER,
+      'CITY_APPROVER': UserRole.CITY_APPROVER
+    },
+    
+    // Approval Requests - Admin oversight (not typically created by users)
+    'APPROVAL_REQUEST': {
+      'CITY_ADMIN': UserRole.CITY_APPROVER,
+      'SUBCITY_ADMIN': UserRole.SUBCITY_APPROVER,
+      'REVENUE_ADMIN': UserRole.REVENUE_APPROVER
+    }
+  };
 
-  private getApproverRole(entityType: string, makerRole: UserRole): UserRole {
-    // Define approval hierarchy
-    const approvalRules = {
-      'WIZARD_SESSION': {
-        'SUBCITY_NORMAL': 'SUBCITY_ADMIN',
-        'SUBCITY_AUDITOR': 'SUBCITY_ADMIN',
-        'SUBCITY_ADMIN': 'SUBCITY_ADMIN' // Self-approval
-      },
-      'LAND_PARCEL': {
-        'SUBCITY_NORMAL': 'SUBCITY_ADMIN',
-        'SUBCITY_AUDITOR': 'SUBCITY_ADMIN',
-        'SUBCITY_ADMIN': 'SUBCITY_ADMIN'
-      },
-      'LEASE': {
-        'SUBCITY_NORMAL': 'REVENUE_ADMIN',
-        'SUBCITY_ADMIN': 'REVENUE_ADMIN'
-      }
-    };
-
-    return (approvalRules as any)[entityType]?.[makerRole] || 'SUBCITY_ADMIN';
+  // Get the approver role from rules, or default based on maker role
+  const approverRole = approvalRules[entityType]?.[makerRole];
+  
+  if (approverRole) {
+    return approverRole;
   }
+
+  // Default fallback logic based on maker role
+  if (makerRole.includes('CITY')) {
+    return UserRole.CITY_APPROVER;
+  } else if (makerRole.includes('SUBCITY')) {
+    return UserRole.SUBCITY_APPROVER;
+  } else if (makerRole.includes('REVENUE')) {
+    return UserRole.REVENUE_APPROVER;
+  }
+
+  // Ultimate fallback
+  return UserRole.SUBCITY_APPROVER;
+}
 
 
  async updateApprovalRequestDocuments(requestId: string, documents: any[]): Promise<void> {
@@ -578,14 +654,48 @@ async getPendingRequests(
       where.status = status;
     }
 
-    // Filter by subcity for subcity admins
-    if (user.role === 'SUBCITY_ADMIN' && user.sub_city_id) {
-      where.sub_city_id = user.sub_city_id;
+    // Filter by approver role based on user's role
+    if (user.role === 'CITY_APPROVER') {
+      // City approvers see all city-level approval requests
+      where.approver_role = 'CITY_APPROVER';
+    } 
+    else if (user.role === 'SUBCITY_APPROVER') {
+      // Sub-city approvers see requests for their specific sub-city
+      where.approver_role = 'SUBCITY_APPROVER';
+      if (user.sub_city_id) {
+        where.sub_city_id = user.sub_city_id;
+      }
     }
-
-    // Revenue admins see revenue-related requests
-    if (user.role === 'REVENUE_ADMIN') {
+    else if (user.role === 'REVENUE_APPROVER') {
+      // Revenue approvers see revenue-related requests
+      where.approver_role = 'REVENUE_APPROVER';
+      // Revenue approvers don't have sub-city restrictions
+    }
+    else if (user.role === 'CITY_ADMIN') {
+      // City admins can see all requests (for oversight)
+      // No approver_role filter needed
+    }
+    else if (user.role === 'SUBCITY_ADMIN') {
+      // Sub-city admins can see requests from their sub-city
+      if (user.sub_city_id) {
+        where.sub_city_id = user.sub_city_id;
+      }
+    }
+    else if (user.role === 'REVENUE_ADMIN') {
+      // Revenue admins see revenue-related requests
       where.entity_type = 'REVENUE';
+    }
+    else {
+      // Non-approver/non-admin roles cannot view requests
+      return {
+        requests: [],
+        page,
+        limit,
+        totalCount: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
     }
 
     // Apply entity type filter if provided
@@ -619,10 +729,14 @@ async getPendingRequests(
       }
     }
 
-    // Check if user is an approver for any entity type
-    const userCanApprove = ['SUBCITY_ADMIN', 'REVENUE_ADMIN', 'CITY_ADMIN'].includes(user.role);
+    // Check if user has permission to view requests
+    const userCanView = [
+      'SUBCITY_APPROVER', 
+      'CITY_APPROVER', 
+      'REVENUE_APPROVER'
+    ].includes(user.role);
     
-    if (!userCanApprove) {
+    if (!userCanView) {
       return {
         requests: [],
         page,
@@ -647,7 +761,7 @@ async getPendingRequests(
       'status', 
       'entity_type', 
       'action_type',
-      'submitted_at',
+      'created_at',
       'approved_at',
       'rejected_at'
     ];
@@ -663,14 +777,16 @@ async getPendingRequests(
       orderBy: {
         [orderByField]: orderDirection
       },
-       select:{
-        request_id:true,
+      select: {
+        request_id: true,
         entity_type: true,
         action_type: true,
         status: true,
         created_at: true,
-        maker:{
-          select :{
+        approver_role: true,
+        sub_city_id: true,
+        maker: {
+          select: {
             user_id: true,
             username: true,
             full_name: true,
@@ -694,7 +810,6 @@ async getPendingRequests(
     throw new Error('Failed to fetch pending requests');
   }
 }
-
   // src/services/makerCheckerService.ts
 
 
@@ -743,11 +858,6 @@ async getMakerPendingRequests(
     if (requestingUser.role === 'SUBCITY_ADMIN' && requestingUser.sub_city_id) {
       where.sub_city_id = requestingUser.sub_city_id;
     }
-
-    if (requestingUser.role === 'REVENUE_ADMIN') {
-      where.entity_type = 'REVENUE';
-    }
-
     // Get total count for pagination
     const totalCount = await this.prisma.approval_requests.count({ where });
 
