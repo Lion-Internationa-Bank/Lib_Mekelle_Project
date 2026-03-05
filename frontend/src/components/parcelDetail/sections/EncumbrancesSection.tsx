@@ -1,5 +1,6 @@
 // src/components/parcelDetail/sections/EncumbrancesSection.tsx
 import { useState, useEffect } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
 import GenericDocsUpload from "../../common/GenericDocsUpload";
@@ -14,6 +15,8 @@ type Props = {
 };
 
 const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
+  const { t } = useTranslate('encumbrancesSection');
+  const { t: tCommon } = useTranslate('common');
   const [editing, setEditing] = useState<ParcelDetail["encumbrances"][number] | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const { user } = useAuth();
@@ -39,8 +42,8 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
     if (result?.approval_request_id) {
       setCurrentApprovalRequest({
         id: result.approval_request_id,
-        title: "Upload Encumbrance Documents",
-        description: "Upload supporting documents for the encumbrance approval request",
+        title: t('approval.title'),
+        description: t('approval.description'),
         resultData: result
       });
       setShowApprovalDocsModal(true);
@@ -81,7 +84,6 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
     
     // Show success message if we have result data
     if (currentApprovalRequest?.resultData) {
-      // You can show a toast or update UI here
       console.log("Documents uploaded for approval request:", currentApprovalRequest.id);
     }
     
@@ -97,7 +99,7 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
               onClick={() => setAddingNew(true)}
               className="px-6 py-3 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20"
             >
-              + Add First Encumbrance
+              + {t('buttons.addFirst')}
             </button>
           </div>
         ) : (
@@ -116,7 +118,7 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
               onClick={() => setAddingNew(true)}
               className="px-6 py-3 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20"
             >
-              + Add New Encumbrance
+              + {t('buttons.addNew')}
             </button>
           </div>
         )}
@@ -144,16 +146,16 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-                    Encumbrance Registered ✓
+                    {t('upload.title')}
                   </h2>
                   <p className="text-[#2a2718]/70">
-                    Upload supporting documents for parcel{" "}
+                    {t('upload.description')}{" "}
                     <span className="font-mono font-bold text-[#f0cd6e]">{upin}</span>
                   </p>
                 </div>
                 <div className="text-right">
                   <span className="inline-block px-4 py-2 text-sm font-bold bg-[#f0cd6e] text-[#2a2718] rounded-full">
-                    Optional Step
+                    {t('upload.optional')}
                   </span>
                 </div>
               </div>
@@ -161,17 +163,17 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
 
             <div className="p-8">
               <GenericDocsUpload
-                title="Encumbrance supporting documents"
+                title={t('upload.docsTitle')}
                 upin={upin}
                 subCity=""
                 encumbranceId={latestEncumbranceId}
                 hideTitle={true}
                 allowedDocTypes={[
-                  { value: "ENCUMBRANCE_CERT", label: "Encumbrance Certificate" },
-                  { value: "COURT_ORDER", label: "Court Order" },
-                  { value: "BANK_LETTER", label: "Bank/Mortgage Letter" },
-                  { value: "RELEASE_LETTER", label: "Release Letter (if applicable)" },
-                  { value: "OTHER", label: "Other Supporting Document" },
+                  { value: "ENCUMBRANCE_CERT", label: t('upload.docTypes.certificate') },
+                  { value: "COURT_ORDER", label: t('upload.docTypes.courtOrder') },
+                  { value: "BANK_LETTER", label: t('upload.docTypes.bankLetter') },
+                  { value: "RELEASE_LETTER", label: t('upload.docTypes.releaseLetter') },
+                  { value: "OTHER", label: t('upload.docTypes.other') },
                 ]}
                 onUploadSuccess={onReload}
               />
@@ -182,13 +184,13 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
                 onClick={handleSkipUpload}
                 className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
               >
-                Skip for now
+                {t('upload.skip')}
               </button>
               <button
                 onClick={handleUploadComplete}
                 className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
               >
-                Done – Close
+                {t('upload.done')}
                 <span className="text-lg">→</span>
               </button>
             </div>

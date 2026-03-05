@@ -1,5 +1,6 @@
 // src/components/wizard/ParcelWizard/OwnerDocsStep.tsx
 import { useState, useEffect } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
@@ -22,6 +23,8 @@ const ownerDocumentTypes = [
 ];
 
 const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
+  const { t } = useTranslate('ownerDocsStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, uploadDocument, deleteDocument, isLoading } = useWizard();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
@@ -30,7 +33,6 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   useEffect(() => {
     if (currentSession?.owner_docs) {
       setDocuments(currentSession.owner_docs);
-      
     }
   }, [currentSession?.owner_docs]);
 
@@ -44,14 +46,14 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     // Validate file type
     const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please upload PDF, JPG, or PNG files.');
+      toast.error(t('errors.invalidFileType'));
       e.target.value = '';
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size exceeds 10MB limit.');
+      toast.error(t('errors.fileTooLarge'));
       e.target.value = '';
       return;
     }
@@ -76,12 +78,12 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       setDocuments(prev => prev.map(doc =>
         doc.id === tempId ? { ...result, status: "success" } : doc
       ));
-      toast.success(`${docType.replace('_', ' ')} uploaded successfully`);
+      toast.success(t('messages.uploadSuccess', { type: docType.replace('_', ' ') }));
     } catch (error: any) {
       setDocuments(prev => prev.map(doc =>
         doc.id === tempId ? { ...doc, status: "error" } : doc
       ));
-      toast.error(error.message || 'Upload failed');
+      toast.error(error.message || t('errors.uploadFailed'));
     } finally {
       setUploadingDoc(null);
       e.target.value = '';
@@ -89,41 +91,39 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    if (!confirm(t('confirm.delete'))) return;
     
     try {
-    const result =   await  deleteDocument('owner-docs', documentId);
-    console.log("document delete result",result)
+      const result = await deleteDocument('owner-docs', documentId);
+      console.log("document delete result", result);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      if(result.success){
-         toast.success('Document deleted');
+      if (result.success) {
+        toast.success(t('messages.deleteSuccess'));
       }
-    
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete document');
+      toast.error(error.message || t('errors.deleteFailed'));
     }
   };
 
-// In your component, add this temporary debug function
-const handleViewDocument = (file_url: string) => {
-  openDocument(file_url);
-};
+  const handleViewDocument = (file_url: string) => {
+    openDocument(file_url);
+  };
 
   // Show warning if no owner data
   if (!currentSession?.owner_data) {
     return (
       <div className="text-center py-12">
         <p className="text-2xl font-bold text-red-600 mb-4">
-          Missing Owner Information
+          {t('errors.missingOwner')}
         </p>
         <p className="text-gray-600 mb-6">
-          Please complete the Owner step first.
+          {t('errors.missingOwnerDesc')}
         </p>
         <button
           onClick={prevStep}
           className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-medium"
         >
-          ← Go Back
+          ← {t('actions.back')}
         </button>
       </div>
     );
@@ -132,17 +132,17 @@ const handleViewDocument = (file_url: string) => {
   return (
     <>
       <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-        Owner Documents
+        {t('title')}
       </h2>
       <p className="text-[#2a2718]/70 mb-8">
-        Upload supporting documents for the owner (PDF, JPG, PNG up to 10MB)
+        {t('subtitle')}
       </p>
 
       {/* Documents List */}
       <div className="space-y-4 mb-8">
         {documents.length === 0 ? (
           <div className="text-center py-8 border-2 border-dashed border-[#f0cd6e] rounded-xl">
-            <p className="text-[#2a2718]/70">No documents uploaded yet</p>
+            <p className="text-[#2a2718]/70">{t('empty')}</p>
           </div>
         ) : (
           documents.map((doc) => (
@@ -161,22 +161,24 @@ const handleViewDocument = (file_url: string) => {
                   </div>
                   <div className="text-sm text-[#2a2718]/70 truncate">{doc.file_name}</div>
                   <div className="text-xs text-[#2a2718]/70">
-                    {new Date(doc.uploaded_at).toLocaleDateString()} • {doc.uploaded_by || 'You'}
+                    {new Date(doc.uploaded_at).toLocaleDateString()} • {doc.uploaded_by || t('uploadedBy')}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-            {   doc.file_url &&(    <button
-                  onClick={() => handleViewDocument(doc.file_url)}
-                  className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-xl transition-colors"
-                  title="View document"
-                >
-                  👁️ View
-                </button>)}
+                {doc.file_url && (
+                  <button
+                    onClick={() => handleViewDocument(doc.file_url)}
+                    className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-xl transition-colors"
+                    title={t('actions.view')}
+                  >
+                    👁️ {t('actions.view')}
+                  </button>
+                )}
                 <button
                   onClick={() => handleDeleteDocument(doc.id)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                  title="Remove document"
+                  title={t('actions.remove')}
                   disabled={uploadingDoc === doc.id}
                 >
                   ✕
@@ -193,9 +195,9 @@ const handleViewDocument = (file_url: string) => {
           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
             📄
           </div>
-          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">Upload Owner Documents</h3>
+          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">{t('upload.title')}</h3>
           <p className="text-[#2a2718]/70 mb-6 max-w-md mx-auto">
-            Click below to upload owner identification documents (PDF, JPG, PNG up to 10MB)
+            {t('upload.description')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
@@ -206,7 +208,7 @@ const handleViewDocument = (file_url: string) => {
                     <span className="text-xl font-bold text-[#2a2718]">📄</span>
                   </div>
                   <div className="font-semibold text-[#2a2718] mb-1">{type.label}</div>
-                  <div className="text-sm text-[#2a2718]/70">Click to upload</div>
+                  <div className="text-sm text-[#2a2718]/70">{t('upload.clickToUpload')}</div>
                 </div>
                 <input
                   type="file"
@@ -227,7 +229,7 @@ const handleViewDocument = (file_url: string) => {
           onClick={prevStep}
           className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
         >
-          ← Back
+          ← {t('actions.back')}
         </button>
         
         <div className="flex gap-4">
@@ -236,7 +238,7 @@ const handleViewDocument = (file_url: string) => {
             className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
             disabled={isLoading || !!uploadingDoc}
           >
-            Next Step →
+            {t('actions.next')} →
             {(isLoading || uploadingDoc) && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           </button>
         </div>
@@ -244,10 +246,9 @@ const handleViewDocument = (file_url: string) => {
 
       {/* Optional Lease Info */}
       <div className="mt-6 p-4 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-xl">
-        <h4 className="font-medium text-[#2a2718] mb-1">Optional: Lease Registration</h4>
+        <h4 className="font-medium text-[#2a2718] mb-1">{t('leaseInfo.title')}</h4>
         <p className="text-sm text-[#2a2718]/70">
-          If this parcel has a lease agreement, continue to the next step to register lease details.
-          If not, you can skip the lease steps after this.
+          {t('leaseInfo.description')}
         </p>
       </div>
     </>

@@ -1,7 +1,8 @@
-// src/components/admin/SuspendActivateModal.tsx
+// src/components/userMgt/SuspendActivateModal.tsx
 import { UserX, UserCheck, Clock } from 'lucide-react';
 import type { User } from '../../services/userService';
 import { useState } from 'react';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface SuspendActivateModalProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ const SuspendActivateModal = ({
   onConfirm,
   isSubmitting = false 
 }: SuspendActivateModalProps) => {
+  const { t } = useTranslate('users');
+  const { t: tCommon } = useTranslate('common');
   const [reason, setReason] = useState('');
 
   if (!isOpen || !user) return null;
@@ -51,25 +54,31 @@ const SuspendActivateModal = ({
         </div>
         
         <h3 className="text-xl font-bold text-[#2a2718] mb-2">
-          {suspend ? 'Suspend User' : 'Activate User'}
+          {suspend ? t('suspendModal.title_suspend') : t('suspendModal.title_activate')}
         </h3>
         
         <p className="text-[#2a2718]/70 mb-2">
-          Are you sure you want to {suspend ? 'suspend' : 'activate'} <span className="font-semibold">{user.full_name}</span>?
+          {suspend 
+            ? t('suspendModal.confirmMessage_suspend', { name: user.full_name })
+            : t('suspendModal.confirmMessage_activate', { name: user.full_name })
+          }
         </p>
 
         {/* Reason input for all actions */}
         <div className="mb-4">
           <label htmlFor="reason" className="block text-sm font-medium text-[#2a2718]/70 mb-1">
-            Reason for this action {requiresApproval ? '(required)' : '(optional)'}
+            {requiresApproval 
+              ? t('suspendModal.reasonRequired') 
+              : t('suspendModal.reasonOptional')
+            }
           </label>
           <textarea
             id="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={requiresApproval 
-              ? "Please provide a reason for this action..." 
-              : "Optional reason for this action..."
+              ? t('suspendModal.reasonPlaceholder')
+              : t('suspendModal.reasonOptionalPlaceholder')
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:border-transparent"
             rows={3}
@@ -84,10 +93,10 @@ const SuspendActivateModal = ({
               <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm text-amber-700 font-medium">
-                  This action requires approval
+                  {t('suspendModal.requiresApproval')}
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
-                  Your request will be sent for review by an approver. You'll be notified once it's processed.
+                  {t('suspendModal.approvalMessage')}
                 </p>
               </div>
             </div>
@@ -100,7 +109,7 @@ const SuspendActivateModal = ({
             disabled={isSubmitting}
             className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleConfirm}
@@ -114,12 +123,12 @@ const SuspendActivateModal = ({
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Submitting...
+                {tCommon('submitting')}
               </>
             ) : (
               requiresApproval 
-                ? `Request ${suspend ? 'Suspension' : 'Activation'}`
-                : `${suspend ? 'Suspend' : 'Activate'} User`
+                ? t('suspendModal.requestAction', { action: suspend ? 'Suspension' : 'Activation' })
+                : (suspend ? t('actions.suspend') : t('actions.activate'))
             )}
           </button>
         </div>

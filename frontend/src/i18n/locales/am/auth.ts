@@ -1,0 +1,32 @@
+export const auth = {
+  login: {
+    welcome: 'እንኳን በደህና መጡ',
+    subtitle: 'ወደ መለያዎ ይግቡ',
+    username: 'የተጠቃሚ ስም',
+    usernamePlaceholder: 'የተጠቃሚ ስምዎን ያስገቡ',
+    password: 'የይለፍ ቃል',
+    passwordPlaceholder: 'የይለፍ ቃልዎን ያስገቡ',
+    rememberMe: 'አስታውሰኝ',
+    forgotPassword: 'የይለፍ ቃል ረስተዋል?',
+    button: 'ግባ',
+    buttonLoading: 'በመግባት ላይ...',
+    error: 'የተጠቃሚ ስም ወይም የይለፍ ቃል ትክክል አይደለም',
+  },
+  logout: 'ውጣ',
+  profile: 'መገለጫ',
+  views: {
+    maker: 'የፈጣሪ እይታ',
+    approver: 'የአፅዳቂ እይታ',
+  },
+  roles: {
+    CITY_ADMIN: 'የከተማ አስተዳዳሪ',
+    CITY_APPROVER: 'የከተማ አፅዳቂ',
+    SUBCITY_ADMIN: 'የንኡስ ከተማ አስተዳዳሪ',
+    SUBCITY_APPROVER: 'የንኡስ ከተማ አፅዳቂ',
+    SUBCITY_NORMAL: 'የንኡስ ከተማ ተራ ተጠቃሚ',
+    SUBCITY_AUDITOR: 'የንኡስ ከተማ ኦዲተር',
+    REVENUE_ADMIN: 'የገቢ አስተዳዳሪ',
+    REVENUE_APPROVER: 'የገቢ አፅዳቂ',
+    REVENUE_USER: 'የገቢ ተጠቃሚ',
+  },
+};

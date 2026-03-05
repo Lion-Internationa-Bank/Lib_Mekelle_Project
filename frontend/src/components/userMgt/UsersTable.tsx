@@ -1,6 +1,7 @@
-// src/components/admin/UsersTable.tsx
+// src/components/userMgt/UsersTable.tsx
 import { User, Building, Eye, Shield, TrendingUp, UserX, UserCheck, Trash2 } from 'lucide-react';
-import type { User  as UserType} from '../../services/userService';
+import type { User as UserType } from '../../services/userService';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface UsersTableProps {
   users: UserType[];
@@ -19,6 +20,9 @@ const UsersTable = ({
   getRoleIcon,
   getRoleDisplayName,
 }: UsersTableProps) => {
+  const { t } = useTranslate('users');
+  const { t: tCommon } = useTranslate('common');
+  
   const showSubCityColumn = currentUserRole !== 'REVENUE_ADMIN';
 
   if (users.length === 0) {
@@ -27,8 +31,8 @@ const UsersTable = ({
         <div className="w-16 h-16 bg-[#f0cd6e]/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <UserX className="w-8 h-8 text-[#2a2718]" />
         </div>
-        <h3 className="text-lg font-medium text-[#2a2718] mb-2">No users found</h3>
-        <p className="text-[#2a2718]/70">Try adjusting your filters or search term</p>
+        <h3 className="text-lg font-medium text-[#2a2718] mb-2">{t('messages.noUsers')}</h3>
+        <p className="text-[#2a2718]/70">{t('messages.noUsersDescription')}</p>
       </div>
     );
   }
@@ -39,13 +43,13 @@ const UsersTable = ({
         <table className="w-full">
           <thead className="bg-[#f0cd6e]/10">
             <tr>
-              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">User</th>
-              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Role</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">{t('table.user')}</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">{t('table.role')}</th>
               {showSubCityColumn && (
-                <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Sub-city</th>
+                <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">{t('table.subcity')}</th>
               )}
-              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">Status</th>
-              <th className="px-6 py-4 text-right font-semibold text-[#2a2718]">Actions</th>
+              <th className="px-6 py-4 text-left font-semibold text-[#2a2718]">{t('table.status')}</th>
+              <th className="px-6 py-4 text-right font-semibold text-[#2a2718]">{t('table.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f0cd6e]/30">
@@ -71,7 +75,7 @@ const UsersTable = ({
                         {u.sub_city_name}
                       </span>
                     ) : (
-                      <span className="text-[#2a2718]/50 text-sm">N/A</span>
+                      <span className="text-[#2a2718]/50 text-sm">{t('subcity.none')}</span>
                     )}
                   </td>
                 )}
@@ -79,7 +83,7 @@ const UsersTable = ({
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${u.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className={`font-medium ${u.is_active ? 'text-green-700' : 'text-red-700'}`}>
-                      {u.is_active ? 'Active' : 'Suspended'}
+                      {u.is_active ? t('status.active') : t('status.inactive')}
                     </span>
                   </div>
                 </td>
@@ -96,12 +100,12 @@ const UsersTable = ({
                       {u.is_active ? (
                         <>
                           <UserX className="w-4 h-4" />
-                          Suspend
+                          {t('actions.suspend')}
                         </>
                       ) : (
                         <>
                           <UserCheck className="w-4 h-4" />
-                          Activate
+                          {t('actions.activate')}
                         </>
                       )}
                     </button>
@@ -110,7 +114,7 @@ const UsersTable = ({
                       className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 text-sm font-medium transition-colors border border-red-200"
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      {t('actions.delete')}
                     </button>
                   </div>
                 </td>

@@ -1,7 +1,8 @@
 // src/components/Header.tsx
-import {  Search, User } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CalendarToggle from './CalendarToggle';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface HeaderProps {
   isSidebarOpen: boolean;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
   const { user, logout } = useAuth();
+  const { t, changeLanguage, language } = useTranslate('navigation');
 
   return (
     <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-[#f0cd6e]/50 sticky top-0 z-50">
@@ -32,8 +34,8 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
                 ML
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-sm font-bold text-[#2a2718] leading-tight">Mekelle Land Administration</h1>
-                <p className="text-[10px] text-[#6d5f35] font-medium uppercase tracking-wider">City Admin</p>
+                <h1 className="text-sm font-bold text-[#2a2718] leading-tight">{t('header.appName')}</h1>
+                <p className="text-[10px] text-[#6d5f35] font-medium uppercase tracking-wider">{t('header.subText')}</p>
               </div>
             </div>
           </div>
@@ -44,7 +46,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d5f35] w-4 h-4 group-focus-within:text-[#a68f4e] transition-colors" />
               <input
                 type="search"
-                placeholder="Search parcels..."
+                placeholder={t('header.searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#a68f4e]/20 focus:border-[#a68f4e] bg-gray-50/50 transition-all"
               />
             </div>
@@ -53,10 +55,19 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
           {/* 3. Right Section: Action Group */}
           <div className="flex items-center gap-2 sm:gap-4">
             
+            {/* Language Switcher */}
+            <select
+              value={language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="bg-transparent border border-[#f0cd6e] rounded-lg px-2 py-1 text-sm text-[#2a2718] focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
+            >
+              <option value="en">🇬🇧 English</option>
+              <option value="am">🇪🇹 አማርኛ</option>
+            </select>
+            
             {/* Utility Group: Calendar & Notifications */}
             <div className="flex items-center gap-1.5 pr-2 sm:pr-4 border-r border-[#f0cd6e]">
               <CalendarToggle />
-           
             </div>
 
             {/* User Account */}
@@ -68,18 +79,21 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
                   </div>
                   <div className="hidden lg:block text-left">
                     <p className="text-xs font-semibold text-[#2a2718] leading-none">{user.full_name}</p>
-                    <p className="text-[10px] text-[#6d5f35] mt-1 uppercase tracking-tighter">Authorized</p>
+                    <p className="text-[10px] text-[#6d5f35] mt-1 uppercase tracking-tighter">{t('header.userStatus')}</p>
                   </div>
                 </button>
 
-                {/* Dropdown menu remains the same */}
+                {/* Dropdown menu */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-[#f0cd6e] py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <div className="px-4 py-3 border-b border-[#f0cd6e]/50">
                     <p className="text-sm font-bold text-[#2a2718]">{user.full_name}</p>
                     <p className="text-xs text-[#6d5f35]">{user.username}</p>
                   </div>
-                  <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-[#2a2718] hover:bg-[#f0cd6e]/20 transition-colors">
-                    Sign Out
+                  <button 
+                    onClick={logout} 
+                    className="w-full text-left px-4 py-2 text-sm text-[#2a2718] hover:bg-[#f0cd6e]/20 transition-colors"
+                  >
+                    {t('header.logout')}
                   </button>
                 </div>
               </div>

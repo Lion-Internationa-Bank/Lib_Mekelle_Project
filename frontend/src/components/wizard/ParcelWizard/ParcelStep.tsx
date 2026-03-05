@@ -1,6 +1,7 @@
 // src/components/wizard/ParcelWizard/ParcelStep.tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslate } from "../../../i18n/useTranslate";
 import {
   ParcelFormSchema,
   type ParcelFormData,
@@ -12,6 +13,8 @@ import { useEffect, useState } from "react";
 import { toast } from 'sonner';
 
 const ParcelStep = ({ nextStep }: ParcelStepProps) => {
+  const { t } = useTranslate('parcelStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, saveStep, isLoading } = useWizard();
   const [landUseOptions, setLandUseOptions] = useState<string[]>([]);
   const [tenureOptions, setTenureOptions] = useState<string[]>([]);
@@ -72,14 +75,14 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         }
       } catch (error) {
         console.error("Error loading configuration:", error);
-        toast.error("Failed to load configuration options");
+        toast.error(t('errors.loadConfig'));
       } finally {
         setLoadingConfig(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [t]);
 
   // Auto-uppercase UPIN
   const upinValue = watch("upin");
@@ -92,10 +95,10 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
   const onSubmit = async (data: ParcelFormData) => {
     try {
       await saveStep('parcel', data);
-      toast.success('Parcel information saved');
+      toast.success(t('messages.saveSuccess'));
       nextStep();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save parcel information');
+      toast.error(err.message || t('errors.saveFailed'));
       console.error("Save error:", err);
     }
   };
@@ -121,10 +124,10 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
   return (
     <>
       <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-        Register Land Parcel
+        {t('title')}
       </h2>
       <p className="text-[#2a2718]/70 mb-8">
-        Fill in all required fields to register a new parcel
+        {t('subtitle')}
       </p>
 
       <form
@@ -134,12 +137,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* UPIN */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            UPIN *
+            {t('fields.upin')} *
           </label>
           <input
             {...register("upin")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] text-lg font-mono"
-            placeholder="e.g. MANC-2347"
+            placeholder={t('placeholders.upin')}
           />
           {errors.upin && (
             <p className="mt-1 text-sm text-red-600">{errors.upin.message}</p>
@@ -149,12 +152,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* File Number */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            File Number *
+            {t('fields.fileNumber')} *
           </label>
           <input
             {...register("file_number")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            placeholder="e.g. FIL-2026-001"
+            placeholder={t('placeholders.fileNumber')}
           />
           {errors.file_number && (
             <p className="mt-1 text-sm text-red-600">
@@ -166,12 +169,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Ketena */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Ketena *
+            {t('fields.ketena')} *
           </label>
           <input
             {...register("ketena")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            placeholder="e.g. Ketena 01"
+            placeholder={t('placeholders.ketena')}
           />
           {errors.ketena && (
             <p className="mt-1 text-sm text-red-600">{errors.ketena.message}</p>
@@ -181,12 +184,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Tabia */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Tabia *
+            {t('fields.tabia')} *
           </label>
           <input
             {...register("tabia")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            placeholder="e.g. Tabia 05"
+            placeholder={t('placeholders.tabia')}
           />
           {errors.tabia && (
             <p className="mt-1 text-sm text-red-600">{errors.tabia.message}</p>
@@ -196,12 +199,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Block */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Block *
+            {t('fields.block')} *
           </label>
           <input
             {...register("block")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            placeholder="e.g. Block A"
+            placeholder={t('placeholders.block')}
           />
           {errors.block && (
             <p className="mt-1 text-sm text-red-600">{errors.block.message}</p>
@@ -211,7 +214,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Total Area */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Total Area (m²) *
+            {t('fields.totalArea')} *
           </label>
           <input
             {...register("total_area_m2", { valueAsNumber: true })}
@@ -230,16 +233,16 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Land Use */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Land Use *
+            {t('fields.landUse')} *
           </label>
           <select
             {...register("land_use")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             disabled={loadingConfig}
           >
-            <option value="">Select Land Use</option>
+            <option value="">{t('placeholders.selectLandUse')}</option>
             {loadingConfig ? (
-              <option value="" disabled>Loading options...</option>
+              <option value="" disabled>{tCommon('loading')}</option>
             ) : (
               landUseOptions.map((option) => (
                 <option key={option} value={option}>
@@ -258,14 +261,14 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Land Grade */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Land Grade *
+            {t('fields.landGrade')} *
           </label>
           <input
             {...register("land_grade", { valueAsNumber: true })}
             type="number"
             step="0.01"
             min="1.0"
-            placeholder="e.g. 1.0"
+            placeholder={t('placeholders.landGrade')}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
           {errors.land_grade && (
@@ -278,16 +281,16 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Tenure Type */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Tenure Type *
+            {t('fields.tenureType')} *
           </label>
           <select
             {...register("tenure_type")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             disabled={loadingConfig}
           >
-            <option value="">Select Tenure Type</option>
+            <option value="">{t('placeholders.selectTenureType')}</option>
             {loadingConfig ? (
-              <option value="" disabled>Loading options...</option>
+              <option value="" disabled>{tCommon('loading')}</option>
             ) : (
               tenureOptions.map((option) => (
                 <option key={option} value={option}>
@@ -305,12 +308,12 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
              {/* Tender */}
         <div>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Tender *
+            {t('fields.tender')} *
           </label>
           <input
             {...register("tender")}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            placeholder="e.g. tender 01"
+            placeholder={t('placeholders.tender')}
           />
           {errors.tender && (
             <p className="mt-1 text-sm text-red-600">{errors.tender.message}</p>
@@ -320,13 +323,13 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         {/* Optional Geometry Data */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Geometry Data (Optional)
+            {t('fields.geometryData')}
           </label>
           <textarea
             {...register("boundary_coords")}
             rows={4}
             className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] font-mono text-sm"
-            placeholder='{"type": "Polygon", "coordinates": [...]}'
+            placeholder={t('placeholders.geometryData')}
           />
           {errors.boundary_coords && (
             <p className="mt-1 text-sm text-red-600">
@@ -338,7 +341,7 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
             onClick={fillExampleGeometry}
             className="mt-2 text-sm text-[#f0cd6e] hover:text-[#2a2718]"
           >
-            Fill with example geometry
+            {t('actions.fillExample')}
           </button>
         </div>
 
@@ -346,45 +349,45 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-              North Boundary (optional)
+              {t('fields.north')}
             </label>
             <input
               {...register("boundary_north")}
               className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-              placeholder="e.g. North boundary description"
+              placeholder={t('placeholders.north')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-              East Boundary (optional)
+              {t('fields.east')}
             </label>
             <input
               {...register("boundary_east")}
               className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-              placeholder="e.g. East boundary description"
+              placeholder={t('placeholders.east')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-              South Boundary (optional)
+              {t('fields.south')}
             </label>
             <input
               {...register("boundary_south")}
               className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-              placeholder="e.g. South boundary description"
+              placeholder={t('placeholders.south')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-              West Boundary (optional)
+              {t('fields.west')}
             </label>
             <input
               {...register("boundary_west")}
               className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-              placeholder="e.g. West boundary description"
+              placeholder={t('placeholders.west')}
             />
           </div>
         </div>
@@ -399,10 +402,10 @@ const ParcelStep = ({ nextStep }: ParcelStepProps) => {
             {isSubmitting || isLoading ? (
               <>
                 <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                Saving...
+                {tCommon('saving')}
               </>
             ) : (
-              "Save Parcel & Continue →"
+              t('actions.saveAndContinue')
             )}
           </button>
         </div>

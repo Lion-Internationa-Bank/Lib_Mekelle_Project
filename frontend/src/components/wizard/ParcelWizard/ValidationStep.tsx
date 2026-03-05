@@ -1,5 +1,6 @@
 // src/components/wizard/ParcelWizard/ValidationStep.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import type { FinishStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import wizardApi from "../../../services/wizardApi";
@@ -20,6 +21,8 @@ interface RejectionInfo {
 }
 
 const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
+  const { t } = useTranslate('validationStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, submitForApproval, resubmitForApproval, isLoading } = useWizard();
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -31,8 +34,8 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
   const validateSession = useCallback(async (): Promise<ValidationResult> => {
     if (!currentSession) {
-      toast.error("No active session");
-      throw new Error("No active session");
+      toast.error(t('errors.noSession'));
+      throw new Error(t('errors.noSession'));
     }
 
     try {
@@ -52,16 +55,16 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           return response.data as ValidationResult;
         }
 
-        throw new Error("Invalid validation payload shape");
+        throw new Error(t('errors.invalidPayload'));
       } else {
-        toast.error(response.error || "Failed to validate session");
-        throw new Error(response.error || "Failed to validate session");
+        toast.error(response.error || t('errors.validateFailed'));
+        throw new Error(response.error || t('errors.validateFailed'));
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to validate session");
+      toast.error(error.message || t('errors.validateFailed'));
       throw error;
     }
-  }, [currentSession]);
+  }, [currentSession, t]);
 
   const loadRejectionInfo = useCallback(async () => {
     if (!currentSession || currentSession.status !== 'REJECTED') return;
@@ -71,7 +74,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       // First try to get rejection info from approval_request if available
       if (currentSession.approval_request) {
         setRejectionInfo({
-          reason: currentSession.approval_request.rejection_reason || 'No reason provided',
+          reason: currentSession.approval_request.rejection_reason || t('rejection.noReason'),
           rejected_at: currentSession.approval_request.updated_at,
           rejected_by: currentSession.approval_request.checker || currentSession.approval_request.maker
         });
@@ -88,7 +91,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     } finally {
       setIsLoadingRejection(false);
     }
-  }, [currentSession]);
+  }, [currentSession, t]);
 
   const runValidation = useCallback(async () => {
     console.group("🔍 runValidation");
@@ -118,19 +121,19 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
       if (!result.valid) {
         console.warn("⚠ Session is INVALID – missing required information");
-        toast.warning("Missing required information");
+        toast.warning(t('messages.missingInfo'));
       } else {
         console.log("🎉 Session is VALID – no missing fields");
-        toast.success("All required information is complete");
+        toast.success(t('messages.complete'));
       }
     } catch (error: any) {
       console.error("Validation error:", error);
-      toast.error(error?.message || "Failed to validate session");
+      toast.error(error?.message || t('errors.validateFailed'));
     } finally {
       setIsValidating(false);
       console.groupEnd();
     }
-  }, [currentSession, isValidating, validateSession]);
+  }, [currentSession, isValidating, validateSession, t]);
 
   // Load rejection info when session is loaded and rejected
   useEffect(() => {
@@ -151,16 +154,16 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
   const handleSubmit = async () => {
     if (!currentSession || !validationResult?.valid) {
-      toast.error("Please fix validation errors before submitting");
+      toast.error(t('errors.fixErrors'));
       return;
     }
 
     const isRejected = currentSession.status === 'REJECTED';
     const confirmMessage = isRejected
-      ? "Are you sure you want to resubmit this rejected session for approval?"
-      : "Are you ready to submit this parcel registration for approval?";
+      ? t('confirm.resubmit')
+      : t('confirm.submit');
 
-    if (!confirm(confirmMessage)) {
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -176,10 +179,10 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
       if (result.success) {
         const message = isRejected
-          ? "Session resubmitted for approval. You will be notified when reviewed."
+          ? t('messages.resubmitted')
           : result.requiresApproval
-            ? "Submitted for approval. You will be notified when reviewed."
-            : "Parcel registered successfully!";
+            ? t('messages.submittedForApproval')
+            : t('messages.registered');
         
         toast.success(message);
 
@@ -188,11 +191,11 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           onFinish();
         }, 2000);
       } else {
-        toast.error(result.error || "Submission failed");
+        toast.error(result.error || t('errors.submissionFailed'));
         setIsSubmitting(false);
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to submit for approval");
+      toast.error(error.message || t('errors.submissionFailed'));
       setIsSubmitting(false);
     }
   };
@@ -201,13 +204,13 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     try {
       // If it's a rejected session, we're just updating it, not creating a new draft
       if (currentSession?.status === 'REJECTED') {
-        toast.success("Changes saved. You can continue editing later.");
+        toast.success(t('messages.draftSavedRejected'));
       } else {
-        toast.info("Session saved as draft. You can continue later.");
+        toast.info(t('messages.draftSaved'));
       }
       onFinish();
     } catch (error: any) {
-      toast.error(error.message || "Failed to save draft");
+      toast.error(error.message || t('errors.draftFailed'));
     }
   };
 
@@ -215,17 +218,17 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-        <p className="text-gray-600">Loading session data...</p>
+        <p className="text-gray-600">{t('loading')}</p>
       </div>
     );
   }
 
   const getOwnerName = () => {
-    if (!currentSession.owner_data) return "Not provided";
+    if (!currentSession.owner_data) return t('notProvided');
     const owner = Array.isArray(currentSession.owner_data)
       ? currentSession.owner_data[0]
       : currentSession.owner_data;
-    return owner?.full_name || "Not provided";
+    return owner?.full_name || t('notProvided');
   };
 
   const getDocumentCount = () => {
@@ -237,7 +240,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ET', {
+    return new Intl.NumberFormat(tCommon('locale') === 'am' ? 'am-ET' : 'en-ET', {
       style: 'currency',
       currency: 'ETB',
       minimumFractionDigits: 0,
@@ -247,13 +250,13 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(tCommon('locale') === 'am' ? 'am-ET' : 'en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
     } catch (error) {
-      return "Invalid date";
+      return tCommon('date.invalid');
     }
   };
 
@@ -264,15 +267,15 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">Review & Submit</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h2>
       <p className="text-gray-600 mb-8">
         {isRejected 
-          ? "Review the rejection feedback, update your information, and resubmit"
+          ? t('subtitle.rejected')
           : isPending
-          ? "This session is pending approval. You cannot make changes while it's being reviewed."
+          ? t('subtitle.pending')
           : isCompleted
-          ? "This session has been completed. View the details below."
-          : "Review your information and submit for approval"
+          ? t('subtitle.completed')
+          : t('subtitle.draft')
         }
       </p>
 
@@ -299,24 +302,24 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               isCompleted ? 'text-green-800' :
               'text-gray-800'
             }`}>
-              {isRejected ? 'Session Rejected' :
-               isPending ? 'Pending Approval' :
-               isCompleted ? 'Session Completed' :
-               'Ready for Submission'}
+              {isRejected ? t('banners.rejected.title') :
+               isPending ? t('banners.pending.title') :
+               isCompleted ? t('banners.completed.title') :
+               t('banners.draft.title')}
             </h3>
             
             {isRejected && rejectionInfo && (
               <div className="space-y-3">
                 <p className="text-red-700">
-                  This session was rejected. Please review the feedback below and make the necessary changes.
+                  {t('banners.rejected.description')}
                 </p>
                 <div className="bg-white rounded-lg p-4 border border-red-100">
-                  <p className="text-sm font-medium text-red-800 mb-2">Rejection Reason:</p>
+                  <p className="text-sm font-medium text-red-800 mb-2">{t('rejection.reason')}:</p>
                   <p className="text-gray-700 mb-3">{rejectionInfo.reason}</p>
                   <div className="flex justify-between text-xs text-gray-500">
-                    <span>Rejected on: {formatDate(rejectionInfo.rejected_at)}</span>
+                    <span>{t('rejection.rejectedOn')}: {formatDate(rejectionInfo.rejected_at)}</span>
                     {rejectionInfo.rejected_by && (
-                      <span>By: {rejectionInfo.rejected_by.full_name || rejectionInfo.rejected_by.username}</span>
+                      <span>{t('rejection.by')}: {rejectionInfo.rejected_by.full_name || rejectionInfo.rejected_by.username}</span>
                     )}
                   </div>
                 </div>
@@ -325,20 +328,19 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
             {isPending && (
               <p className="text-blue-700">
-                Your submission is being reviewed by an approver. You will be notified once a decision is made.
-                No changes can be made while the session is pending.
+                {t('banners.pending.description')}
               </p>
             )}
 
             {isCompleted && (
               <p className="text-green-700">
-                This parcel has been successfully registered. You can view the details below.
+                {t('banners.completed.description')}
               </p>
             )}
 
             {isDraft && validationResult?.valid && (
               <p className="text-gray-700">
-                All required information is complete. You can now submit this parcel for approval.
+                {t('banners.draft.ready')}
               </p>
             )}
           </div>
@@ -351,7 +353,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           onClick={() => setShowSummary((s) => !s)}
           className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
         >
-          {showSummary ? "Hide" : "Show"} Summary
+          {showSummary ? t('actions.hide') : t('actions.show')} {t('summary.title')}
           <span>{showSummary ? "↑" : "↓"}</span>
         </button>
       </div>
@@ -362,72 +364,72 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           {/* Parcel Info */}
           <div className="bg-blue-50 rounded-xl p-6">
             <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
-              <span>📍</span> Parcel Information
+              <span>📍</span> {t('summary.parcel')}
             </h3>
             {currentSession.parcel_data ? (
               <div className="space-y-2">
                 <div>
-                  <span className="font-medium">UPIN:</span>{" "}
-                  {currentSession.parcel_data.upin || "Not set"}
+                  <span className="font-medium">{t('fields.upin')}:</span>{" "}
+                  {currentSession.parcel_data.upin || t('notSet')}
                 </div>
                 <div>
-                  <span className="font-medium">File Number:</span>{" "}
-                  {currentSession.parcel_data.file_number || "Not set"}
+                  <span className="font-medium">{t('fields.fileNumber')}:</span>{" "}
+                  {currentSession.parcel_data.file_number || t('notSet')}
                 </div>
                 <div>
-                  <span className="font-medium">Area:</span>{" "}
+                  <span className="font-medium">{t('fields.area')}:</span>{" "}
                   {currentSession.parcel_data.total_area_m2 || 0} m²
                 </div>
                 <div>
-                  <span className="font-medium">Land Use:</span>{" "}
-                  {currentSession.parcel_data.land_use || "Not set"}
+                  <span className="font-medium">{t('fields.landUse')}:</span>{" "}
+                  {currentSession.parcel_data.land_use || t('notSet')}
                 </div>
                 <div>
-                  <span className="font-medium">Tenure:</span>{" "}
-                  {currentSession.parcel_data.tenure_type || "Not set"}
+                  <span className="font-medium">{t('fields.tenureType')}:</span>{" "}
+                  {currentSession.parcel_data.tenure_type || t('notSet')}
                 </div>
                 <div>
-                  <span className="font-medium">Location:</span>{" "}
+                  <span className="font-medium">{t('fields.location')}:</span>{" "}
                   {[currentSession.parcel_data.block, 
                     currentSession.parcel_data.tabia, 
                     currentSession.parcel_data.ketena]
                     .filter(Boolean)
-                    .join(", ") || "Not set"}
+                    .join(", ") || t('notSet')}
                 </div>
               </div>
             ) : (
-              <p className="text-red-600">Missing parcel data</p>
+              <p className="text-red-600">{t('missing.parcel')}</p>
             )}
             <div className="mt-4 pt-4 border-t border-blue-100">
-              <span className="font-medium">Documents:</span>{" "}
-              {currentSession.parcel_docs?.length || 0} uploaded
+              <span className="font-medium">{t('fields.documents')}:</span>{" "}
+              {t('documents.count', { count: currentSession.parcel_docs?.length || 0 })}
             </div>
           </div>
 
           {/* Owner Info */}
           <div className="bg-emerald-50 rounded-xl p-6">
             <h3 className="font-bold text-emerald-800 mb-4 flex items-center gap-2">
-              <span>👤</span> Owner Information
+              <span>👤</span> {t('summary.owner')}
             </h3>
             {currentSession.owner_data ? (
               <div className="space-y-2">
                 <div>
-                  <span className="font-medium">Name:</span> {getOwnerName()}
+                  <span className="font-medium">{t('fields.name')}:</span> {getOwnerName()}
                 </div>
                 {Array.isArray(currentSession.owner_data)
                   ? currentSession.owner_data.map((owner, idx) => (
                       <div key={idx} className="space-y-1">
                         <div>
-                          <span className="font-medium">National ID:</span>{" "}
-                          {owner.national_id || "Not set"}
+                          <span className="font-medium">{t('fields.nationalId')}:</span>{" "}
+                          {owner.national_id || t('notSet')}
                         </div>
                         <div>
-                          <span className="font-medium">Phone:</span>{" "}
-                          {owner.phone_number || "Not set"}
+                          <span className="font-medium">{t('fields.phone')}:</span>{" "}
+                          {owner.phone_number || t('notSet')}
                         </div>
                         {owner.acquired_at && (
                           <div>
-                            <span className="font-medium">Acquired:</span>{" "}
+                            <span className="font-medium">{t('fields.acquiredAt')}:</span>{" "}
                             {formatDate(owner.acquired_at)}
                           </div>
                         )}
@@ -436,16 +438,16 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
                   : (
                     <>
                       <div>
-                        <span className="font-medium">National ID:</span>{" "}
-                        {currentSession.owner_data.national_id || "Not set"}
+                        <span className="font-medium">{t('fields.nationalId')}:</span>{" "}
+                        {currentSession.owner_data.national_id || t('notSet')}
                       </div>
                       <div>
-                        <span className="font-medium">Phone:</span>{" "}
-                        {currentSession.owner_data.phone_number || "Not set"}
+                        <span className="font-medium">{t('fields.phone')}:</span>{" "}
+                        {currentSession.owner_data.phone_number || t('notSet')}
                       </div>
                       {currentSession.owner_data.acquired_at && (
                         <div>
-                          <span className="font-medium">Acquired:</span>{" "}
+                          <span className="font-medium">{t('fields.acquiredAt')}:</span>{" "}
                           {formatDate(currentSession.owner_data.acquired_at)}
                         </div>
                       )}
@@ -453,11 +455,11 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
                   )}
               </div>
             ) : (
-              <p className="text-red-600">Missing owner data</p>
+              <p className="text-red-600">{t('missing.owner')}</p>
             )}
             <div className="mt-4 pt-4 border-t border-emerald-100">
-              <span className="font-medium">Documents:</span>{" "}
-              {currentSession.owner_docs?.length || 0} uploaded
+              <span className="font-medium">{t('fields.documents')}:</span>{" "}
+              {t('documents.count', { count: currentSession.owner_docs?.length || 0 })}
             </div>
           </div>
 
@@ -465,47 +467,47 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           {currentSession.lease_data && (
             <div className="md:col-span-2 bg-purple-50 rounded-xl p-6">
               <h3 className="font-bold text-purple-800 mb-4 flex items-center gap-2">
-                <span>📝</span> Lease Information
+                <span>📝</span> {t('summary.lease')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <span className="font-medium">Total Amount:</span><br />
+                  <span className="font-medium">{t('fields.totalAmount')}:</span><br />
                   {formatCurrency(currentSession.lease_data.total_lease_amount || 0)}
                 </div>
                 <div>
-                  <span className="font-medium">Period:</span><br />
-                  {currentSession.lease_data.lease_period_years || 0} years
+                  <span className="font-medium">{t('fields.leasePeriod')}:</span><br />
+                  {t('years', { count: currentSession.lease_data.lease_period_years || 0 })}
                 </div>
                 <div>
-                  <span className="font-medium">Start Date:</span><br />
+                  <span className="font-medium">{t('fields.startDate')}:</span><br />
                   {formatDate(currentSession.lease_data.start_date)}
                 </div>
                 <div>
-                  <span className="font-medium">Price/m²:</span><br />
+                  <span className="font-medium">{t('fields.pricePerM2')}:</span><br />
                   {formatCurrency(currentSession.lease_data.price_per_m2 || 0)}
                 </div>
                 <div>
-                  <span className="font-medium">Payment Term:</span><br />
-                  {currentSession.lease_data.payment_term_years || 0} years
+                  <span className="font-medium">{t('fields.paymentTerm')}:</span><br />
+                  {t('years', { count: currentSession.lease_data.payment_term_years || 0 })}
                 </div>
                 <div>
-                  <span className="font-medium">Down Payment:</span><br />
+                  <span className="font-medium">{t('fields.downPayment')}:</span><br />
                   {formatCurrency(currentSession.lease_data.down_payment_amount || 0)}
                 </div>
                 <div>
-                  <span className="font-medium">Legal Framework:</span><br />
-                  {currentSession.lease_data.legal_framework || "Not set"}
+                  <span className="font-medium">{t('fields.legalFramework')}:</span><br />
+                  {currentSession.lease_data.legal_framework || t('notSet')}
                 </div>
                 {currentSession.lease_data.contract_date && (
                   <div>
-                    <span className="font-medium">Contract Date:</span><br />
+                    <span className="font-medium">{t('fields.contractDate')}:</span><br />
                     {formatDate(currentSession.lease_data.contract_date)}
                   </div>
                 )}
               </div>
               <div className="mt-4 pt-4 border-t border-purple-100">
-                <span className="font-medium">Documents:</span>{" "}
-                {currentSession.lease_docs?.length || 0} uploaded
+                <span className="font-medium">{t('fields.documents')}:</span>{" "}
+                {t('documents.count', { count: currentSession.lease_docs?.length || 0 })}
               </div>
             </div>
           )}
@@ -514,26 +516,26 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">{getDocumentCount()}</div>
-              <div className="text-xs text-gray-500">Total Documents</div>
+              <div className="text-xs text-gray-500">{t('stats.totalDocuments')}</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">
                 {currentSession.parcel_data?.total_area_m2 || 0} m²
               </div>
-              <div className="text-xs text-gray-500">Parcel Area</div>
+              <div className="text-xs text-gray-500">{t('stats.parcelArea')}</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">
                 {currentSession.owner_data ? 
                   (Array.isArray(currentSession.owner_data) ? currentSession.owner_data.length : 1) : 0}
               </div>
-              <div className="text-xs text-gray-500">Owners</div>
+              <div className="text-xs text-gray-500">{t('stats.owners')}</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">
-                {currentSession.updated_at ? formatDate(currentSession.updated_at) : 'N/A'}
+                {currentSession.updated_at ? formatDate(currentSession.updated_at) : tCommon('na')}
               </div>
-              <div className="text-xs text-gray-500">Last Updated</div>
+              <div className="text-xs text-gray-500">{t('stats.lastUpdated')}</div>
             </div>
           </div>
         </div>
@@ -560,17 +562,17 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
             </div>
             <h3 className="font-bold text-lg">
               {isValidating
-                ? "Validating..."
+                ? t('validation.inProgress')
                 : validationResult?.valid
-                ? "Ready to Submit"
-                : "Missing Information"}
+                ? t('validation.ready')
+                : t('validation.missing')}
             </h3>
           </div>
 
           {validationResult && !validationResult.valid && (
             <div className="ml-11">
               <p className="text-gray-700 mb-2">
-                Please complete these steps before submitting:
+                {t('validation.pleaseComplete')}:
               </p>
               <ul className="list-disc pl-5 text-gray-600 space-y-1">
                 {validationResult.missing.map((item, index) => (
@@ -584,7 +586,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
                 disabled={isValidating}
                 className="mt-4 text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
-                {isValidating ? "Validating..." : "Re-check validation"}
+                {isValidating ? t('actions.validating') : t('actions.revalidate')}
               </button>
             </div>
           )}
@@ -592,12 +594,12 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           {validationResult?.valid && (
             <div className="ml-11">
               <p className="text-green-700 font-medium">
-                All required information is complete.
+                {t('validation.complete')}
               </p>
               <p className="text-gray-600 text-sm mt-1">
                 {isRejected 
-                  ? "You can now resubmit this parcel registration for approval."
-                  : "You can now submit this parcel registration for approval."}
+                  ? t('validation.resubmitPrompt')
+                  : t('validation.submitPrompt')}
               </p>
             </div>
           )}
@@ -608,7 +610,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       <div className="mb-8 p-6 bg-gray-50 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="font-medium text-gray-700">Session Status</h4>
+            <h4 className="font-medium text-gray-700">{t('session.status')}</h4>
             <div className="flex items-center gap-3 mt-2">
               <span
                 className={`px-3 py-1 text-sm rounded-full ${
@@ -623,18 +625,20 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
                     : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {currentSession.status === "PENDING_APPROVAL" ? "Pending Approval" :
-                 currentSession.status === "REJECTED" ? "Rejected" :
-                 currentSession.status === "MERGED" ? "Completed" :
-                 currentSession.status.charAt(0) + currentSession.status.slice(1).toLowerCase()}
+                {currentSession.status === "PENDING_APPROVAL" ? t('status.pending') :
+                 currentSession.status === "REJECTED" ? t('status.rejected') :
+                 currentSession.status === "MERGED" ? t('status.completed') :
+                 currentSession.status === "APPROVED" ? t('status.approved') :
+                 currentSession.status === "DRAFT" ? t('status.draft') :
+                 currentSession.status}
               </span>
               <span className="text-sm text-gray-500">
-                Created: {formatDate(currentSession.created_at)}
+                {t('session.created')}: {formatDate(currentSession.created_at)}
               </span>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-500">Session ID</div>
+            <div className="text-sm text-gray-500">{t('session.id')}</div>
             <div className="font-mono text-sm">
               {currentSession.session_id.substring(0, 12)}...
             </div>
@@ -651,7 +655,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               onClick={prevStep}
               className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
             >
-              ← Go Back
+              ← {t('actions.goBack')}
             </button>
           )}
 
@@ -662,7 +666,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               disabled={isValidating || isLoading}
               className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition disabled:opacity-70"
             >
-              {isValidating ? "Validating..." : "Validate Again"}
+              {isValidating ? t('actions.validating') : t('actions.validateAgain')}
             </button>
           )}
 
@@ -672,7 +676,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               onClick={prevStep}
               className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
             >
-              ← Back to Summary
+              ← {t('actions.backToSummary')}
             </button>
           )}
         </div>
@@ -685,7 +689,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
               disabled={isSubmitting}
             >
-              Save as Draft
+              {t('actions.saveAsDraft')}
             </button>
           )}
 
@@ -703,10 +707,10 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {isRejected ? "Resubmitting..." : "Submitting..."}
+                  {isRejected ? t('actions.resubmitting') : t('actions.submitting')}
                 </>
               ) : (
-                isRejected ? "Resubmit for Approval" : "Submit for Approval"
+                isRejected ? t('actions.resubmit') : t('actions.submit')
               )}
             </button>
           )}
@@ -717,7 +721,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               onClick={onFinish}
               className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              Return to Dashboard
+              {t('actions.returnToDashboard')}
             </button>
           )}
         </div>
@@ -727,41 +731,41 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
       <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-xl">
         <h4 className="font-medium text-blue-800 mb-2">
           {isRejected 
-            ? "What happens after resubmission?"
+            ? t('infoBox.rejected.title')
             : isPending
-            ? "What happens while pending?"
+            ? t('infoBox.pending.title')
             : isCompleted
-            ? "What's next?"
-            : "What happens after submission?"}
+            ? t('infoBox.completed.title')
+            : t('infoBox.draft.title')}
         </h4>
         <ul className="text-sm text-blue-700 space-y-1">
           {isRejected ? (
             <>
-              <li>• Your updated submission will be reviewed again by an approver</li>
-              <li>• You will receive notifications about the approval status</li>
-              <li>• If approved, the parcel will be registered in the system</li>
-              <li>• You can track the status from your dashboard</li>
+              <li>• {t('infoBox.rejected.item1')}</li>
+              <li>• {t('infoBox.rejected.item2')}</li>
+              <li>• {t('infoBox.rejected.item3')}</li>
+              <li>• {t('infoBox.rejected.item4')}</li>
             </>
           ) : isPending ? (
             <>
-              <li>• An approver is reviewing your submission</li>
-              <li>• You will be notified when a decision is made</li>
-              <li>• No changes can be made while pending</li>
-              <li>• You can check the status from your dashboard</li>
+              <li>• {t('infoBox.pending.item1')}</li>
+              <li>• {t('infoBox.pending.item2')}</li>
+              <li>• {t('infoBox.pending.item3')}</li>
+              <li>• {t('infoBox.pending.item4')}</li>
             </>
           ) : isCompleted ? (
             <>
-              <li>• This parcel has been successfully registered</li>
-              <li>• You can view it in the parcel list</li>
-              <li>• You can start a new registration from your dashboard</li>
+              <li>• {t('infoBox.completed.item1')}</li>
+              <li>• {t('infoBox.completed.item2')}</li>
+              <li>• {t('infoBox.completed.item3')}</li>
             </>
           ) : (
             <>
-              <li>• Your submission will be reviewed by an approver based on your role</li>
-              <li>• You will receive notifications about the approval status</li>
-              <li>• If approved, the parcel will be registered in the system</li>
-              <li>• If rejected, you can modify and resubmit</li>
-              <li>• You can track the status from your dashboard</li>
+              <li>• {t('infoBox.draft.item1')}</li>
+              <li>• {t('infoBox.draft.item2')}</li>
+              <li>• {t('infoBox.draft.item3')}</li>
+              <li>• {t('infoBox.draft.item4')}</li>
+              <li>• {t('infoBox.draft.item5')}</li>
             </>
           )}
         </ul>

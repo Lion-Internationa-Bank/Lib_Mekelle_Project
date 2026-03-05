@@ -1,6 +1,7 @@
 // src/routes/admin/RateConfigsPage.tsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslate } from "../../i18n/useTranslate";
 import {
   getCurrentRate,
   getRateHistory,
@@ -31,12 +32,6 @@ import { toast } from "sonner";
 const RATE_TYPES = [
   "LEASE_INTEREST_RATE",
   "PENALTY_RATE",
-  // "PENALTY_CONSTRUCTION_DELAY",
-  // "GRADE_FACTOR_MULTIPLIER",
-  // "ANNUAL_ESCALATION_RATE",
-  // "DOWN_PAYMENT_INTEREST",
-  // "LATE_PAYMENT_GRACE_DAYS",
-  // "BANK_REFERENCE_RATE",
 ] as const;
 
 type RateType = (typeof RATE_TYPES)[number];
@@ -56,36 +51,15 @@ const rateMeta: Record<
     label: "Penalty Rate",
     desc: "Penalty rate for late payments or violations (%)",
   },
-  // PENALTY_CONSTRUCTION_DELAY: {
-  //   label: "Construction Delay Penalty",
-  //   desc: "Penalty rate for construction delays",
-  // },
-  // GRADE_FACTOR_MULTIPLIER: {
-  //   label: "Grade Factor Multiplier",
-  //   desc: "Multiplier factor based on land/building grade",
-  // },
-  // ANNUAL_ESCALATION_RATE: {
-  //   label: "Annual Escalation Rate",
-  //   desc: "Yearly escalation rate for lease or tax (%)",
-  // },
-  // DOWN_PAYMENT_INTEREST: {
-  //   label: "Down Payment Interest",
-  //   desc: "Interest rate applied on down payment (%)",
-  // },
-  // LATE_PAYMENT_GRACE_DAYS: {
-  //   label: "Late Payment Grace Days",
-  //   desc: "Number of days before late payment penalty applies",
-  // },
-  // BANK_REFERENCE_RATE: {
-  //   label: "Bank Reference Rate",
-  //   desc: "Reference interest rate from central bank (%)",
-  // },
 };
 
 type FormMode = "view" | "edit-existing" | "create-new";
 
 const RateConfigsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslate('rates');
+  const { t: tCommon } = useTranslate('common');
+  const { t: tAuth } = useTranslate('auth');
 
   const [selectedRateType, setSelectedRateType] =
     useState<RateType>("LEASE_INTEREST_RATE");
@@ -113,18 +87,17 @@ const RateConfigsPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-[#2a2718] mb-3">
-            Access Denied
+            {t('accessDenied.title')}
           </h2>
           <p className="text-[#2a2718]/70 mb-6">
-            Only Revenue Administrators can manage rate configurations.
+            {t('accessDenied.message')}
           </p>
         </div>
       </div>
     );
   }
- const isPercentageType:Boolean = true
-  // const isPercentageType = (type: RateType) =>
-  //   type !== "LATE_PAYMENT_GRACE_DAYs";
+
+  const isPercentageType = true;
 
   // Format rate for display (convert decimal to percentage with 2 decimal places)
   const formatRateForDisplay = (decimalValue: number): string => {
@@ -147,7 +120,7 @@ const RateConfigsPage: React.FC = () => {
         const r = res.data;
         setCurrentRate(r);
 
-        // Backend stores 0–1; UI shows percent with 2 decimal places except for grace days
+        // Backend stores 0–1; UI shows percent with 2 decimal places
         const raw = r.value ?? 0;
         const uiValue = isPercentageType ? formatRateForDisplay(raw) : raw.toString();
         setValue(uiValue);
@@ -163,7 +136,7 @@ const RateConfigsPage: React.FC = () => {
         setSource("");
         setEffectiveFrom(null);
         setEffectiveUntil(null);
-        setError(res.error || "No currently effective rate for this type");
+        setError(res.error || t('errors.noCurrentRate'));
       }
     } catch {
       setCurrentRate(null);
@@ -171,7 +144,7 @@ const RateConfigsPage: React.FC = () => {
       setSource("");
       setEffectiveFrom(null);
       setEffectiveUntil(null);
-      setError("Failed to load current rate");
+      setError(t('errors.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -198,116 +171,107 @@ const RateConfigsPage: React.FC = () => {
     loadHistory(selectedRateType);
   }, [selectedRateType]);
 
-const handleSave = async () => {
-  if (!selectedRateType) return;
-  setSaving(true);
-  setError("");
-  setSuccess("");
+  const handleSave = async () => {
+    if (!selectedRateType) return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
 
-  try {
-    let numericValue: number;
+    try {
+      let numericValue: number;
 
-    if (selectedRateType === "LATE_PAYMENT_GRACE_DAYS") {
-      numericValue = Number(value);
-      if (!Number.isFinite(numericValue) || numericValue < 0 || numericValue > 365) {
-        setError("Grace days must be between 0 and 365");
-        setSaving(false);
-        return;
-      }
-    } else {
       const percent = parseFloat(value);
       if (isNaN(percent) || percent <= 0 || percent > 100) {
-        setError("Rate must be a number between 0 and 100 (exclusive for 0)");
+        setError(t('validation.valueBetween'));
         setSaving(false);
         return;
       }
-      // Convert percent to decimal 0–1 for backend (exclusive for 0)
+      // Convert percent to decimal 0–1 for backend
       numericValue = formatRateForBackend(percent);
       
-      // Ensure value is between 0 and 1 (exclusive for 0)
+      // Ensure value is between 0 and 1
       if (numericValue <= 0 || numericValue > 1) {
-        setError("Rate must be between 0 and 1 (exclusive for 0)");
+        setError(t('validation.valueBetween'));
         setSaving(false);
         return;
       }
-    }
 
-    if (!effectiveFrom) {
-      setError("Effective from date is required");
-      setSaving(false);
-      return;
-    }
+      if (!effectiveFrom) {
+        setError(t('validation.effectiveFromRequired'));
+        setSaving(false);
+        return;
+      }
 
-    // Format dates using formatLocalDate to ensure YYYY-MM-DD format without timezone issues
-    const payload = {
-      value: numericValue,
-      source: source.trim() || undefined,
-      effective_from: formatLocalDate(effectiveFrom),
-      effective_until: effectiveUntil ? formatLocalDate(effectiveUntil) : undefined,
-    };
+      // Format dates using formatLocalDate to ensure YYYY-MM-DD format without timezone issues
+      const payload = {
+        value: numericValue,
+        source: source.trim() || undefined,
+        effective_from: formatLocalDate(effectiveFrom),
+        effective_until: effectiveUntil ? formatLocalDate(effectiveUntil) : undefined,
+      };
 
-    const res =
-      formMode === "edit-existing"
-        ? await updateRate(selectedRateType, payload)
-        : await createRate(selectedRateType, payload);
+      const res =
+        formMode === "edit-existing"
+          ? await updateRate(selectedRateType, payload)
+          : await createRate(selectedRateType, payload);
 
-    if (res.success && res.data) {
-      // Success toast based on form mode
+      if (res.success && res.data) {
+        // Success toast based on form mode
+        if (formMode === "edit-existing") {
+          toast.success(t('messages.updateSuccess'), {
+            description: t('messages.updateDescription', { type: selectedRateType.replace(/_/g, ' ').toLowerCase() }),
+            duration: 3000,
+          });
+        } else {
+          toast.success(t('messages.createSuccess'), {
+            description: t('messages.createDescription', { type: selectedRateType.replace(/_/g, ' ').toLowerCase() }),
+            duration: 3000,
+          });
+        }
+        
+        setSuccess(
+          formMode === "edit-existing"
+            ? t('messages.updateSuccess')
+            : t('messages.createSuccess')
+        );
+        setCurrentRate(res.data);
+        setFormMode("view");
+        setTimeout(() => setSuccess(""), 3000);
+        loadHistory(selectedRateType);
+      } else {
+        // Error toast based on form mode
+        if (formMode === "edit-existing") {
+          toast.error(t('errors.updateFailed'), {
+            description: res.error || t('errors.updateGeneric'),
+            duration: 5000,
+          });
+        } else {
+          toast.error(t('errors.createFailed'), {
+            description: res.error || t('errors.createGeneric'),
+            duration: 5000,
+          });
+        }
+      }
+    } catch (error) {
+      // Network/unknown error toast based on form mode
       if (formMode === "edit-existing") {
-        toast.success("Rate updated successfully!", {
-          description: `The ${selectedRateType.replace(/_/g, ' ').toLowerCase()} has been updated.`,
-          duration: 3000,
+        toast.error(t('errors.updateFailed'), {
+          description: t('errors.networkError'),
+          duration: 5000,
         });
       } else {
-        toast.success("Rate created successfully!", {
-          description: `New ${selectedRateType.replace(/_/g, ' ').toLowerCase()} rate has been created.`,
-          duration: 3000,
+        toast.error(t('errors.createFailed'), {
+          description: t('errors.networkError'),
+          duration: 5000,
         });
       }
       
-      setSuccess(
-        formMode === "edit-existing"
-          ? "Rate updated successfully!"
-          : "Rate created successfully!"
-      );
-      setCurrentRate(res.data);
-      setFormMode("view");
-      setTimeout(() => setSuccess(""), 3000);
-      loadHistory(selectedRateType);
-    } else {
-      // Error toast based on form mode
-      if (formMode === "edit-existing") {
-        toast.error("Failed to update rate", {
-          description: res.error || "Could not update the rate. Please try again.",
-          duration: 5000,
-        });
-      } else {
-        toast.error("Failed to create rate", {
-          description: res.error || "Could not create the rate. Please try again.",
-          duration: 5000,
-        });
-      }
+      // Also log to console for debugging
+      console.error("Save error:", error);
+    } finally {
+      setSaving(false);
     }
-  } catch (error) {
-    // Network/unknown error toast based on form mode
-    if (formMode === "edit-existing") {
-      toast.error("Update failed", {
-        description: "A network error occurred while updating the rate.",
-        duration: 5000,
-      });
-    } else {
-      toast.error("Creation failed", {
-        description: "A network error occurred while creating the rate.",
-        duration: 5000,
-      });
-    }
-    
-    // Also log to console for debugging
-    console.error("Save error:", error);
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const handleDeactivate = async () => {
     if (!currentRate || !currentRate.effective_from) return;
@@ -320,15 +284,15 @@ const handleSave = async () => {
         effective_from: formatLocalDate(parseLocalDate(currentRate.effective_from) || new Date()),
       });
       if (res.success) {
-        setSuccess("Rate deactivated successfully");
+        setSuccess(t('messages.deactivateSuccess'));
         setTimeout(() => setSuccess(""), 3000);
         loadCurrent(selectedRateType);
         loadHistory(selectedRateType);
       } else {
-        setError(res.error || "Failed to deactivate rate");
+        setError(res.error || t('errors.deactivateFailed'));
       }
     } catch {
-      setError("Network error while deactivating");
+      setError(t('errors.networkError'));
     } finally {
       setSaving(false);
     }
@@ -358,7 +322,7 @@ const handleSave = async () => {
   const formatDateForHeader = (dateString: string | undefined): string => {
     if (!dateString) return "N/A";
     const date = parseLocalDate(dateString);
-    return date ? date.toLocaleDateString() : "Invalid date";
+    return date ? date.toLocaleDateString() : tCommon('date.invalid');
   };
 
   return (
@@ -369,10 +333,10 @@ const handleSave = async () => {
           <div>
             <h1 className="text-3xl font-bold text-[#2a2718] flex items-center gap-3">
               <Settings className="w-8 h-8 text-[#f0cd6e]" />
-              Rate Configurations
+              {t('pageTitle')}
             </h1>
             <p className="text-[#2a2718]/70 mt-1">
-              Manage interest, penalty and other revenue-related rates.
+              {t('pageDescription')}
             </p>
           </div>
 
@@ -382,13 +346,13 @@ const handleSave = async () => {
               onClick={() => setShowSidebar((prev) => !prev)}
               className="md:hidden px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg bg-white text-[#2a2718] hover:bg-[#f0cd6e]/20"
             >
-              {showSidebar ? "Hide Rate Types" : "Show Rate Types"}
+              {showSidebar ? t('actions.hideTypes') : t('actions.showTypes')}
             </button>
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-[#f0cd6e]">
               <div className="flex items-center gap-2">
                 <Percent className="w-5 h-5 text-[#f0cd6e]" />
                 <span className="font-medium text-[#2a2718]">
-                  {user.role.replace("_", " ")}
+                  {tAuth('roles.REVENUE_ADMIN')}
                 </span>
               </div>
             </div>
@@ -421,7 +385,7 @@ const handleSave = async () => {
               <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6 border border-[#f0cd6e]">
                 <h2 className="text-lg font-semibold text-[#2a2718] mb-5 flex items-center gap-2">
                   <Percent className="w-5 h-5 text-[#f0cd6e]" />
-                  Rate Types
+                  {t('rateTypes')}
                 </h2>
                 <div className="space-y-2">
                   {RATE_TYPES.map((rt) => (
@@ -435,10 +399,10 @@ const handleSave = async () => {
                       }`}
                     >
                       <div className="font-medium">
-                        {rateMeta[rt].label}
+                        {t(`types.${rt}.label`)}
                       </div>
                       <div className="text-xs text-[#2a2718]/70 mt-0.5 line-clamp-1">
-                        {rateMeta[rt].desc}
+                        {t(`types.${rt}.description`)}
                       </div>
                     </button>
                   ))}
@@ -466,21 +430,21 @@ const handleSave = async () => {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-[#2a2718]">
-                        {rateMeta[selectedRateType].label}
+                        {t(`types.${selectedRateType}.label`)}
                       </h2>
                       <p className="text-[#2a2718]/70 mt-1">
-                        {rateMeta[selectedRateType].desc}
+                        {t(`types.${selectedRateType}.description`)}
                       </p>
                       {currentRate && (
                         <p className="text-xs text-[#2a2718]/70 mt-1">
-                          Currently effective from{" "}
+                          {t('current.effectiveFrom')}{" "}
                           {currentRate.effective_from
                             ? formatDateForHeader(currentRate.effective_from)
                             : "N/A"}{" "}
                           {currentRate.effective_until
-                            ? `to ${formatDateForHeader(currentRate.effective_until)}`
-                            : "(no end date)"}{" "}
-                          • {currentRate.is_active ? "Active" : "Inactive"}
+                            ? `${t('current.to')} ${formatDateForHeader(currentRate.effective_until)}`
+                            : t('current.noEndDate')}{" "}
+                          • {currentRate.is_active ? t('status.active') : t('status.inactive')}
                         </p>
                       )}
                     </div>
@@ -508,7 +472,7 @@ const handleSave = async () => {
                           }}
                           className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0cd6e]/10 text-[#2a2718]"
                         >
-                          Add new rate
+                          {t('actions.addNew')}
                         </button>
                         <button
                           type="button"
@@ -519,7 +483,7 @@ const handleSave = async () => {
                           disabled={!currentRate}
                           className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0cd6e]/10 text-[#2a2718] disabled:text-[#2a2718]/40 disabled:cursor-not-allowed"
                         >
-                          Update current rate
+                          {t('actions.updateCurrent')}
                         </button>
                       </div>
                     )}
@@ -531,68 +495,58 @@ const handleSave = async () => {
                 {loading ? (
                   <div className="text-center py-20">
                     <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
-                    <p className="text-[#2a2718]">Loading current rate...</p>
+                    <p className="text-[#2a2718]">{t('loading')}</p>
                   </div>
                 ) : (
                   <div className="space-y-8 max-w-2xl">
                     {/* Value */}
                     <div>
                       <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                        {selectedRateType === "LATE_PAYMENT_GRACE_DAYS"
-                          ? "Grace Days"
-                          : "Rate Value (%)"}
+                        {t('fields.value')}
                       </label>
                       <div className="relative">
                         <input
                           type="number"
-                          step={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "1" : "0.01"}
-                          min={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "0" : "0.01"}
-                          max={selectedRateType === "LATE_PAYMENT_GRACE_DAYS" ? "365" : "100"}
+                          step="0.01"
+                          min="0.01"
+                          max="100"
                           value={value}
                           onChange={(e) => setValue(e.target.value)}
                           className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] disabled:bg-[#f0cd6e]/5"
-                          placeholder={
-                            selectedRateType === "LATE_PAYMENT_GRACE_DAYS"
-                              ? "e.g. 15"
-                              : "e.g. 12.50"
-                          }
+                          placeholder={t('placeholders.value')}
                           disabled={isReadOnly}
                         />
-                        {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS" && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2a2718]/70 font-bold">
-                            %
-                          </span>
-                        )}
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2a2718]/70 font-bold">
+                          %
+                        </span>
                       </div>
-                      {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS" && (
-                        <p className="text-xs text-[#2a2718]/70 mt-1">
-                          Enter rate as percentage (e.g., 12.5 for 12.5%)
-                        </p>
-                      )}
+                      <p className="text-xs text-[#2a2718]/70 mt-1">
+                        {t('hints.value')}
+                      </p>
                     </div>
 
                     {/* Effective dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                          Effective From
+                          {t('fields.effectiveFrom')}
                         </label>
                         <UniversalDateInput
                           value={effectiveFrom}
                           onChange={setEffectiveFrom}
-                          placeholder="Select start date"
+                          placeholder={t('placeholders.effectiveFrom')}
                           size="sm"
                           disabled={isReadOnly}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                          Effective Until
+                          {t('fields.effectiveUntil')}
                         </label>
                         <UniversalDateInput
                           value={effectiveUntil}
                           onChange={setEffectiveUntil}
-                          placeholder="Select end date (optional)"
+                          placeholder={t('placeholders.effectiveUntil')}
                           size="sm"
                           disabled={isReadOnly}
                         />
@@ -602,13 +556,13 @@ const handleSave = async () => {
                     {/* Source */}
                     <div>
                       <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                        Source / Reference (optional)
+                        {t('fields.source')}
                       </label>
                       <textarea
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                         className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] min-h-[80px] resize-none disabled:bg-[#f0cd6e]/5"
-                        placeholder="e.g., Council Resolution No. 123..."
+                        placeholder={t('placeholders.source')}
                         disabled={isReadOnly}
                       />
                     </div>
@@ -629,14 +583,14 @@ const handleSave = async () => {
                           {saving ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
-                              Saving...
+                              {tCommon('saving')}
                             </>
                           ) : (
                             <>
                               <Save className="w-5 h-5" />
                               {formMode === "edit-existing"
-                                ? "Update Rate"
-                                : "Create Rate"}
+                                ? t('actions.update')
+                                : t('actions.create')}
                             </>
                           )}
                         </button>
@@ -666,7 +620,7 @@ const handleSave = async () => {
                           }}
                           className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-[#f0cd6e] text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/10 transition-all"
                         >
-                          Cancel
+                          {tCommon('cancel')}
                         </button>
                       </div>
                     )}
@@ -681,7 +635,7 @@ const handleSave = async () => {
                 <div className="flex items-center gap-2">
                   <History className="w-5 h-5 text-[#2a2718]" />
                   <h3 className="text-lg font-semibold text-[#2a2718]">
-                    Rate History
+                    {t('history.title')}
                   </h3>
                 </div>
               </div>
@@ -692,7 +646,7 @@ const handleSave = async () => {
                 </div>
               ) : history.length === 0 ? (
                 <p className="text-sm text-[#2a2718]/70">
-                  No history found for this rate type.
+                  {t('history.empty')}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -700,22 +654,22 @@ const handleSave = async () => {
                     <thead>
                       <tr className="border-b bg-[#f0cd6e]/10">
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Value
+                          {t('history.columns.value')}
                         </th>
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Effective From
+                          {t('history.columns.effectiveFrom')}
                         </th>
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Effective Until
+                          {t('history.columns.effectiveUntil')}
                         </th>
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Active
+                          {t('history.columns.active')}
                         </th>
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Source
+                          {t('history.columns.source')}
                         </th>
                         <th className="px-3 py-2 text-left text-[#2a2718]">
-                          Updated At
+                          {t('history.columns.updatedAt')}
                         </th>
                       </tr>
                     </thead>
@@ -731,10 +685,7 @@ const handleSave = async () => {
                             className="border-b last:border-0 hover:bg-[#f0cd6e]/5"
                           >
                             <td className="px-3 py-2 text-[#2a2718]">
-                              {uiValue}
-                              {selectedRateType !== "LATE_PAYMENT_GRACE_DAYS"
-                                ? " %"
-                                : ""}
+                              {uiValue}%
                             </td>
 
                             <td className="px-3 py-2">
@@ -756,7 +707,7 @@ const handleSave = async () => {
                               />
                             </td>
                             <td className="px-3 py-2 text-[#2a2718]">
-                              {h.is_active ? "Yes" : "No"}
+                              {h.is_active ? t('history.yes') : t('history.no')}
                             </td>
                             <td className="px-3 py-2 max-w-xs truncate text-[#2a2718]">
                               {h.source || "-"}

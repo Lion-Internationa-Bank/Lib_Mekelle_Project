@@ -1,5 +1,6 @@
 // src/components/parcelDetail/sections/OwnersSection.tsx
 import { useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import OwnerCard from "../cards/OwnerCard";
 import EditOwnerModal from "../modals/EditOwnerModal";
 import TransferOwnershipModal from "../modals/TransferOwnershipModal";
@@ -14,6 +15,9 @@ type Props = {
 };
 
 const OwnersSection = ({ parcel, onReload }: Props) => {
+  const { t } = useTranslate('ownersSection');
+  const { t: tCommon } = useTranslate('common');
+  
   const [editingOwner, setEditingOwner] =
     useState<ParcelDetail["owners"][number] | null>(null);
   const [transferFrom, setTransferFrom] =
@@ -61,7 +65,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
 
   const handleSaveNewOwner = async () => {
     if (!newOwnerForm.full_name || !newOwnerForm.national_id) {
-      alert("Full name and National ID are required");
+      alert(t('newOwner.validation'));
       return;
     }
 
@@ -92,7 +96,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
       await onReload();
     } catch (err: any) {
       console.error(err);
-      alert("Failed to create owner: " + (err.message || "Unknown error"));
+      alert(t('newOwner.createFailed') + (err.message || tCommon('unknownError')));
     } finally {
       setSavingNewOwner(false);
     }
@@ -103,25 +107,25 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
       {/* Owners List */}
       <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-[#2a2718]">Current Owners</h2>
+          <h2 className="text-xl font-semibold text-[#2a2718]">{t('title')}</h2>
           <span className="text-sm text-[#2a2718]/70">
-            {parcel.owners.length} owner{parcel.owners.length !== 1 ? "s" : ""}
+            {t('count', { count: parcel.owners.length })}
           </span>
         </div>
 
         {parcel.owners.length === 0 ? (
           <div className="text-center py-12 bg-[#f0cd6e]/5 rounded-xl border border-dashed border-[#f0cd6e]">
             <p className="text-[#2a2718] mb-2">
-              No owners registered for this parcel yet
+              {t('empty.title')}
             </p>
             <p className="text-sm text-[#2a2718]/70 mb-6">
-              Add the first owner and attach supporting documents.
+              {t('empty.description')}
             </p>
             <button
               onClick={handleOpenAddOwner}
               className="inline-flex items-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
             >
-              + Add Owner
+              + {t('empty.addButton')}
             </button>
           </div>
         ) : (
@@ -175,43 +179,43 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-[#2a2718] mb-2">
-                    Transfer Completed ✓
+                    {t('transfer.upload.title')}
                   </h2>
                   <p className="text-[#2a2718]/70">
-                    Please upload supporting documents for{" "}
+                    {t('transfer.upload.description')}{" "}
                     <span className="font-mono font-bold text-[#f0cd6e]">
                       {parcel.upin}
                     </span>
                   </p>
                 </div>
                 <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full whitespace-nowrap">
-                  Step 2 of 2
+                  {t('transfer.upload.step')}
                 </span>
               </div>
             </div>
 
             <div className="p-6 md:p-8">
               <GenericDocsUpload
-                title="Land transfer supporting docs"
+                title={t('transfer.upload.docsTitle')}
                 upin={parcel.upin}
-                subCity={parcel.sub_city?.name || "—"}
+                subCity={parcel.sub_city?.name || tCommon('notAvailable')}
                 historyId={latestTransferHistoryId}
                 hideTitle={true}
                 allowedDocTypes={[
                   {
                     value: "TRANSFER_CONTRACT",
-                    label: "Transfer Contract / Agreement",
+                    label: t('transfer.upload.docTypes.contract'),
                   },
                   {
                     value: "ID_COPY",
-                    label: "ID Copies (Buyer & Seller)",
+                    label: t('transfer.upload.docTypes.idCopy'),
                   },
-                  { value: "PAYMENT_PROOF", label: "Payment Receipt" },
+                  { value: "PAYMENT_PROOF", label: t('transfer.upload.docTypes.paymentProof') },
                   {
                     value: "POWER_OF_ATTORNEY",
-                    label: "Power of Attorney (if applicable)",
+                    label: t('transfer.upload.docTypes.powerOfAttorney'),
                   },
-                  { value: "OTHER", label: "Other Supporting Document" },
+                  { value: "OTHER", label: t('transfer.upload.docTypes.other') },
                 ]}
               />
             </div>
@@ -221,14 +225,14 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
                 onClick={handleSkipUpload}
                 className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
               >
-                Skip for now
+                {t('transfer.upload.skip')}
               </button>
 
               <button
                 onClick={handleUploadComplete}
                 className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
-                Done – Close
+                {t('transfer.upload.done')}
                 <span className="text-lg">→</span>
               </button>
             </div>

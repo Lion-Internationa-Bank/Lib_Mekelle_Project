@@ -1,6 +1,7 @@
 // src/routes/admin/SubCitiesPage.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslate } from '../../i18n/useTranslate';
 import {
   getSubCities,
   createSubCity,
@@ -21,7 +22,6 @@ import {
   Calendar,
   Search,
   Filter,
-  MoreVertical,
   Users,
   Globe,
   Shield,
@@ -33,6 +33,10 @@ import {
 
 const SubCitiesPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslate('subcity');
+  const { t: tCommon } = useTranslate('common');
+  const { t: tAuth } = useTranslate('auth');
+  
   const [subCities, setSubCities] = useState<SubCity[]>([]);
   const [filteredCities, setFilteredCities] = useState<SubCity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +57,7 @@ const SubCitiesPage = () => {
       setSubCities(cities);
       setFilteredCities(cities);
     } else {
-      setError(res.error || 'Failed to load sub-cities');
+      setError(res.error || t('errors.fetchFailed'));
     }
     setLoading(false);
   };
@@ -79,7 +83,7 @@ const SubCitiesPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setError('Sub-city name is required');
+      setError(t('validation.nameRequired'));
       return;
     }
 
@@ -94,8 +98,8 @@ const SubCitiesPage = () => {
 
       if (res.success) {
         setSuccess(editingId 
-          ? 'Sub-city updated successfully!' 
-          : 'Sub-city created successfully!'
+          ? t('messages.updateSuccess')
+          : t('messages.createSuccess')
         );
         setForm({ name: '', description: '' });
         setEditingId(null);
@@ -103,10 +107,10 @@ const SubCitiesPage = () => {
         fetchSubCities();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(res.error || 'Operation failed');
+        setError(res.error || t('errors.operationFailed'));
       }
     } catch (err: any) {
-      setError('Network error occurred');
+      setError(t('errors.networkError'));
     }
     
     setSaving(false);
@@ -124,23 +128,23 @@ const SubCitiesPage = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this sub-city? This action cannot be undone.')) return;
+    if (!window.confirm(t('confirm.delete'))) return;
 
     setLoading(true);
     const res = await deleteSubCity(id);
     if (res.success) {
-      setSuccess('Sub-city deleted successfully!');
+      setSuccess(t('messages.deleteSuccess'));
       fetchSubCities();
       setTimeout(() => setSuccess(''), 3000);
     } else {
-      setError(res.error || 'Failed to delete sub-city');
+      setError(res.error || t('errors.deleteFailed'));
     }
     setLoading(false);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(tCommon('language') === 'am' ? 'am-ET' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -160,9 +164,11 @@ const SubCitiesPage = () => {
       <div className="min-h-screen bg-linear-0-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">Access Denied</h2>
-          <p className="text-[#2a2718]/70 mb-4">This page is only accessible to City Administrators.</p>
-          <p className="text-sm text-[#2a2718]/70">Your current role: {user?.role || 'Not authenticated'}</p>
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">{t('accessDenied.title')}</h2>
+          <p className="text-[#2a2718]/70 mb-4">{t('accessDenied.message')}</p>
+          <p className="text-sm text-[#2a2718]/70">
+            {t('accessDenied.currentRole')} {tAuth(`roles.${user?.role}`) || user?.role || t('accessDenied.notAuthenticated')}
+          </p>
         </div>
       </div>
     );
@@ -176,15 +182,15 @@ const SubCitiesPage = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#2a2718] flex items-center gap-3">
               <Building2 className="w-7 h-7 text-[#f0cd6e]" />
-              Sub-cities Management
+              {t('pageTitle')}
             </h1>
-            <p className="text-[#2a2718]/70 mt-1 text-sm">Manage all sub-cities within the city administration</p>
+            <p className="text-[#2a2718]/70 mt-1 text-sm">{t('pageDescription')}</p>
           </div>
           
           <div className="flex items-center gap-3">
             <div className="text-sm text-[#2a2718]/70 bg-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2 border border-[#f0cd6e]">
               <Globe className="w-4 h-4" />
-              <span>{subCities.length} sub-cities</span>
+              <span>{t('stats.total', { count: subCities.length })}</span>
             </div>
             
             <button
@@ -195,7 +201,7 @@ const SubCitiesPage = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
             >
               {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              {showForm ? 'Cancel' : 'Add Sub-city'}
+              {showForm ? tCommon('cancel') : t('actions.add')}
             </button>
           </div>
         </div>
@@ -229,12 +235,12 @@ const SubCitiesPage = () => {
                 {editingId ? (
                   <>
                     <Edit className="w-5 h-5 text-[#f0cd6e]" />
-                    Edit Sub-city
+                    {t('form.editTitle')}
                   </>
                 ) : (
                   <>
                     <Plus className="w-5 h-5 text-[#f0cd6e]" />
-                    Add New Sub-city
+                    {t('form.createTitle')}
                   </>
                 )}
               </h2>
@@ -243,9 +249,9 @@ const SubCitiesPage = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <label className=" text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    Sub-city Name
+                    {t('form.name')}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -253,26 +259,26 @@ const SubCitiesPage = () => {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all placeholder:text-[#2a2718]/40"
-                    placeholder="e.g., Bole, Kirkos, Lideta"
+                    placeholder={t('form.namePlaceholder')}
                     required
                   />
-                  <p className="text-xs text-[#2a2718]/70 mt-2">Enter the official name of the sub-city</p>
+                  <p className="text-xs text-[#2a2718]/70 mt-2">{t('form.nameHint')}</p>
                 </div>
 
                 <div>
-                  <label className=" text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-[#2a2718] mb-2 flex items-center gap-2">
                     <Info className="w-4 h-4" />
-                    Description
-                    <span className="text-[#2a2718]/70 text-sm font-normal">(optional)</span>
+                    {t('form.description')}
+                    <span className="text-[#2a2718]/70 text-sm font-normal">{tCommon('optional')}</span>
                   </label>
                   <textarea
                     value={form.description || ''}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all min-h-25 resize-none placeholder:text-[#2a2718]/40"
-                    placeholder="Brief description about this sub-city..."
+                    placeholder={t('form.descriptionPlaceholder')}
                     rows={3}
                   />
-                  <p className="text-xs text-[#2a2718]/70 mt-2">Add any relevant details about this sub-city</p>
+                  <p className="text-xs text-[#2a2718]/70 mt-2">{t('form.descriptionHint')}</p>
                 </div>
               </div>
 
@@ -280,17 +286,17 @@ const SubCitiesPage = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
+                      {tCommon('saving')}
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      {editingId ? 'Update Sub-city' : 'Create Sub-city'}
+                      {editingId ? t('form.update') : t('form.create')}
                     </>
                   )}
                 </button>
@@ -301,7 +307,7 @@ const SubCitiesPage = () => {
                   className="px-6 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-all flex items-center justify-center gap-2 font-medium border border-[#f0cd6e]"
                 >
                   <X className="w-4 h-4" />
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
               </div>
             </form>
@@ -318,7 +324,7 @@ const SubCitiesPage = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search sub-cities by name or description..."
+                  placeholder={t('search.placeholder')}
                   className="w-full pl-10 pr-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-all"
                 />
               </div>
@@ -326,7 +332,7 @@ const SubCitiesPage = () => {
             
             <div className="flex items-center gap-3">
               <div className="text-sm text-[#2a2718]/70 bg-[#f0cd6e]/10 px-3 py-1.5 rounded-lg border border-[#f0cd6e]">
-                Showing {filteredCities.length} of {subCities.length}
+                {t('search.showing', { filtered: filteredCities.length, total: subCities.length })}
               </div>
               
               <button className="p-2 border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/10 transition-colors">
@@ -340,19 +346,16 @@ const SubCitiesPage = () => {
         {loading && subCities.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-[#f0cd6e]">
             <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
-            <p className="text-[#2a2718]">Loading sub-cities...</p>
+            <p className="text-[#2a2718]">{t('loading')}</p>
           </div>
         ) : filteredCities.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-[#f0cd6e]">
             <MapPin className="w-16 h-16 text-[#f0cd6e]/30 mx-auto mb-5" />
             <h3 className="text-xl font-semibold text-[#2a2718] mb-2">
-              {searchTerm ? 'No matching sub-cities found' : 'No sub-cities yet'}
+              {searchTerm ? t('empty.search') : t('empty.noData')}
             </h3>
             <p className="text-[#2a2718]/70 mb-8 max-w-md mx-auto">
-              {searchTerm 
-                ? 'Try adjusting your search terms or filters'
-                : 'Get started by adding your first sub-city using the "Add Sub-city" button above.'
-              }
+              {searchTerm ? t('empty.searchDescription') : t('empty.noDataDescription')}
             </p>
             {!searchTerm && (
               <button
@@ -360,7 +363,7 @@ const SubCitiesPage = () => {
                 className="px-6 py-3 bg-linear-0-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] transition-all shadow hover:shadow-md flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-5 h-5" />
-                Add Your First Sub-city
+                {t('empty.addFirst')}
               </button>
             )}
           </div>
@@ -371,10 +374,10 @@ const SubCitiesPage = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-[#2a2718] flex items-center gap-2">
                   <Building2 className="w-5 h-5" />
-                  All Sub-cities
+                  {t('table.title')}
                 </h3>
                 <div className="text-sm text-[#2a2718]/70">
-                  {filteredCities.length} sub-cities
+                  {t('table.total', { count: filteredCities.length })}
                 </div>
               </div>
             </div>
@@ -387,23 +390,23 @@ const SubCitiesPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4" />
-                        Name
+                        {t('table.name')}
                       </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <Info className="w-4 h-4" />
-                        Description
+                        {t('table.description')}
                       </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        Created
+                        {t('table.created')}
                       </div>
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-[#2a2718] uppercase tracking-wider">
-                      Actions
+                      {t('table.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -428,7 +431,7 @@ const SubCitiesPage = () => {
                         <div className="max-w-xs">
                           <p className="text-[#2a2718]/70 text-sm">
                             {sub.description || (
-                              <span className="text-[#2a2718]/50 italic">No description</span>
+                              <span className="text-[#2a2718]/50 italic">{t('table.noDescription')}</span>
                             )}
                           </p>
                         </div>
@@ -444,14 +447,14 @@ const SubCitiesPage = () => {
                           <button
                             onClick={() => handleEdit(sub)}
                             className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/10 rounded-lg transition-colors"
-                            title="Edit sub-city"
+                            title={t('actions.edit')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(sub.sub_city_id)}
                             className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete sub-city"
+                            title={t('actions.delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -468,11 +471,11 @@ const SubCitiesPage = () => {
               <div className="flex items-center justify-between text-sm text-[#2a2718]/70">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>Total sub-cities: {subCities.length}</span>
+                  <span>{t('table.footer', { count: subCities.length })}</span>
                 </div>
                 <div>
                   {searchTerm && (
-                    <span>Showing results for: "{searchTerm}"</span>
+                    <span>{t('search.resultsFor', { term: searchTerm })}</span>
                   )}
                 </div>
               </div>

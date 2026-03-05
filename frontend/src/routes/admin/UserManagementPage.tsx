@@ -1,6 +1,7 @@
 // src/routes/admin/UserManagementPage.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslate } from '../../i18n/useTranslate';
 import {
   getUsers,
   suspendUser,
@@ -26,6 +27,9 @@ import ApprovalPendingModal from '../../components/userMgt/ApprovalPendingModal'
 
 const UserManagementPage = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useTranslate('users');
+  const { t: tCommon } = useTranslate('common');
+  
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,7 +57,7 @@ const UserManagementPage = () => {
       setUsers(res.data?.users || []);
       setSuccessMessage('');
     } else {
-      setError(res.error || 'Failed to load users');
+      setError(res.error || t('errors.fetchFailed'));
     }
     setLoading(false);
   };
@@ -68,21 +72,21 @@ const UserManagementPage = () => {
     if (!suspendModal) return;
     const { user, suspend } = suspendModal;
 
-    const res = await suspendUser(user.user_id, suspend, 'User management action');
+    const res = await suspendUser(user.user_id, suspend, );
     
     if (res.success) {
       if (res.data && isApprovalRequest(res.data)) {
         // Show approval pending modal
         setPendingApproval(res.data);
-        toast.info('Approval request submitted');
+        toast.info(t('messages.approvalSubmitted'));
       } else {
         // Direct success
         fetchUsers();
-        toast.success(`User ${suspend ? 'suspended' : 'activated'} successfully`);
+        toast.success(suspend ? t('messages.userSuspended') : t('messages.userActivated'));
       }
       setSuspendModal(null);
     } else {
-      toast.error(res.error || `Failed to ${suspend ? 'suspend' : 'activate'} user`);
+      toast.error(res.error || (suspend ? t('errors.suspendFailed') : t('errors.activateFailed')));
     }
   };
 
@@ -95,15 +99,15 @@ const UserManagementPage = () => {
       if (res.data && isApprovalRequest(res.data)) {
         // Show approval pending modal
         setPendingApproval(res.data);
-        toast.info('Deletion request submitted for approval');
+        toast.info(t('messages.approvalSubmitted'));
       } else {
         // Direct success (though delete always requires approval)
         fetchUsers();
-        toast.success('User deleted successfully');
+        toast.success(t('messages.userDeleted'));
       }
       setDeleteModal(null);
     } else {
-      toast.error(res.error || 'Failed to delete user');
+      toast.error(res.error || t('errors.deleteFailed'));
     }
   };
 
@@ -118,19 +122,19 @@ const UserManagementPage = () => {
         if (res.data && isApprovalRequest(res.data)) {
           // Show approval pending modal
           setPendingApproval(res.data);
-          toast.info('User creation request submitted for approval');
+          toast.info(t('messages.approvalSubmitted'));
           setAddUserModal(false);
         } else {
           // Direct creation
           fetchUsers();
           setAddUserModal(false);
-          toast.success('User created successfully');
+          toast.success(t('messages.userCreated'));
         }
       } else {
-        setError(res.error || 'Failed to create user');
+        setError(res.error || t('errors.createFailed'));
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create user');
+      toast.error(err.message || t('errors.createFailed'));
     } finally {
       setCreatingUser(false);
     }
@@ -167,39 +171,18 @@ const UserManagementPage = () => {
     }
   };
 
-  // Get display name for role
+  // Get display name for role (now using translations)
   const getRoleDisplayName = (role: string) => {
-    const roleMap: Record<string, string> = {
-      'CITY_ADMIN': 'City Admin',
-      'CITY_APPROVER': 'City Approver',
-      'SUBCITY_ADMIN': 'Sub-city Admin',
-      'SUBCITY_APPROVER': 'Sub-city Approver',
-      'SUBCITY_NORMAL': 'Sub-city Normal',
-      'SUBCITY_AUDITOR': 'Sub-city Auditor',
-      'REVENUE_ADMIN': 'Revenue Admin',
-      'REVENUE_APPROVER': 'Revenue Approver',
-      'REVENUE_USER': 'Revenue User',
-    };
-    return roleMap[role] || role.replace(/_/g, ' ');
+    return t(`roles.${role}`);
   };
-
-  // Dynamic page title based on role
-  const pageTitle = {
-    CITY_ADMIN: 'Manage Sub-city Admins',
-    CITY_APPROVER: 'Approve User Requests',
-    SUBCITY_ADMIN: 'Manage Sub-city Users',
-    SUBCITY_APPROVER: 'Approve Sub-city User Requests',
-    REVENUE_ADMIN: 'Manage Revenue Users',
-    REVENUE_APPROVER: 'Approve Revenue User Requests',
-  }[currentUser?.role || ''] || 'User Management';
 
   if (!currentUser || !['CITY_ADMIN', 'CITY_APPROVER', 'SUBCITY_ADMIN', 'SUBCITY_APPROVER', 'REVENUE_ADMIN', 'REVENUE_APPROVER'].includes(currentUser.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">Access Denied</h2>
-          <p className="text-[#2a2718]/70">You don't have permission to access this page.</p>
+          <h2 className="text-2xl font-bold text-[#2a2718] mb-2">{t('accessDenied.title') || 'Access Denied'}</h2>
+          <p className="text-[#2a2718]/70">{t('accessDenied.message') || "You don't have permission to access this page."}</p>
         </div>
       </div>
     );
@@ -210,9 +193,11 @@ const UserManagementPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#2a2718]">{pageTitle}</h1>
+          <h1 className="text-3xl font-bold text-[#2a2718]">
+            {t(`pageTitle.${currentUser?.role || 'default'}`)}
+          </h1>
           <p className="text-[#2a2718]/70 mt-1">
-            Manage user accounts and permissions in your scope
+            {t('description')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -221,7 +206,7 @@ const UserManagementPage = () => {
             className="flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 transition-colors border border-[#f0cd6e]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('actions.refresh')}
           </button>
           {currentUser.role.includes('ADMIN') && (
             <button 
@@ -229,7 +214,7 @@ const UserManagementPage = () => {
               className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add User
+              {t('actions.addUser')}
             </button>
           )}
         </div>
@@ -275,7 +260,7 @@ const UserManagementPage = () => {
       {loading ? (
         <div className="text-center py-12">
           <RefreshCw className="w-8 h-8 text-[#f0cd6e] animate-spin mx-auto mb-4" />
-          <p className="text-[#2a2718]">Loading users...</p>
+          <p className="text-[#2a2718]">{t('messages.loading')}</p>
         </div>
       ) : (
         <UsersTable

@@ -1,11 +1,12 @@
-// src/components/cards/ParcelInfoCard.tsx
+// src/components/parcelDetail/cards/ParcelInfoCard.tsx
 import { useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import { MoreVertical, Edit, UserPlus, Scissors, ChevronDown, ChevronUp } from "lucide-react";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 
 interface ParcelInfoCardProps {
-  data?: ParcelDetail | null; // ← Make data optional
+  data?: ParcelDetail | null;
   onEditParcel: () => void;
   onAddCoOwner: () => void;
   onSubdivide: () => void;
@@ -17,17 +18,19 @@ export default function ParcelInfoCard({
   onAddCoOwner,
   onSubdivide,
 }: ParcelInfoCardProps) {
+  const { t } = useTranslate('parcelInfo');
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCoords, setShowCoords] = useState(false);
-  const {user} = useAuth();
-    const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
+  const { user } = useAuth();
+  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
+  
   // If no data yet, show loading/fallback UI
   if (!data) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 relative min-h-[400px] flex items-center justify-center">
         <div className="text-center text-[#2a2718]/70">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#f0cd6e] mx-auto mb-4" />
-          <p>Loading parcel information...</p>
+          <p>{t('loading')}</p>
         </div>
       </div>
     );
@@ -43,17 +46,14 @@ export default function ParcelInfoCard({
     <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 relative">
       {/* 3-dot menu button */}
       {isSubcityNormal && (
- <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="absolute top-5 right-5 p-2 rounded-full hover:bg-[#f0cd6e]/20 transition-colors"
-        aria-label="Parcel actions"
-      >
-        <MoreVertical size={20} className="text-[#2a2718]" />
-      </button>
-
-      )
-
-      }
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="absolute top-5 right-5 p-2 rounded-full hover:bg-[#f0cd6e]/20 transition-colors"
+          aria-label={t('actions.menu')}
+        >
+          <MoreVertical size={20} className="text-[#2a2718]" />
+        </button>
+      )}
      
       {/* Dropdown Menu */}
       {isSubcityNormal && menuOpen && (
@@ -68,7 +68,7 @@ export default function ParcelInfoCard({
               className="w-full text-left px-5 py-3 text-sm text-[#2a2718] hover:bg-[#f0cd6e]/10 flex items-center gap-3 transition-colors"
             >
               <Edit size={18} className="text-[#2a2718]" />
-              Edit Parcel Details
+              {t('actions.edit')}
             </button>
 
             <button
@@ -76,7 +76,7 @@ export default function ParcelInfoCard({
               className="w-full text-left px-5 py-3 text-sm text-[#2a2718] hover:bg-[#f0cd6e]/10 flex items-center gap-3 transition-colors"
             >
               <UserPlus size={18} className="text-[#2a2718]" />
-              Add Co-Owner
+              {t('actions.addCoOwner')}
             </button>
 
             <button
@@ -84,45 +84,45 @@ export default function ParcelInfoCard({
               className="w-full text-left px-5 py-3 text-sm text-[#f0cd6e] hover:bg-[#f0cd6e]/10 flex items-center gap-3 transition-colors border-t border-[#f0cd6e] mt-1"
             >
               <Scissors size={18} className="text-[#f0cd6e]" />
-              Subdivide Parcel
+              {t('actions.subdivide')}
             </button>
           </div>
         </>
       )}
 
       {/* Parcel Information Content */}
-      <h2 className="text-xl font-semibold text-[#2a2718] mb-6">Parcel Information</h2>
+      <h2 className="text-xl font-semibold text-[#2a2718] mb-6">{t('title')}</h2>
 
       {/* Four-column layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Column 1: Basic Information */}
         <div>
           <h4 className="text-base font-semibold text-[#2a2718] mb-4 pb-2 border-b border-[#f0cd6e]">
-            Basic Information
+            {t('sections.basic')}
           </h4>
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">UPIN</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.upin')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.upin || "—"}
+                {data.upin || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">File Number</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.fileNumber')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.file_number || "—"}
+                {data.file_number || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Total Area</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.totalArea')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
                 {Number(data.total_area_m2).toLocaleString()} m²
               </dd>
             </div>
-             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Tender</dt>
+            <div className="flex justify-between items-baseline">
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.tender')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.tender || "—"}
+                {data.tender || t('notAvailable')}
               </dd>
             </div>
           </dl>
@@ -131,31 +131,31 @@ export default function ParcelInfoCard({
         {/* Column 2: Location */}
         <div>
           <h4 className="text-base font-semibold text-[#2a2718] mb-4 pb-2 border-b border-[#f0cd6e]">
-            Location
+            {t('sections.location')}
           </h4>
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Sub City</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.subCity')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.sub_city?.name || "—"}
+                {data.sub_city?.name || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Tabia</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.tabia')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.tabia || "—"}
+                {data.tabia || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Ketena</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.ketena')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.ketena || "—"}
+                {data.ketena || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Block</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.block')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.block || "—"}
+                {data.block || t('notAvailable')}
               </dd>
             </div>
           </dl>
@@ -164,25 +164,25 @@ export default function ParcelInfoCard({
         {/* Column 3: Tenure & Classification */}
         <div>
           <h4 className="text-base font-semibold text-[#2a2718] mb-4 pb-2 border-b border-[#f0cd6e]">
-            Tenure & Classification
+            {t('sections.tenure')}
           </h4>
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Land Use</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.landUse')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right capitalize">
-                {data.land_use || "—"}
+                {data.land_use || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Tenure Type</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.tenureType')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right capitalize">
-                {data.tenure_type || "—"}
+                {data.tenure_type || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">Land Grade</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.landGrade')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.land_grade || "—"}
+                {data.land_grade || t('notAvailable')}
               </dd>
             </div>
           </dl>
@@ -191,31 +191,31 @@ export default function ParcelInfoCard({
         {/* Column 4: Boundary Information */}
         <div>
           <h4 className="text-base font-semibold text-[#2a2718] mb-4 pb-2 border-b border-[#f0cd6e]">
-            Boundary Information
+            {t('sections.boundary')}
           </h4>
           <dl className="space-y-4 text-sm">
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">North</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.north')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.boundary_north || "—"}
+                {data.boundary_north || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">East</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.east')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.boundary_east || "—"}
+                {data.boundary_east || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">South</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.south')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.boundary_south || "—"}
+                {data.boundary_south || t('notAvailable')}
               </dd>
             </div>
             <div className="flex justify-between items-baseline">
-              <dt className="text-[#2a2718]/70 font-medium w-32">West</dt>
+              <dt className="text-[#2a2718]/70 font-medium w-32">{t('fields.west')}</dt>
               <dd className="text-[#2a2718] font-normal flex-1 text-right">
-                {data.boundary_west || "—"}
+                {data.boundary_west || t('notAvailable')}
               </dd>
             </div>
 
@@ -227,7 +227,7 @@ export default function ParcelInfoCard({
               >
                 {showCoords ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 <span className="ml-1">
-                  Boundary Coordinates {data.boundary_coords ? "(JSON)" : "(none)"}
+                  {t('fields.boundaryCoords')} {data.boundary_coords ? t('fields.json') : `(${t('fields.none')})`}
                 </span>
               </button>
 
@@ -238,7 +238,7 @@ export default function ParcelInfoCard({
                       {JSON.stringify(data.boundary_coords, null, 2)}
                     </pre>
                   ) : (
-                    "No coordinates available"
+                    t('fields.noCoordinates')
                   )}
                 </div>
               )}

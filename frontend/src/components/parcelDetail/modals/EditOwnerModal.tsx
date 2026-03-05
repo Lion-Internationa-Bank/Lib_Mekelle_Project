@@ -1,5 +1,6 @@
-// src/modals/EditOwnerModal.tsx
+// src/components/parcelDetail/modals/EditOwnerModal.tsx
 import { useEffect, useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import { updateOwnerApi } from "../../../services/parcelDetailApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import {
@@ -19,6 +20,9 @@ type Props = {
 };
 
 const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
+  const { t } = useTranslate('editOwnerModal');
+  const { t: tCommon } = useTranslate('common');
+  
   const [form, setForm] = useState({
     full_name: "",
     national_id: "",
@@ -49,16 +53,16 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
         tin_number: form.tin_number || undefined,
       }) as EditOwnerFormData;
 
-     const res = await updateOwnerApi(owner.owner_id, parsed);
+      const res = await updateOwnerApi(owner.owner_id, parsed);
       
       await onSuccess();
-      toast.success(res.message || "Owner updated successfuly")
+      toast.success(res.message || t('messages.success'));
       onClose();
     } catch (err: any) {
       if (err instanceof z.ZodError) {
-        setError(err.issues[0]?.message || "Validation failed");
+        setError(err.issues[0]?.message || t('errors.validation'));
       } else {
-        toast.error(err.message || "Update failed")
+        toast.error(err.message || t('errors.update'));
       }
     }
   };
@@ -68,7 +72,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold text-[#2a2718] mb-6">Edit Owner</h2>
+        <h2 className="text-xl font-bold text-[#2a2718] mb-6">{t('title')}</h2>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
@@ -80,7 +84,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
           {Object.keys(form).map((key) => (
             <div key={key}>
               <label className="block text-sm font-medium text-[#2a2718] capitalize mb-1">
-                {key.replace(/_/g, " ")}
+                {t(`fields.${key}`)}
               </label>
               <input
                 value={form[key as keyof typeof form]}
@@ -97,13 +101,13 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
             onClick={onClose}
             className="px-6 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleSave}
             className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e]"
           >
-            Save
+            {tCommon('save')}
           </button>
         </div>
       </div>

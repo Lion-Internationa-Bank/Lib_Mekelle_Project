@@ -1,9 +1,11 @@
 // src/components/wizard/ParcelWizard/LeaseDocsStep.tsx
 import { useState, useEffect } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import type { SimpleStepProps } from "../../../types/wizard";
 import { useWizard } from "../../../contexts/WizardContext";
 import { toast } from 'sonner';
 import { openDocument } from "../../../services/documentService";
+
 interface Document {
   id: string;
   document_type: string;
@@ -21,6 +23,8 @@ const leaseDocumentTypes = [
 ];
 
 const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
+  const { t } = useTranslate('leaseDocsStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, uploadDocument, deleteDocument, isLoading } = useWizard();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
@@ -47,14 +51,14 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
     // Validate file type
     const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please upload PDF, JPG, or PNG files.');
+      toast.error(t('errors.invalidFileType'));
       e.target.value = '';
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size exceeds 10MB limit.');
+      toast.error(t('errors.fileTooLarge'));
       e.target.value = '';
       return;
     }
@@ -79,12 +83,12 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       setDocuments(prev => prev.map(doc =>
         doc.id === tempId ? { ...result, status: "success" } : doc
       ));
-      toast.success(`${docType.replace('_', ' ')} uploaded successfully`);
+      toast.success(t('messages.uploadSuccess', { type: docType.replace('_', ' ') }));
     } catch (error: any) {
       setDocuments(prev => prev.map(doc =>
         doc.id === tempId ? { ...doc, status: "error" } : doc
       ));
-      toast.error(error.message || 'Upload failed');
+      toast.error(error.message || t('errors.uploadFailed'));
     } finally {
       setUploadingDoc(null);
       e.target.value = '';
@@ -92,25 +96,22 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    if (!confirm(t('confirm.delete'))) return;
     
     try {
       await deleteDocument('lease-docs', documentId);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      toast.success('Document deleted');
+      toast.success(t('messages.deleteSuccess'));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete document');
+      toast.error(error.message || t('errors.deleteFailed'));
     }
   };
 
-
-
   const handleSkipLease = () => {
     setSkipLease(true);
-    toast.info('Lease step skipped. Proceeding to validation.');
+    toast.info(t('messages.skipInfo'));
     nextStep();
   };
-
 
   const handleViewDocument = (file_url: string) => {
     openDocument(file_url);
@@ -120,9 +121,9 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   if (skipLease || !currentSession?.lease_data) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-3xl font-bold text-[#2a2718] mb-2">No Lease Agreement</h2>
+        <h2 className="text-3xl font-bold text-[#2a2718] mb-2">{t('noLease.title')}</h2>
         <p className="text-[#2a2718]/70 mb-8">
-          This parcel does not have a lease agreement. You can proceed to validation.
+          {t('noLease.description')}
         </p>
         
         <div className="space-y-4">
@@ -130,14 +131,14 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
             onClick={prevStep}
             className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
           >
-            ← Back to Lease Info
+            ← {t('actions.backToLease')}
           </button>
           
           <button
             onClick={nextStep}
             className="ml-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all"
           >
-            Proceed to Validation →
+            {t('actions.proceed')} →
           </button>
         </div>
       </div>
@@ -146,16 +147,18 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">Lease Documents</h2>
+      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
+        {t('title')}
+      </h2>
       <p className="text-[#2a2718]/70 mb-8">
-        Upload supporting documents for the lease agreement (PDF, JPG, PNG up to 10MB)
+        {t('subtitle')}
       </p>
 
       {/* Documents List */}
       <div className="space-y-4 mb-8">
         {documents.length === 0 ? (
           <div className="text-center py-8 border-2 border-dashed border-[#f0cd6e] rounded-xl">
-            <p className="text-[#2a2718]/70">No documents uploaded yet</p>
+            <p className="text-[#2a2718]/70">{t('empty')}</p>
           </div>
         ) : (
           documents.map((doc) => (
@@ -174,7 +177,7 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
                   </div>
                   <div className="text-sm text-[#2a2718]/70 truncate">{doc.file_name}</div>
                   <div className="text-xs text-[#2a2718]/70">
-                    {new Date(doc.uploaded_at).toLocaleDateString()} • {doc.uploaded_by || 'You'}
+                    {new Date(doc.uploaded_at).toLocaleDateString()} • {doc.uploaded_by || t('uploadedBy')}
                   </div>
                 </div>
               </div>
@@ -182,14 +185,14 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
                 <button
                   onClick={() => handleViewDocument(doc.file_url)}
                   className="p-2 text-[#f0cd6e] hover:text-[#2a2718] hover:bg-[#f0cd6e]/20 rounded-xl transition-colors"
-                  title="View document"
+                  title={t('actions.view')}
                 >
-                  👁️ View
+                  👁️ {t('actions.view')}
                 </button>
                 <button
                   onClick={() => handleDeleteDocument(doc.id)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                  title="Remove document"
+                  title={t('actions.remove')}
                   disabled={uploadingDoc === doc.id}
                 >
                   ✕
@@ -206,9 +209,9 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
             📄
           </div>
-          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">Upload Lease Documents</h3>
+          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">{t('upload.title')}</h3>
           <p className="text-[#2a2718]/70 mb-6 max-w-md mx-auto">
-            Click below to upload lease agreement documents (PDF, JPG, PNG up to 10MB)
+            {t('upload.description')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
@@ -219,7 +222,7 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
                     <span className="text-xl font-bold text-[#2a2718]">📄</span>
                   </div>
                   <div className="font-semibold text-[#2a2718] mb-1">{type.label}</div>
-                  <div className="text-sm text-[#2a2718]/70">Click to upload</div>
+                  <div className="text-sm text-[#2a2718]/70">{t('upload.clickToUpload')}</div>
                 </div>
                 <input
                   type="file"
@@ -241,14 +244,14 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
             onClick={prevStep}
             className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
           >
-            ← Back
+            ← {t('actions.back')}
           </button>
           
           <button
             onClick={handleSkipLease}
             className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
           >
-            Skip Lease Documents
+            {t('actions.skip')}
           </button>
         </div>
         
@@ -257,7 +260,7 @@ const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
           className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
           disabled={isLoading || !!uploadingDoc}
         >
-          Next: Review & Submit →
+          {t('actions.next')} →
           {(isLoading || uploadingDoc) && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
         </button>
       </div>

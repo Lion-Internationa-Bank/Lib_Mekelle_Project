@@ -1,5 +1,6 @@
-// src/modals/EditParcelModal.tsx
+// src/components/parcelDetail/modals/EditParcelModal.tsx
 import { useEffect, useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import { updateParcelApi } from "../../../services/parcelDetailApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import {
@@ -22,6 +23,8 @@ type Props = {
 };
 
 const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
+  const { t } = useTranslate('editParcelModal');
+  const { t: tCommon } = useTranslate('common');
   const { user } = useAuth();
   const [form, setForm] = useState<Partial<EditParcelFormData>>({});
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +51,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
       land_use: parcel.land_use || undefined,
       land_grade: Number(parcel.land_grade) ?? undefined,
       tenure_type: parcel.tenure_type || undefined,
-      tender:parcel.tender || undefined,
+      tender: parcel.tender || undefined,
       boundary_north: parcel.boundary_north || "",
       boundary_east: parcel.boundary_east || "",
       boundary_south: parcel.boundary_south || "",
@@ -76,7 +79,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
           setTenureTypes(tenureRes.data.options);
         }
       } catch (err: any) {
-        setOptionsError("Failed to load options from server");
+        setOptionsError(t('errors.loadOptions'));
       } finally {
         setLoadingOptions(false);
       }
@@ -84,7 +87,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
 
     loadOptions();
     setError(null);
-  }, [open, parcel, user?.sub_city_id]);
+  }, [open, parcel, user?.sub_city_id, t]);
 
   const handleSave = async () => {
     try {
@@ -94,17 +97,16 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
       const parsed = EditParcelFormSchema.parse(form) as EditParcelFormData;
 
       const res = await updateParcelApi(parcel.upin, parsed);
-      toast.success(res.message || " Successfully updated parcle info ")
+      toast.success(res.message || t('messages.success'));
       await onSuccess();
       onClose();
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        
-        setError(err.issues[0]?.message || "Validation failed");
+        setError(err.issues[0]?.message || t('errors.validation'));
       } else if (err instanceof Error) {
-        toast.error(err.message || "Failed to update parcel")
+        toast.error(err.message || t('errors.update'));
       } else {
-        toast.error("An unexpected error occurred")
+        toast.error(t('errors.unexpected'));
       }
     } finally {
       setSaving(false);
@@ -116,7 +118,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full my-8">
-        <h2 className="text-2xl font-bold text-[#2a2718] mb-6">Edit Parcel</h2>
+        <h2 className="text-2xl font-bold text-[#2a2718] mb-6">{t('title')}</h2>
 
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -127,7 +129,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
         {loadingOptions ? (
           <div className="text-center py-12 text-[#2a2718]/70">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#f0cd6e] mx-auto mb-2" />
-            Loading options...
+            {tCommon('loading')}
           </div>
         ) : optionsError ? (
           <div className="text-red-600 text-center py-8">{optionsError}</div>
@@ -136,7 +138,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* File Number */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                File Number
+                {t('fields.fileNumber')}
               </label>
               <input
                 type="text"
@@ -151,7 +153,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Tabia */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Tabia
+                {t('fields.tabia')}
               </label>
               <input
                 type="text"
@@ -166,7 +168,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Ketena */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Ketena
+                {t('fields.ketena')}
               </label>
               <input
                 type="text"
@@ -181,7 +183,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Block */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Block
+                {t('fields.block')}
               </label>
               <input
                 type="text"
@@ -196,7 +198,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Total Area m² */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Total Area (m²)
+                {t('fields.totalArea')}
               </label>
               <input
                 type="number"
@@ -214,7 +216,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Land Use */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Land Use
+                {t('fields.landUse')}
               </label>
               <select
                 value={form.land_use ?? ""}
@@ -223,7 +225,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 }
                 className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               >
-                <option value="">Select Land Use</option>
+                <option value="">{t('placeholders.selectLandUse')}</option>
                 {landUses.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.value} {opt.description ? `(${opt.description})` : ""}
@@ -235,7 +237,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Land Grade */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Land Grade
+                {t('fields.landGrade')}
               </label>
               <input
                 type="number"
@@ -253,7 +255,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Tenure Type */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Tenure Type
+                {t('fields.tenureType')}
               </label>
               <select
                 value={form.tenure_type ?? ""}
@@ -262,7 +264,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                 }
                 className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
               >
-                <option value="">Select Tenure Type</option>
+                <option value="">{t('placeholders.selectTenureType')}</option>
                 {tenureTypes.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.value} {opt.description ? `(${opt.description})` : ""}
@@ -274,7 +276,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             {/* Tender */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-1">
-                Tender
+                {t('fields.tender')}
               </label>
               <input
                 type="text"
@@ -290,7 +292,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                  North Boundary (optional)
+                  {t('fields.north')}
                 </label>
                 <input
                   type="text"
@@ -299,13 +301,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     setForm((f) => ({ ...f, boundary_north: e.target.value || undefined }))
                   }
                   className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g. North boundary description"
+                  placeholder={t('placeholders.north')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                  East Boundary (optional)
+                  {t('fields.east')}
                 </label>
                 <input
                   type="text"
@@ -314,13 +316,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     setForm((f) => ({ ...f, boundary_east: e.target.value || undefined }))
                   }
                   className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g. East boundary description"
+                  placeholder={t('placeholders.east')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                  South Boundary (optional)
+                  {t('fields.south')}
                 </label>
                 <input
                   type="text"
@@ -329,13 +331,13 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     setForm((f) => ({ ...f, boundary_south: e.target.value || undefined }))
                   }
                   className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g. South boundary description"
+                  placeholder={t('placeholders.south')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                  West Boundary (optional)
+                  {t('fields.west')}
                 </label>
                 <input
                   type="text"
@@ -344,14 +346,14 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                     setForm((f) => ({ ...f, boundary_west: e.target.value || undefined }))
                   }
                   className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g. West boundary description"
+                  placeholder={t('placeholders.west')}
                 />
               </div>
 
               {/* Boundary Coordinates (JSON) */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                  Boundary Coordinates (JSON, optional)
+                  {t('fields.boundaryCoords')}
                 </label>
                 <textarea
                   value={form.boundary_coords ?? ""}
@@ -360,7 +362,7 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
                   }
                   rows={5}
                   className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] font-mono text-sm"
-                  placeholder='{"type": "Polygon", "coordinates": [[[lon1, lat1], [lon2, lat2], ...]]}'
+                  placeholder={t('placeholders.boundaryCoords')}
                 />
               </div>
             </div>
@@ -373,14 +375,14 @@ const EditParcelModal = ({ parcel, open, onClose, onSuccess }: Props) => {
             className="px-6 py-3 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition"
             disabled={saving}
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] transition disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? tCommon('saving') : tCommon('save')}
           </button>
         </div>
       </div>

@@ -1,0 +1,32 @@
+export const auth = {
+  login: {
+    welcome: 'Welcome Back',
+    subtitle: 'Sign in to your account',
+    username: 'Username',
+    usernamePlaceholder: 'Enter your username',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    rememberMe: 'Remember me',
+    forgotPassword: 'Forgot password?',
+    button: 'Sign In',
+    buttonLoading: 'Signing in...',
+    error: 'Invalid username or password',
+  },
+  logout: 'Logout',
+  profile: 'Profile',
+  views: {
+    maker: 'Maker View',
+    approver: 'Approver View',
+  },
+  roles: {
+    CITY_ADMIN: 'City Admin',
+    CITY_APPROVER: 'City Approver',
+    SUBCITY_ADMIN: 'Sub-city Admin',
+    SUBCITY_APPROVER: 'Sub-city Approver',
+    SUBCITY_NORMAL: 'Sub-city Normal',
+    SUBCITY_AUDITOR: 'Sub-city Auditor',
+    REVENUE_ADMIN: 'Revenue Admin',
+    REVENUE_APPROVER: 'Revenue Approver',
+    REVENUE_USER: 'Revenue User',
+  },
+};

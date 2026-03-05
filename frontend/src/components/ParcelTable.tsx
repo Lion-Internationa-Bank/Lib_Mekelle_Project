@@ -1,5 +1,6 @@
 // src/components/ParcelTable.tsx
 import { useNavigate } from "react-router-dom";
+import { useTranslate } from "../i18n/useTranslate";
 
 interface Parcel {
   upin: string;
@@ -18,26 +19,28 @@ interface ParcelTableProps {
 }
 
 const ParcelTable = ({ parcels }: ParcelTableProps) => {
+  const { t } = useTranslate('parcelTable');
+
   return (
     <div className="bg-white/80 rounded-2xl border border-[#f0cd6e] shadow-sm overflow-hidden">
       {/* Table Header */}
       <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-xs font-semibold text-[#2a2718] uppercase tracking-wider bg-[#f0cd6e]/20 border-b-2 border-[#f0cd6e] sticky top-0 z-10">
-        <div>UPIN</div>
-        <div>File Number</div>
-        <div>Sub City</div>
-        <div>Ketena</div>
-        <div>Area (m²)</div>
-        <div>Land Use</div>
-        <div>Tenure Type</div>
-        <div>Encumbrance</div>
-        <div className="hidden xl:block">Owner(s)</div>
+        <div>{t('headers.upin')}</div>
+        <div>{t('headers.fileNumber')}</div>
+        <div>{t('headers.subCity')}</div>
+        <div>{t('headers.ketena')}</div>
+        <div>{t('headers.area')}</div>
+        <div>{t('headers.landUse')}</div>
+        <div>{t('headers.tenureType')}</div>
+        <div>{t('headers.encumbrance')}</div>
+        <div className="hidden xl:block">{t('headers.owners')}</div>
       </div>
 
       {/* Table Body */}
       <div className="divide-y divide-[#f0cd6e]/30">
         {parcels.length === 0 ? (
           <div className="text-center py-12 text-[#2a2718]/70 text-sm">
-            No parcels found
+            {t('empty.message')}
           </div>
         ) : (
           parcels.map((parcel) => (
@@ -52,13 +55,17 @@ const ParcelTable = ({ parcels }: ParcelTableProps) => {
 // Internal ParcelRow component (kept inside the same file)
 const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
   const navigate = useNavigate();
+  const { t } = useTranslate('parcelTable');
 
   const handleRowClick = () => {
     navigate(`/parcels/${encodeURIComponent(parcel.upin)}`);
   }
 
   return (
-    <div className="group grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-sm hover:bg-[#f0cd6e]/10 transition-colors cursor-pointer" onClick={handleRowClick}>
+    <div 
+      className="group grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_2fr_1.5fr_1fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-3 md:gap-4 px-4 py-4 text-sm hover:bg-[#f0cd6e]/10 transition-colors cursor-pointer" 
+      onClick={handleRowClick}
+    >
       {/* UPIN */}
       <div className="font-semibold text-[#2a2718]">{parcel.upin}</div>
 
@@ -89,7 +96,9 @@ const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
               : "bg-[#2a2718]/20 text-[#2a2718]"
           }`}
         >
-          {parcel.encumbrance_status}
+          {parcel.encumbrance_status === "Clear" 
+            ? t('encumbrance.clear') 
+            : t('encumbrance.encumbered')}
         </span>
       </div>
 
@@ -104,13 +113,13 @@ const ParcelRow = ({ parcel }: { parcel: Parcel }) => {
       {/* Mobile-only: Extra details */}
       <div className="xl:hidden mt-3 pt-3 border-t border-[#f0cd6e]/30 text-xs text-[#2a2718]/70 space-y-1">
         <div>
-          <span className="font-medium text-[#2a2718]">File:</span> {parcel.file_number}
+          <span className="font-medium text-[#2a2718]">{t('headers.fileNumber')}:</span> {parcel.file_number}
         </div>
         <div>
-          <span className="font-medium text-[#2a2718]">Tenure:</span> {parcel.tenure_type}
+          <span className="font-medium text-[#2a2718]">{t('headers.tenureType')}:</span> {parcel.tenure_type}
         </div>
         <div>
-          <span className="font-medium text-[#2a2718]">Owner(s):</span> {parcel.owners}
+          <span className="font-medium text-[#2a2718]">{t('headers.owners')}:</span> {parcel.owners}
         </div>
       </div>
     </div>

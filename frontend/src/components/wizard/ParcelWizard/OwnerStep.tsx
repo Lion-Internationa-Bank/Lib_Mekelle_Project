@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslate } from "../../../i18n/useTranslate";
 import { useWizard } from "../../../contexts/WizardContext";
 import type { OwnerStepProps } from "../../../types/wizard";
 import {
@@ -13,6 +14,8 @@ import { searchOwnersLiteApi } from "../../../services/parcelDetailApi";
 import { Search, X, Check, UserCheck, UserPlus } from "lucide-react";
 
 const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
+  const { t } = useTranslate('ownerStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, saveStep, isLoading } = useWizard();
   const today = new Date().toISOString().split("T")[0];
   
@@ -43,7 +46,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       acquired_at: today,
       owner_id: undefined,
     },
-    mode: "onChange", // Add this to validate on change
+    mode: "onChange",
   });
 
   const acquired_at = watch("acquired_at");
@@ -74,7 +77,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           tin_number: ownerData.tin_number || "",
           phone_number: ownerData.phone_number,
           acquired_at: ownerData.acquired_at || today,
-          owner_id: ownerData.owner_id, // Make sure to set this
+          owner_id: ownerData.owner_id,
         });
       } else {
         // This is a new owner being created
@@ -141,7 +144,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     setSearchTerm("");
     setSearchResults([]);
     
-    toast.success(`Selected existing owner: ${owner.full_name}`);
+    toast.success(t('messages.ownerSelected', { name: owner.full_name }));
   };
 
   const handleCreateNew = () => {
@@ -209,13 +212,13 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       await saveStep('owner', ownerData);
       
       toast.success(data.owner_id 
-        ? 'Existing owner linked successfully' 
-        : 'New owner information saved'
+        ? t('messages.existingOwnerSaved') 
+        : t('messages.newOwnerSaved')
       );
       
       nextStep();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save owner information');
+      toast.error(err.message || t('errors.saveFailed'));
       console.error("Save error:", err);
     }
   };
@@ -232,16 +235,16 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     return (
       <div className="text-center py-12">
         <p className="text-2xl font-bold text-red-600 mb-4">
-          Missing Parcel Information
+          {t('errors.missingParcel')}
         </p>
         <p className="text-gray-600 mb-6">
-          Please complete the Parcel step first.
+          {t('errors.missingParcelDesc')}
         </p>
         <button
           onClick={prevStep}
           className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-medium"
         >
-          ← Go Back
+          ← {t('actions.goBack')}
         </button>
       </div>
     );
@@ -251,11 +254,11 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     <>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-3xl font-bold text-[#2a2718]">Register Owner</h2>
+          <h2 className="text-3xl font-bold text-[#2a2718]">{t('title')}</h2>
           <p className="text-[#2a2718]/70 mt-1">
             {selectedOwner 
-              ? `Using existing owner: ${selectedOwner.full_name}` 
-              : "Register a new owner or search for an existing one"}
+              ? t('subtitle.existingOwner', { name: selectedOwner.full_name })
+              : t('subtitle.newOwner')}
           </p>
         </div>
         
@@ -266,7 +269,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             className="px-4 py-2 bg-[#f0cd6e]/20 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/30 transition-colors flex items-center gap-2"
           >
             <Search size={18} />
-            Search Existing Owner
+            {t('actions.search')}
           </button>
         )}
       </div>
@@ -276,7 +279,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#2a2718]">Select Existing Owner</h2>
+              <h2 className="text-xl font-semibold text-[#2a2718]">{t('search.title')}</h2>
               <button
                 onClick={() => setShowSearch(false)}
                 className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
@@ -289,13 +292,13 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
               {/* Search input */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Search by name, national ID, phone or TIN
+                  {t('search.label')}
                 </label>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Type at least 2 characters..."
+                  placeholder={t('search.placeholder')}
                   className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                   autoFocus
                 />
@@ -305,7 +308,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
               {isSearching ? (
                 <div className="text-center py-8 text-gray-500">
                   <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#f0cd6e] border-t-transparent" />
-                  <p className="mt-2">Searching...</p>
+                  <p className="mt-2">{tCommon('searching')}</p>
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="max-h-60 overflow-y-auto border border-[#f0cd6e] rounded-lg divide-y">
@@ -318,9 +321,9 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
                       <div>
                         <div className="font-medium text-[#2a2718]">{owner.full_name}</div>
                         <div className="text-sm text-[#2a2718]/70">
-                          {owner.national_id && `ID: ${owner.national_id}`}
+                          {owner.national_id && `${t('fields.id')}: ${owner.national_id}`}
                           {owner.phone_number && ` • ${owner.phone_number}`}
-                          {owner.tin_number && ` • TIN: ${owner.tin_number}`}
+                          {owner.tin_number && ` • ${t('fields.tin')}: ${owner.tin_number}`}
                         </div>
                       </div>
                       <Check size={18} className="text-[#f0cd6e]" />
@@ -329,7 +332,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
                 </div>
               ) : searchTerm.length >= 2 ? (
                 <div className="text-center py-8 text-[#2a2718]/70">
-                  No matching owners found
+                  {t('search.noResults')}
                 </div>
               ) : null}
 
@@ -339,7 +342,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
                   className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <UserPlus size={18} />
-                  Create New Owner Instead
+                  {t('actions.createNew')}
                 </button>
               </div>
             </div>
@@ -354,16 +357,16 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             <div className="flex items-start gap-3">
               <UserCheck size={20} className="text-[#2a2718] mt-0.5" />
               <div>
-                <h3 className="font-medium text-[#2a2718]">Using Existing Owner</h3>
+                <h3 className="font-medium text-[#2a2718]">{t('selected.title')}</h3>
                 <p className="text-[#2a2718] mt-1">
                   <span className="font-medium">{selectedOwner.full_name}</span>
-                  {selectedOwner.national_id && ` (ID: ${selectedOwner.national_id})`}
+                  {selectedOwner.national_id && ` (${t('fields.id')}: ${selectedOwner.national_id})`}
                 </p>
                 <p className="text-sm text-[#2a2718]/70 mt-1">
-                  Owner ID: {selectedOwner.owner_id}
+                  {t('selected.ownerId')}: {selectedOwner.owner_id}
                 </p>
                 <p className="text-sm text-[#2a2718]/70 mt-1">
-                  You can modify the acquisition date below. Owner details cannot be changed.
+                  {t('selected.note')}
                 </p>
               </div>
             </div>
@@ -371,7 +374,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
               onClick={handleClearSelected}
               className="text-[#2a2718] hover:text-[#2a2718]/80 text-sm font-medium"
             >
-              Change
+              {t('actions.change')}
             </button>
           </div>
         </div>
@@ -390,12 +393,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Full Name *
+                {t('fields.fullName')} *
               </label>
               <input
                 {...register("full_name")}
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                placeholder="e.g. John Doe"
+                placeholder={t('placeholders.fullName')}
               />
               {errors.full_name && (
                 <p className="mt-1 text-sm text-red-600">
@@ -407,12 +410,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             {/* National ID */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                National ID *
+                {t('fields.nationalId')} *
               </label>
               <input
                 {...register("national_id")}
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                placeholder="1234567890"
+                placeholder={t('placeholders.nationalId')}
               />
               {errors.national_id && (
                 <p className="mt-1 text-sm text-red-600">
@@ -424,12 +427,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             {/* Phone Number */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Phone Number *
+                {t('fields.phone')} *
               </label>
               <input
                 {...register("phone_number")}
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                placeholder="+251911223344"
+                placeholder={t('placeholders.phone')}
               />
               {errors.phone_number && (
                 <p className="mt-1 text-sm text-red-600">
@@ -441,12 +444,12 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             {/* TIN Number */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                TIN Number
+                {t('fields.tin')}
               </label>
               <input
                 {...register("tin_number")}
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                placeholder="Optional"
+                placeholder={tCommon('optional')}
               />
               {errors.tin_number && (
                 <p className="mt-1 text-sm text-red-600">
@@ -460,7 +463,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Full Name
+                {t('fields.fullName')}
               </label>
               <input
                 type="text"
@@ -471,7 +474,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                National ID
+                {t('fields.nationalId')}
               </label>
               <input
                 type="text"
@@ -482,7 +485,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Phone Number
+                {t('fields.phone')}
               </label>
               <input
                 type="text"
@@ -493,11 +496,11 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                TIN Number
+                {t('fields.tin')}
               </label>
               <input
                 type="text"
-                value={selectedOwner.tin_number || "Not provided"}
+                value={selectedOwner.tin_number || tCommon('notProvided')}
                 disabled
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
@@ -508,7 +511,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
         {/* Acquisition Date - Always shown */}
         <div className={selectedOwner ? "md:col-span-2" : "md:col-span-2"}>
           <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-            Acquisition Date *
+            {t('fields.acquiredAt')} *
           </label>
           <input
             type="date"
@@ -523,7 +526,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           )}
           {selectedOwner && (
             <p className="mt-1 text-sm text-[#2a2718]/70">
-              Date when this owner acquired the parcel
+              {t('hints.acquiredAt')}
             </p>
           )}
         </div>
@@ -535,7 +538,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             onClick={prevStep}
             className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
           >
-            ← Back
+            ← {t('actions.back')}
           </button>
           
           <button
@@ -543,19 +546,19 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
             disabled={isSubmitting || isLoading}
             className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
-            {isSubmitting ? "Saving..." : selectedOwner ? "Link Owner & Continue →" : "Save Owner & Continue →"}
+            {isSubmitting ? tCommon('saving') : selectedOwner ? t('actions.linkAndContinue') : t('actions.saveAndContinue')}
           </button>
         </div>
       </form>
 
       {/* Help text */}
       <div className="mt-6 p-4 bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-xl">
-        <h4 className="font-medium text-[#2a2718] mb-1">Note:</h4>
+        <h4 className="font-medium text-[#2a2718] mb-1">{t('note.title')}:</h4>
         <ul className="text-sm text-[#2a2718]/70 space-y-1">
-          <li>• You can either create a new owner or link an existing one</li>
-          <li>• When linking an existing owner, their details are shown but cannot be edited</li>
-          <li>• Only one owner can be registered per wizard session</li>
-          <li>• For multiple owners, submit this session first then add additional owners later</li>
+          <li>• {t('note.item1')}</li>
+          <li>• {t('note.item2')}</li>
+          <li>• {t('note.item3')}</li>
+          <li>• {t('note.item4')}</li>
         </ul>
       </div>
     </>

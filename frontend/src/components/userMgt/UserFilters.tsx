@@ -1,5 +1,6 @@
-// src/components/admin/UserFilters.tsx
+// src/components/userMgt/UserFilters.tsx
 import { Filter } from 'lucide-react';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface UserFiltersProps {
   searchTerm: string;
@@ -22,6 +23,8 @@ const UserFilters = ({
   availableRoles,
   getRoleDisplayName,
 }: UserFiltersProps) => {
+  const { t } = useTranslate('users');
+
   return (
     <div className="bg-white rounded-2xl p-6 shadow border border-[#f0cd6e]">
       <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -29,7 +32,7 @@ const UserFilters = ({
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by name or username..."
+              placeholder={t('filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
@@ -43,7 +46,7 @@ const UserFilters = ({
             onChange={(e) => onRoleFilterChange(e.target.value)}
             className="px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white text-[#2a2718]"
           >
-            <option value="all">All Roles</option>
+            <option value="all">{t('filters.allRoles')}</option>
             {availableRoles.map(role => (
               <option key={role} value={role}>
                 {getRoleDisplayName(role)}
@@ -55,9 +58,9 @@ const UserFilters = ({
             onChange={(e) => onStatusFilterChange(e.target.value)}
             className="px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white text-[#2a2718]"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="suspended">Suspended Only</option>
+            <option value="all">{t('filters.allStatuses')}</option>
+            <option value="active">{t('filters.active')}</option>
+            <option value="suspended">{t('filters.suspended')}</option>
           </select>
         </div>
       </div>

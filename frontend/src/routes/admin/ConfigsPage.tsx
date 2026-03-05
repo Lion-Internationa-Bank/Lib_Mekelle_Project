@@ -1,6 +1,7 @@
 // src/routes/admin/ConfigsPage.tsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslate } from "../../i18n/useTranslate";
 import {
   getConfig,
   saveConfig,
@@ -33,10 +34,6 @@ const CITY_ADMIN_CATEGORIES = [
   "LAND_USE",
   "ENCUMBRANCE_TYPE",
   "TRANSFER_TYPE",
-] as const;
-
-const REVENUE_ADMIN_CATEGORIES = [
-  "PAYMENT_METHOD",
 ] as const;
 
 // Category metadata - config categories only (REVENUE_TYPE removed)
@@ -73,18 +70,15 @@ const categoryMeta: Record<
     desc: "Methods of property transfer (e.g., Sale, Gift, Inheritance)",
     type: "multiple",
   },
-  PAYMENT_METHOD: {
-    label: "Payment Methods",
-    icon: CreditCard,
-    desc: "Accepted payment channels (e.g., Bank, Mobile Money)",
-    type: "multiple",
-  },
 } as const;
 
 type AllowedCategory = keyof typeof categoryMeta;
 
 const ConfigsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslate('configs');
+  const { t: tCommon } = useTranslate('common');
+  const { t: tAuth } = useTranslate('auth');
 
   const [categories, setCategories] = useState<AllowedCategory[]>([]);
   const [selectedCategory, setSelectedCategory] =
@@ -105,9 +99,7 @@ const ConfigsPage: React.FC = () => {
 
     if (user.role === "CITY_ADMIN") {
       allowed = [...CITY_ADMIN_CATEGORIES] as AllowedCategory[];
-    } else if (user.role === "REVENUE_ADMIN") {
-      allowed = [...REVENUE_ADMIN_CATEGORIES] as AllowedCategory[];
-    }
+    } 
 
     setCategories(allowed);
 
@@ -145,7 +137,7 @@ const ConfigsPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Failed to load configuration:", err);
-        setError("Failed to load configuration");
+        setError(t('errors.fetchFailed'));
         setOptions([]);
         setDescription("");
       } finally {
@@ -154,7 +146,7 @@ const ConfigsPage: React.FC = () => {
     };
 
     loadData();
-  }, [selectedCategory]);
+  }, [selectedCategory, t]);
 
   const handleSave = async () => {
     if (!selectedCategory) return;
@@ -164,13 +156,13 @@ const ConfigsPage: React.FC = () => {
 
     try {
       if (options.some((opt) => !opt.value.trim())) {
-        setError("All option values are required");
+        setError(t('validation.valueRequired'));
         setSaving(false);
         return;
       }
       const values = options.map((opt) => opt.value.trim().toLowerCase());
       if (new Set(values).size !== values.length) {
-        setError("Option values must be unique");
+        setError(t('validation.valueUnique'));
         setSaving(false);
         return;
       }
@@ -185,7 +177,7 @@ const ConfigsPage: React.FC = () => {
 
       const res = await saveConfig(selectedCategory, configData);
       if (res.success && res.data) {
-        setSuccess("Configuration saved successfully!");
+        setSuccess(t('messages.saveSuccess'));
         setTimeout(() => setSuccess(""), 3000);
         const refreshed = await getConfig(selectedCategory);
         if (refreshed.success && refreshed.data) {
@@ -196,11 +188,11 @@ const ConfigsPage: React.FC = () => {
           setDescription(refreshed.data.description || "");
         }
       } else {
-        setError(res.error || "Failed to save configuration");
+        setError(res.error || t('errors.saveFailed'));
       }
     } catch (err) {
       console.error("Network error while saving:", err);
-      setError("Network error while saving");
+      setError(t('errors.networkError'));
     } finally {
       setSaving(false);
     }
@@ -230,11 +222,10 @@ const ConfigsPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-[#2a2718] mb-3">
-            Access Denied
+            {t('accessDenied.title')}
           </h2>
           <p className="text-[#2a2718]/70 mb-6">
-            Only City Administrators and Revenue Administrators can manage
-            system configurations.
+            {t('accessDenied.message')}
           </p>
         </div>
       </div>
@@ -249,12 +240,12 @@ const ConfigsPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-[#2a2718] flex items-center gap-3">
               <Settings className="w-8 h-8 text-[#f0cd6e]" />
-              System Configurations
+              {t('pageTitle')}
             </h1>
             <p className="text-[#2a2718]/70 mt-1">
               {user.role === "CITY_ADMIN"
-                ? "Manage land and property-related configuration options"
-                : "Manage payment configuration options"}
+                ? t('pageDescription.cityAdmin')
+                : t('pageDescription.revenueAdmin')}
             </p>
           </div>
 
@@ -266,7 +257,7 @@ const ConfigsPage: React.FC = () => {
                 <Percent className="w-5 h-5 text-[#f0cd6e]" />
               )}
               <span className="font-medium text-[#2a2718]">
-                {user.role.replace("_", " ")}
+                {tAuth(`roles.${user.role}`)}
               </span>
             </div>
           </div>
@@ -298,13 +289,13 @@ const ConfigsPage: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm p-5 sticky top-6 border border-[#f0cd6e]">
               <h2 className="text-lg font-semibold text-[#2a2718] mb-5 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-[#f0cd6e]" />
-                Allowed Categories
+                {t('sidebar.title')}
               </h2>
 
               <div className="space-y-2">
                 {categories.length === 0 ? (
                   <p className="text-[#2a2718]/70 text-sm py-4 text-center">
-                    No categories available for your role
+                    {t('sidebar.noCategories')}
                   </p>
                 ) : (
                   categories.map((cat) => {
@@ -332,10 +323,10 @@ const ConfigsPage: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <div className="font-medium">
-                            {categoryMeta[cat]?.label}
+                            {t(`categories.${cat}.label`)}
                           </div>
                           <div className="text-xs text-[#2a2718]/70 mt-0.5 line-clamp-1">
-                            {categoryMeta[cat]?.desc}
+                            {t(`categories.${cat}.description`)}
                           </div>
                         </div>
                       </button>
@@ -364,10 +355,10 @@ const ConfigsPage: React.FC = () => {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-[#2a2718]">
-                        {categoryMeta[selectedCategory]?.label}
+                        {t(`categories.${selectedCategory}.label`)}
                       </h2>
                       <p className="text-[#2a2718]/70 mt-1">
-                        {categoryMeta[selectedCategory]?.desc}
+                        {t(`categories.${selectedCategory}.description`)}
                       </p>
                     </div>
                   </div>
@@ -379,7 +370,7 @@ const ConfigsPage: React.FC = () => {
                     <div className="text-center py-20">
                       <Loader2 className="w-12 h-12 text-[#f0cd6e] animate-spin mx-auto mb-4" />
                       <p className="text-[#2a2718]">
-                        Loading configuration...
+                        {t('loading')}
                       </p>
                     </div>
                   ) : (
@@ -388,14 +379,14 @@ const ConfigsPage: React.FC = () => {
                       {/* Options for config categories */}
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-semibold text-[#2a2718]">
-                          Configuration Options
+                          {t('options.title')}
                         </h3>
                         <button
                           onClick={addOption}
                           className="flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/10 text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition border border-[#f0cd6e]"
                         >
                           <Plus className="w-4 h-4" />
-                          Add Option
+                          {t('options.addButton')}
                         </button>
                       </div>
 
@@ -403,10 +394,10 @@ const ConfigsPage: React.FC = () => {
                         <div className="border-2 border-dashed border-[#f0cd6e] rounded-xl p-10 text-center">
                           <Tag className="w-12 h-12 text-[#f0cd6e]/30 mx-auto mb-3" />
                           <p className="text-[#2a2718] font-medium mb-2">
-                            No options configured yet
+                            {t('options.empty.title')}
                           </p>
                           <p className="text-sm text-[#2a2718]/70">
-                            Add your first configuration option above
+                            {t('options.empty.description')}
                           </p>
                         </div>
                       ) : (
@@ -430,7 +421,7 @@ const ConfigsPage: React.FC = () => {
                                       e.target.value
                                     )
                                   }
-                                  placeholder="Option value (required)"
+                                  placeholder={t('options.valuePlaceholder')}
                                   className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                                 />
                                 <input
@@ -442,7 +433,7 @@ const ConfigsPage: React.FC = () => {
                                       e.target.value
                                     )
                                   }
-                                  placeholder="Description (optional)"
+                                  placeholder={t('options.descriptionPlaceholder')}
                                   className="w-full p-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                                 />
                               </div>
@@ -450,7 +441,7 @@ const ConfigsPage: React.FC = () => {
                               <button
                                 onClick={() => removeOption(index)}
                                 className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Remove option"
+                                title={t('options.remove')}
                               >
                                 <Trash2 className="w-5 h-5" />
                               </button>
@@ -473,12 +464,12 @@ const ConfigsPage: React.FC = () => {
                           {saving ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
-                              Saving...
+                              {tCommon('saving')}
                             </>
                           ) : (
                             <>
                               <Save className="w-5 h-5" />
-                              Save Configuration
+                              {t('saveButton')}
                             </>
                           )}
                         </button>
@@ -486,7 +477,7 @@ const ConfigsPage: React.FC = () => {
                         {options.some((opt) => !opt.value.trim()) ? (
                           <p className="text-sm text-red-500 mt-3 text-center flex items-center justify-center gap-2">
                             <AlertCircle className="w-4 h-4" />
-                            Fill all option values before saving
+                            {t('validation.valueRequired')}
                           </p>
                         ) : null}
                       </div>
@@ -499,14 +490,14 @@ const ConfigsPage: React.FC = () => {
                 <div className="max-w-lg mx-auto">
                   <Settings className="w-16 h-16 text-[#f0cd6e]/30 mx-auto mb-6" />
                   <h3 className="text-2xl font-semibold text-[#2a2718] mb-3">
-                    No Category Selected
+                    {t('noCategory.title')}
                   </h3>
                   <p className="text-[#2a2718]/70 mb-8">
-                    Choose a configuration category from the list on the left
+                    {t('noCategory.description')}
                   </p>
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0cd6e]/5 rounded-lg text-sm text-[#2a2718] border border-[#f0cd6e]">
                     <Info className="w-4 h-4" />
-                    {categories.length} categories available for your role
+                    {t('noCategory.categoriesAvailable', { count: categories.length })}
                   </div>
                 </div>
               </div>

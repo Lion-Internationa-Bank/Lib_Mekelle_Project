@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslate } from "../../../i18n/useTranslate";
 import { useWizard } from "../../../contexts/WizardContext";
 import type { LeaseStepProps } from "../../../types/wizard";
 import {
@@ -12,6 +13,8 @@ import { toast } from 'sonner';
 import { Receipt, Ruler, FileText } from "lucide-react";
 
 const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
+  const { t } = useTranslate('leaseStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, saveStep, isLoading } = useWizard();
   const today = new Date().toISOString().split("T")[0];
 
@@ -64,10 +67,10 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
   const onSubmit = async (data: LeaseStepFormData) => {
     try {
       await saveStep('lease', data);
-      toast.success('Lease information saved');
+      toast.success(t('messages.saveSuccess'));
       nextStep();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save lease information');
+      toast.error(err.message || t('errors.saveFailed'));
       console.error("Save error:", err);
     }
   };
@@ -77,16 +80,16 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
     return (
       <div className="text-center py-12">
         <p className="text-2xl font-bold text-red-600 mb-4">
-          Missing Owner Information
+          {t('errors.missingOwner')}
         </p>
         <p className="text-gray-600 mb-6">
-          Please complete the Owner step first.
+          {t('errors.missingOwnerDesc')}
         </p>
         <button
           onClick={prevStep}
           className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-medium"
         >
-          ← Go Back
+          ← {t('actions.back')}
         </button>
       </div>
     );
@@ -97,10 +100,10 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
   return (
     <>
       <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-        Register Lease Agreement
+        {t('title')}
       </h2>
       <p className="text-[#2a2718]/70 mb-8">
-        Optional: Register lease agreement for the parcel
+        {t('subtitle')}
       </p>
 
       <form
@@ -110,13 +113,13 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         {/* Main Lease Information */}
         <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
           <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
-            Lease Payment Information
+            {t('sections.payment')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Price per m² */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Price per m² (ETB) *
+                {t('fields.pricePerM2')} *
               </label>
               <input
                 type="number"
@@ -135,7 +138,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Total Lease Amount */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Total Lease Amount (ETB) *
+                {t('fields.totalLeaseAmount')} *
               </label>
               <input
                 type="number"
@@ -154,7 +157,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Down Payment Amount */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Down Payment Amount (ETB)
+                {t('fields.downPayment')}
               </label>
               <input
                 type="number"
@@ -173,7 +176,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Other Payment Amount */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Other Payment Amount (ETB)
+                {t('fields.otherPayment')}
               </label>
               <input
                 type="number"
@@ -196,7 +199,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <div className="flex items-center gap-2 mb-4">
             <Receipt className="w-5 h-5 text-[#2a2718]" />
             <h3 className="text-lg font-semibold text-[#2a2718]">
-              Additional Fees 
+              {t('sections.additionalFees')}
             </h3>
           </div>
           
@@ -205,7 +208,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <Ruler size={16} className="text-[#2a2718]" />
-                Demarcation Fee (ETB)
+                {t('fields.demarcationFee')}
               </label>
               <input
                 type="number"
@@ -220,17 +223,16 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                   {errors.demarcation_fee.message}
                 </p>
               )}
-           
             </div>
 
             {/* Engineering Service Fee */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <FileText size={16} className="text-[#2a2718]" />
-                Engineering Service Fee (ETB)
+                {t('fields.engineeringFee')}
               </label>
               <input
-              type="number"
+                type="number"
                 min="0"
                 step="0.01"
                 {...register("engineering_service_fee", { valueAsNumber: true })}
@@ -242,15 +244,13 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                   {errors.engineering_service_fee.message}
                 </p>
               )}
-             
             </div>
 
             {/* Contract Registration Fee */}
-                  
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <Receipt size={16} className="text-[#2a2718]" />
-                Contract Registration Fee (ETB)
+                {t('fields.registrationFee')}
               </label>
               <input
                 type="number"
@@ -266,24 +266,22 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
                 </p>
               )}
               <p className="text-xs text-[#2a2718]/70 mt-1">
-                Contract registration fee amount
+                {t('hints.registrationFee')}
               </p>
             </div>
           </div>
         </div>
-         
-      
 
         {/* Period Information */}
         <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
           <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
-            Lease Period & Dates
+            {t('sections.period')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Lease Period */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Lease Period (Years) *
+                {t('fields.leasePeriod')} *
               </label>
               <input
                 type="number"
@@ -301,7 +299,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Payment Term */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Payment Term (Years) *
+                {t('fields.paymentTerm')} *
               </label>
               <input
                 type="number"
@@ -319,7 +317,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Contract Date */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Contract Date *
+                {t('fields.contractDate')} *
               </label>
               <input
                 type="date"
@@ -337,7 +335,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Start Date */}
             <div>
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Start Date *
+                {t('fields.startDate')} *
               </label>
               <input
                 type="date"
@@ -355,16 +353,16 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             {/* Expiry Date (calculated, read-only) */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-                Expiry Date (calculated)
+                {t('fields.expiryDate')}
               </label>
               <input
                 type="text"
-                value={expiryDate || "Enter start date and lease period"}
+                value={expiryDate || t('placeholders.expiryDate')}
                 readOnly
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/10 text-[#2a2718]"
               />
               <p className="text-xs text-[#2a2718]/70 mt-1">
-                Calculated based on start date + lease period
+                {t('hints.expiryDate')}
               </p>
             </div>
           </div>
@@ -373,16 +371,16 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
         {/* Legal Framework */}
         <div className="bg-white p-6 rounded-xl border border-[#f0cd6e]">
           <h3 className="text-lg font-semibold text-[#2a2718] mb-4">
-            Legal Information
+            {t('sections.legal')}
           </h3>
           <div>
             <label className="block text-sm font-semibold text-[#2a2718] mb-2">
-              Legal Framework *
+              {t('fields.legalFramework')} *
             </label>
             <textarea
               rows={3}
               {...register("legal_framework")}
-              placeholder="e.g. Proclamation No. 721/2011, Urban Lands Lease Holding Proclamation"
+              placeholder={t('placeholders.legalFramework')}
               className="w-full px-4 py-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] resize-none"
             />
             {errors.legal_framework && (
@@ -398,7 +396,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <p className="text-sm text-[#2a2718] flex items-center gap-2">
             <Receipt size={16} />
             <span>
-              <strong>Note:</strong> Additional fees (demarcation, engineering, registration) are stored separately and do not affect the lease payment calculations or installment plans.
+              <strong>{t('info.note')}:</strong> {t('info.feesNote')}
             </span>
           </p>
         </div>
@@ -411,7 +409,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
               onClick={prevStep}
               className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
-              ← Back
+              ← {t('actions.back')}
             </button>
             
             <button
@@ -419,7 +417,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
               onClick={nextStep}
               className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
-              Skip Lease
+              {t('actions.skip')}
             </button>
           </div>
           
@@ -428,7 +426,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
             disabled={isSubmitting || isLoading}
             className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
-            {isSubmitting ? "Saving..." : "Save Lease & Continue →"}
+            {isSubmitting ? tCommon('saving') : t('actions.saveAndContinue')}
           </button>
         </div>
       </form>

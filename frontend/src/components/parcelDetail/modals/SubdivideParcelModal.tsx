@@ -1,5 +1,6 @@
-// src/components/modals/SubdivideParcelModal.tsx
+// src/components/parcelDetail/modals/SubdivideParcelModal.tsx
 import { useState } from 'react';
+import { useTranslate } from "../../../i18n/useTranslate";
 import { X, Plus, Trash2, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { subdivideParcel } from './../../../services/parcelDetailApi';
 import SubdivisionDocsUploadModal from './SubdivisionDocsUploadModal';
@@ -19,6 +20,9 @@ export default function SubdivideParcelModal({
   parcel,
   onSuccess,
 }: SubdivideParcelModalProps) {
+  const { t } = useTranslate('subdivideModal');
+  const { t: tCommon } = useTranslate('common');
+  
   const [children, setChildren] = useState<Array<{
     upin: string;
     file_number: string;
@@ -69,7 +73,7 @@ export default function SubdivideParcelModal({
 
   const removeChild = (index: number) => {
     if (children.length <= 2) {
-      setError("Minimum 2 child parcels required for subdivision");
+      setError(t('errors.minChildren'));
       return;
     }
     setChildren(children.filter((_, i) => i !== index));
@@ -103,30 +107,30 @@ export default function SubdivideParcelModal({
 
       if (totalChildArea > parentArea + 0.1) {
         throw new Error(
-          `Total child area (${totalChildArea.toFixed(2)} m²) exceeds parent area (${parentArea.toFixed(2)} m²)`
+          t('errors.areaExceeds', { total: totalChildArea.toFixed(2), parent: parentArea.toFixed(2) })
         );
       }
 
       if (Math.abs(totalChildArea - parentArea) > 0.1) {
         throw new Error(
-          `Total child area (${totalChildArea.toFixed(2)} m²) must equal parent area (${parentArea.toFixed(2)} m²)`
+          t('errors.areaMismatch', { total: totalChildArea.toFixed(2), parent: parentArea.toFixed(2) })
         );
       }
 
       if (children.some(c => Number(c.total_area_m2) <= 0)) {
-        throw new Error("All child parcels must have positive area");
+        throw new Error(t('errors.areaPositive'));
       }
 
       // Check duplicate UPINs
       const upins = new Set(children.map(c => c.upin.trim()));
       if (upins.size !== children.length) {
-        throw new Error("Duplicate UPINs detected. Each child must have a unique UPIN.");
+        throw new Error(t('errors.duplicateUpin'));
       }
 
       // Check duplicate file numbers
       const fileNumbers = new Set(children.map(c => c.file_number.trim()));
       if (fileNumbers.size !== children.length) {
-        throw new Error("Duplicate file numbers detected. Each child must have a unique file number.");
+        throw new Error(t('errors.duplicateFileNumber'));
       }
 
       // Prepare payload (filter out undefined/empty boundary fields)
@@ -149,15 +153,15 @@ export default function SubdivideParcelModal({
         setApprovalRequestId(response.data.approval_request_id);
         setSubmittedChildParcels(children);
         setShowDocsUpload(true); // Show the document upload modal
-        toast.success(response.message || "Subdivision request submitted for approval");
+        toast.success(response.message || t('messages.submitted'));
       } else {
         // Immediate execution (self-approval)
-        toast.success(response.message || "Parcel subdivided successfully");
+        toast.success(response.message || t('messages.success'));
         await onSuccess();
         onClose();
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to subdivide parcel");
+      toast.error(err.message || t('errors.failed'));
     } finally {
       setLoading(false);
     }
@@ -192,10 +196,10 @@ export default function SubdivideParcelModal({
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 <FileText size={24} />
-                Subdivide Parcel
+                {t('title')}
               </h2>
               <p className="text-white/80 mt-1">
-                Parent UPIN: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{parcel.upin}</span>
+                {t('parentUpin')}: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{parcel.upin}</span>
               </p>
             </div>
             <button 
@@ -213,25 +217,25 @@ export default function SubdivideParcelModal({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-[#2a2718] font-medium text-lg">
-                    Parent Parcel: <strong>{parcel.upin}</strong>
+                    {t('parentParcel')}: <strong>{parcel.upin}</strong>
                   </p>
                   <p className="text-sm text-[#2a2718]/70 mt-2">
-                    Total Area: <strong>{parentArea.toLocaleString()} m²</strong>
+                    {t('totalArea')}: <strong>{parentArea.toLocaleString()} m²</strong>
                   </p>
                   <p className="text-sm text-[#2a2718]/70 mt-3">
-                    <span className="font-medium">Area Balance:</span>{' '}
+                    <span className="font-medium">{t('areaBalance')}:</span>{' '}
                     {totalChildArea > 0 ? (
                       <span className={isValidArea ? 'text-green-700' : 'text-red-700'}>
                         {totalChildArea.toFixed(2)} m² / {parentArea.toFixed(2)} m²
-                        {isValidArea ? ' ✓' : ` (${areaDifference.toFixed(2)} m² difference)`}
+                        {isValidArea ? ' ✓' : ` (${t('difference', { diff: areaDifference.toFixed(2) })}`}
                       </span>
                     ) : (
-                      'Enter child areas'
+                      t('enterAreas')
                     )}
                   </p>
                 </div>
                 <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-[#f0cd6e]">
-                  <span className="text-sm font-medium text-[#2a2718]/70">Owners to copy:</span>
+                  <span className="text-sm font-medium text-[#2a2718]/70">{t('ownersToCopy')}:</span>
                   <span className="ml-2 text-lg font-bold text-[#f0cd6e]">{parcel.owners?.length || 0}</span>
                 </div>
               </div>
@@ -253,7 +257,7 @@ export default function SubdivideParcelModal({
                     <span className="w-8 h-8 bg-[#f0cd6e]/20 rounded-full flex items-center justify-center text-[#2a2718] font-bold">
                       {String.fromCharCode(65 + index)}
                     </span>
-                    Child Parcel {String.fromCharCode(65 + index)}
+                    {t('childParcel', { letter: String.fromCharCode(65 + index) })}
                   </h3>
                   {children.length > 2 && (
                     <button
@@ -270,7 +274,7 @@ export default function SubdivideParcelModal({
                   {/* UPIN */}
                   <div>
                     <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                      UPIN *
+                      {t('fields.upin')} *
                     </label>
                     <input
                       value={child.upin}
@@ -284,7 +288,7 @@ export default function SubdivideParcelModal({
                   {/* File Number */}
                   <div>
                     <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                      File Number *
+                      {t('fields.fileNumber')} *
                     </label>
                     <input
                       value={child.file_number}
@@ -298,7 +302,7 @@ export default function SubdivideParcelModal({
                   {/* Area */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                      Total Area (m²) *
+                      {t('fields.totalArea')} *
                     </label>
                     <input
                       type="number"
@@ -323,7 +327,7 @@ export default function SubdivideParcelModal({
                   >
                     {child.showBoundaries ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     <span className="ml-1.5">
-                      {child.showBoundaries ? 'Hide' : 'Add/Edit'} Boundary Details (optional)
+                      {child.showBoundaries ? t('hideBoundaries') : t('addBoundaries')}
                     </span>
                   </button>
 
@@ -331,13 +335,13 @@ export default function SubdivideParcelModal({
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-[#f0cd6e]">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                          Boundary Coordinates (JSON)
+                          {t('fields.boundaryCoords')}
                         </label>
                         <textarea
                           value={child.boundary_coords || ''}
                           onChange={e => updateChild(index, 'boundary_coords', e.target.value)}
                           rows={4}
-                          placeholder='{"type":"Polygon","coordinates":[[[...]]]}'
+                          placeholder={t('placeholders.boundaryCoords')}
                           className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] font-mono text-sm"
                           disabled={loading}
                         />
@@ -345,7 +349,7 @@ export default function SubdivideParcelModal({
 
                       <div>
                         <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                          North Boundary
+                          {t('fields.north')}
                         </label>
                         <input
                           value={child.boundary_north || ''}
@@ -357,7 +361,7 @@ export default function SubdivideParcelModal({
 
                       <div>
                         <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                          East Boundary
+                          {t('fields.east')}
                         </label>
                         <input
                           value={child.boundary_east || ''}
@@ -369,7 +373,7 @@ export default function SubdivideParcelModal({
 
                       <div>
                         <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                          South Boundary
+                          {t('fields.south')}
                         </label>
                         <input
                           value={child.boundary_south || ''}
@@ -381,7 +385,7 @@ export default function SubdivideParcelModal({
 
                       <div>
                         <label className="block text-sm font-medium text-[#2a2718] mb-1.5">
-                          West Boundary
+                          {t('fields.west')}
                         </label>
                         <input
                           value={child.boundary_west || ''}
@@ -403,7 +407,7 @@ export default function SubdivideParcelModal({
               className="w-full py-4 border-2 border-dashed border-[#f0cd6e] rounded-xl text-[#2a2718] hover:bg-[#f0cd6e]/10 hover:border-[#2a2718] flex items-center justify-center gap-2 mt-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={20} />
-              Add Another Child Parcel
+              {t('addChild')}
             </button>
 
             {/* Footer Actions */}
@@ -413,7 +417,7 @@ export default function SubdivideParcelModal({
                 disabled={loading}
                 className="px-8 py-3 border border-[#f0cd6e] rounded-xl hover:bg-[#f0cd6e]/20 disabled:opacity-50 text-[#2a2718]"
               >
-                Cancel
+                {tCommon('cancel')}
               </button>
 
               <button
@@ -424,10 +428,10 @@ export default function SubdivideParcelModal({
                 {loading ? (
                   <>
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Processing...
+                    {tCommon('processing')}
                   </>
                 ) : (
-                  'Submit for Approval'
+                  t('submitForApproval')
                 )}
               </button>
             </div>

@@ -1,5 +1,6 @@
 // src/components/parcelDetail/sections/LeaseSection.tsx
 import { useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import LeaseCard from "../cards/LeaseCard";
 import EditLeaseModal from "../modals/EditLeaseModal";
 import CreateLeaseModal from "../modals/CreateLeaseModal";
@@ -16,6 +17,8 @@ type Props = {
 };
 
 const LeaseSection = ({ parcel, lease, onReload }: Props) => {
+  const { t } = useTranslate('leaseSection');
+  const { t: tCommon } = useTranslate('common');
   const [editing, setEditing] = useState(false);
   const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
@@ -45,18 +48,18 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
     if (result?.approval_request_id) {
       setCurrentApprovalRequest({
         id: result.approval_request_id,
-        title: "Upload Lease Documents",
-        description: `Upload supporting documents for lease agreement on parcel ${parcel.upin}`,
+        title: t('approval.title'),
+        description: t('approval.description', { upin: parcel.upin }),
         resultData: result
       });
       setShowApprovalDocsModal(true);
-      toast.success(result.message || "Lease creation request submitted for approval");
+      toast.success(result.message || t('messages.submitted'));
     } 
     // If immediate execution (self-approval or no approval needed)
     else if (result?.lease_id) {
       setCreatedLeaseId(result.lease_id);
       setShowLeaseDocsUpload(true);
-      toast.success(result.message || "Lease agreement created successfully");
+      toast.success(result.message || t('messages.created'));
     }
     
     await onReload();
@@ -89,7 +92,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
   const handleEditSuccess = async () => {
     await onReload();
     setEditing(false);
-    toast.success("Lease agreement updated successfully");
+    toast.success(t('messages.updated'));
   };
 
   return (
@@ -97,14 +100,14 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
       <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-[#2a2718]">
-            Lease Agreement
+            {t('title')}
           </h2>
           {lease && isSubcityNormal && (
             <button
               onClick={() => setEditing(true)}
               className="px-5 py-2 text-sm font-medium text-[#f0cd6e] bg-white border border-[#f0cd6e] rounded-lg hover:bg-[#f0cd6e]/20 hover:border-[#2a2718] transition-all shadow-sm"
             >
-              Edit Lease
+              {t('editButton')}
             </button>
           )}
         </div>
@@ -114,19 +117,19 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
         ) : isSubcityNormal ? (
           <div className="text-center py-12 bg-[#f0cd6e]/5 rounded-xl border border-dashed border-[#f0cd6e]">
             <p className="text-[#2a2718] mb-2">
-              No lease agreement recorded for this parcel yet
+              {t('empty.title')}
             </p>
             <p className="text-sm text-[#2a2718]/70 mb-6">
-              Create a lease agreement and submit for approval.
+              {t('empty.description')}
               {user?.role === "SUBCITY_NORMAL" && (
-                " Your request will be reviewed by a higher authority."
+                ` ${t('empty.approvalNote')}`
               )}
             </p>
             <button
               onClick={handleCreateLeaseClick}
               className="inline-flex items-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
             >
-              + Create Lease Agreement
+              + {t('empty.createButton')}
             </button>
           </div>
         ) : null}
@@ -160,36 +163,36 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-[#2a2718] mb-2">
-                    Lease Created ✓
+                    {t('upload.title')}
                   </h2>
                   <p className="text-[#2a2718]/70">
-                    Upload supporting documents for{" "}
+                    {t('upload.description')}{" "}
                     <span className="font-mono font-bold text-[#f0cd6e]">
                       {parcel.upin}
                     </span>
                   </p>
                 </div>
                 <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full whitespace-nowrap">
-                  Optional Step
+                  {t('upload.optional')}
                 </span>
               </div>
             </div>
 
             <div className="p-6 md:p-8">
               <GenericDocsUpload
-                title="Lease agreement documents"
+                title={t('upload.docsTitle')}
                 upin={parcel.upin}
-                subCity={parcel.sub_city?.name || "—"}
+                subCity={parcel.sub_city?.name || tCommon('notAvailable')}
                 leaseId={createdLeaseId}
                 hideTitle={true}
                 allowedDocTypes={[
-                  { value: "LEASE_CONTRACT", label: "Signed Lease Contract" },
-                  { value: "PAYMENT_PROOF", label: "Payment Receipts" },
+                  { value: "LEASE_CONTRACT", label: t('upload.docTypes.contract') },
+                  { value: "PAYMENT_PROOF", label: t('upload.docTypes.paymentProof') },
                   {
                     value: "COUNCIL_DECISION",
-                    label: "Council/Board Decision",
+                    label: t('upload.docTypes.councilDecision'),
                   },
-                  { value: "OTHER", label: "Other Lease Document" },
+                  { value: "OTHER", label: t('upload.docTypes.other') },
                 ]}
                 onUploadSuccess={handleLeaseDocsDone}
               />
@@ -200,14 +203,14 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
                 onClick={handleSkipUpload}
                 className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
               >
-                Skip for now
+                {t('upload.skip')}
               </button>
 
               <button
                 onClick={handleLeaseDocsDone}
                 className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
-                Done – Close
+                {t('upload.done')}
                 <span className="text-lg">→</span>
               </button>
             </div>

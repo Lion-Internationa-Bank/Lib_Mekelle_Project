@@ -1,5 +1,8 @@
-// src/components/wizard/ValidationStep.tsx - FIXED VERSION
+// src/components/wizard/ParcelWizard/ValidationStep.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
+// import { useTranslate } from "../../../i18n/useTranslate";
+import { useTranslate } from "../../i18n/useTranslate";
+// import type { FinishStepProps } from "../types/wizard";
 import type { FinishStepProps } from "../../types/wizard";
 import { useWizard } from "../../contexts/WizardContext";
 import { toast } from 'sonner';
@@ -11,6 +14,8 @@ interface ValidationResult {
 }
 
 const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
+  const { t } = useTranslate('validationStep');
+  const { t: tCommon } = useTranslate('common');
   const { currentSession, validateSession, submitForApproval } = useWizard();
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -27,7 +32,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
   // Memoize the validation function
   const runValidation = useCallback(async () => {
     if (!currentSession) {
-      toast.error('No active session');
+      toast.error(t('errors.noSession'));
       return;
     }
     
@@ -51,20 +56,20 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           setValidationResult(result.data as ValidationResult);
         } else {
           console.error("Unexpected validation result structure:", result);
-          toast.error('Invalid validation response format');
+          toast.error(t('errors.invalidResponse'));
         }
       } else {
         console.error("Invalid validation result:", result);
-        toast.error('Failed to validate session');
+        toast.error(t('errors.validateFailed'));
       }
     } catch (error: any) {
       console.error("Validation error:", error);
-      toast.error(error.message || 'Failed to validate session');
+      toast.error(error.message || t('errors.validateFailed'));
     } finally {
       setIsValidating(false);
       console.log("Validation completed");
     }
-  }, [currentSession, validateSession]);
+  }, [currentSession, validateSession, t]);
 
   // Run validation ONCE when component mounts
   useEffect(() => {
@@ -81,161 +86,159 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
-
-  // In ValidationStep.tsx, modify the save as draft handler
-const handleSaveAsDraft = async () => {
-  try {
-    // If it's a rejected session, we're just updating it, not creating a new draft
-    if (currentSession?.status === 'REJECTED') {
-      toast.success("Changes saved. You can continue editing later.");
-    } else {
-      toast.info("Session saved as draft. You can continue later.");
+  const handleSaveAsDraft = async () => {
+    try {
+      // If it's a rejected session, we're just updating it, not creating a new draft
+      if (currentSession?.status === 'REJECTED') {
+        toast.success(t('messages.draftSavedRejected'));
+      } else {
+        toast.info(t('messages.draftSaved'));
+      }
+      onFinish();
+    } catch (error: any) {
+      toast.error(error.message || t('errors.draftFailed'));
     }
-    onFinish();
-  } catch (error: any) {
-    toast.error(error.message || "Failed to save draft");
-  }
-};
- // In ValidationStep.tsx, modify the submit handler
-const handleSubmit = async () => {
-  if (!currentSession || !validationResult?.valid) {
-    toast.error("Please fix validation errors before submitting");
-    return;
-  }
+  };
 
-  const isRejected = currentSession.status === 'REJECTED';
-  const confirmMessage = isRejected
-    ? "Are you sure you want to resubmit this rejected session for approval?"
-    : "Are you ready to submit this parcel registration for approval?";
-
-  if (!confirm(confirmMessage)) {
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    let result;
-    if (isRejected) {
-      // Use resubmit endpoint for rejected sessions
-      result = await wizardApi.resubmitSession(currentSession.session_id);
-    } else {
-      result = await submitForApproval();
+  const handleSubmit = async () => {
+    if (!currentSession || !validationResult?.valid) {
+      toast.error(t('errors.fixErrors'));
+      return;
     }
 
-    if (result.success) {
-      const message = isRejected
-        ? "Session resubmitted for approval. You will be notified when reviewed."
-        : result.data.requiresApproval
-          ? "Submitted for approval. You will be notified when reviewed."
-          : "Parcel registered successfully!";
-      
-      toast.success(message);
+    const isRejected = currentSession.status === 'REJECTED';
+    const confirmMessage = isRejected
+      ? t('confirm.resubmit')
+      : t('confirm.submit');
 
-      setTimeout(() => {
-        onFinish();
-      }, 2000);
-    } else {
-      toast.error(result.error || "Submission failed");
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      let result;
+      if (isRejected) {
+        // Use resubmit endpoint for rejected sessions
+        result = await wizardApi.resubmitSession(currentSession.session_id);
+      } else {
+        result = await submitForApproval();
+      }
+
+      if (result.success) {
+        const message = isRejected
+          ? t('messages.resubmitted')
+          : result.data.requiresApproval
+            ? t('messages.submittedForApproval')
+            : t('messages.registered');
+        
+        toast.success(message);
+
+        setTimeout(() => {
+          onFinish();
+        }, 2000);
+      } else {
+        toast.error(result.error || t('errors.submissionFailed'));
+        setIsSubmitting(false);
+      }
+    } catch (error: any) {
+      toast.error(error.message || t('errors.submissionFailed'));
       setIsSubmitting(false);
     }
-  } catch (error: any) {
-    toast.error(error.message || "Failed to submit for approval");
-    setIsSubmitting(false);
-  }
-};
+  };
 
   if (!currentSession) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-4"></div>
-        <p className="text-[#2a2718]">Loading session data...</p>
+        <p className="text-[#2a2718]">{t('loading')}</p>
       </div>
     );
   }
 
   // Get owner name safely
   const getOwnerName = () => {
-    if (!currentSession.owner_data) return "Not provided";
+    if (!currentSession.owner_data) return t('notProvided');
     
     if (Array.isArray(currentSession.owner_data)) {
-      return currentSession.owner_data[0]?.full_name || "Not provided";
+      return currentSession.owner_data[0]?.full_name || t('notProvided');
     }
-    return currentSession.owner_data.full_name || "Not provided";
+    return currentSession.owner_data.full_name || t('notProvided');
   };
 
   // Get owner national ID safely
   const getOwnerNationalId = () => {
-    if (!currentSession.owner_data) return "Not provided";
+    if (!currentSession.owner_data) return t('notProvided');
     
     if (Array.isArray(currentSession.owner_data)) {
-      return currentSession.owner_data[0]?.national_id || "Not provided";
+      return currentSession.owner_data[0]?.national_id || t('notProvided');
     }
-    return currentSession.owner_data.national_id || "Not provided";
+    return currentSession.owner_data.national_id || t('notProvided');
   };
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">Review & Submit</h2>
+      <h2 className="text-3xl font-bold text-[#2a2718] mb-2">{t('title')}</h2>
       <p className="text-[#2a2718]/70 mb-8">
-        Review your information before submitting for approval
+        {t('subtitle')}
       </p>
 
-      {/* Summary - Show even if validation hasn't run yet */}
+      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Parcel Information */}
         <div className="bg-[#f0cd6e]/10 rounded-xl p-6 border border-[#f0cd6e]">
-          <h3 className="font-bold text-[#2a2718] mb-4">Parcel Information</h3>
+          <h3 className="font-bold text-[#2a2718] mb-4">{t('sections.parcel')}</h3>
           {currentSession.parcel_data ? (
             <div className="space-y-2 text-[#2a2718]">
-              <div><span className="font-medium">UPIN:</span> {currentSession.parcel_data.upin || "Not provided"}</div>
-              <div><span className="font-medium">File Number:</span> {currentSession.parcel_data.file_number || "Not provided"}</div>
-              <div><span className="font-medium">Area:</span> {currentSession.parcel_data.total_area_m2 || 0} m²</div>
-              <div><span className="font-medium">Land Use:</span> {currentSession.parcel_data.land_use || "Not specified"}</div>
+              <div><span className="font-medium">{t('fields.upin')}:</span> {currentSession.parcel_data.upin || t('notProvided')}</div>
+              <div><span className="font-medium">{t('fields.fileNumber')}:</span> {currentSession.parcel_data.file_number || t('notProvided')}</div>
+              <div><span className="font-medium">{t('fields.area')}:</span> {currentSession.parcel_data.total_area_m2 || 0} m²</div>
+              <div><span className="font-medium">{t('fields.landUse')}:</span> {currentSession.parcel_data.land_use || t('notSpecified')}</div>
             </div>
           ) : (
-            <p className="text-red-600">No parcel data available</p>
+            <p className="text-red-600">{t('noData.parcel')}</p>
           )}
           <div className="mt-4 pt-4 border-t border-[#f0cd6e]">
-            <span className="font-medium text-[#2a2718]">Documents:</span> <span className="text-[#2a2718]/70">{currentSession.parcel_docs?.length || 0} uploaded</span>
+            <span className="font-medium text-[#2a2718]">{t('fields.documents')}:</span> <span className="text-[#2a2718]/70">{t('documents.count', { count: currentSession.parcel_docs?.length || 0 })}</span>
           </div>
         </div>
 
         {/* Owner Information */}
         <div className="bg-[#f0cd6e]/10 rounded-xl p-6 border border-[#f0cd6e]">
-          <h3 className="font-bold text-[#2a2718] mb-4">Owner Information</h3>
+          <h3 className="font-bold text-[#2a2718] mb-4">{t('sections.owner')}</h3>
           {currentSession.owner_data ? (
             <div className="space-y-2 text-[#2a2718]">
-              <div><span className="font-medium">Name:</span> {getOwnerName()}</div>
-              <div><span className="font-medium">National ID:</span> {getOwnerNationalId()}</div>
-              <div><span className="font-medium">Phone:</span> {
+              <div><span className="font-medium">{t('fields.name')}:</span> {getOwnerName()}</div>
+              <div><span className="font-medium">{t('fields.nationalId')}:</span> {getOwnerNationalId()}</div>
+              <div><span className="font-medium">{t('fields.phone')}:</span> {
                 (Array.isArray(currentSession.owner_data) 
                   ? currentSession.owner_data[0]?.phone_number 
-                  : currentSession.owner_data.phone_number) || "Not provided"
+                  : currentSession.owner_data.phone_number) || t('notProvided')
               }</div>
             </div>
           ) : (
-            <p className="text-red-600">No owner data available</p>
+            <p className="text-red-600">{t('noData.owner')}</p>
           )}
           <div className="mt-4 pt-4 border-t border-[#f0cd6e]">
-            <span className="font-medium text-[#2a2718]">Documents:</span> <span className="text-[#2a2718]/70">{currentSession.owner_docs?.length || 0} uploaded</span>
+            <span className="font-medium text-[#2a2718]">{t('fields.documents')}:</span> <span className="text-[#2a2718]/70">{t('documents.count', { count: currentSession.owner_docs?.length || 0 })}</span>
           </div>
         </div>
 
         {/* Lease Information (if exists) */}
         {currentSession.lease_data && (
           <div className="md:col-span-2 bg-[#f0cd6e]/10 rounded-xl p-6 border border-[#f0cd6e]">
-            <h3 className="font-bold text-[#2a2718] mb-4">Lease Information</h3>
+            <h3 className="font-bold text-[#2a2718] mb-4">{t('sections.lease')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[#2a2718]">
-              <div><span className="font-medium">Total Amount:</span> ETB {currentSession.lease_data.total_lease_amount?.toLocaleString() || "0"}</div>
-              <div><span className="font-medium">Period:</span> {currentSession.lease_data.lease_period_years || 0} years</div>
-              <div><span className="font-medium">Start Date:</span> {
+              <div><span className="font-medium">{t('fields.totalAmount')}:</span> ETB {currentSession.lease_data.total_lease_amount?.toLocaleString() || "0"}</div>
+              <div><span className="font-medium">{t('fields.period')}:</span> {t('years', { count: currentSession.lease_data.lease_period_years || 0 })}</div>
+              <div><span className="font-medium">{t('fields.startDate')}:</span> {
                 currentSession.lease_data.start_date 
                   ? new Date(currentSession.lease_data.start_date).toLocaleDateString()
-                  : "Not specified"
+                  : t('notSpecified')
               }</div>
             </div>
             <div className="mt-4 pt-4 border-t border-[#f0cd6e]">
-              <span className="font-medium text-[#2a2718]">Documents:</span> <span className="text-[#2a2718]/70">{currentSession.lease_docs?.length || 0} uploaded</span>
+              <span className="font-medium text-[#2a2718]">{t('fields.documents')}:</span> <span className="text-[#2a2718]/70">{t('documents.count', { count: currentSession.lease_docs?.length || 0 })}</span>
             </div>
           </div>
         )}
@@ -259,15 +262,15 @@ const handleSubmit = async () => {
              validationResult ? '⚠️' : '?'}
           </div>
           <h3 className="font-bold text-lg text-[#2a2718]">
-            {isValidating ? 'Validating...' : 
-             validationResult ? (validationResult.valid ? 'Ready to Submit' : 'Missing Information') : 
-             'Validating session...'}
+            {isValidating ? t('validation.inProgress') : 
+             validationResult ? (validationResult.valid ? t('validation.ready') : t('validation.missing')) : 
+             t('validation.validating')}
           </h3>
         </div>
         
         {validationResult && !validationResult.valid && validationResult.missing && (
           <div className="ml-11">
-            <p className="text-[#2a2718] mb-2">Please complete these steps:</p>
+            <p className="text-[#2a2718] mb-2">{t('validation.pleaseComplete')}:</p>
             <ul className="list-disc pl-5 text-[#2a2718]/70 space-y-1">
               {validationResult.missing.map((item, index) => (
                 <li key={index} className="font-medium">{item}</li>
@@ -278,16 +281,16 @@ const handleSubmit = async () => {
         
         {validationResult?.valid && (
           <div className="ml-11">
-            <p className="text-green-700 font-medium">All required information is complete.</p>
+            <p className="text-green-700 font-medium">{t('validation.complete')}</p>
             <p className="text-[#2a2718]/70 text-sm mt-1">
-              You can now submit this parcel registration for approval.
+              {t('validation.submitPrompt')}
             </p>
           </div>
         )}
         
         {!validationResult && isValidating && (
           <div className="ml-11">
-            <p className="text-[#2a2718]">Validating your session data...</p>
+            <p className="text-[#2a2718]">{t('validation.validatingData')}</p>
           </div>
         )}
       </div>
@@ -298,7 +301,7 @@ const handleSubmit = async () => {
           onClick={prevStep}
           className="px-6 py-3 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
         >
-          ← Go Back
+          ← {t('actions.goBack')}
         </button>
         
         <div className="flex gap-4">
@@ -310,9 +313,9 @@ const handleSubmit = async () => {
             {isValidating ? (
               <>
                 <div className="w-4 h-4 border-2 border-[#2a2718] border-t-transparent rounded-full animate-spin"></div>
-                Validating...
+                {t('actions.validating')}
               </>
-            ) : 'Re-validate Session'}
+            ) : t('actions.revalidate')}
           </button>
           
           <button
@@ -323,9 +326,9 @@ const handleSubmit = async () => {
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Submitting...
+                {t('actions.submitting')}
               </>
-            ) : 'Submit for Approval'}
+            ) : t('actions.submit')}
           </button>
         </div>
       </div>

@@ -1,11 +1,11 @@
-// src/components/parcelDetail/OwnershipTable.tsx
+// src/components/ownership/OwnershipTable.tsx
 import { useState, useRef, useEffect } from "react";
+import { useTranslate } from "../../i18n/useTranslate";
 import type {
   OwnerWithParcels,
   OwnersPagination,
 } from "../../services/ownersApi";
 import { useAuth } from "../../contexts/AuthContext";
-
 
 type Props = {
   owners: OwnerWithParcels[];
@@ -34,8 +34,8 @@ const OwnershipTable = ({
   onDelete,
   onPageChange,
 }: Props) => {
-
-  const {user } = useAuth();
+  const { t } = useTranslate('ownership');
+  const { user } = useAuth();
     
   return (
     <>
@@ -69,13 +69,17 @@ const OwnershipTable = ({
   );
 };
 
-const LoadingOwnersBlock = () => (
-  <div className="p-16 text-center">
-    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-6"></div>
-    <p className="text-xl font-semibold text-[#2a2718]">Loading owners...</p>
-    <p className="text-[#2a2718]/70 mt-2">Connecting to backend API</p>
-  </div>
-);
+const LoadingOwnersBlock = () => {
+  const { t } = useTranslate('ownership');
+  
+  return (
+    <div className="p-16 text-center">
+      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-6"></div>
+      <p className="text-xl font-semibold text-[#2a2718]">{t('table.loading')}</p>
+      <p className="text-[#2a2718]/70 mt-2">{t('table.connecting')}</p>
+    </div>
+  );
+};
 
 const ErrorBlock = ({
   error,
@@ -83,34 +87,43 @@ const ErrorBlock = ({
 }: {
   error: string;
   onRetry: () => void;
-}) => (
-  <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-[#2a2718]/5">
-    <div className="text-6xl mb-6">⚠️</div>
-    <h3 className="text-2xl font-bold text-[#2a2718] mb-4">{error}</h3>
-    <button
-      onClick={onRetry}
-      className="bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
-    >
-      Retry
-    </button>
-  </div>
-);
+}) => {
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
+  return (
+    <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-[#2a2718]/5">
+      <div className="text-6xl mb-6">⚠️</div>
+      <h3 className="text-2xl font-bold text-[#2a2718] mb-4">{error}</h3>
+      <button
+        onClick={onRetry}
+        className="bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
+      >
+        {tCommon('retry')}
+      </button>
+    </div>
+  );
+};
 
-const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => (
-  <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
-    <span className="text-6xl mb-4 block">👥</span>
-    <h3 className="text-2xl font-bold text-[#2a2718] mb-3">No owners found</h3>
-    <p className="text-[#2a2718]/70 mb-6">
-      Try adjusting your search or add the first owner.
-    </p>
-    <button
-      onClick={onCreate}
-      className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-    >
-      Add Owner
-    </button>
-  </div>
-);
+const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => {
+  const { t } = useTranslate('ownership');
+  
+  return (
+    <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
+      <span className="text-6xl mb-4 block">👥</span>
+      <h3 className="text-2xl font-bold text-[#2a2718] mb-3">{t('table.empty.title')}</h3>
+      <p className="text-[#2a2718]/70 mb-6">
+        {t('table.empty.description')}
+      </p>
+      <button
+        onClick={onCreate}
+        className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+      >
+        {t('table.empty.addButton')}
+      </button>
+    </div>
+  );
+};
 
 const OwnersTableInner = ({
   owners,
@@ -124,34 +137,38 @@ const OwnersTableInner = ({
   onToggleExpand: (id: string) => void;
   onEdit: (owner: OwnerWithParcels) => void;
   onDelete: (owner: OwnerWithParcels) => void;
-}) => (
-  <div>
-    {/* Table Header */}
-    <div className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-xs font-semibold text-[#2a2718] uppercase tracking-wider bg-[#f0cd6e]/20 border-b border-[#f0cd6e]">
-      <div></div> {/* Empty for chevron */}
-      <div>Owner</div>
-      <div>National ID</div>
-      <div>TIN</div>
-      <div>Phone</div>
-      <div>Parcels (count)</div>
-      <div className="text-right">Actions</div>
-    </div>
+}) => {
+  const { t } = useTranslate('ownership');
+  
+  return (
+    <div>
+      {/* Table Header */}
+      <div className="grid grid-cols-[auto_2fr_2fr_1.5fr_1.5fr_2fr_auto] gap-4 px-4 py-3 text-xs font-semibold text-[#2a2718] uppercase tracking-wider bg-[#f0cd6e]/20 border-b border-[#f0cd6e]">
+        <div></div> {/* Empty for chevron */}
+        <div>{t('table.headers.owner')}</div>
+        <div>{t('table.headers.nationalId')}</div>
+        <div>{t('table.headers.tin')}</div>
+        <div>{t('table.headers.phone')}</div>
+        <div>{t('table.headers.parcels')}</div>
+        <div className="text-right">{t('table.headers.actions')}</div>
+      </div>
 
-    {/* Rows */}
-    <div className="divide-y divide-[#f0cd6e]/30">
-      {owners.map((owner) => (
-        <OwnerRow
-          key={owner.owner_id}
-          owner={owner}
-          isExpanded={expandedOwnerId === owner.owner_id}
-          onToggle={() => onToggleExpand(owner.owner_id)}
-          onEdit={() => onEdit(owner)}
-          onDelete={() => onDelete(owner)}
-        />
-      ))}
+      {/* Rows */}
+      <div className="divide-y divide-[#f0cd6e]/30">
+        {owners.map((owner) => (
+          <OwnerRow
+            key={owner.owner_id}
+            owner={owner}
+            isExpanded={expandedOwnerId === owner.owner_id}
+            onToggle={() => onToggleExpand(owner.owner_id)}
+            onEdit={() => onEdit(owner)}
+            onDelete={() => onDelete(owner)}
+          />
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const PaginationBar = ({
   pagination,
@@ -163,44 +180,49 @@ const PaginationBar = ({
   loading: boolean;
   onPrev: () => void;
   onNext: () => void;
-}) => (
-  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-sm border border-[#f0cd6e]/50 rounded-2xl shadow-sm">
-    {/* Info */}
-    <div className="text-sm text-[#2a2718]/70 mb-3 sm:mb-0">
-      Showing{" "}
-      <span className="font-semibold text-[#2a2718]">
-        {pagination.page * pagination.limit - pagination.limit + 1}–
-        {Math.min(pagination.page * pagination.limit, pagination.total)}
-      </span>{" "}
-      of{" "}
-      <span className="font-semibold text-[#2a2718]">
-        {pagination.total.toLocaleString()}
-      </span>{" "}
-      owners • Page{" "}
-      <span className="font-semibold text-[#2a2718]">{pagination.page}</span> of{" "}
-      <span className="font-semibold text-[#2a2718]">{pagination.totalPages}</span>
-    </div>
+}) => {
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
+  return (
+    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-sm border border-[#f0cd6e]/50 rounded-2xl shadow-sm">
+      {/* Info */}
+      <div className="text-sm text-[#2a2718]/70 mb-3 sm:mb-0">
+        {tCommon('pagination.showing')}{" "}
+        <span className="font-semibold text-[#2a2718]">
+          {pagination.page * pagination.limit - pagination.limit + 1}–
+          {Math.min(pagination.page * pagination.limit, pagination.total)}
+        </span>{" "}
+        {tCommon('pagination.of')}{" "}
+        <span className="font-semibold text-[#2a2718]">
+          {pagination.total.toLocaleString()}
+        </span>{" "}
+        {t('table.pagination.owners')} • {tCommon('pagination.page')}{" "}
+        <span className="font-semibold text-[#2a2718]">{pagination.page}</span> {tCommon('pagination.of')}{" "}
+        <span className="font-semibold text-[#2a2718]">{pagination.totalPages}</span>
+      </div>
 
-    {/* Buttons */}
-    <div className="flex items-center gap-3">
-      <button
-        onClick={onPrev}
-        disabled={!pagination.hasPrev || loading}
-        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
-      >
-        Previous
-      </button>
+      {/* Buttons */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onPrev}
+          disabled={!pagination.hasPrev || loading}
+          className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+        >
+          {tCommon('pagination.previous')}
+        </button>
 
-      <button
-        onClick={onNext}
-        disabled={!pagination.hasNext || loading}
-        className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
-      >
-        Next
-      </button>
+        <button
+          onClick={onNext}
+          disabled={!pagination.hasNext || loading}
+          className="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#f0cd6e]/20 text-[#2a2718] hover:bg-[#f0cd6e]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+        >
+          {tCommon('pagination.next')}
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface OwnerRowProps {
   owner: OwnerWithParcels;
@@ -217,6 +239,7 @@ const OwnerRow = ({
   onEdit,
   onDelete,
 }: OwnerRowProps) => {
+  const { t } = useTranslate('ownership');
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuFlipUp, setMenuFlipUp] = useState(false);
 
@@ -278,7 +301,7 @@ const OwnerRow = ({
           }}
           className="flex items-center justify-center w-6 h-6 rounded-full border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition-transform focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
           aria-expanded={isExpanded}
-          aria-label="Toggle owner details"
+          aria-label={t('table.actions.toggleDetails')}
         >
           <svg
             className={`w-3 h-3 transform transition-transform ${
@@ -315,8 +338,8 @@ const OwnerRow = ({
 
         <div className="text-[#2a2718]/70">
           {parcelCount === 0
-            ? "No parcels"
-            : `${parcelCount} parcel${parcelCount > 1 ? "s" : ""}`}
+            ? t('table.parcels.none')
+            : t('table.parcels.count', { count: parcelCount })}
         </div>
 
         {/* Actions */}
@@ -326,7 +349,7 @@ const OwnerRow = ({
               ref={menuButtonRef}
               onClick={handleMenuToggle}
               className="p-2 rounded-lg hover:bg-[#f0cd6e]/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
-              aria-label="Owner actions menu"
+              aria-label={t('table.actions.menu')}
             >
               <svg
                 className="w-4 h-4 text-[#2a2718]"
@@ -358,7 +381,7 @@ const OwnerRow = ({
                     onEdit();
                   }}
                 >
-                  Edit owner
+                  {t('table.actions.edit')}
                 </button>
                 <button
                   className="w-full text-left px-5 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -369,7 +392,7 @@ const OwnerRow = ({
                     onDelete();
                   }}
                 >
-                  Delete owner
+                  {t('table.actions.delete')}
                 </button>
               </div>
             )}
@@ -382,7 +405,7 @@ const OwnerRow = ({
         <div className="px-4 pb-6 bg-[#f0cd6e]/10">
           {parcelCount === 0 ? (
             <div className="border border-dashed border-[#f0cd6e] rounded-xl p-4 text-xs text-[#2a2718]/70 text-center">
-              No parcels registered for this owner.
+              {t('table.expanded.noParcels')}
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
@@ -395,7 +418,7 @@ const OwnerRow = ({
                   >
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-semibold text-[#2a2718]">
-                        UPIN: {parcel.upin}
+                        {t('table.expanded.upin')}: {parcel.upin}
                       </div>
                       <div className="text-[#2a2718]/70">
                         {new Date(ownership.acquired_at).toLocaleDateString()}
@@ -403,23 +426,22 @@ const OwnerRow = ({
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[#2a2718]/70">
                       <div>
-                        <div className="font-medium text-[#2a2718]">Sub City</div>
+                        <div className="font-medium text-[#2a2718]">{t('table.expanded.subCity')}</div>
                         <div>{parcel.sub_city.name || "-"}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-[#2a2718]">Ketena</div>
+                        <div className="font-medium text-[#2a2718]">{t('table.expanded.ketena')}</div>
                         <div>{parcel.ketena || "-"}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-[#2a2718]">Area (m²)</div>
+                        <div className="font-medium text-[#2a2718]">{t('table.expanded.area')}</div>
                         <div>{Number(parcel.total_area_m2).toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-[#2a2718]">Land Use</div>
+                        <div className="font-medium text-[#2a2718]">{t('table.expanded.landUse')}</div>
                         <div>{parcel.land_use || "-"}</div>
                       </div>
                     </div>
-                   
                   </div>
                 );
               })}

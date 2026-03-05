@@ -1,4 +1,5 @@
 // src/components/parcelDetail/cards/TransferHistoryCard.tsx
+import { useTranslate } from "../../../i18n/useTranslate";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 import DateDisplay from "../../common/DateDisplay";
@@ -10,6 +11,8 @@ interface TransferHistoryCardProps {
 }
 
 const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
+  const { t } = useTranslate('transferHistoryCard');
+
   const formatDate = (dateStr: string | null) =>
     dateStr ? new Date(dateStr).toLocaleDateString("en-GB") : "-";
 
@@ -35,10 +38,10 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-[#2a2718]">
-              {entry.transfer_type.replace("_", " ")} Transfer
+              {t('title', { type: entry.transfer_type.replace("_", " ") })}
             </h3>
             <p className="text-sm text-[#2a2718]/70 mt-1">
-              Date: <span className="font-medium">
+              {t('date')}: <span className="font-medium">
                 <DateDisplay 
                   date={entry.transfer_date} 
                   format="medium"
@@ -47,7 +50,7 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
                 />
               </span>
               {entry.reference_no && (
-                <> • Ref: <span className="font-mono">{entry.reference_no}</span></>
+                <> • {t('reference')}: <span className="font-mono">{entry.reference_no}</span></>
               )}
             </p>
           </div>
@@ -63,12 +66,12 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
       <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <dt className="text-sm font-medium text-[#2a2718]/70">From Owner</dt>
+            <dt className="text-sm font-medium text-[#2a2718]/70">{t('fromOwner')}</dt>
             <dd className="mt-1 text-[#2a2718]">
               {entry.from_owner_name ? (
                 <span className="font-medium">{entry.from_owner_name }</span>
               ) : (
-                <span className="italic text-[#2a2718]/50">Original/Old Possession</span>
+                <span className="italic text-[#2a2718]/50">{t('originalPossession')}</span>
               )}
             </dd>
           </div>
@@ -84,12 +87,12 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
           </div>
 
           <div>
-            <dt className="text-sm font-medium text-[#2a2718]/70">To Owner</dt>
+            <dt className="text-sm font-medium text-[#2a2718]/70">{t('toOwner')}</dt>
             <dd className="mt-1 text-[#2a2718] font-medium">
               {entry.to_owner_name ? (
                 <span>{entry.to_owner_name}</span>
               ) : (
-                <span className="italic text-[#2a2718]/50">Unknown</span>
+                <span className="italic text-[#2a2718]/50">{t('unknown')}</span>
               )}
             </dd>
           </div>
@@ -100,7 +103,7 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
           <div className="pt-5 border-t border-[#f0cd6e]">
             <DocumentList
               documents={entry.documents}
-              title="Transfer Documents"
+              title={t('documentsTitle')}
             />
           </div>
         )}

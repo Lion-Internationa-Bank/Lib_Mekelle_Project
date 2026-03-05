@@ -1,4 +1,4 @@
-// src/routes/LoginPage.tsx
+// src/routes/LandingPage.tsx
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';

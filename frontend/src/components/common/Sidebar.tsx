@@ -2,6 +2,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslate } from '../../i18n/useTranslate';
 
 type MenuItem = {
   id: string;
@@ -19,140 +20,14 @@ type ReportItem = {
   description: string;
 };
 
-const menuItems: MenuItem[] = [
-  {
-    id: 'parcels',
-    label: 'Land Parcels',
-    icon: '🏞️',
-    href: '/home',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
-  },
-  {
-    id: 'sessions',
-    label: 'Sessions',
-    icon: '🖥️',
-    href: '/sessions',
-    allowedRoles: ['SUBCITY_NORMAL'],
-  },
-  {
-    id: 'pending-requests',
-    label: 'Pending Requests',
-    icon: '⏳',
-    href: '/pending-requests',
-    allowedRoles: ['SUBCITY_APPROVER','CITY_APPROVER','REVENUE_APPROVER','CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN','SUBCITY_NORMAL'],
-  },
-  {
-    id: 'ownership',
-    label: 'Ownership',
-    icon: '📋',
-    href: '/ownership',
-    allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'REVENUE_USER'],
-  },
-  {
-    id: 'users',
-    label: 'User Management',
-    icon: '👥',
-    href: '/users',
-    allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
-  },
-  {
-    id: 'subcities',
-    label: 'Sub-cities',
-    icon: '🏛️',
-    href: '/sub-cities',
-    allowedRoles: ['CITY_ADMIN'],
-  },
-  {
-    id: 'rateconfigs',
-    label: 'Rate Configs',
-    icon: '💰',
-    href: '/rateConfigs',
-    allowedRoles: ['REVENUE_ADMIN'],
-  },
-  {
-    id: 'configs',
-    label: 'Configurations',
-    icon: '⚙️',
-    href: '/configs',
-    allowedRoles: ['CITY_ADMIN'],
-  },
-  {
-  id: 'upload-excel',
-  label: 'Bulk Upload',
-  icon: '📤',
-  href: '/upload-excel',
-  allowedRoles: ['SUBCITY_ADMIN'], // Adjust roles as needed
-},
-];
-
-// Update the reports array in Sidebar.tsx
-const reports: ReportItem[] = [
-  {
-    id: 'bills',
-    label: 'Bills Report',
-    icon: '💰',
-    href: '/reports/bills',
-    description: 'View and download bills',
-  },
-  {
-    id: 'encumbrances',
-    label: 'Encumbrances',
-    icon: '🔒',
-    href: '/reports/encumbrances',
-    description: 'View encumbrances with date filters',
-  },
-  {
-    id: 'parcels',
-    label: 'Parcels Report',
-    icon: '🏞️',
-    href: '/reports/parcels',
-    description: 'Land parcels and their status',
-  },
-  {
-    id: 'owners-multiple',
-    label: 'Multiple Parcels Owners',
-    icon: '👥',
-    href: '/reports/owners-multiple',
-    description: 'Owners with >1 parcel',
-  },
-  {
-    id: 'lease-installments',
-    label: 'Lease Installments',
-    icon: '📊',
-    href: '/reports/lease-installments',
-    description: 'Filter by installment range',
-  },
-  {
-    id: 'payments',
-    label: 'Payments Report',
-    icon: '💳',
-    href: '/reports/payments',
-    description: 'Track all payments',
-  },
-  {
-    id: 'revenue',
-    label: 'Revenue Analysis',
-    icon: '📈',
-    href: '/reports/revenue',
-    description: 'Detailed revenue analysis',
-  },
-];
-
-// Update visibility by role
-const reportVisibilityByRole: Record<string, string[]> = {
-  CITY_ADMIN: [ 'encumbrances', 'parcels', 'owners-multiple', 'payments', ],
-  REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
-  SUBCITY_ADMIN: ['encumbrances', 'parcels', 'owners-multiple'],
-  SUBCITY_NORMAL: ['encumbrances', 'parcels', 'owners-multiple', ],
-  SUBCITY_AUDITOR: ['encumbrances', 'parcels', 'owners-multiple', ],
-  REVENUE_USER: ['bills', 'payments', 'revenue'],
-};
-
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isReportsOpen, setIsReportsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Add translation hook
+  const { t } = useTranslate('navigation');
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -169,6 +44,135 @@ const Sidebar = () => {
   useEffect(() => {
     setIsReportsOpen(false);
   }, [location.pathname]);
+
+  const menuItems: MenuItem[] = [
+    {
+      id: 'parcels',
+      label: t('parcels'),
+      icon: '🏞️',
+      href: '/home',
+      allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'SUBCITY_ADMIN', 'REVENUE_USER'],
+    },
+    {
+      id: 'sessions',
+      label: t('sessions'),
+      icon: '🖥️',
+      href: '/sessions',
+      allowedRoles: ['SUBCITY_NORMAL'],
+    },
+    {
+      id: 'pending-requests',
+      label: t('pendingRequests'),
+      icon: '⏳',
+      href: '/pending-requests',
+      allowedRoles: ['SUBCITY_APPROVER','CITY_APPROVER','REVENUE_APPROVER','CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN','SUBCITY_'],
+    },
+    {
+      id: 'ownership',
+      label: t('ownership'),
+      icon: '📋',
+      href: '/ownership',
+      allowedRoles: ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR', 'REVENUE_USER'],
+    },
+    {
+      id: 'users',
+      label: t('users'),
+      icon: '👥',
+      href: '/users',
+      allowedRoles: ['CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN'],
+    },
+    {
+      id: 'subcities',
+      label: t('subcities'),
+      icon: '🏛️',
+      href: '/sub-cities',
+      allowedRoles: ['CITY_ADMIN'],
+    },
+    {
+      id: 'rateconfigs',
+      label: t('rateConfigs'),
+      icon: '💰',
+      href: '/rateConfigs',
+      allowedRoles: ['REVENUE_ADMIN'],
+    },
+    {
+      id: 'configs',
+      label: t('configurations'),
+      icon: '⚙️',
+      href: '/configs',
+      allowedRoles: ['CITY_ADMIN', ],
+    },
+    {
+      id: 'upload-excel',
+      label: t('bulkUpload'),
+      icon: '📤',
+      href: '/upload-excel',
+      allowedRoles: ['SUBCITY_ADMIN'],
+    },
+  ];
+
+  // Update the reports array with translations
+  const reports: ReportItem[] = [
+    {
+      id: 'bills',
+      label: t('reportItems.bills'),
+      icon: '💰',
+      href: '/reports/bills',
+      description: t('reportItems.descriptions.bills'),
+    },
+    {
+      id: 'encumbrances',
+      label: t('reportItems.encumbrances'),
+      icon: '🔒',
+      href: '/reports/encumbrances',
+      description: t('reportItems.descriptions.encumbrances'),
+    },
+    {
+      id: 'parcels',
+      label: t('reportItems.parcels'),
+      icon: '🏞️',
+      href: '/reports/parcels',
+      description: t('reportItems.descriptions.parcels'),
+    },
+    {
+      id: 'owners-multiple',
+      label: t('reportItems.ownersMultiple'),
+      icon: '👥',
+      href: '/reports/owners-multiple',
+      description: t('reportItems.descriptions.ownersMultiple'),
+    },
+    {
+      id: 'lease-installments',
+      label: t('reportItems.leaseInstallments'),
+      icon: '📊',
+      href: '/reports/lease-installments',
+      description: t('reportItems.descriptions.leaseInstallments'),
+    },
+    {
+      id: 'payments',
+      label: t('reportItems.payments'),
+      icon: '💳',
+      href: '/reports/payments',
+      description: t('reportItems.descriptions.payments'),
+    },
+    {
+      id: 'revenue',
+      label: t('reportItems.revenue'),
+      icon: '📈',
+      href: '/reports/revenue',
+      description: t('reportItems.descriptions.revenue'),
+    },
+  ];
+
+  // Update visibility by role
+  const reportVisibilityByRole: Record<string, string[]> = {
+    CITY_ADMIN: [ 'encumbrances', 'parcels', 'owners-multiple', 'payments', ],
+    REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
+    SUBCITY_ADMIN: ['encumbrances', 'parcels', 'owners-multiple'],
+    SUBCITY_NORMAL: ['encumbrances', 'parcels', 'owners-multiple', ],
+    SUBCITY_AUDITOR: ['encumbrances', 'parcels', 'owners-multiple', ],
+    REVENUE_USER: ['bills', 'payments', 'revenue'],
+  };
 
   const activeMenu = menuItems.find((item) => item.href === location.pathname)?.id || 
     (location.pathname.startsWith('/reports') ? 'reports' : 'dashboard');
@@ -217,7 +221,7 @@ const Sidebar = () => {
             >
               <div className="flex items-center space-x-3">
                 <span className="text-lg">📊</span>
-                <span className="font-medium">Reports</span>
+                <span className="font-medium">{t('reports')}</span>
               </div>
               <svg
                 className={`w-4 h-4 transition-transform ${isReportsOpen ? 'rotate-180' : ''}`}
@@ -267,7 +271,7 @@ const Sidebar = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7" />
             </svg>
-            Logout
+            {t('header.logout')}
           </button>
         </div>
       )}

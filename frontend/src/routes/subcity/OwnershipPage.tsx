@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslate } from "../../i18n/useTranslate";
 import {
   fetchOwnersWithParcels,
   type OwnerWithParcels,
@@ -29,6 +30,9 @@ const PAGE_LIMIT = 20;
 
 const OwnershipPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
   const [owners, setOwners] = useState<OwnerWithParcels[]>([]);
   const [pagination, setPagination] = useState<OwnersPagination | null>(null);
   const [loading, setLoading] = useState(false);
@@ -70,7 +74,6 @@ const OwnershipPage = () => {
   // Pending approval requests (to show status to users)
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
-
   const loadOwners = useCallback(async (pageArg: number, searchArg: string) => {
     try {
       setLoading(true);
@@ -85,23 +88,20 @@ const OwnershipPage = () => {
         setOwners(res.data.owners);
         setPagination(res.data.pagination);
       } else {
-        setError("Failed to load owners");
+        setError(t('errors.fetchFailed'));
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load owners");
+      setError(err.message || t('errors.fetchFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Load pending approval requests for the current user
   const loadPendingRequests = useCallback(async () => {
     if (!user) return;
     
     try {
-    
-      // This endpoint should be created in your backend
-      // Example: GET /api/approval-requests/pending?entity_type=OWNERS&maker_id=${user.user_id}
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/approval-requests/pending?entity_type=OWNERS&maker_id=${user.user_id}`,
         {
@@ -120,8 +120,6 @@ const OwnershipPage = () => {
       }
     } catch (error) {
       console.error("Failed to load pending requests:", error);
-    } finally {
-     
     }
   }, [user]);
 
@@ -175,21 +173,14 @@ const OwnershipPage = () => {
         // Show document upload for approval request
         setCurrentApprovalRequest({
           id: result.data.approval_request_id,
-          title: "Upload Owner Creation Documents",
-          description: "Upload supporting documents for the owner creation approval request",
+          title: t('docs.uploadTitle'),
+          description: t('docs.uploadDescription'),
         });
         setShowDocsModal(true);
-        toast.info(result.message || "Owner creation request submitted for approval");
+        toast.info(result.message || t('messages.creationSubmitted'));
       } else if (result.data.owner_id) {
         // Immediate execution (self-approval)
-        toast.success(result.message || "Owner created successfully");
-        // You could still show document upload for immediate creation
-        // setCurrentApprovalRequest({
-        //   id: result.data.owner_id,
-        //   title: "Upload Owner Documents",
-        //   description: "Upload supporting documents for the newly created owner",
-        // });
-        // setShowDocsModal(true);
+        toast.success(result.message || t('messages.createSuccess'));
       }
 
       setShowCreate(false);
@@ -198,11 +189,11 @@ const OwnershipPage = () => {
       await loadPendingRequests();
     } catch (err: unknown) {
       if (err instanceof ZodError) {
-        toast.error(err.issues[0]?.message || "Validation failed");
+        toast.error(err.issues[0]?.message || tCommon('validationError'));
       } else if (err instanceof Error) {
-        toast.error(err.message || "Failed to create owner");
+        toast.error(err.message || t('errors.createFailed'));
       } else {
-        toast.error("Failed to create owner");
+        toast.error(t('errors.createFailed'));
       }
     } finally {
       setSaving(false);
@@ -221,18 +212,17 @@ const OwnershipPage = () => {
         phone_number: editForm.phone_number || undefined,
       });
 
-      // Note: Update might also require approval depending on your rules
       const res = await updateOwnerApi(editingOwner.owner_id, parsed);
-      toast.success(res.message || "Owner updated successfully");
+      toast.success(res.message || t('messages.updateSuccess'));
       setEditingOwner(null);
       await loadOwners(page, search);
     } catch (err: unknown) {
       if (err instanceof ZodError) {
-        toast.error(err.issues[0]?.message || "Validation failed");
+        toast.error(err.issues[0]?.message || tCommon('validationError'));
       } else if (err instanceof Error) {
-        toast.error(err.message || "Failed to update owner");
+        toast.error(err.message || t('errors.updateFailed'));
       } else {
-        toast.error("Failed to update owner");
+        toast.error(t('errors.updateFailed'));
       }
     } finally {
       setSaving(false);
@@ -244,11 +234,11 @@ const OwnershipPage = () => {
     try {
       setSaving(true);
       const res = await deleteOwnerApi(deletingOwner.owner_id);
-      toast.success(res.message || "Owner deleted successfully");
+      toast.success(res.message || t('messages.deleteSuccess'));
       setDeletingOwner(null);
       await loadOwners(page, search);
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete owner");
+      toast.error(err.message || t('errors.deleteFailed'));
     } finally {
       setSaving(false);
     }
@@ -274,8 +264,8 @@ const OwnershipPage = () => {
       {/* Header with pending requests info */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-[#2a2718]">Ownership Management</h1>
-          <p className="text-[#2a2718]/70 mt-2">Manage property owners and their details</p>
+          <h1 className="text-3xl font-bold text-[#2a2718]">{t('pageTitle')}</h1>
+          <p className="text-[#2a2718]/70 mt-2">{t('pageDescription')}</p>
         </div>
         
         {/* Pending Requests Badge */}
@@ -285,11 +275,11 @@ const OwnershipPage = () => {
               <AlertCircle size={20} className="text-[#2a2718]" />
               <div>
                 <p className="text-sm font-medium text-[#2a2718]">
-                  You have {pendingRequests.length} pending approval request{pendingRequests.length !== 1 ? 's' : ''}
+                  {t('pending.count', { count: pendingRequests.length })}
                 </p>
                 <p className="text-xs text-[#2a2718]/70 mt-1">
                   {pendingRequests.some(r => !r.has_documents) && 
-                    "Some requests may need supporting documents"}
+                    t('pending.documentsNeeded')}
                 </p>
               </div>
             </div>
@@ -305,12 +295,12 @@ const OwnershipPage = () => {
             <button
               onClick={() => {
                 // Navigate to pending requests page or show modal
-                toast.info("Pending requests feature coming soon");
+                toast.info(t('pending.comingSoon'));
               }}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#f0cd6e] hover:bg-[#2a2718] text-[#2a2718] hover:text-white font-semibold shadow-md hover:shadow-lg transition-all"
             >
               <FileText size={18} />
-              View Pending ({pendingRequests.length})
+              {t('pending.viewButton', { count: pendingRequests.length })}
             </button>
           )}
           
@@ -319,7 +309,7 @@ const OwnershipPage = () => {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-lg transition-all"
           >
             <span className="text-lg">+</span>
-            Add New Owner
+            {t('actions.addOwner')}
           </button>
         </div>
       )}
@@ -331,7 +321,7 @@ const OwnershipPage = () => {
       >
         <input
           type="text"
-          placeholder="Search owner by name, national ID, or phone..."
+          placeholder={t('search.placeholder')}
           className="flex-1 border-none focus:ring-0 text-sm bg-transparent text-[#2a2718] placeholder-[#2a2718]/50"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -340,7 +330,7 @@ const OwnershipPage = () => {
           type="submit"
           className="px-6 py-2 text-sm rounded-xl bg-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#2a2718] hover:text-white transition-colors"
         >
-          Search
+          {t('search.button')}
         </button>
       </form>
 

@@ -1,8 +1,9 @@
 // src/components/wizard/ParcelWizard.tsx
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, useParams } from "react-router-dom"; // Add useParams
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { useWizard } from "../../contexts/WizardContext";
 import { toast } from 'sonner';
+import { useTranslate } from "../../i18n/useTranslate";
 
 // Import your step components
 import ParcelStep from "./ParcelWizard/ParcelStep";
@@ -26,14 +27,16 @@ const STEPS = [
 type Step = (typeof STEPS)[number];
 
 const ParcelWizard = () => {
+  const { t } = useTranslate('wizard');
+  const { t: tCommon } = useTranslate('common');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { sessionId: routeSessionId } = useParams(); // Get sessionId from route params
+  const { sessionId: routeSessionId } = useParams();
   const { currentSession, createSession, loadSession, isLoading } = useWizard();
 
   // Get session_id from either query params or route params
   const querySessionId = searchParams.get("session_id");
-  const sessionId = routeSessionId || querySessionId; // Prefer route param over query param
+  const sessionId = routeSessionId || querySessionId;
   
   const currentStepParam = searchParams.get("step");
   
@@ -64,7 +67,6 @@ const ParcelWizard = () => {
           
           // Update URL to use route parameter format if it was using query param
           if (querySessionId && !routeSessionId) {
-            // Replace the URL with the route parameter format
             navigate(`/wizard/${sessionId}?step=${validStep}`, { replace: true });
           }
         } else {
@@ -79,13 +81,13 @@ const ParcelWizard = () => {
             // Navigate to the new session using route parameter format
             navigate(`/wizard/${newSessionId}?step=${validStep}`, { replace: true });
           } else {
-            toast.error("Failed to create/load session");
+            toast.error(t('errors.createFailed'));
             navigate("/home");
           }
         }
       } catch (error: any) {
         console.error("Session initialization error:", error);
-        toast.error("Failed to initialize wizard session");
+        toast.error(t('errors.initFailed'));
         navigate("/home");
       } finally {
         setIsInitializing(false);
@@ -93,12 +95,12 @@ const ParcelWizard = () => {
     };
 
     initializeSession();
-  }, [sessionId]); // Add sessionId to dependency array
+  }, [sessionId]);
 
   // Show rejection warning when session loads and is rejected
   useEffect(() => {
     if (currentSession?.status === 'REJECTED' && hasSessionLoaded) {
-      toast.warning("This session was previously rejected. Please update the information and resubmit.", {
+      toast.warning(t('messages.rejectedWarning'), {
         duration: 6000,
         icon: "⚠️"
       });
@@ -147,7 +149,7 @@ const ParcelWizard = () => {
 
   // Calculate available steps based on conditions
   const getAvailableSteps = (): readonly Step[] => {
-    let steps = [...STEPS]; // Start with all steps
+    let steps = [...STEPS];
     
     if (shouldSkipOwnerDocs) {
       steps = steps.filter(step => step !== "owner-docs");
@@ -167,7 +169,6 @@ const ParcelWizard = () => {
   // Ensure current step is valid based on available steps
   useEffect(() => {
     if (!availableSteps.includes(currentStep)) {
-      // If current step is not in available steps, navigate to the first available step
       console.log("Current step not available, redirecting to:", availableSteps[0]);
       goToStep(availableSteps[0]);
     }
@@ -264,19 +265,19 @@ const ParcelWizard = () => {
   const stepLabel = (s: Step) => {
     switch (s) {
       case "parcel":
-        return "Parcel Info";
+        return t('steps.parcel');
       case "parcel-docs":
-        return "Parcel Docs";
+        return t('steps.parcelDocs');
       case "owner":
-        return "Owner Info";
+        return t('steps.owner');
       case "owner-docs":
-        return "Owner Docs";
+        return t('steps.ownerDocs');
       case "lease":
-        return "Lease Info";
+        return t('steps.lease');
       case "lease-docs":
-        return "Lease Docs";
+        return t('steps.leaseDocs');
       case "validation":
-        return "Review & Submit";
+        return t('steps.validation');
       default:
         return s;
     }
@@ -300,7 +301,7 @@ const ParcelWizard = () => {
       case "owner-docs":
         // If we have an existing owner (with owner_id), owner-docs is not required
         if (shouldSkipOwnerDocs) {
-          return false; // Don't allow access to skipped step
+          return false;
         }
         return !!currentSession.owner_data;
       case "lease":
@@ -331,7 +332,7 @@ const ParcelWizard = () => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-4"></div>
             <p className="text-[#2a2718]">
-              {isInitializing ? "Initializing wizard session..." : "Loading session data..."}
+              {isInitializing ? t('loading.initializing') : t('loading.sessionData')}
             </p>
           </div>
         </div>
@@ -345,25 +346,25 @@ const ParcelWizard = () => {
       <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#f0cd6e]/30 p-8 text-center">
-            <h3 className="text-2xl font-bold text-[#2a2718] mb-2">Session Error</h3>
-            <p className="text-[#2a2718]/70 mb-4">Failed to load wizard session. Please try again.</p>
+            <h3 className="text-2xl font-bold text-[#2a2718] mb-2">{t('errors.sessionError')}</h3>
+            <p className="text-[#2a2718]/70 mb-4">{t('errors.sessionErrorDesc')}</p>
             <div className="text-sm text-[#2a2718]/70 mb-6">
-              <p>Session ID from URL: {sessionId || 'none'}</p>
-              <p>Has session loaded: {hasSessionLoaded ? 'Yes' : 'No'}</p>
-              <p>Current session: {currentSession ? 'Exists' : 'Null'}</p>
+              <p>{t('errors.sessionId')}: {sessionId || t('errors.none')}</p>
+              <p>{t('errors.hasSessionLoaded')}: {hasSessionLoaded ? t('common.yes') : t('common.no')}</p>
+              <p>{t('errors.currentSession')}: {currentSession ? t('common.exists') : t('common.null')}</p>
             </div>
             <div className="space-x-4">
               <button
                 onClick={() => window.location.reload()}
                 className="px-6 py-2 rounded-xl bg-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#2a2718] hover:text-white transition"
               >
-                Retry
+                {tCommon('retry')}
               </button>
               <button
                 onClick={goBackToDashboard}
                 className="px-6 py-2 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
               >
-                ← Back to Dashboard
+                ← {t('actions.backToDashboard')}
               </button>
             </div>
           </div>
@@ -380,7 +381,7 @@ const ParcelWizard = () => {
           <div className="mb-6 p-4 bg-white/80 rounded-xl shadow-sm border border-[#f0cd6e]">
             <div className="flex justify-between items-center">
               <div>
-                <span className="text-sm font-medium text-[#2a2718]">Session:</span>
+                <span className="text-sm font-medium text-[#2a2718]">{t('session.label')}:</span>
                 <span className="ml-2 font-mono text-sm bg-[#f0cd6e]/20 px-2 py-1 rounded">
                   {currentSession.session_id.substring(0, 8)}...
                 </span>
@@ -392,25 +393,25 @@ const ParcelWizard = () => {
                   currentSession.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
-                  {currentSession.status === 'PENDING_APPROVAL' ? 'Pending Approval' :
-                   currentSession.status === 'REJECTED' ? 'Rejected' :
-                   currentSession.status === 'MERGED' ? 'Completed' :
-                   currentSession.status === 'APPROVED' ? 'Approved' :
+                  {currentSession.status === 'PENDING_APPROVAL' ? t('status.pending') :
+                   currentSession.status === 'REJECTED' ? t('status.rejected') :
+                   currentSession.status === 'MERGED' ? t('status.completed') :
+                   currentSession.status === 'APPROVED' ? t('status.approved') :
                    currentSession.status}
                 </span>
                 {shouldSkipOwnerDocs && (
                   <span className="ml-4 px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
-                    Existing Owner
+                    {t('badges.existingOwner')}
                   </span>
                 )}
                 {shouldSkipLeaseSteps && (
                   <span className="ml-4 px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-                    Non-Lease Parcel
+                    {t('badges.nonLease')}
                   </span>
                 )}
               </div>
               <div className="text-sm text-[#2a2718]/70">
-                Updated: {new Date(currentSession.updated_at).toLocaleDateString()}
+                {t('session.updated')}: {new Date(currentSession.updated_at).toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -420,9 +421,9 @@ const ParcelWizard = () => {
         <div className="mb-10">
           <div className="flex justify-between text-sm font-medium text-[#2a2718]/70 mb-3">
             <span>
-              Step {currentStepIndexInAvailable + 1} of {availableSteps.length}
-              {shouldSkipOwnerDocs && " (Owner Docs Skipped)"}
-              {shouldSkipLeaseSteps && " (Lease Steps Skipped)"}
+              {t('progress.step', { current: currentStepIndexInAvailable + 1, total: availableSteps.length })}
+              {shouldSkipOwnerDocs && ` ${t('progress.ownerDocsSkipped')}`}
+              {shouldSkipLeaseSteps && ` ${t('progress.leaseStepsSkipped')}`}
             </span>
             <span>{stepLabel(currentStep)}</span>
           </div>
@@ -465,16 +466,16 @@ const ParcelWizard = () => {
 
         {/* Debug info (temporary) - remove in production */}
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-          <div className="font-medium text-yellow-800 mb-1">Debug Info:</div>
+          <div className="font-medium text-yellow-800 mb-1">{t('debug.title')}:</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <div>Step: <span className="font-bold">{currentStep}</span></div>
-            <div>Existing Owner: <span className={shouldSkipOwnerDocs ? "text-purple-600" : "text-gray-600"}>{shouldSkipOwnerDocs ? "Yes" : "No"}</span></div>
-            <div>Is Lease: <span className={!shouldSkipLeaseSteps ? "text-green-600" : "text-gray-600"}>{!shouldSkipLeaseSteps ? "Yes" : "No"}</span></div>
-            <div>Tenure: <span className="font-medium">{currentSession.parcel_data?.[0]?.tenure_type || "N/A"}</span></div>
-            <div>Parcel: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
-            <div>Owner: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
-            <div>Owner ID: <span className={currentSession.owner_data?.[0]?.owner_id ? "text-green-600" : "text-gray-600"}>{currentSession.owner_data?.[0]?.owner_id || "None"}</span></div>
-            <div>Lease: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
+            <div>{t('debug.step')}: <span className="font-bold">{currentStep}</span></div>
+            <div>{t('debug.existingOwner')}: <span className={shouldSkipOwnerDocs ? "text-purple-600" : "text-gray-600"}>{shouldSkipOwnerDocs ? t('common.yes') : t('common.no')}</span></div>
+            <div>{t('debug.isLease')}: <span className={!shouldSkipLeaseSteps ? "text-green-600" : "text-gray-600"}>{!shouldSkipLeaseSteps ? t('common.yes') : t('common.no')}</span></div>
+            <div>{t('debug.tenure')}: <span className="font-medium">{currentSession.parcel_data?.[0]?.tenure_type || t('common.na')}</span></div>
+            <div>{t('debug.parcel')}: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
+            <div>{t('debug.owner')}: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
+            <div>{t('debug.ownerId')}: <span className={currentSession.owner_data?.[0]?.owner_id ? "text-green-600" : "text-gray-600"}>{currentSession.owner_data?.[0]?.owner_id || t('common.none')}</span></div>
+            <div>{t('debug.lease')}: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
           </div>
         </div>
 
@@ -524,7 +525,7 @@ const ParcelWizard = () => {
               onClick={goBackToDashboard}
               className="px-6 py-2 rounded-xl border border-[#f0cd6e] text-[#2a2718] font-semibold hover:bg-[#f0cd6e]/20 transition"
             >
-              ← Back to Dashboard
+              ← {t('actions.backToDashboard')}
             </button>
           </div>
         </div>

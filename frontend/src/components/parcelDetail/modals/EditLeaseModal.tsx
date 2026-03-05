@@ -1,5 +1,6 @@
-// src/modals/EditLeaseModal.tsx
+// src/components/parcelDetail/modals/EditLeaseModal.tsx
 import { useEffect, useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import {
   type ParcelDetail,
   updateLeaseApi,
@@ -34,6 +35,8 @@ type EditLeaseFormWithDates = Omit<
 };
 
 const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
+  const { t } = useTranslate('editLeaseModal');
+  const { t: tCommon } = useTranslate('common');
   const { isEthiopian } = useCalendar();
   const [form, setForm] = useState<Partial<EditLeaseFormWithDates>>({});
   const [error, setError] = useState<string | null>(null);
@@ -132,16 +135,16 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
 
       const res = await updateLeaseApi(lease.lease_id, parsed);
       await onSuccess();
-      toast.success(res.message || "Lease data successfully updated.");
+      toast.success(res.message || t('messages.success'));
       onClose();
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        setError(err.issues[0]?.message || "Validation failed");
+        setError(err.issues[0]?.message || t('errors.validation'));
       } else if (err instanceof Error) {
-        toast.error(err.message || "Failed to update lease");
-        setError(err.message || "Failed to update lease");
+        toast.error(err.message || t('errors.update'));
+        setError(err.message || t('errors.update'));
       } else {
-        toast.error("An unexpected error occurred");
+        toast.error(t('errors.unexpected'));
       }
     } finally {
       setSaving(false);
@@ -157,16 +160,15 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-[#2a2718]">
-              Edit Lease Agreement
+              {t('title')}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-[#2a2718]/70">Lease ID: {lease.lease_id}</p>
+              <p className="text-sm text-[#2a2718]/70">{t('leaseId')}: {lease.lease_id}</p>
               <span className="text-xs px-2 py-0.5 bg-[#f0cd6e]/20 text-[#2a2718] rounded">
-                {isEthiopian ? "ዓ/ም" : "GC"}
+                {isEthiopian ? t('calendar.ethiopian') : t('calendar.gregorian')}
               </span>
             </div>
           </div>
-
 
           <button
             onClick={onClose}
@@ -190,14 +192,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="w-5 h-5 text-[#2a2718]" />
               <h3 className="text-lg font-semibold text-[#2a2718]">
-                Financial Information
+                {t('sections.financial')}
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Total Lease Amount */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Total Lease Amount (ETB)
+                  {t('fields.totalLeaseAmount')}
                 </label>
                 <input
                   type="number"
@@ -220,7 +222,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               {/* Down Payment Amount */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Down Payment Amount (ETB)
+                  {t('fields.downPayment')}
                 </label>
                 <input
                   type="number"
@@ -243,7 +245,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               {/* Other Payment Amount */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Other Payment Amount (ETB)
+                  {t('fields.otherPayment')}
                 </label>
                 <input
                   type="number"
@@ -266,7 +268,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               {/* Price per m² */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Price per m² (ETB)
+                  {t('fields.pricePerM2')}
                 </label>
                 <input
                   type="number"
@@ -293,17 +295,17 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             <div className="flex items-center gap-2 mb-4">
               <Receipt className="w-5 h-5 text-[#2a2718]" />
               <h3 className="text-lg font-semibold text-[#2a2718]">
-                Additional Fees
+                {t('sections.additionalFees')}
               </h3>
               <span className="text-xs px-2 py-0.5 bg-[#f0cd6e]/20 text-[#2a2718] rounded-full">
-                Optional
+                {tCommon('optional')}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Demarcation Fee */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Demarcation Fee (ETB)
+                  {t('fields.demarcationFee')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -327,14 +329,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                   />
                 </div>
                 <p className="mt-1 text-xs text-[#2a2718]/70">
-                  Land demarcation/survey fee
+                  {t('hints.demarcationFee')}
                 </p>
               </div>
 
               {/* Engineering Service Fee */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Engineering Service Fee (ETB)
+                  {t('fields.engineeringFee')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -358,21 +360,21 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                   />
                 </div>
                 <p className="mt-1 text-xs text-[#2a2718]/70">
-                  Engineering/consultancy fees
+                  {t('hints.engineeringFee')}
                 </p>
               </div>
 
-              {/* Contract Registration Fee (String) */}
+              {/* Contract Registration Fee */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Contract Registration Fee
+                  {t('fields.registrationFee')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Receipt className="h-4 w-4 text-[#2a2718]" />
                   </div>
                   <input
-                   type="number"
+                    type="number"
                     step="0.01"
                     min="0"
                     value={form.contract_registration_fee ?? ""}
@@ -382,9 +384,8 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                         contract_registration_fee: e.target.value || undefined,
                       }))
                     }
-                     placeholder="0.00"
+                    placeholder="0.00"
                     className="w-full pl-10 px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                 
                   />
                 </div>
               </div>
@@ -396,14 +397,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-[#2a2718]" />
               <h3 className="text-lg font-semibold text-[#2a2718]">
-                Period Information
+                {t('sections.period')}
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Lease Period Years */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Lease Period (Years)
+                  {t('fields.leasePeriod')}
                 </label>
                 <input
                   type="number"
@@ -419,14 +420,14 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                     }))
                   }
                   className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g., 25"
+                  placeholder={t('placeholders.leasePeriod')}
                 />
               </div>
 
               {/* Payment Term Years */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Payment Term (Years)
+                  {t('fields.paymentTerm')}
                 </label>
                 <input
                   type="number"
@@ -442,7 +443,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                     }))
                   }
                   className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                  placeholder="e.g., 10"
+                  placeholder={t('placeholders.paymentTerm')}
                 />
               </div>
             </div>
@@ -454,12 +455,10 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               <Calendar className="w-5 h-5 text-[#2a2718]" />
               <div>
                 <h3 className="text-lg font-semibold text-[#2a2718]">
-                  Date Information
+                  {t('sections.dates')}
                 </h3>
                 <p className="text-sm text-[#2a2718]/70">
-                  Dates in {isEthiopian ? "Ethiopian" : "Gregorian"} calendar
-                  {isEthiopian && " (hover for Gregorian equivalent)"}
-                  {!isEthiopian && " (hover for Ethiopian equivalent)"}
+                  {isEthiopian ? t('calendar.infoEthiopian') : t('calendar.infoGregorian')}
                 </p>
               </div>
             </div>
@@ -467,7 +466,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               {/* Contract Date */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Contract Date
+                  {t('fields.contractDate')}
                 </label>
                 <UniversalDateInput
                   value={form.contract_date ?? null}
@@ -477,7 +476,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                       contract_date: date ?? undefined,
                     }))
                   }
-                  placeholder="Select contract date"
+                  placeholder={t('placeholders.contractDate')}
                   size="sm"
                 />
               </div>
@@ -485,7 +484,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
               {/* Start Date */}
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Start Date
+                  {t('fields.startDate')}
                 </label>
                 <UniversalDateInput
                   value={form.start_date ?? null}
@@ -495,7 +494,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                       start_date: date ?? undefined,
                     }))
                   }
-                  placeholder="Select start date"
+                  placeholder={t('placeholders.startDate')}
                   size="sm"
                 />
               </div>
@@ -507,12 +506,12 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-5 h-5 text-[#2a2718]" />
               <h3 className="text-lg font-semibold text-[#2a2718]">
-                Legal Information
+                {t('sections.legal')}
               </h3>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                Legal Framework
+                {t('fields.legalFramework')}
               </label>
               <input
                 type="text"
@@ -524,7 +523,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
                   }))
                 }
                 className="w-full px-4 py-3 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
-                placeholder="e.g., Proclamation No. 123/2021"
+                placeholder={t('placeholders.legalFramework')}
               />
             </div>
           </div>
@@ -537,7 +536,7 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             className="px-6 py-3 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition disabled:opacity-50"
             disabled={saving}
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -547,10 +546,10 @@ const EditLeaseModal = ({ lease, open, onClose, onSuccess }: Props) => {
             {saving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving...
+                {tCommon('saving')}
               </>
             ) : (
-              "Save Changes"
+              tCommon('save')
             )}
           </button>
         </div>

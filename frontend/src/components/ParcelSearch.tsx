@@ -1,6 +1,7 @@
 // src/components/ParcelSearch.tsx
 import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
+import { useTranslate } from "../i18n/useTranslate";
 import type { SubCity } from "../services/cityAdminService";
 import { getConfig } from "../services/cityAdminService";
 
@@ -35,6 +36,9 @@ const ParcelSearch = ({
   subCitiesLoading = false,
   lockedSubCityName,
 }: ParcelSearchProps) => {
+  const { t } = useTranslate('parcelSearch');
+  const { t: tCommon } = useTranslate('common');
+  
   const [filters, setFilters] = useState({
     search: "",
     sub_city: "",
@@ -52,42 +56,41 @@ const ParcelSearch = ({
 
   const timeoutRef = useRef<number | null>(null);
 
-// Replace the two separate useEffects with this single one:
-useEffect(() => {
-  const fetchConfigs = async () => {
-    try {
-      // Fetch both configs in parallel
-      const [tenureResponse, landUseResponse] = await Promise.all([
-        getConfig('LAND_TENURE'),
-        getConfig('LAND_USE'),
-      ]);
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      try {
+        // Fetch both configs in parallel
+        const [tenureResponse, landUseResponse] = await Promise.all([
+          getConfig('LAND_TENURE'),
+          getConfig('LAND_USE'),
+        ]);
 
-      if (tenureResponse.success && tenureResponse.data) {
-        setTenureTypes(tenureResponse.data.options.map(opt => opt.value));
-      } else {
-        setErrorTenureTypes(tenureResponse.error || "Failed to load tenure types");
+        if (tenureResponse.success && tenureResponse.data) {
+          setTenureTypes(tenureResponse.data.options.map(opt => opt.value));
+        } else {
+          setErrorTenureTypes(tenureResponse.error || t('errors.loadTenureFailed'));
+        }
+
+        if (landUseResponse.success && landUseResponse.data) {
+          setLandUses(landUseResponse.data.options.map(opt => opt.value));
+        } else {
+          setErrorLandUses(landUseResponse.error || t('errors.loadLandUseFailed'));
+        }
+      } catch (err) {
+        setErrorTenureTypes(t('errors.loadTenureFailed'));
+        setErrorLandUses(t('errors.loadLandUseFailed'));
+        console.error("Error fetching configs:", err);
+      } finally {
+        setLoadingTenureTypes(false);
+        setLoadingLandUses(false);
       }
+    };
 
-      if (landUseResponse.success && landUseResponse.data) {
-        setLandUses(landUseResponse.data.options.map(opt => opt.value));
-      } else {
-        setErrorLandUses(landUseResponse.error || "Failed to load land use types");
-      }
-    } catch (err) {
-      setErrorTenureTypes("Failed to load tenure types");
-      setErrorLandUses("Failed to load land use types");
-      console.error("Error fetching configs:", err);
-    } finally {
-      setLoadingTenureTypes(false);
-      setLoadingLandUses(false);
-    }
-  };
-
-  // Set loading states before fetching
-  setLoadingTenureTypes(true);
-  setLoadingLandUses(true);
-  fetchConfigs();
-}, []);
+    // Set loading states before fetching
+    setLoadingTenureTypes(true);
+    setLoadingLandUses(true);
+    fetchConfigs();
+  }, [t]);
 
   // Keep internal sub_city in sync with controlled prop when provided
   useEffect(() => {
@@ -153,20 +156,20 @@ useEffect(() => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4">
         <div>
           <label className="block text-xs font-medium text-[#2a2718] mb-1">
-            Search UPIN/File
+            {t('labels.search')}
           </label>
           <input
             name="search"
             value={filters.search}
             onChange={handleChange}
-            placeholder="UPIN, file..."
+            placeholder={t('placeholders.search')}
             className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-[#2a2718] mb-1">
-            Sub City
+            {t('labels.subCity')}
           </label>
 
           {lockedSubCityName ? (
@@ -185,7 +188,7 @@ useEffect(() => {
               className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             >
               <option value="">
-                {subCitiesLoading ? "Loading..." : "All sub-cities"}
+                {subCitiesLoading ? tCommon('loading') : t('options.allSubCities')}
               </option>
               {subCities.map((sc) => (
                 <option key={sc.sub_city_id} value={sc.sub_city_id}>
@@ -199,7 +202,7 @@ useEffect(() => {
               name="sub_city"
               value={filters.sub_city}
               onChange={handleChange}
-              placeholder="Adi Haki..."
+              placeholder={t('placeholders.subCity')}
               className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             />
           )}
@@ -207,20 +210,20 @@ useEffect(() => {
 
         <div>
           <label className="block text-xs font-medium text-[#2a2718] mb-1">
-            Ketena
+            {t('labels.ketena')}
           </label>
           <input
             name="ketena"
             value={filters.ketena}
             onChange={handleChange}
-            placeholder="Ketena 01..."
+            placeholder={t('placeholders.ketena')}
             className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
           />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-[#2a2718] mb-1">
-            Tenure Type
+            {t('labels.tenureType')}
           </label>
           <select
             name="tenure_type"
@@ -229,11 +232,11 @@ useEffect(() => {
             disabled={loadingTenureTypes}
             className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] disabled:bg-[#f0cd6e]/10"
           >
-            <option value="">All</option>
+            <option value="">{t('options.all')}</option>
             {loadingTenureTypes ? (
-              <option value="" disabled>Loading tenure types...</option>
+              <option value="" disabled>{tCommon('loading')}</option>
             ) : errorTenureTypes ? (
-              <option value="" disabled>Error loading tenure types</option>
+              <option value="" disabled>{t('errors.loadTenureFailed')}</option>
             ) : (
               tenureTypes.map((type) => (
                 <option key={type} value={type}>
@@ -249,7 +252,7 @@ useEffect(() => {
 
         <div>
           <label className="block text-xs font-medium text-[#2a2718] mb-1">
-            Land Use
+            {t('labels.landUse')}
           </label>
           <select
             name="land_use"
@@ -258,11 +261,11 @@ useEffect(() => {
             disabled={loadingLandUses}
             className="w-full px-3 py-2 text-sm border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] disabled:bg-[#f0cd6e]/10"
           >
-            <option value="">All</option>
+            <option value="">{t('options.all')}</option>
             {loadingLandUses ? (
-              <option value="" disabled>Loading land uses...</option>
+              <option value="" disabled>{tCommon('loading')}</option>
             ) : errorLandUses ? (
-              <option value="" disabled>Error loading land uses</option>
+              <option value="" disabled>{t('errors.loadLandUseFailed')}</option>
             ) : (
               landUses.map((use) => (
                 <option key={use} value={use}>
@@ -282,11 +285,11 @@ useEffect(() => {
           onClick={clearFilters}
           className="px-4 py-1.5 text-[#2a2718] bg-[#f0cd6e]/20 hover:bg-[#f0cd6e]/40 rounded-lg transition-colors text-xs font-medium"
         >
-          Clear Filters
+          {t('actions.clearFilters')}
         </button>
         {activeCount > 0 && (
           <span className="text-[#2a2718]/70">
-            {activeCount} active filter{activeCount > 1 ? "s" : ""}
+            {t('activeFilters', { count: activeCount })}
           </span>
         )}
       </div>

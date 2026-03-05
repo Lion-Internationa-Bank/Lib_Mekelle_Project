@@ -1,5 +1,6 @@
-// src/modals/EncumbranceModal.tsx
+// src/components/parcelDetail/modals/EncumbranceModal.tsx
 import { useEffect, useState } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import {
   createEncumbranceApi,
   updateEncumbranceApi,
@@ -33,6 +34,8 @@ const EncumbranceModal = ({
   onClose,
   onSuccess,
 }: Props) => {
+  const { t } = useTranslate('encumbranceModal');
+  const { t: tCommon } = useTranslate('common');
   const isEdit = !!encumbrance;
 
   const [form, setForm] = useState<EncumbranceFormData>({
@@ -71,13 +74,13 @@ const EncumbranceModal = ({
           });
         }
       } else {
-        setTypesError(res.error || "Failed to load encumbrance types");
+        setTypesError(res.error || t('errors.loadTypes'));
       }
       setLoadingTypes(false);
     };
 
     loadTypes();
-  }, [open, isEdit, encumbrance]);
+  }, [open, isEdit, encumbrance, t]);
 
   const handleSubmit = async () => {
     try {
@@ -89,10 +92,10 @@ const EncumbranceModal = ({
       if (isEdit && encumbrance) {
         const res = await updateEncumbranceApi(encumbrance.encumbrance_id, parsed);
         if (res.success) {
-          toast.success(res.message || "Encumbrance updated successfully");
+          toast.success(res.message || t('messages.updateSuccess'));
           await onSuccess(res.data);
         } else {
-          throw new Error(res.error || "Failed to update encumbrance");
+          throw new Error(res.error || t('errors.updateFailed'));
         }
       } else {
         const result = await createEncumbranceApi({
@@ -105,14 +108,14 @@ const EncumbranceModal = ({
         if (result.success) {
           // Check if approval is required
           if (result.data?.approval_request_id) {
-            toast.info(result.message || "Encumbrance creation request submitted for approval");
+            toast.info(result.message || t('messages.submitted'));
             await onSuccess({
               approval_request_id: result.data.approval_request_id,
               ...result.data
             });
           } else if (result.data?.encumbrance_id) {
             // Immediate execution (self-approval or no approval needed)
-            toast.success(result.message || "Encumbrance created successfully");
+            toast.success(result.message || t('messages.createSuccess'));
             await onSuccess({
               encumbrance_id: result.data.encumbrance_id,
               ...result.data
@@ -120,29 +123,29 @@ const EncumbranceModal = ({
           } else {
             // Fallback - try to extract ID from response
             const createdId = result.data?.encumbrance_id || result.data?.id || result.id;
-            toast.success(result.message || "Encumbrance created successfully");
+            toast.success(result.message || t('messages.createSuccess'));
             await onSuccess({
               encumbrance_id: createdId,
               ...result.data
             });
           }
         } else {
-          throw new Error(result.error || "Failed to create encumbrance");
+          throw new Error(result.error || t('errors.createFailed'));
         }
       }
 
       onClose();
     } catch (err: unknown) {
       if (err instanceof ZodError) {
-        const errorMsg = err.issues[0]?.message || "Validation failed";
+        const errorMsg = err.issues[0]?.message || t('errors.validation');
         setError(errorMsg);
         toast.error(errorMsg);
       } else if (err instanceof Error) {
         setError(err.message);
-        toast.error(err.message || "Operation failed");
+        toast.error(err.message || t('errors.operationFailed'));
       } else {
-        setError("An unexpected error occurred");
-        toast.error("Operation failed");
+        setError(t('errors.unexpected'));
+        toast.error(t('errors.operationFailed'));
       }
     } finally {
       setSaving(false);
@@ -155,7 +158,7 @@ const EncumbranceModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full my-8">
         <h2 className="text-xl font-bold text-[#2a2718] mb-4">
-          {isEdit ? "Edit Encumbrance" : "Add New Encumbrance"}
+          {isEdit ? t('title.edit') : t('title.create')}
         </h2>
 
         {error && (
@@ -174,12 +177,12 @@ const EncumbranceModal = ({
           {/* Type - Dynamic from backend */}
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">
-              Type *
+              {t('fields.type')} *
             </label>
             {loadingTypes ? (
-              <div className="text-sm text-[#2a2718]/70">Loading types...</div>
+              <div className="text-sm text-[#2a2718]/70">{tCommon('loading')}</div>
             ) : encumbranceTypes.length === 0 ? (
-              <div className="text-sm text-[#2a2718]/70">No types available</div>
+              <div className="text-sm text-[#2a2718]/70">{t('errors.noTypes')}</div>
             ) : (
               <select
                 value={form.type}
@@ -192,7 +195,7 @@ const EncumbranceModal = ({
                 className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
                 required
               >
-                <option value="">Select type</option>
+                <option value="">{t('placeholders.selectType')}</option>
                 {encumbranceTypes.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.value} {opt.description ? `(${opt.description})` : ""}
@@ -204,7 +207,7 @@ const EncumbranceModal = ({
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">
-              Issuing Entity *
+              {t('fields.issuingEntity')} *
             </label>
             <input
               value={form.issuing_entity}
@@ -218,7 +221,7 @@ const EncumbranceModal = ({
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">
-              Reference Number
+              {t('fields.referenceNumber')}
             </label>
             <input
               value={form.reference_number}
@@ -231,7 +234,7 @@ const EncumbranceModal = ({
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">
-              Status
+              {t('fields.status')}
             </label>
             <select
               value={form.status}
@@ -243,14 +246,14 @@ const EncumbranceModal = ({
               }
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-lg focus:ring-2 focus:ring-[#f0cd6e]"
             >
-              <option value="ACTIVE">Active</option>
-              <option value="RELEASED">Released</option>
+              <option value="ACTIVE">{t('status.active')}</option>
+              <option value="RELEASED">{t('status.released')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#2a2718] mb-1">
-              Registration Date
+              {t('fields.registrationDate')}
             </label>
             <input
               type="date"
@@ -272,7 +275,7 @@ const EncumbranceModal = ({
             className="px-6 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
             disabled={saving}
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -280,12 +283,10 @@ const EncumbranceModal = ({
             className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
           >
             {saving
-              ? isEdit
-                ? "Saving..."
-                : "Creating..."
+              ? tCommon('saving')
               : isEdit
-              ? "Save Changes"
-              : "Create"}
+              ? t('buttons.update')
+              : t('buttons.create')}
           </button>
         </div>
       </div>

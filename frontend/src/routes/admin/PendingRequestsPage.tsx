@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPendingRequests, getMakerPendingRequests } from '../../services/makerCheckerService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslate } from '../../i18n/useTranslate';
 import { 
   type PendingRequestData,
   type ApiResponse,
@@ -51,6 +52,9 @@ const PendingRequestsPage: React.FC = () => {
   
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslate('requests');
+  const { t: tCommon } = useTranslate('common');
+  const { t: tAuth } = useTranslate('auth'); // Add this for roles
 
   // Determine if user is approver or maker
   const isApprover = user?.role ? APPROVER_ROLES.includes(user.role as UserRole) : false;
@@ -95,7 +99,7 @@ const PendingRequestsPage: React.FC = () => {
         } else {
           console.error('Response data is not an array:', response.data);
           setRequests([]);
-          toast.error('Invalid response format');
+          toast.error(tCommon('error'));
         }
         
         // Update pagination info
@@ -106,12 +110,12 @@ const PendingRequestsPage: React.FC = () => {
           setHasPreviousPage(response.data.pagination.hasPreviousPage);
         }
       } else {
-        setError(response.error || 'Failed to fetch pending requests');
-        toast.error(response.error || 'Failed to fetch pending requests');
+        setError(response.error || t('errors.fetchFailed'));
+        toast.error(response.error || t('errors.fetchFailed'));
         setRequests([]);
       }
     } catch (err) {
-      const errorMessage = 'An unexpected error occurred';
+      const errorMessage = t('errors.unexpected');
       setError(errorMessage);
       toast.error(errorMessage);
       console.error('Fetch error:', err);
@@ -119,7 +123,7 @@ const PendingRequestsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, statusFilter, entityTypeFilter, actionTypeFilter, sortBy, sortOrder, isApprover, user?.user_id]);
+  }, [currentPage, limit, statusFilter, entityTypeFilter, actionTypeFilter, sortBy, sortOrder, isApprover, user?.user_id, t, tCommon]);
 
   useEffect(() => {
     fetchRequests();
@@ -259,9 +263,9 @@ const PendingRequestsPage: React.FC = () => {
       <div className="flex justify-center items-center h-[70vh]">
         <div className="text-center">
           <div className="text-5xl mb-4">⏳</div>
-          <div className="text-xl text-[#2a2718]">Loading requests...</div>
+          <div className="text-xl text-[#2a2718]">{t('loading')}</div>
           <div className="text-sm text-[#2a2718]/70 mt-2">
-            Please wait while we fetch your requests
+            {t('loadingMessage')}
           </div>
         </div>
       </div>
@@ -274,18 +278,18 @@ const PendingRequestsPage: React.FC = () => {
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#2a2718] m-0">
-            {isApprover ? 'Pending Approval Requests' : 'My Requests'}
+            {isApprover ? t('title.approver') : t('title.maker')}
           </h1>
           <div className="flex items-center gap-4 mt-2">
             <p className="text-[#2a2718]/70 m-0">
-              {totalCount.toLocaleString()} request{totalCount !== 1 ? 's' : ''} found
+              {t('count', { count: totalCount })}
             </p>
             {(statusFilter || entityTypeFilter || actionTypeFilter) && (
               <button
                 onClick={clearFilters}
                 className="px-3 py-1 bg-[#f0cd6e]/20 hover:bg-[#f0cd6e]/40 rounded text-sm text-[#2a2718] flex items-center gap-1 transition-colors"
               >
-                ✕ Clear Filters
+                ✕ {t('clearFilters')}
               </button>
             )}
           </div>
@@ -297,7 +301,7 @@ const PendingRequestsPage: React.FC = () => {
           ${isApprover ? 'bg-[#2a2718] text-white' : 'bg-[#f0cd6e] text-[#2a2718]'}
         `}>
           <span className="text-lg">{isApprover ? '👤' : '✍️'}</span>
-          <span>{isApprover ? 'Approver View' : 'Maker View'}</span>
+          <span>{isApprover ? t('view.approver') : t('view.maker')}</span>
         </div>
       </div>
 
@@ -307,17 +311,17 @@ const PendingRequestsPage: React.FC = () => {
           {/* Status Filter */}
           <div>
             <label className="block text-xs font-semibold text-[#2a2718] mb-2">
-              Status
+              {t('filters.status')}
             </label>
             <select
               value={statusFilter}
               onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
-              <option value="">All Statuses</option>
+              <option value="">{t('filters.allStatuses')}</option>
               {REQUEST_STATUSES.map(status => (
                 <option key={status} value={status}>
-                  {getStatusDisplayName(status)}
+                  {t(`status.${status}`)}
                 </option>
               ))}
             </select>
@@ -326,17 +330,17 @@ const PendingRequestsPage: React.FC = () => {
           {/* Entity Type Filter */}
           <div>
             <label className="block text-xs font-semibold text-[#2a2718] mb-2">
-              Entity Type
+              {t('filters.entityType')}
             </label>
             <select
               value={entityTypeFilter}
               onChange={(e) => handleEntityTypeFilterChange(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
-              <option value="">All Entities</option>
+              <option value="">{t('filters.allEntities')}</option>
               {ENTITY_TYPES.map(type => (
                 <option key={type} value={type}>
-                  {getEntityIcon(type)} {getEntityDisplayName(type)}
+                  {getEntityIcon(type)} {t(`entity.${type}`)}
                 </option>
               ))}
             </select>
@@ -345,17 +349,17 @@ const PendingRequestsPage: React.FC = () => {
           {/* Action Type Filter */}
           <div>
             <label className="block text-xs font-semibold text-[#2a2718] mb-2">
-              Action Type
+              {t('filters.actionType')}
             </label>
             <select
               value={actionTypeFilter}
               onChange={(e) => handleActionTypeFilterChange(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
             >
-              <option value="">All Actions</option>
+              <option value="">{t('filters.allActions')}</option>
               {ACTION_TYPES.map(type => (
                 <option key={type} value={type}>
-                  {getActionDisplayName(type)}
+                  {t(`action.${type}`)}
                 </option>
               ))}
             </select>
@@ -364,7 +368,7 @@ const PendingRequestsPage: React.FC = () => {
           {/* Sort Options */}
           <div>
             <label className="block text-xs font-semibold text-[#2a2718] mb-2">
-              Sort By
+              {t('filters.sortBy')}
             </label>
             <div className="flex gap-2">
               <select
@@ -372,14 +376,13 @@ const PendingRequestsPage: React.FC = () => {
                 onChange={(e) => handleSortChange(e.target.value, sortOrder)}
                 className="flex-1 px-4 py-3 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
               >
-                <option value="created_at">Created Date</option>
-                <option value="updated_at">Updated Date</option>
-              
+                <option value="created_at">{t('sort.created')}</option>
+                <option value="updated_at">{t('sort.updated')}</option>
               </select>
               <button
                 onClick={() => handleSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}
                 className="px-4 py-3 rounded-lg border border-[#f0cd6e] bg-white hover:bg-[#f0cd6e]/20 transition-colors text-[#2a2718]"
-                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                title={sortOrder === 'asc' ? t('sort.asc') : t('sort.desc')}
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
               </button>
@@ -390,10 +393,10 @@ const PendingRequestsPage: React.FC = () => {
         {/* Active Filters Display */}
         {(statusFilter || entityTypeFilter || actionTypeFilter) && (
           <div className="flex items-center gap-2 pt-4 border-t border-[#f0cd6e]">
-            <span className="text-sm text-[#2a2718]/70">Active filters:</span>
+            <span className="text-sm text-[#2a2718]/70">{t('filters.activeFilters')}</span>
             {statusFilter && (
               <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(statusFilter as RequestStatus)}`}>
-                Status: {getStatusDisplayName(statusFilter as RequestStatus)}
+                {t('filters.status')}: {t(`status.${statusFilter}`)}
                 <button 
                   className="ml-1 hover:opacity-70"
                   onClick={() => handleStatusFilterChange('')}
@@ -404,7 +407,7 @@ const PendingRequestsPage: React.FC = () => {
             )}
             {entityTypeFilter && (
               <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#f0cd6e]/20 text-[#2a2718] flex items-center gap-1">
-                {getEntityIcon(entityTypeFilter as EntityType)} {getEntityDisplayName(entityTypeFilter as EntityType)}
+                {getEntityIcon(entityTypeFilter as EntityType)} {t(`entity.${entityTypeFilter}`)}
                 <button 
                   className="ml-1 hover:opacity-70"
                   onClick={() => handleEntityTypeFilterChange('')}
@@ -415,7 +418,7 @@ const PendingRequestsPage: React.FC = () => {
             )}
             {actionTypeFilter && (
               <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${getActionColor(actionTypeFilter as ActionType)}`}>
-                Action: {getActionDisplayName(actionTypeFilter as ActionType)}
+                {t('filters.actionType')}: {t(`action.${actionTypeFilter}`)}
                 <button 
                   className="ml-1 hover:opacity-70"
                   onClick={() => handleActionTypeFilterChange('')}
@@ -437,7 +440,7 @@ const PendingRequestsPage: React.FC = () => {
             onClick={() => fetchRequests()}
             className="ml-auto px-3 py-1 bg-transparent border border-red-800 rounded text-red-800 hover:bg-red-50 transition-colors"
           >
-            Retry
+            {tCommon('retry')}
           </button>
         </div>
       )}
@@ -446,20 +449,20 @@ const PendingRequestsPage: React.FC = () => {
       {(!requests || requests.length === 0) && !loading ? (
         <div className="text-center py-16 bg-[#f0cd6e]/10 rounded-xl">
           <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">No requests found</h3>
+          <h3 className="text-xl font-semibold text-[#2a2718] mb-2">{t('empty.title')}</h3>
           <p className="text-[#2a2718]/70 max-w-md mx-auto">
             {statusFilter || entityTypeFilter || actionTypeFilter
-              ? 'No requests match your current filters. Try clearing some filters.'
+              ? t('empty.filtered')
               : isApprover 
-                ? 'There are no pending approval requests at the moment.'
-                : 'You have not submitted any requests yet.'}
+                ? t('empty.approver')
+                : t('empty.maker')}
           </p>
           {(statusFilter || entityTypeFilter || actionTypeFilter) && (
             <button
               onClick={clearFilters}
               className="mt-6 px-6 py-3 bg-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#2a2718] hover:text-white transition-colors"
             >
-              Clear Filters
+              {t('clearFilters')}
             </button>
           )}
         </div>
@@ -468,21 +471,21 @@ const PendingRequestsPage: React.FC = () => {
           {/* Results Summary */}
           <div className="flex justify-between items-center mb-6">
             <div className="text-sm text-[#2a2718]/70">
-              Showing <strong className="text-[#2a2718]">{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> to{' '}
-              <strong className="text-[#2a2718]">{Math.min(currentPage * limit, totalCount)}</strong> of{' '}
-              <strong className="text-[#2a2718]">{totalCount.toLocaleString()}</strong> requests
+              {tCommon('pagination.showing')} <strong className="text-[#2a2718]">{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> {tCommon('pagination.to')}{' '}
+              <strong className="text-[#2a2718]">{Math.min(currentPage * limit, totalCount)}</strong> {tCommon('pagination.of')}{' '}
+              <strong className="text-[#2a2718]">{totalCount.toLocaleString()}</strong> {tCommon('pagination.results')}
             </div>
             
             {/* Page Size Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[#2a2718]/70">Show:</span>
+              <span className="text-sm text-[#2a2718]/70">{tCommon('pagination.show')}:</span>
               <select
                 value={limit}
                 onChange={(e) => handleLimitChange(Number(e.target.value))}
                 className="px-3 py-2 rounded-lg border border-[#f0cd6e] text-sm bg-white focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
               >
                 {DEFAULT_PAGE_SIZE_OPTIONS.map(size => (
-                  <option key={size} value={size}>{size} per page</option>
+                  <option key={size} value={size}>{size} {tCommon('pagination.perPage')}</option>
                 ))}
               </select>
             </div>
@@ -506,14 +509,14 @@ const PendingRequestsPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-lg text-[#2a2718] mb-2">
-                        {getEntityDisplayName(req.entity_type)}
+                        {t(`entity.${req.entity_type}`)}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(req.status)}`}>
-                          {getStatusDisplayName(req.status)}
+                          {t(`status.${req.status}`)}
                         </span>
                         <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getActionColor(req.action_type)}`}>
-                          {getActionDisplayName(req.action_type)}
+                          {t(`action.${req.action_type}`)}
                         </span>
                       </div>
                     </div>
@@ -527,10 +530,10 @@ const PendingRequestsPage: React.FC = () => {
                       </div>
                       <div>
                         <div className="font-semibold text-sm text-[#2a2718]">
-                          {req.maker.full_name || 'Unknown User'}
+                          {req.maker.full_name || t('card.unknownUser')}
                         </div>
                         <div className="text-xs text-[#2a2718]/70">
-                          {req.maker.role?.replace('_', ' ')} • {req.maker.username}
+                          {tAuth(`roles.${req.maker.role}`)} • {req.maker.username}
                         </div>
                       </div>
                     </div>
@@ -547,17 +550,16 @@ const PendingRequestsPage: React.FC = () => {
                   {/* Footer with ID and Date */}
                   <div className="flex justify-between items-center text-xs text-[#2a2718]/70 border-t border-[#f0cd6e] pt-3 mt-1">
                     <span className="font-mono">
-                      ID: {req.request_id?.slice(0, 8)}...
+                      {t('card.id')}: {req.request_id?.slice(0, 8)}...
                     </span>
-                          <span className="font-medium">
-                <DateDisplay 
-                  date={req.created_at} 
-                  format="medium"
-                  showCalendarIndicator={true}
-                  showTooltip={true}
-                />
-              </span>
-
+                    <span className="font-medium">
+                      <DateDisplay 
+                        date={req.created_at} 
+                        format="medium"
+                        showCalendarIndicator={true}
+                        showTooltip={true}
+                      />
+                    </span>
                   </div>
                 </div>
               );
@@ -569,7 +571,7 @@ const PendingRequestsPage: React.FC = () => {
             <div className="flex flex-col items-center gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
               {/* Pagination Info */}
               <div className="text-sm text-[#2a2718]/70">
-                Page {currentPage} of {totalPages}
+                {tCommon('pagination.page')} {currentPage} {tCommon('pagination.of')} {totalPages}
               </div>
 
               {/* Pagination Buttons */}
@@ -584,7 +586,7 @@ const PendingRequestsPage: React.FC = () => {
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
-                  ⏮️ First
+                  ⏮️ {tCommon('pagination.first')}
                 </button>
 
                 {/* Previous Page */}
@@ -597,7 +599,7 @@ const PendingRequestsPage: React.FC = () => {
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
-                  ◀️ Previous
+                  ◀️ {tCommon('pagination.previous')}
                 </button>
 
                 {/* Page Numbers */}
@@ -627,7 +629,7 @@ const PendingRequestsPage: React.FC = () => {
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
-                  Next ▶️
+                  {tCommon('pagination.next')} ▶️
                 </button>
 
                 {/* Last Page */}
@@ -640,13 +642,13 @@ const PendingRequestsPage: React.FC = () => {
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
                 >
-                  Last ⏭️
+                  {tCommon('pagination.last')} ⏭️
                 </button>
               </div>
 
               {/* Jump to Page */}
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-[#2a2718]/70">Jump to page:</span>
+                <span className="text-sm text-[#2a2718]/70">{tCommon('pagination.jumpTo')}:</span>
                 <input
                   type="number"
                   min={1}
@@ -660,7 +662,7 @@ const PendingRequestsPage: React.FC = () => {
                   }}
                   className="w-16 px-3 py-2 rounded-lg border border-[#f0cd6e] text-sm text-center focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
                 />
-                <span className="text-sm text-[#2a2718]/70">of {totalPages}</span>
+                <span className="text-sm text-[#2a2718]/70">{tCommon('pagination.of')} {totalPages}</span>
               </div>
             </div>
           )}

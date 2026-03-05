@@ -1,5 +1,6 @@
-// src/components/modals/TransferOwnershipModal.tsx
+// src/components/parcelDetail/modals/TransferOwnershipModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslate } from "../../../i18n/useTranslate";
 import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, FileText, AlertCircle } from 'lucide-react';
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
@@ -25,6 +26,9 @@ export default function TransferOwnershipModal({
   onSuccess,
   onRefreshParcel,
 }: TransferOwnershipModalProps) {
+  const { t } = useTranslate('transferModal');
+  const { t: tCommon } = useTranslate('common');
+  
   const [formData, setFormData] = useState({
     from_owner_id: '',
     to_owner_id: '',
@@ -61,7 +65,7 @@ export default function TransferOwnershipModal({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   // Fetch transfer types
   useEffect(() => {
@@ -80,14 +84,14 @@ export default function TransferOwnershipModal({
         );
       } catch (err) {
         console.error('Failed to load transfer types:', err);
-        setError('Failed to load transfer types');
+        setError(t('errors.loadTypes'));
       } finally {
         setLoadingTypes(false);
       }
     };
 
     fetchTypes();
-  }, [isOpen]);
+  }, [isOpen, t]);
 
   // Debounced search + outside click
   useEffect(() => {
@@ -141,8 +145,8 @@ export default function TransferOwnershipModal({
     if (result?.approval_request_id) {
       setCurrentApprovalRequest({
         id: result.approval_request_id,
-        title: "Upload Ownership Transfer Documents",
-        description: "Upload supporting documents for the ownership transfer approval request",
+        title: t('approval.title'),
+        description: t('approval.description'),
         resultData: result
       });
       setShowApprovalDocsModal(true);
@@ -195,10 +199,10 @@ export default function TransferOwnershipModal({
     e.preventDefault();
     setError(null);
 
-    if (!formData.to_owner_id) return setError('Please select the new owner');
-    if (!formData.transfer_type) return setError('Please select transfer type');
+    if (!formData.to_owner_id) return setError(t('errors.buyerRequired'));
+    if (!formData.transfer_type) return setError(t('errors.typeRequired'));
     if (formData.from_owner_id && formData.from_owner_id === formData.to_owner_id) {
-      return setError('Seller and buyer cannot be the same person');
+      return setError(t('errors.samePerson'));
     }
 
     try {
@@ -216,7 +220,7 @@ export default function TransferOwnershipModal({
       if (result.success) {
         // Check if approval is required
         if (result.data?.approval_request_id) {
-          toast.info(result.message || "Transfer request submitted for approval");
+          toast.info(result.message || t('messages.submitted'));
           await handleTransferSuccess({
             approval_request_id: result.data.approval_request_id,
             ...result.data
@@ -224,24 +228,24 @@ export default function TransferOwnershipModal({
         } else if (result.history?.history_id || result.data?.history_id) {
           // Immediate execution
           const historyId = result.history?.history_id || result.data?.history_id;
-          toast.success(result.message || "Transfer completed successfully");
+          toast.success(result.message || t('messages.success'));
           await handleTransferSuccess({
             history_id: historyId,
             ...result.data
           });
         } else {
           // Fallback
-          toast.success(result.message || "Transfer completed successfully");
+          toast.success(result.message || t('messages.success'));
           await onRefreshParcel();
           onClose();
         }
       } else {
-        throw new Error(result.error || 'Failed to transfer ownership');
+        throw new Error(result.error || t('errors.failed'));
       }
     } catch (err: any) {
       console.error('Transfer error:', err);
-      toast.error(err.message || 'Failed to transfer ownership');
-      setError(err.message || 'Failed to transfer ownership');
+      toast.error(err.message || t('errors.failed'));
+      setError(err.message || t('errors.failed'));
     } finally {
       setLoading(false);
     }
@@ -262,15 +266,15 @@ export default function TransferOwnershipModal({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-                  Transfer Completed ✓
+                  {t('upload.title')}
                 </h2>
                 <p className="text-[#2a2718]/70">
-                  Upload supporting documents for parcel{' '}
+                  {t('upload.description')}{' '}
                   <span className="font-mono font-bold text-[#f0cd6e]">{parcelUpin}</span>
                 </p>
               </div>
               <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full">
-                Optional Step
+                {t('upload.optionalStep')}
               </span>
             </div>
           </div>
@@ -278,17 +282,17 @@ export default function TransferOwnershipModal({
           {/* Upload Area */}
           <div className="p-8">
             <GenericDocsUpload
-              title="Transfer supporting documents"
+              title={t('upload.docsTitle')}
               upin={parcelUpin}
               subCity=""
               historyId={latestHistoryId}
               hideTitle={true}
               allowedDocTypes={[
-                { value: "TRANSFER_CONTRACT", label: "Transfer Contract / Agreement" },
-                { value: "ID_COPY", label: "ID Copies (Buyer & Seller)" },
-                { value: "PAYMENT_PROOF", label: "Payment Receipt" },
-                { value: "POWER_OF_ATTORNEY", label: "Power of Attorney (if applicable)" },
-                { value: "OTHER", label: "Other Supporting Document" },
+                { value: "TRANSFER_CONTRACT", label: t('upload.docTypes.contract') },
+                { value: "ID_COPY", label: t('upload.docTypes.idCopy') },
+                { value: "PAYMENT_PROOF", label: t('upload.docTypes.paymentProof') },
+                { value: "POWER_OF_ATTORNEY", label: t('upload.docTypes.powerOfAttorney') },
+                { value: "OTHER", label: t('upload.docTypes.other') },
               ]}
               onUploadSuccess={handleUploadComplete}
             />
@@ -300,14 +304,14 @@ export default function TransferOwnershipModal({
               onClick={handleSkipUpload}
               className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
             >
-              Skip for now
+              {t('upload.skip')}
             </button>
 
             <button
               onClick={handleUploadComplete}
               className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
             >
-              Done – Close
+              {t('upload.done')}
               <span className="text-lg">→</span>
             </button>
           </div>
@@ -327,16 +331,16 @@ export default function TransferOwnershipModal({
           <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-[#2a2718] dark:text-white">
-                Transfer Ownership
+                {t('title')}
               </h2>
               <p className="text-sm text-[#2a2718]/70 dark:text-gray-400 mt-0.5">
-                UPIN: {parcelUpin}
+                {t('upin')}: {parcelUpin}
               </p>
             </div>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-[#f0cd6e]/20 dark:hover:bg-gray-800"
-              aria-label="Close"
+              aria-label={tCommon('close')}
             >
               <X size={20} />
             </button>
@@ -348,12 +352,12 @@ export default function TransferOwnershipModal({
               <div className="flex items-start gap-3">
                 <AlertTriangle size={20} className="text-[#2a2718] mt-1 shrink-0" />
                 <div className="text-sm text-[#2a2718]">
-                  <strong className="font-medium block mb-1">Full Ownership Transfer</strong>
-                  <p>The selected current owner's entire share will be transferred to the new owner.</p>
+                  <strong className="font-medium block mb-1">{t('info.title')}</strong>
+                  <p>{t('info.description')}</p>
                   <p className="mt-2 text-xs">
                     {user?.role === "SUBCITY_NORMAL" ? 
-                      "Your request will be submitted for approval by a higher authority." :
-                      "You have permission to execute transfers directly."
+                      t('info.approvalNote') :
+                      t('info.directPermission')
                     }
                   </p>
                 </div>
@@ -363,7 +367,7 @@ export default function TransferOwnershipModal({
             {/* From Owner */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
-                Current Owner (Seller) <span className="text-[#2a2718]/70 font-normal">(optional)</span>
+                {t('fields.fromOwner')} <span className="text-[#2a2718]/70 font-normal">{t('optional')}</span>
               </label>
               <select
                 name="from_owner_id"
@@ -371,7 +375,7 @@ export default function TransferOwnershipModal({
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
               >
-                <option value="">— Whole parcel transfer —</option>
+                <option value="">— {t('wholeParcel')} —</option>
                 {currentOwners.map(owner => (
                   <option key={owner.owner_id} value={owner.owner_id}>
                     {owner.full_name}
@@ -384,7 +388,7 @@ export default function TransferOwnershipModal({
             <div className="relative" ref={dropdownRef}>
               <label className="text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5 flex items-center gap-2">
                 <UserPlus size={16} />
-                New Owner (Buyer/Receiver) <span className="text-red-500">*</span>
+                {t('fields.toOwner')} <span className="text-red-500">*</span>
               </label>
 
               <div className="relative">
@@ -397,7 +401,7 @@ export default function TransferOwnershipModal({
                     setShowDropdown(true);
                   }}
                   onFocus={() => setShowDropdown(true)}
-                  placeholder="Search by name, national ID, phone or TIN..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] pr-10 text-[#2a2718]"
                 />
                 <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f0cd6e] pointer-events-none" />
@@ -407,18 +411,18 @@ export default function TransferOwnershipModal({
                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {isSearching ? (
                     <div className="p-4 text-center text-sm text-[#2a2718]/70 dark:text-gray-400">
-                      Searching...
+                      {tCommon('searching')}
                     </div>
                   ) : searchResults.length === 0 && buyerSearch.length >= 2 ? (
                     <div className="p-4 text-center text-sm text-[#2a2718]/70 dark:text-gray-400">
-                      No matching owners found
+                      {t('noResults')}
                       <button
                         type="button"
-                        onClick={() => alert("Create new owner feature - to be implemented")}
+                        onClick={() => alert(t('createNewFeature'))}
                         className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-[#f0cd6e] bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded hover:bg-[#f0cd6e]/20 transition-colors"
                       >
                         <Plus size={14} className="mr-1" />
-                        Create New
+                        {t('createNew')}
                       </button>
                     </div>
                   ) : (
@@ -451,11 +455,11 @@ export default function TransferOwnershipModal({
             {/* Transfer Type - Dynamic */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
-                Transfer Type <span className="text-red-500">*</span>
+                {t('fields.transferType')} <span className="text-red-500">*</span>
               </label>
               {loadingTypes ? (
                 <div className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-500">
-                  Loading transfer types...
+                  {tCommon('loading')}
                 </div>
               ) : (
                 <select
@@ -466,7 +470,7 @@ export default function TransferOwnershipModal({
                   disabled={transferTypes.length === 0}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718] disabled:opacity-60"
                 >
-                  <option value="">— Select type —</option>
+                  <option value="">— {t('selectType')} —</option>
                   {transferTypes.map(type => (
                     <option key={type.value} value={type.value}>
                       {type.label}
@@ -480,7 +484,7 @@ export default function TransferOwnershipModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
-                  Transfer Price (ETB)
+                  {t('fields.price')}
                 </label>
                 <input
                   type="number"
@@ -496,14 +500,14 @@ export default function TransferOwnershipModal({
 
               <div>
                 <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
-                  Reference Number
+                  {t('fields.reference')}
                 </label>
                 <input
                   type="text"
                   name="reference_no"
                   value={formData.reference_no}
                   onChange={handleChange}
-                  placeholder="Optional"
+                  placeholder={t('optional')}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
                 />
               </div>
@@ -517,8 +521,8 @@ export default function TransferOwnershipModal({
 
             {formData.to_owner_id && selectedBuyer && (
               <div className="text-sm bg-[#f0cd6e]/10 p-3 rounded-lg text-center border border-[#f0cd6e] text-[#2a2718]">
-                Transferring full ownership → <strong>{selectedBuyer.full_name}</strong>
-                {formData.from_owner_id && <> from <strong>{fromOwnerName}</strong></>}
+                {t('transferringTo')} <strong>{selectedBuyer.full_name}</strong>
+                {formData.from_owner_id && <> {t('from')} <strong>{fromOwnerName}</strong></>}
               </div>
             )}
 
@@ -529,7 +533,7 @@ export default function TransferOwnershipModal({
                 disabled={loading}
                 className="flex-1 px-6 py-2.5 border border-[#f0cd6e] dark:border-gray-700 rounded-lg hover:bg-[#f0cd6e]/20 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 text-[#2a2718]"
               >
-                Cancel
+                {tCommon('cancel')}
               </button>
 
               <button
@@ -540,12 +544,12 @@ export default function TransferOwnershipModal({
                 {loading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Processing...
+                    {tCommon('processing')}
                   </>
                 ) : (
                   <>
                     <UserMinus size={18} />
-                    Confirm Transfer
+                    {t('confirmButton')}
                   </>
                 )}
               </button>

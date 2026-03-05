@@ -1,6 +1,7 @@
 // src/components/parcelDetail/modals/CreateLeaseModal.tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslate } from "../../../i18n/useTranslate";
 import {
   LeaseStepFormSchema,
   type LeaseStepFormData,
@@ -19,6 +20,8 @@ type Props = {
 };
 
 const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
+  const { t } = useTranslate('createLeaseModal');
+  const { t: tCommon } = useTranslate('common');
   const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   
@@ -59,14 +62,14 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
       
       // Check if approval is required
       if (response.data?.approval_request_id) {
-        toast.info(response.message || "Lease creation request submitted for approval");
+        toast.info(response.message || t('messages.submitted'));
         await onCreated({
           approval_request_id: response.data.approval_request_id,
           ...response.data
         });
       } else if (response.data?.lease_id) {
         // Immediate execution
-        toast.success(response.message || "Lease agreement created successfully");
+        toast.success(response.message || t('messages.created'));
         await onCreated({
           lease_id: response.data.lease_id,
           ...response.data
@@ -74,14 +77,14 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
       } else {
         // Fallback - try to extract ID from response
         const leaseId = response.data?.lease_id || response.data?.id || response.id;
-        toast.success(response.message || "Lease agreement created successfully");
+        toast.success(response.message || t('messages.created'));
         await onCreated({ lease_id: leaseId, ...response.data });
       }
 
       reset();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || "Failed to create lease");
+      toast.error(err.message || t('errors.createFailed'));
       console.error(err);
     }
   };
@@ -94,10 +97,10 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold">
-                Create Lease Agreement
+                {t('title')}
               </h3>
               <p className="mt-1 text-sm text-white/80">
-                Parcel: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{parcel.upin}</span>
+                {t('parcel')}: <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{parcel.upin}</span>
               </p>
             </div>
             <button
@@ -117,11 +120,8 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             <div className="flex items-start gap-3">
               <AlertCircle size={20} className="text-[#2a2718] mt-0.5 shrink-0" />
               <div className="text-sm text-[#2a2718]">
-                <p className="font-medium mb-1">Lease Creation Request</p>
-                <p>
-                  Your lease creation will be submitted for approval. 
-                  You can upload supporting documents after submission.
-                </p>
+                <p className="font-medium mb-1">{t('info.title')}</p>
+                <p>{t('info.description')}</p>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Price per m² */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Price per m² <span className="text-red-500">*</span>
+                {t('fields.pricePerM2')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -153,7 +153,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Total lease amount */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Total lease amount <span className="text-red-500">*</span>
+                {t('fields.totalLeaseAmount')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -171,7 +171,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Down payment amount */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Down payment amount <span className="text-red-500">*</span>
+                {t('fields.downPayment')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -189,7 +189,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Other payment amount */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Other payment amount
+                {t('fields.otherPayment')}
               </label>
               <input
                 type="number"
@@ -204,18 +204,18 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               )}
             </div>
 
-            {/* NEW: Demarcation Fee */}
+            {/* Demarcation Fee */}
             <div>
               <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
                 <Ruler size={16} className="text-[#2a2718]" />
-                Demarcation Fee
+                {t('fields.demarcationFee')}
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                placeholder="Optional"
+                placeholder={tCommon('optional')}
                 {...register("demarcation_fee")}
               />
               {errors.demarcation_fee && (
@@ -225,11 +225,11 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               )}
             </div>
 
-            {/* NEW: Engineering Service Fee */}
+            {/* Engineering Service Fee */}
             <div>
               <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
                 <FileText size={16} className="text-[#2a2718]" />
-                Engineering Service Fee
+                {t('fields.engineeringFee')}
               </label>
               <input
                 type="number"
@@ -246,11 +246,11 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               )}
             </div>
 
-            {/* NEW: Contract Registration Fee*/}
+            {/* Contract Registration Fee */}
             <div className="md:col-span-2">
               <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
                 <Receipt size={16} className="text-[#2a2718]" />
-                Contract Registration Fee 
+                {t('fields.registrationFee')}
               </label>
               <input
                 type="number"
@@ -265,13 +265,12 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                   {errors.contract_registration_fee.message}
                 </p>
               )}
-            
             </div>
             
             {/* Lease period years */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Lease period (years) <span className="text-red-500">*</span>
+                {t('fields.leasePeriod')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -288,7 +287,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Payment term years */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Payment term (years) <span className="text-red-500">*</span>
+                {t('fields.paymentTerm')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -305,7 +304,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Legal framework */}
             <div className="md:col-span-2">
               <label className="block text-[#2a2718] mb-1">
-                Legal framework <span className="text-red-500">*</span>
+                {t('fields.legalFramework')} <span className="text-red-500">*</span>
               </label>
               <textarea
                 rows={2}
@@ -322,7 +321,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Contract date */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Contract date <span className="text-red-500">*</span>
+                {t('fields.contractDate')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -339,7 +338,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Start date */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                Start date <span className="text-red-500">*</span>
+                {t('fields.startDate')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -358,7 +357,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
           <div className="bg-[#f0cd6e]/10 border border-[#f0cd6e] rounded-lg p-3">
             <p className="text-xs text-[#2a2718] flex items-center gap-1">
               <Receipt size={14} />
-              Additional fees (demarcation, engineering, registration)
+              {t('info.feesNote')}
             </p>
           </div>
 
@@ -368,7 +367,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               onClick={onClose}
               className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20 transition-colors"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
@@ -378,10 +377,10 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               {isSubmitting ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Saving...
+                  {tCommon('saving')}
                 </>
               ) : (
-                isSubcityNormal ? 'Submit for Approval' : 'Save Lease'
+                isSubcityNormal ? t('buttons.submitForApproval') : t('buttons.save')
               )}
             </button>
           </div>

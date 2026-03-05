@@ -1,6 +1,7 @@
 // src/components/userMgt/ApprovalPendingModal.tsx
 import React from 'react';
 import { X, Clock } from 'lucide-react';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface ApprovalPendingModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface ApprovalPendingModalProps {
 }
 
 const ApprovalPendingModal: React.FC<ApprovalPendingModalProps> = ({ isOpen, request, onClose }) => {
+  const { t } = useTranslate('users');
+
   if (!isOpen || !request) return null;
 
   const getActionMessage = () => {
@@ -50,37 +53,40 @@ const ApprovalPendingModal: React.FC<ApprovalPendingModalProps> = ({ isOpen, req
           </div>
           
           <h3 className="text-xl font-bold text-[#2a2718] mb-2">
-            Approval Request Submitted
+            {t('approvalModal.title')}
           </h3>
           
           <p className="text-[#2a2718]/70 mb-4">
-            Your {getEntityMessage().toLowerCase()} {getActionMessage()} request has been submitted for approval.
+            {t('approvalModal.message', { 
+              entity: getEntityMessage().toLowerCase(), 
+              action: getActionMessage() 
+            })}
           </p>
           
           <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left">
             <div className="flex justify-between mb-2">
-              <span className="text-sm text-[#2a2718]/60">Request ID:</span>
+              <span className="text-sm text-[#2a2718]/60">{t('approvalModal.requestId')}:</span>
               <span className="text-sm font-mono text-[#2a2718]">{request.request_id}</span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-sm text-[#2a2718]/60">Status:</span>
-              <span className="text-sm font-medium text-yellow-600">Pending Approval</span>
+              <span className="text-sm text-[#2a2718]/60">{t('approvalModal.status')}:</span>
+              <span className="text-sm font-medium text-yellow-600">{t('approvalModal.pending')}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-[#2a2718]/60">Action:</span>
+              <span className="text-sm text-[#2a2718]/60">{t('approvalModal.action')}:</span>
               <span className="text-sm text-[#2a2718]">{request.action}</span>
             </div>
           </div>
           
           <p className="text-sm text-[#2a2718]/60 mb-4">
-            You will be notified when an approver reviews your request.
+            {t('approvalModal.notification')}
           </p>
           
           <button
             onClick={onClose}
             className="w-full px-4 py-2 bg-[#f0cd6e] text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/80 transition-colors font-medium"
           >
-            Got it
+            {t('approvalModal.close')}
           </button>
         </div>
       </div>

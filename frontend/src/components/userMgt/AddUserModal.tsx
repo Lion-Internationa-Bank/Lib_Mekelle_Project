@@ -1,8 +1,9 @@
-// src/components/admin/AddUserModal.tsx
+// src/components/userMgt/AddUserModal.tsx
 import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Building, Clock } from 'lucide-react';
 import type { UserCreateInput } from '../../services/userService';
 import { getSubCities, type SubCity } from '../../services/cityAdminService';
+import { useTranslate } from '../../i18n/useTranslate';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ interface AddUserModalProps {
 }
 
 const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: AddUserModalProps) => {
+  const { t } = useTranslate('users');
+  const { t: tCommon } = useTranslate('common');
+  
   const [formData, setFormData] = useState<UserCreateInput>({
     username: '',
     password: '',
@@ -47,10 +51,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
       if (res.success) {
         setSubCities(res.data?.sub_cities || []);
       } else {
-        setSubCitiesError(res.error || 'Failed to load sub-cities');
+        setSubCitiesError(res.error || t('errors.fetchFailed'));
       }
     } catch (error) {
-      setSubCitiesError('Failed to load sub-cities');
+      setSubCitiesError(t('errors.fetchFailed'));
     } finally {
       setLoadingSubCities(false);
     }
@@ -67,25 +71,14 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
       case 'SUBCITY_ADMIN':
         return ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'];
       case 'REVENUE_ADMIN':
-        return ['REVENUE_USER',];
+        return ['REVENUE_USER'];
       default:
         return [];
     }
   };
 
   const getRoleDisplayName = (role: string) => {
-    const roleMap: Record<string, string> = {
-      'CITY_ADMIN': 'City Admin',
-      'CITY_APPROVER': 'City Approver',
-      'SUBCITY_ADMIN': 'Sub-city Admin',
-      'SUBCITY_APPROVER': 'Sub-city Approver',
-      'SUBCITY_NORMAL': 'Sub-city Normal',
-      'SUBCITY_AUDITOR': 'Sub-city Auditor',
-      'REVENUE_ADMIN': 'Revenue Admin',
-      'REVENUE_APPROVER': 'Revenue Approver',
-      'REVENUE_USER': 'Revenue User',
-    };
-    return roleMap[role] || role.replace('_', ' ');
+    return t(`roles.${role}`);
   };
 
   const shouldShowSubCityField = (role: string) => {
@@ -124,14 +117,14 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'SUBCITY_ADMIN') {
       return (
         <div>
-          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.subcity')} *</label>
           <div className="flex items-center gap-2 p-2 bg-[#f0cd6e]/10 rounded-xl border border-[#f0cd6e]">
             <Building className="w-4 h-4 text-[#2a2718]" />
             <span className="text-[#2a2718]">{currentUser.sub_city_id}</span>
-            <span className="text-xs text-[#2a2718]/70 ml-auto">(Your sub-city)</span>
+            <span className="text-xs text-[#2a2718]/70 ml-auto">{t('subcity.yourSubcity')}</span>
           </div>
           <p className="text-xs text-[#2a2718]/70 mt-1">
-            As a Sub-city Admin, you can only create users in your own sub-city
+            {t('subcity.adminRestriction')}
           </p>
         </div>
       );
@@ -141,10 +134,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'CITY_ADMIN' && ['SUBCITY_ADMIN', 'SUBCITY_APPROVER'].includes(formData.role)) {
       return (
         <div>
-          <label className="block text-sm font-medium text-[#2a2718] mb-1">Select Sub-city *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('subcity.select')} *</label>
           {loadingSubCities ? (
             <div className="px-4 py-2 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/5">
-              <p className="text-sm text-[#2a2718]/70">Loading sub-cities...</p>
+              <p className="text-sm text-[#2a2718]/70">{tCommon('loading')}</p>
             </div>
           ) : subCitiesError ? (
             <div className="px-4 py-2 border border-red-300 rounded-xl bg-red-50">
@@ -154,12 +147,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
                 onClick={loadSubCities}
                 className="mt-2 text-sm text-[#f0cd6e] hover:text-[#2a2718]"
               >
-                Retry
+                {tCommon('retry')}
               </button>
             </div>
           ) : subCities.length === 0 ? (
             <div className="px-4 py-2 border border-[#f0cd6e] rounded-xl bg-[#f0cd6e]/5">
-              <p className="text-sm text-[#2a2718]/70">No sub-cities available</p>
+              <p className="text-sm text-[#2a2718]/70">{t('subcity.none')}</p>
             </div>
           ) : (
             <select
@@ -168,7 +161,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white"
               required
             >
-              <option value="">Select a sub-city</option>
+              <option value="">{t('subcity.select')}</option>
               {subCities.map((subCity) => (
                 <option key={subCity.sub_city_id} value={subCity.sub_city_id}>
                   {subCity.name} ({subCity.sub_city_id.substring(0, 8)}...)
@@ -177,7 +170,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             </select>
           )}
           <p className="text-xs text-[#2a2718]/70 mt-1">
-            Select the sub-city this user will manage
+            {t('subcity.selectDescription')}
           </p>
         </div>
       );
@@ -187,17 +180,17 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
     if (currentUser?.role === 'CITY_ADMIN' && ['SUBCITY_NORMAL', 'SUBCITY_AUDITOR'].includes(formData.role)) {
       return (
         <div>
-          <label className="block text-sm font-medium text-[#2a2718] mb-1">Sub-city *</label>
+          <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.subcity')} *</label>
           <input
             type="text"
             value={formData.sub_city_id || ''}
             onChange={(e) => setFormData({...formData, sub_city_id: e.target.value})}
             className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
             required
-            placeholder="Enter sub-city ID"
+            placeholder={t('placeholders.selectSubcity')}
           />
           <p className="text-xs text-[#2a2718]/70 mt-1">
-            Enter the sub-city ID for this user
+            {t('subcity.enterDescription')}
           </p>
         </div>
       );
@@ -211,8 +204,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
       <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-bold text-[#2a2718]">Add New User</h3>
-            <p className="text-sm text-[#2a2718]/70 mt-1">Create a new user account</p>
+            <h3 className="text-xl font-bold text-[#2a2718]">{t('addUser.title')}</h3>
+            <p className="text-sm text-[#2a2718]/70 mt-1">{t('addUser.subtitle')}</p>
           </div>
           <button
             onClick={onClose}
@@ -229,10 +222,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm text-amber-700 font-medium">
-                  This user creation requires approval
+                  {t('addUser.requiresApproval')}
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
-                  Your request will be sent for review by an approver. The user will be created after approval.
+                  {t('addUser.approvalMessage')}
                 </p>
               </div>
             </div>
@@ -241,7 +234,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#2a2718] mb-1">Full Name *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.fullName')} *</label>
             <input
               type="text"
               value={formData.full_name}
@@ -249,11 +242,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
               disabled={creatingUser}
+              placeholder={t('placeholders.fullName')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#2a2718] mb-1">Username *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.username')} *</label>
             <input
               type="text"
               value={formData.username}
@@ -261,11 +255,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
               required
               disabled={creatingUser}
+              placeholder={t('placeholders.username')}
             />
           </div>
 
           <div className="relative">
-            <label className="block text-sm font-medium text-[#2a2718] mb-1">Password *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.password')} *</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -275,6 +270,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
                 required
                 minLength={6}
                 disabled={creatingUser}
+                placeholder={t('placeholders.password')}
               />
               <button
                 type="button"
@@ -284,11 +280,11 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-[#2a2718]/70 mt-1">Minimum 6 characters</p>
+            <p className="text-xs text-[#2a2718]/70 mt-1">{t('addUser.passwordHint')}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#2a2718] mb-1">Role *</label>
+            <label className="block text-sm font-medium text-[#2a2718] mb-1">{t('fields.role')} *</label>
             <select
               value={formData.role}
               onChange={(e) => handleRoleChange(e.target.value)}
@@ -312,7 +308,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               disabled={creatingUser}
               className="flex-1 px-4 py-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl hover:bg-[#f0cd6e]/20 font-medium transition-colors border border-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
@@ -322,10 +318,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
               {creatingUser ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {selectedRoleRequiresApproval ? 'Submitting...' : 'Creating...'}
+                  {selectedRoleRequiresApproval ? t('addUser.submitting') : t('addUser.submitting')}
                 </>
               ) : (
-                selectedRoleRequiresApproval ? 'Submit for Approval' : 'Create User'
+                selectedRoleRequiresApproval ? t('addUser.submitForApproval') : t('addUser.submit')
               )}
             </button>
           </div>

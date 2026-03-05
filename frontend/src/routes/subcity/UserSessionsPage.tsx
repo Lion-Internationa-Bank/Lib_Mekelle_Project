@@ -1,6 +1,7 @@
 // src/pages/UserSessionsPage.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslate } from "../../i18n/useTranslate";
 import wizardApi from "../../services/wizardApi";
 import { toast } from "sonner";
 
@@ -76,6 +77,9 @@ interface Pagination {
 
 const UserSessionsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslate('sessions');
+  const { t: tCommon } = useTranslate('common');
+  
   const [sessions, setSessions] = useState<WizardSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "draft" | "pending" | "completed" | "rejected">("all");
@@ -134,12 +138,12 @@ const UserSessionsPage = () => {
           setPagination(response.data.pagination);
         }
       } else {
-        toast.error(response.error || "Failed to load sessions");
+        toast.error(response.error || t('errors.loadFailed'));
         setSessions([]);
       }
     } catch (error: any) {
       console.error('Load sessions error:', error);
-      toast.error(error.message || "Failed to load sessions");
+      toast.error(error.message || t('errors.loadFailed'));
       setSessions([]);
     } finally {
       setIsLoading(false);
@@ -186,15 +190,15 @@ const UserSessionsPage = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "DRAFT":
-        return "Draft";
+        return t('status.draft');
       case "PENDING_APPROVAL":
-        return "Pending Approval";
+        return t('status.pending');
       case "APPROVED":
-        return "Approved";
+        return t('status.approved');
       case "REJECTED":
-        return "Rejected";
+        return t('status.rejected');
       case "MERGED":
-        return "Completed";
+        return t('status.completed');
       default:
         return status.replace("_", " ");
     }
@@ -202,13 +206,13 @@ const UserSessionsPage = () => {
 
   const getStepText = (step: string) => {
     const stepMap: Record<string, string> = {
-      parcel: "Parcel Info",
-      "parcel-docs": "Parcel Documents",
-      owner: "Owner Info",
-      "owner-docs": "Owner Documents",
-      lease: "Lease Info",
-      "lease-docs": "Lease Documents",
-      validation: "Ready to Submit",
+      parcel: t('steps.parcel'),
+      "parcel-docs": t('steps.parcelDocs'),
+      owner: t('steps.owner'),
+      "owner-docs": t('steps.ownerDocs'),
+      lease: t('steps.lease'),
+      "lease-docs": t('steps.leaseDocs'),
+      validation: t('steps.validation'),
     };
     return stepMap[step] || step;
   };
@@ -242,18 +246,18 @@ const UserSessionsPage = () => {
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(tCommon('language') === 'am' ? 'am-ET' : 'en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
     } catch (error) {
-      return "Invalid date";
+      return tCommon('date.invalid');
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ET', {
+    return new Intl.NumberFormat(tCommon('language') === 'am' ? 'am-ET' : 'en-ET', {
       style: 'currency',
       currency: 'ETB',
       minimumFractionDigits: 0,
@@ -272,7 +276,7 @@ const UserSessionsPage = () => {
   const handleResubmitSession = (sessionId: string) => {
     console.log("session id from user sessions ", sessionId);
     navigate(`/wizard/${sessionId}`);
-    toast.info("You can now update your information and resubmit for approval");
+    toast.info(t('messages.resubmitInfo'));
   };
 
   const handleCreateNew = () => {
@@ -282,7 +286,7 @@ const UserSessionsPage = () => {
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
+    if (!confirm(t('confirm.delete'))) {
       return;
     }
 
@@ -290,18 +294,16 @@ const UserSessionsPage = () => {
       const response = await wizardApi.deleteSession(sessionId);
       if (response.success) {
         setSessions(prev => prev.filter(s => s.session_id !== sessionId));
-        toast.success("Session deleted");
+        toast.success(t('messages.deleteSuccess'));
         // Refresh the current page to update counts
         loadSessions(pagination.page);
       } else {
-        toast.error(response.error || "Failed to delete session");
+        toast.error(response.error || t('errors.deleteFailed'));
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete session");
+      toast.error(error.message || t('errors.deleteFailed'));
     }
   };
-
-
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
@@ -326,7 +328,7 @@ const UserSessionsPage = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto"></div>
-            <p className="mt-4 text-[#2a2718]">Loading your sessions...</p>
+            <p className="mt-4 text-[#2a2718]">{t('loading')}</p>
           </div>
         </div>
       </div>
@@ -338,9 +340,9 @@ const UserSessionsPage = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2a2718]">My Wizard Sessions</h1>
+          <h1 className="text-3xl font-bold text-[#2a2718]">{t('pageTitle')}</h1>
           <p className="text-[#2a2718]/70 mt-2">
-            Manage your parcel registration sessions
+            {t('pageDescription')}
           </p>
         </div>
 
@@ -355,7 +357,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              All ({pagination.totalCount})
+              {t('filters.all')} ({pagination.totalCount})
             </button>
             <button
               onClick={() => handleFilterChange("draft")}
@@ -365,7 +367,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              Draft
+              {t('filters.draft')}
             </button>
             <button
               onClick={() => handleFilterChange("pending")}
@@ -375,7 +377,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              Pending
+              {t('filters.pending')}
             </button>
             <button
               onClick={() => handleFilterChange("rejected")}
@@ -385,7 +387,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              Rejected
+              {t('filters.rejected')}
             </button>
             <button
               onClick={() => handleFilterChange("completed")}
@@ -395,7 +397,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              Completed
+              {t('filters.completed')}
             </button>
           </div>
 
@@ -406,7 +408,7 @@ const UserSessionsPage = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            New Registration
+            {t('actions.newRegistration')}
           </button>
         </div>
 
@@ -417,20 +419,20 @@ const UserSessionsPage = () => {
               <span className="text-4xl">📋</span>
             </div>
             <h3 className="text-2xl font-bold text-[#2a2718] mb-2">
-              No sessions found
+              {t('empty.title')}
             </h3>
             <p className="text-[#2a2718]/70 mb-6">
               {filter === "all"
-                ? "You haven't started any parcel registration sessions yet."
+                ? t('empty.all')
                 : filter === "rejected"
-                ? "No rejected sessions found."
-                : `No ${filter} sessions found.`}
+                ? t('empty.rejected')
+                : t('empty.filtered', { filter: t(`filters.${filter}`) })}
             </p>
             <button
               onClick={handleCreateNew}
               className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              Start New Registration
+              {t('actions.startNew')}
             </button>
           </div>
         ) : (
@@ -457,7 +459,7 @@ const UserSessionsPage = () => {
                           </span>
                           {isExpired && (
                             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                              Expired
+                              {t('badges.expired')}
                             </span>
                           )}
                           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-[#f0cd6e]/20 text-[#2a2718] border border-[#f0cd6e]">
@@ -465,9 +467,9 @@ const UserSessionsPage = () => {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-[#2a2718]/70">
-                          <span>Session ID: {session.session_id.substring(0, 8)}...</span>
+                          <span>{t('sessionId')}: {session.session_id.substring(0, 8)}...</span>
                           <span>•</span>
-                          <span>Created: {formatDate(session.created_at)}</span>
+                          <span>{t('created')}: {formatDate(session.created_at)}</span>
                         </div>
                       </div>
                       
@@ -476,7 +478,7 @@ const UserSessionsPage = () => {
                           {formatDate(session.updated_at)}
                         </div>
                         <div className="text-xs text-[#2a2718]/70">
-                          Last updated
+                          {t('lastUpdated')}
                         </div>
                       </div>
                     </div>
@@ -489,52 +491,52 @@ const UserSessionsPage = () => {
                           <svg className="w-5 h-5 text-[#f0cd6e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Parcel Information
+                          {t('sections.parcel')}
                         </h3>
                         
                         {session.parcel_data ? (
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">UPIN</div>
-                                <div className="font-mono text-sm font-medium">{session.parcel_data.upin || "Not set"}</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.upin')}</div>
+                                <div className="font-mono text-sm font-medium">{session.parcel_data.upin || t('notSet')}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">File Number</div>
-                                <div className="text-sm font-medium">{session.parcel_data.file_number || "Not set"}</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.fileNumber')}</div>
+                                <div className="text-sm font-medium">{session.parcel_data.file_number || t('notSet')}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Land Use</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.landUse')}</div>
                                 {session.parcel_data.land_use ? (
                                   <span className={`px-2 py-1 text-xs rounded-full ${getLandUseBadge(session.parcel_data.land_use)}`}>
                                     {getLandUseText(session.parcel_data.land_use)}
                                   </span>
                                 ) : (
-                                  <div className="text-sm">Not set</div>
+                                  <div className="text-sm">{t('notSet')}</div>
                                 )}
                               </div>
                             </div>
                             <div className="space-y-2">
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Total Area</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.totalArea')}</div>
                                 <div className="text-sm font-medium">{session.parcel_data.total_area_m2 || 0} m²</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Tenure Type</div>
-                                <div className="text-sm font-medium">{session.parcel_data.tenure_type || "Not set"}</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.tenureType')}</div>
+                                <div className="text-sm font-medium">{session.parcel_data.tenure_type || t('notSet')}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Location</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.location')}</div>
                                 <div className="text-sm font-medium">
                                   {[session.parcel_data.block, session.parcel_data.tabia, session.parcel_data.ketena]
                                     .filter(Boolean)
-                                    .join(", ") || "Not set"}
+                                    .join(", ") || t('notSet')}
                                 </div>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-[#2a2718]/50 italic text-sm">No parcel information added yet</div>
+                          <div className="text-[#2a2718]/50 italic text-sm">{t('noData.parcel')}</div>
                         )}
                       </div>
 
@@ -546,23 +548,23 @@ const UserSessionsPage = () => {
                             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            Owner Information
+                            {t('sections.owner')}
                           </h3>
                           {session.owner_data?.length ? (
                             <div className="space-y-2">
                               <div className="text-sm font-medium">{session.owner_data[0].full_name}</div>
                               <div className="text-xs text-[#2a2718]/70">
-                                {session.owner_data[0].national_id && `ID: ${session.owner_data[0].national_id}`}
-                                {session.owner_data[0].tin_number && ` • TIN: ${session.owner_data[0].tin_number}`}
+                                {session.owner_data[0].national_id && `${t('fields.nationalId')}: ${session.owner_data[0].national_id}`}
+                                {session.owner_data[0].tin_number && ` • ${t('fields.tin')}: ${session.owner_data[0].tin_number}`}
                               </div>
                               {session.owner_data.length > 1 && (
                                 <div className="text-xs text-[#f0cd6e]">
-                                  +{session.owner_data.length - 1} more owner(s)
+                                  +{session.owner_data.length - 1} {t('moreOwners')}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <div className="text-[#2a2718]/50 italic text-sm">No owner information added yet</div>
+                            <div className="text-[#2a2718]/50 italic text-sm">{t('noData.owner')}</div>
                           )}
                         </div>
 
@@ -572,29 +574,29 @@ const UserSessionsPage = () => {
                             <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            Lease Information
+                            {t('sections.lease')}
                           </h3>
                           {session.lease_data ? (
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Total Amount</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.totalAmount')}</div>
                                 <div className="text-sm font-medium">{formatCurrency(session.lease_data.total_lease_amount)}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Lease Period</div>
-                                <div className="text-sm font-medium">{session.lease_data.lease_period_years} years</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.leasePeriod')}</div>
+                                <div className="text-sm font-medium">{session.lease_data.lease_period_years} {t('years')}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Price per m²</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.pricePerM2')}</div>
                                 <div className="text-sm font-medium">{formatCurrency(session.lease_data.price_per_m2)}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#2a2718]/70">Start Date</div>
+                                <div className="text-xs text-[#2a2718]/70">{t('fields.startDate')}</div>
                                 <div className="text-sm font-medium">{formatDate(session.lease_data.start_date)}</div>
                               </div>
                             </div>
                           ) : (
-                            <div className="text-[#2a2718]/50 italic text-sm">No lease information added yet</div>
+                            <div className="text-[#2a2718]/50 italic text-sm">{t('noData.lease')}</div>
                           )}
                         </div>
                       </div>
@@ -606,8 +608,8 @@ const UserSessionsPage = () => {
                       {/* Documents */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-[#2a2718]/70">Documents</span>
-                          <span className="text-sm font-medium">{documentCount} file(s)</span>
+                          <span className="text-sm text-[#2a2718]/70">{t('documents')}</span>
+                          <span className="text-sm font-medium">{t('files', { count: documentCount })}</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {session.parcel_docs?.map((doc, index) => (
@@ -626,7 +628,7 @@ const UserSessionsPage = () => {
                             </span>
                           ))}
                           {documentCount === 0 && (
-                            <span className="text-[#2a2718]/50 italic text-xs">No documents uploaded</span>
+                            <span className="text-[#2a2718]/50 italic text-xs">{t('noDocuments')}</span>
                           )}
                         </div>
                       </div>
@@ -642,7 +644,7 @@ const UserSessionsPage = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                           </svg>
-                          Continue Session
+                          {t('actions.continue')}
                         </button>
                       )}
 
@@ -654,7 +656,7 @@ const UserSessionsPage = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                          Resubmit for Approval
+                          {t('actions.resubmit')}
                         </button>
                       )}
 
@@ -673,7 +675,7 @@ const UserSessionsPage = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          View Details
+                          {t('actions.viewDetails')}
                         </button>
                       )}
 
@@ -686,7 +688,7 @@ const UserSessionsPage = () => {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            Delete
+                            {tCommon('delete')}
                           </button>
                         </>
                       )}
@@ -702,15 +704,15 @@ const UserSessionsPage = () => {
                           </svg>
                           <div>
                             <div className="text-sm font-medium text-red-800 mb-1">
-                              This request was rejected
+                              {t('rejection.title')}
                             </div>
                             {session.approval_request.rejection_reason && (
                               <p className="text-xs text-red-700 mb-2">
-                                Reason: {session.approval_request.rejection_reason}
+                                {t('rejection.reason')}: {session.approval_request.rejection_reason}
                               </p>
                             )}
                             <p className="text-xs text-red-700">
-                              Click "Resubmit for Approval" to update your information and try again.
+                              {t('rejection.instructions')}
                             </p>
                           </div>
                         </div>
@@ -724,7 +726,7 @@ const UserSessionsPage = () => {
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
-                          <span>This draft session has expired and cannot be continued.</span>
+                          <span>{t('expired.warning')}</span>
                         </div>
                       </div>
                     )}
@@ -737,9 +739,9 @@ const UserSessionsPage = () => {
             {pagination.totalPages > 1 && (
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-[#2a2718]/70 order-2 sm:order-1">
-                  Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of{' '}
-                  {pagination.totalCount} sessions
+                  {tCommon('pagination.showing')} {(pagination.page - 1) * pagination.limit + 1} {tCommon('pagination.to')}{' '}
+                  {Math.min(pagination.page * pagination.limit, pagination.totalCount)} {tCommon('pagination.of')}{' '}
+                  {pagination.totalCount} {t('items')}
                 </div>
                 
                 <div className="flex items-center gap-2 order-1 sm:order-2">
@@ -752,7 +754,7 @@ const UserSessionsPage = () => {
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    Previous
+                    {tCommon('pagination.previous')}
                   </button>
                   
                   {/* Page numbers */}
@@ -781,7 +783,7 @@ const UserSessionsPage = () => {
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    Next
+                    {tCommon('pagination.next')}
                   </button>
                 </div>
               </div>
@@ -794,26 +796,23 @@ const UserSessionsPage = () => {
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
               <div className="text-2xl font-bold text-[#2a2718]">{pagination.totalCount}</div>
-              <div className="text-sm text-[#2a2718]/70">Total Sessions</div>
+              <div className="text-sm text-[#2a2718]/70">{t('stats.total')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-[#f0cd6e]">
-                {/* We don't have per-status counts from API, but could add another endpoint */}
-                -
-              </div>
-              <div className="text-sm text-[#2a2718]/70">Draft</div>
+              <div className="text-2xl font-bold text-[#f0cd6e]">-</div>
+              <div className="text-sm text-[#2a2718]/70">{t('stats.draft')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
               <div className="text-2xl font-bold text-blue-600">-</div>
-              <div className="text-sm text-[#2a2718]/70">Pending</div>
+              <div className="text-sm text-[#2a2718]/70">{t('stats.pending')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
               <div className="text-2xl font-bold text-red-600">-</div>
-              <div className="text-sm text-[#2a2718]/70">Rejected</div>
+              <div className="text-sm text-[#2a2718]/70">{t('stats.rejected')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
               <div className="text-2xl font-bold text-green-600">-</div>
-              <div className="text-sm text-[#2a2718]/70">Completed</div>
+              <div className="text-sm text-[#2a2718]/70">{t('stats.completed')}</div>
             </div>
           </div>
         )}

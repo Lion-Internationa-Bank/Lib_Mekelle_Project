@@ -1,5 +1,6 @@
 // src/components/ownership/OwnershipModals.tsx
 import { Info, X } from 'lucide-react';
+import { useTranslate } from '../../i18n/useTranslate';
 import GenericDocsUpload from "../common/GenericDocsUpload";
 import type { OwnerWithParcels } from "../../services/ownersApi";
 
@@ -21,83 +22,86 @@ export const CreateOwnerModal = ({
   onChangeForm: React.Dispatch<React.SetStateAction<typeof form>>;
   onClose: () => void;
   onSave: () => void;
-}) => (
-  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 text-sm">
-      <h2 className="text-lg font-semibold mb-4 text-[#2a2718]">Add Owner</h2>
-      <div className="space-y-3">
-        <div>
-          <label className="block text-[#2a2718] mb-1">Full Name *</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.full_name}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, full_name: e.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">
-            National ID *
-          </label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.national_id}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, national_id: e.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">Phone</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.phone_number}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, phone_number: e.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">TIN</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.tin_number}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, tin_number: e.target.value }))
-            }
-          />
-        </div>
-      </div>
-      <div className="mt-4 p-3 bg-[#f0cd6e]/20 rounded-lg">
-        <div className="flex items-start gap-2">
-          <div className="text-[#2a2718] mt-0.5">
-            <Info size={16} />
+}) => {
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 text-sm">
+        <h2 className="text-lg font-semibold mb-4 text-[#2a2718]">{t('modals.create.title')}</h2>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.fullName')} *</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.full_name}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, full_name: e.target.value }))
+              }
+            />
           </div>
-          <div className="text-sm text-[#2a2718]">
-            <p className="font-medium">Note:</p>
-            <p>Owner creation may require approval. You can upload supporting documents after submission.</p>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.nationalId')} *</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.national_id}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, national_id: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.phone')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.phone_number}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, phone_number: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.tin')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.tin_number}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, tin_number: e.target.value }))
+              }
+            />
           </div>
         </div>
-      </div>
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
-        >
-          {saving ? "Submitting..." : "Submit"}
-        </button>
+        <div className="mt-4 p-3 bg-[#f0cd6e]/20 rounded-lg">
+          <div className="flex items-start gap-2">
+            <div className="text-[#2a2718] mt-0.5">
+              <Info size={16} />
+            </div>
+            <div className="text-sm text-[#2a2718]">
+              <p className="font-medium">{t('modals.create.note')}</p>
+              <p>{t('modals.create.noteDescription')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
+          >
+            {tCommon('cancel')}
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
+          >
+            {saving ? tCommon('submitting') : tCommon('submit')}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const OwnerDocsUploadModal = ({
   ownerId,
@@ -110,6 +114,7 @@ export const OwnerDocsUploadModal = ({
   onClose: () => void;
   onRefresh: () => void;
 }) => {
+  const { t } = useTranslate('ownership');
   const isApprovalRequest = !!approvalRequestId;
 
   return (
@@ -119,22 +124,22 @@ export const OwnerDocsUploadModal = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-                {isApprovalRequest ? 'Owner Creation Request Submitted ✓' : 'Owner Created ✓'}
+                {isApprovalRequest ? t('docs.requestSubmitted') : t('docs.ownerCreated')}
               </h2>
               <p className="text-[#2a2718]/70">
                 {isApprovalRequest 
-                  ? 'Upload supporting documents for the owner creation request'
-                  : 'Upload supporting documents for the new owner'}
+                  ? t('docs.requestDescription')
+                  : t('docs.ownerDescription')}
               </p>
               {isApprovalRequest && (
                 <div className="mt-2 text-sm text-[#2a2718]/70">
-                  <p>Documents will be reviewed by the approver along with your request.</p>
+                  <p>{t('docs.reviewNote')}</p>
                 </div>
               )}
             </div>
             <div className="text-right">
               <span className="inline-block px-4 py-2 text-sm font-bold bg-[#f0cd6e] text-[#2a2718] rounded-full">
-                Optional Step
+                {t('docs.optionalStep')}
               </span>
             </div>
           </div>
@@ -142,7 +147,7 @@ export const OwnerDocsUploadModal = ({
 
         <div className="p-8">
           <GenericDocsUpload
-            title="Owner supporting documents"
+            title={t('docs.uploadTitle')}
             upin=""
             subCity=""
             ownerId={ownerId}
@@ -150,11 +155,11 @@ export const OwnerDocsUploadModal = ({
             isApprovalRequest={isApprovalRequest}
             hideTitle={true}
             allowedDocTypes={[
-              { value: "ID_COPY", label: "National ID Copy" },
-              { value: "PASSPORT_PHOTO", label: "Passport-size Photo" },
-              { value: "TIN_CERT", label: "TIN Certificate" },
-              { value: "POWER_OF_ATTORNEY", label: "Power of Attorney" },
-              { value: "OTHER", label: "Other Document" },
+              { value: "ID_COPY", label: t('docs.docTypes.idCopy') },
+              { value: "PASSPORT_PHOTO", label: t('docs.docTypes.passportPhoto') },
+              { value: "TIN_CERT", label: t('docs.docTypes.tinCert') },
+              { value: "POWER_OF_ATTORNEY", label: t('docs.docTypes.powerOfAttorney') },
+              { value: "OTHER", label: t('docs.docTypes.other') },
             ]}
             allowDelete={isApprovalRequest}
             showExisting={true}
@@ -169,7 +174,7 @@ export const OwnerDocsUploadModal = ({
             className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition flex items-center gap-2"
           >
             <X size={16} />
-            Skip for now
+            {t('docs.skipForNow')}
           </button>
 
           <button
@@ -179,7 +184,7 @@ export const OwnerDocsUploadModal = ({
             }}
             className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
-            Done – Close
+            {t('docs.doneClose')}
             <span className="text-lg">→</span>
           </button>
         </div>
@@ -205,70 +210,75 @@ export const EditOwnerModal = ({
   onChangeForm: React.Dispatch<React.SetStateAction<typeof form>>;
   onClose: () => void;
   onSave: () => void;
-}) => (
-  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 text-sm">
-      <h2 className="text-lg font-semibold mb-4 text-[#2a2718]">Edit Owner</h2>
-      <div className="space-y-3">
-        <div>
-          <label className="block text-[#2a2718] mb-1">Full Name</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.full_name}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, full_name: e.target.value }))
-            }
-          />
+}) => {
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 text-sm">
+        <h2 className="text-lg font-semibold mb-4 text-[#2a2718]">{t('modals.edit.title')}</h2>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.fullName')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.full_name}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, full_name: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.nationalId')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.national_id}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, national_id: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.phone')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.phone_number}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, phone_number: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[#2a2718] mb-1">{t('fields.tin')}</label>
+            <input
+              className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
+              value={form.tin_number}
+              onChange={(e) =>
+                onChangeForm((f) => ({ ...f, tin_number: e.target.value }))
+              }
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">National ID</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.national_id}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, national_id: e.target.value }))
-            }
-          />
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
+          >
+            {tCommon('cancel')}
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
+          >
+            {saving ? tCommon('saving') : tCommon('save')}
+          </button>
         </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">Phone</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.phone_number}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, phone_number: e.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label className="block text-[#2a2718] mb-1">TIN</label>
-          <input
-            className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-            value={form.tin_number}
-            onChange={(e) =>
-              onChangeForm((f) => ({ ...f, tin_number: e.target.value }))
-            }
-          />
-        </div>
-      </div>
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save"}
-        </button>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const DeleteOwnerModal = ({
   saving,
@@ -280,32 +290,35 @@ export const DeleteOwnerModal = ({
   owner: OwnerWithParcels;
   onClose: () => void;
   onConfirm: () => void;
-}) => (
-  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-sm">
-      <h2 className="text-lg font-semibold mb-4 text-red-700">
-        Delete Owner
-      </h2>
-      <p className="mb-4 text-[#2a2718]">
-        Are you sure you want to delete owner{" "}
-        <span className="font-semibold">{owner.full_name}</span>? Owners
-        with active parcels cannot be deleted.
-      </p>
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={saving}
-          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          {saving ? "Deleting..." : "Delete"}
-        </button>
+}) => {
+  const { t } = useTranslate('ownership');
+  const { t: tCommon } = useTranslate('common');
+  
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-sm">
+        <h2 className="text-lg font-semibold mb-4 text-red-700">
+          {t('modals.delete.title')}
+        </h2>
+        <p className="mb-4 text-[#2a2718]">
+          {t('modals.delete.confirmMessage', { name: owner.full_name })}
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-[#f0cd6e] text-[#2a2718] hover:bg-[#f0cd6e]/20"
+          >
+            {tCommon('cancel')}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {saving ? tCommon('deleting') : tCommon('delete')}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};

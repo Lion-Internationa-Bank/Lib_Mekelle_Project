@@ -1,3 +1,5 @@
+// src/components/parcelDetail/sections/TransferHistorySection.tsx
+import { useTranslate } from "../../../i18n/useTranslate";
 import TransferHistoryCard from "../cards/TransferHistoryCard";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 
@@ -8,23 +10,24 @@ type Props = {
 };
 
 const TransferHistorySection = ({ history, upin, onReload }: Props) => {
+  const { t } = useTranslate('transferHistorySection');
+
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Ownership Transfer History
+          {t('title')}
         </h2>
 
         {history.length === 0 ? (
           <div className="text-center py-12 bg-gradient-to-b from-blue-50 to-indigo-50 rounded-xl">
             <div className="max-w-md mx-auto">
-              <div className="text-5xl mb-4">Initial Allocation</div>
+              <div className="text-5xl mb-4">{t('empty.icon')}</div>
               <p className="text-xl font-semibold text-gray-800 mb-2">
-                Old Possession / Initial Allocation
+                {t('empty.title')}
               </p>
               <p className="text-gray-600">
-                This parcel has no recorded ownership transfers.<br />
-                Current owners hold it under original/old possession rights.
+                {t('empty.description')}
               </p>
             </div>
           </div>

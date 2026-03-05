@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslate } from "../i18n/useTranslate";
 
 import { fetchParcelDetail, type ParcelDetail } from "../services/parcelDetailApi";
 
@@ -19,9 +20,11 @@ import TransferHistorySection from "../components/parcelDetail/sections/Transfer
 
 type DetailTab = "parcel" | "lease" | "encumbrances" | "history" | "buildings" | "billing";
 
-
 const ParcelDetailPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslate('parcelDetail');
+  const { t: tCommon } = useTranslate('common');
+  
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const navigate = useNavigate();
   const { upin } = useParams<{ upin: string }>();
@@ -42,17 +45,17 @@ const ParcelDetailPage = () => {
         if (res.success) {
           setData(res.data);
         } else {
-          setError("Failed to load parcel detail");
+          setError(t('errors.loadFailed'));
         }
       } catch (err: any) {
-        setError(err.message || "Network error");
+        setError(err.message || t('errors.networkError'));
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [upin]);
+  }, [upin, t]);
 
   const reload = async () => {
     if (!upin) return;
@@ -64,14 +67,12 @@ const ParcelDetailPage = () => {
     }
   };
 
-    if (!user) {
-
+  if (!user) {
     console.warn(
       `[AuthGuard] No user found at ${new Date().toLocaleTimeString()}. Redirecting to /login...`
     );
     return <Navigate to="/login" replace />;
   }
-
 
   if (loading) {
     return (
@@ -86,13 +87,13 @@ const ParcelDetailPage = () => {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="text-center p-8 bg-red-50 rounded-2xl border border-red-200 max-w-md">
           <p className="text-red-800 font-semibold text-lg mb-4">
-            {error || "Parcel not found"}
+            {error || t('errors.notFound')}
           </p>
           <button
             onClick={() => navigate("/home")}
             className="mt-4 px-6 py-3 bg-[#f0cd6e] text-[#2a2718] rounded-xl hover:bg-[#2a2718] hover:text-white transition"
           >
-            ← Back to Dashboard
+            ← {t('actions.backToDashboard')}
           </button>
         </div>
       </div>
@@ -117,27 +118,23 @@ const ParcelDetailPage = () => {
 
             {/* Parcel-level Documents */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-8">
-              <h2 className="text-xl font-semibold text-[#2a2718] mb-6">Parcel Documents</h2>
+              <h2 className="text-xl font-semibold text-[#2a2718] mb-6">{t('sections.documents')}</h2>
               <DocumentList documents={data.documents} />
             </div>
-            { isSubcityNormal &&
-            ( <DangerZone upin={data.upin} onDeleted={() => navigate("/home")} />)
-            }
-
-         
+            {isSubcityNormal && (
+              <DangerZone upin={data.upin} onDeleted={() => navigate("/home")} />
+            )}
           </>
         )}
 
         {/* Lease Tab */}
-      
-{ tab === "lease" && data.tenure_type == "LEASE" && (
-  <LeaseSection
-    parcel={data}
-    lease={data.lease_agreement}
-    onReload={reload}
-  />
-)}
-
+        {tab === "lease" && data.tenure_type == "LEASE" && (
+          <LeaseSection
+            parcel={data}
+            lease={data.lease_agreement}
+            onReload={reload}
+          />
+        )}
 
         {/* Encumbrances Tab */}
         {tab === "encumbrances" && (

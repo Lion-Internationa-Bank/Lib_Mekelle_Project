@@ -1,24 +1,29 @@
-// src/components/parcelDetail/ParcelInfoSection.tsx
+// src/components/parcelDetail/sections/ParcelInfoSection.tsx
 import { useState, useEffect } from "react";
+import { useTranslate } from "../../../i18n/useTranslate";
 import ParcelInfoCard from "../cards/ParcelInfoCard";
 import EditParcelModal from "../modals/EditParcelModal";
 import { CreateOwnerModal, OwnerDocsUploadModal } from "../../ownership/OwnershipModals";
 import SubdivideParcelModal from "../modals/SubdivideParcelModal";
 import ApprovalRequestDocsModal from "../../../components/common/ApprovalRequestDocsModal";
-import { searchOwnersLiteApi, addOwnerToParcel, } from "../../../services/parcelDetailApi";
+import { searchOwnersLiteApi, addOwnerToParcel } from "../../../services/parcelDetailApi";
 import { createOwner } from "../../../services/parcelApi";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "sonner";
-import { X,AlertCircle,Plus } from "lucide-react";
+import { X, AlertCircle, Plus } from "lucide-react";
 import UniversalDateInput from "../../common/UniversalDateInput";
 import { formatLocalDate, parseLocalDate } from "../../../utils/calendarUtils";
+
 type Props = {
   parcel: ParcelDetail;
   onReload: () => Promise<void>;
 };
 
 const ParcelInfoSection = ({ parcel, onReload }: Props) => {
+  const { t } = useTranslate('parcelInfo');
+  const { t: tCommon } = useTranslate('common');
+  
   const [showEditParcel, setShowEditParcel] = useState(false);
   const [showAddCoOwnerSearch, setShowAddCoOwnerSearch] = useState(false);
   const [showCreateOwner, setShowCreateOwner] = useState(false);
@@ -90,7 +95,6 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
     setShowAddCoOwnerSearch(false);
   };
 
-
   const handleAddExistingOwner = async () => {
     if (!selectedOwner) return;
     
@@ -98,22 +102,22 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       setAddingOwner(true);
       
       // Call the API to add owner to parcel
-      console.log("date at handle add exiteing owner",acquiredAt)
+      console.log("date at handle add existing owner", acquiredAt);
       const result = await addOwnerToParcel(parcel.upin, selectedOwner.owner_id, acquiredAt);
       
       // Check if approval is required
       if (result.data?.approval_request_id) {
         setCurrentApprovalRequest({
           id: result.data.approval_request_id,
-          title: "Upload Co-Owner Documents",
-          description: `Upload supporting documents for adding ${selectedOwner.full_name} as co-owner`,
+          title: t('coowner.uploadTitle', { name: selectedOwner.full_name }),
+          description: t('coowner.uploadDescription', { name: selectedOwner.full_name }),
           resultData: result.data
         });
         setShowApprovalDocsModal(true);
-        toast.success(result.message || "Co-owner addition request submitted for approval");
+        toast.success(result.message || t('coowner.submitted'));
       } else {
         // Immediate execution
-        toast.success(result.message || "Co-owner added successfully");
+        toast.success(result.message || t('coowner.added'));
         await onReload();
       }
       
@@ -125,7 +129,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       setSearchResults([]);
       
     } catch (err: any) {
-      toast.error(err.message || "Failed to add co-owner");
+      toast.error(err.message || t('coowner.addFailed'));
     } finally {
       setAddingOwner(false);
     }
@@ -134,7 +138,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
   const handleCreateNewOwner = async () => {
     // Validate form
     if (!newOwnerForm.full_name || !newOwnerForm.national_id) {
-      toast.error("Full name and National ID are required");
+      toast.error(t('newowner.validation'));
       return;
     }
 
@@ -153,25 +157,25 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       if (response.data?.approval_request_id) {
         setCurrentApprovalRequest({
           id: response.data.approval_request_id,
-          title: "Upload New Owner Documents",
-          description: `Upload supporting documents for new owner ${newOwnerForm.full_name}`,
+          title: t('newowner.uploadTitle', { name: newOwnerForm.full_name }),
+          description: t('newowner.uploadDescription', { name: newOwnerForm.full_name }),
           resultData: response.data
         });
         setShowApprovalDocsModal(true);
-        toast.success(response.message || "New owner creation request submitted for approval");
+        toast.success(response.message || t('newowner.submitted'));
       } else {
         // Immediate execution
         const ownerId = response.data.owner_id;
         setNewOwnerId(ownerId);
         setShowCreateOwner(false);
         setShowOwnerDocsUpload(true);
-        toast.success(response.message || "Owner created successfully");
+        toast.success(response.message || t('newowner.created'));
       }
       
       await onReload();
       
     } catch (err: any) {
-      toast.error(err.message || "Failed to create owner");
+      toast.error(err.message || t('newowner.createFailed'));
     } finally {
       setAddingOwner(false);
     }
@@ -217,7 +221,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 text-center text-[#2a2718]/70">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f0cd6e] mx-auto mb-4" />
-          Loading parcel data...
+          {tCommon('loading')}
         </div>
       )}
 
@@ -236,7 +240,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
+              <h2 className="text-xl font-semibold text-[#2a2718]">{t('coowner.modalTitle')}</h2>
               <button
                 onClick={handleCloseAddCoOwner}
                 className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
@@ -251,12 +255,12 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-[#2a2718] mt-0.5 shrink-0" />
                   <div className="text-sm text-[#2a2718]">
-                    <p className="font-medium mb-1">Adding Co-Owner to {parcel.upin}</p>
-                    <p>Current owners: {parcel.owners?.length || 0}</p>
+                    <p className="font-medium mb-1">{t('coowner.infoTitle', { upin: parcel.upin })}</p>
+                    <p>{t('coowner.currentOwners', { count: parcel.owners?.length || 0 })}</p>
                     <p className="mt-2 text-xs">
                       {user?.role === "SUBCITY_NORMAL" 
-                        ? "Your request will be submitted for approval by a higher authority."
-                        : "You have permission to add owners directly."}
+                        ? t('coowner.approvalNote')
+                        : t('coowner.directPermission')}
                     </p>
                   </div>
                 </div>
@@ -265,13 +269,13 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
               {/* Search existing */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-[#2a2718] mb-2">
-                  Search Existing Owner
+                  {t('coowner.searchLabel')}
                 </label>
                 <input
                   type="text"
                   value={ownerSearch}
                   onChange={(e) => setOwnerSearch(e.target.value)}
-                  placeholder="Search by name, national ID, phone or TIN..."
+                  placeholder={t('coowner.searchPlaceholder')}
                   className="w-full px-4 py-2.5 border border-[#f0cd6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
                   autoFocus
                 />
@@ -280,7 +284,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
               {isSearching ? (
                 <div className="text-center py-8 text-[#2a2718]/70">
                   <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#f0cd6e] border-t-transparent" />
-                  <p className="mt-2">Searching...</p>
+                  <p className="mt-2">{tCommon('searching')}</p>
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="max-h-60 overflow-y-auto border border-[#f0cd6e] rounded-lg divide-y">
@@ -292,20 +296,20 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                     >
                       <div className="font-medium text-[#2a2718]">{owner.full_name}</div>
                       <div className="text-sm text-[#2a2718]/70">
-                        {owner.national_id && `ID: ${owner.national_id} • `}
-                        {owner.phone_number || "No phone"}
-                        {owner.tin_number && ` • TIN: ${owner.tin_number}`}
+                        {owner.national_id && `${t('coowner.id')}: ${owner.national_id} • `}
+                        {owner.phone_number || t('coowner.noPhone')}
+                        {owner.tin_number && ` • ${t('coowner.tin')}: ${owner.tin_number}`}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : ownerSearch.length >= 2 ? (
                 <div className="text-center py-8 text-[#2a2718]/70">
-                  No matching owners found
+                  {t('coowner.noResults')}
                 </div>
               ) : null}
 
-              <div className="my-8 text-center text-[#2a2718]/50">— OR —</div>
+              <div className="my-8 text-center text-[#2a2718]/50">— {tCommon('or')} —</div>
 
               <button
                 onClick={() => {
@@ -315,84 +319,83 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                 className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Plus size={18} />
-                Create New Owner
+                {t('coowner.createNew')}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      
-    {/* Acquired At Date Modal */}
-{isSubcityNormal && showAddAcquiredDate && selectedOwner && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-      <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-[#2a2718]">Add Co-Owner</h2>
-        <button
-          onClick={handleCloseAcquiredDate}
-          className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      
-      <div className="p-6">
-        <p className="text-[#2a2718] mb-6">
-          Adding <span className="font-medium">{selectedOwner.full_name}</span> as co-owner to <br />
-          <span className="font-mono text-[#f0cd6e]">{parcel.upin}</span>
-        </p>
+      {/* Acquired At Date Modal */}
+      {isSubcityNormal && showAddAcquiredDate && selectedOwner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="sticky top-0 bg-white border-b border-[#f0cd6e] px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#2a2718]">{t('coowner.modalTitle')}</h2>
+              <button
+                onClick={handleCloseAcquiredDate}
+                className="p-2 rounded-full hover:bg-[#f0cd6e]/20"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-[#2a2718] mb-6">
+                {t('coowner.addingOwner', { name: selectedOwner.full_name })} <br />
+                <span className="font-mono text-[#f0cd6e]">{parcel.upin}</span>
+              </p>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-[#2a2718] mb-2">
-            Acquisition Date <span className="text-red-500">*</span>
-          </label>
-        <UniversalDateInput
-  value={acquiredAt ? parseLocalDate(acquiredAt) : null}
-  onChange={(date) => {
-    if (date) {
-      console.log("Selected date:", date);
-      const formattedDate = formatLocalDate(date);
-      setAcquiredAt(formattedDate);
-      console.log("Stored date:", formattedDate);
-    }
-  }}
-  required
-  size="md"
-  placeholder="Select acquisition date"
-/>
-          <p className="text-xs text-[#2a2718]/70 mt-1">
-            Date when this owner acquired ownership of the parcel acquiredAt: {acquiredAt}
-          </p>
-        </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[#2a2718] mb-2">
+                  {t('coowner.acquisitionDate')} <span className="text-red-500">*</span>
+                </label>
+                <UniversalDateInput
+                  value={acquiredAt ? parseLocalDate(acquiredAt) : null}
+                  onChange={(date) => {
+                    if (date) {
+                      console.log("Selected date:", date);
+                      const formattedDate = formatLocalDate(date);
+                      setAcquiredAt(formattedDate);
+                      console.log("Stored date:", formattedDate);
+                    }
+                  }}
+                  required
+                  size="md"
+                  placeholder={t('coowner.datePlaceholder')}
+                />
+                <p className="text-xs text-[#2a2718]/70 mt-1">
+                  {t('coowner.dateHint')}
+                </p>
+              </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleAddExistingOwner}
-            disabled={!acquiredAt || addingOwner}
-            className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {addingOwner ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Processing...
-              </>
-            ) : (
-              'Submit for Approval'
-            )}
-          </button>
-          <button
-            onClick={handleCloseAcquiredDate}
-            className="flex-1 py-2.5 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
-            disabled={addingOwner}
-          >
-            Back
-          </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddExistingOwner}
+                  disabled={!acquiredAt || addingOwner}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {addingOwner ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      {tCommon('processing')}
+                    </>
+                  ) : (
+                    t('coowner.submitForApproval')
+                  )}
+                </button>
+                <button
+                  onClick={handleCloseAcquiredDate}
+                  className="flex-1 py-2.5 border border-[#f0cd6e] text-[#2a2718] rounded-lg hover:bg-[#f0cd6e]/20 transition-colors"
+                  disabled={addingOwner}
+                >
+                  {tCommon('back')}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Create New Owner Modal */}
       {isSubcityNormal && showCreateOwner && (
@@ -451,6 +454,5 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
     </>
   );
 };
-
 
 export default ParcelInfoSection;
