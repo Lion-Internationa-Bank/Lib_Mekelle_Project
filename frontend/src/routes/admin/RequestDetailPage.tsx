@@ -19,6 +19,10 @@ import {
   getStatusColor,
   getActionColor
 } from '../../types/makerChecker';
+import UserRequestDetail from '../../components/request-details/UserRequestDetail';
+import SubCityRequestDetail from '../../components/request-details/SubCityRequestDetail';
+import ConfigurationRequestDetail from '../../components/request-details/ConfigurationRequestDetail';
+import RateRequestDetail from '../../components/request-details/RateRequestDetail';
 import WizardRequestDetail from '../../components/request-details/WizardRequestDetail';
 import ParcelRequestDetail from '../../components/request-details/ParcelRequestDetail';
 import OwnerRequestDetail from '../../components/request-details/OwnerRequestDetail';
@@ -264,6 +268,42 @@ const RequestDetailPage: React.FC = () => {
             entityId={entity_id}
           />
         );
+         case 'USERS':
+        return (
+          <UserRequestDetail 
+            data={request_data || {}}
+            actionType={action_type}
+            entityId={entity_id}
+          />
+        );
+        case 'RATE_CONFIGURATION':
+         return (
+          <RateRequestDetail
+            data={request_data || {}}
+            actionType={action_type}
+            entityId={entity_id}
+          />
+        );
+
+        case 'SUBCITY':
+          return(
+        <SubCityRequestDetail 
+         data={request_data || {}}
+         actionType={action_type}
+         entityId={entity_id}
+          />
+
+          );
+        case 'CONFIGURATIONS':
+          return(
+          <ConfigurationRequestDetail 
+          data={request_data || {}}
+          actionType={action_type}
+            entityId={entity_id}
+            />
+          )
+
+
       default:
         return (
           <div className="space-y-4">
