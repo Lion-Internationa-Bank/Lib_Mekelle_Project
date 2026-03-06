@@ -68,48 +68,54 @@ const UserManagementPage = () => {
     }
   }, [currentUser]);
 
-  const handleSuspend = async () => {
-    if (!suspendModal) return;
-    const { user, suspend } = suspendModal;
 
-    const res = await suspendUser(user.user_id, suspend, );
-    
-    if (res.success) {
-      if (res.data && isApprovalRequest(res.data)) {
-        // Show approval pending modal
-        setPendingApproval(res.data);
-        toast.info(t('messages.approvalSubmitted'));
-      } else {
-        // Direct success
-        fetchUsers();
-        toast.success(suspend ? t('messages.userSuspended') : t('messages.userActivated'));
-      }
-      setSuspendModal(null);
+
+
+const handleSuspend = async (reason?: string) => {
+  if (!suspendModal) return;
+  const { user, suspend } = suspendModal;
+
+  const res = await suspendUser(user.user_id, suspend, reason);  // Pass reason here
+  
+  if (res.success) {
+    if (res.data && isApprovalRequest(res.data)) {
+      // Show approval pending modal
+      setPendingApproval(res.data);
+      toast.info(t('messages.approvalSubmitted'));
     } else {
-      toast.error(res.error || (suspend ? t('errors.suspendFailed') : t('errors.activateFailed')));
+      // Direct success
+      fetchUsers();
+      toast.success(suspend ? t('messages.userSuspended') : t('messages.userActivated'));
     }
-  };
+    setSuspendModal(null);
+  } else {
+    toast.error(res.error || (suspend ? t('errors.suspendFailed') : t('errors.activateFailed')));
+  }
+};
 
-  const handleDelete = async () => {
-    if (!deleteModal) return;
+// src/routes/admin/UserManagementPage.tsx - Update handleDelete function
 
-    const res = await deleteUser(deleteModal.user_id, 'User deletion requested');
-    
-    if (res.success) {
-      if (res.data && isApprovalRequest(res.data)) {
-        // Show approval pending modal
-        setPendingApproval(res.data);
-        toast.info(t('messages.approvalSubmitted'));
-      } else {
-        // Direct success (though delete always requires approval)
-        fetchUsers();
-        toast.success(t('messages.userDeleted'));
-      }
-      setDeleteModal(null);
+const handleDelete = async (reason?: string) => {
+  if (!deleteModal) return;
+
+  const res = await deleteUser(deleteModal.user_id, reason);  // Pass reason here
+  
+  if (res.success) {
+    if (res.data && isApprovalRequest(res.data)) {
+      // Show approval pending modal
+      setPendingApproval(res.data);
+      toast.info(t('messages.approvalSubmitted'));
     } else {
-      toast.error(res.error || t('errors.deleteFailed'));
+      // Direct success (though delete always requires approval)
+      fetchUsers();
+      toast.success(t('messages.userDeleted'));
     }
-  };
+    setDeleteModal(null);
+  } else {
+    toast.error(res.error || t('errors.deleteFailed'));
+  }
+};
+
 
   const handleAddUser = async (userData: UserCreateInput) => {
     setCreatingUser(true);

@@ -215,7 +215,6 @@ const getSubCityName = (subCityId: string): string => {
         nationalId: owner.national_id || '-',
         tinNumber: owner.tin_number || '-',
         phone: owner.phone_number || '-',
-        email: owner.email || '-',
         subCity: owner.sub_city_name || 'N/A',
         totalParcels: owner.parcel_count,
         totalArea: totalArea.toLocaleString(),
@@ -264,7 +263,7 @@ const getSubCityName = (subCityId: string): string => {
       // Alternate row colors
       if (row.number % 2 === 0) {
         row.eachCell((cell) => {
-          if (!cell.fill || cell.fill.type === 'none') {
+          if (!cell.fill ) {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',

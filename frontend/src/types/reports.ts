@@ -13,7 +13,7 @@ export interface EncumbrancesReportFilters extends BaseReportFilters {
   type?: string;
 }
 
-// Land Parcels Report Filters
+// Land Parcels Report Filters (updated)
 export interface LandParcelsReportFilters extends BaseReportFilters {
   landUse?: string;
   tenureType?: string;
@@ -24,6 +24,7 @@ export interface LandParcelsReportFilters extends BaseReportFilters {
   maxArea?: number;
   landGrade?: number;
   status?: 'ACTIVE' | 'RETIRED' | 'PENDING';
+  tender?: string;
 }
 
 // Owners with Multiple Parcels Filters
@@ -45,6 +46,13 @@ export interface ApiResponse<T> {
   count?: number;
 }
 
+interface Owner {
+  full_name: string | null;
+  phone_number: string | null;
+  national_id: string | null;
+  tin_number: string | null;
+}
+
 // Encumbrance Response Type
 export interface EncumbranceReportItem {
   encumbrance_id: string;
@@ -61,21 +69,14 @@ export interface EncumbranceReportItem {
     block: string | null;
     total_area_m2: number | null;
     land_use: string | null;
-    sub_city :{
-        name: string | null;
-    },
-     owners:Array<{owner:Owner}>
-  },
+    sub_city: {
+      name: string | null;
+    };
+    owners: Array<{ owner: Owner }>;
+  };
 }
 
-interface Owner {
-    full_name:string |null;
-    phone_number:string | null;
-    national_id: string | null;
-    tin_number: string | null;
-}
-
-// Land Parcel Response Type
+// Land Parcel Response Type (single declaration - this is the one to keep)
 export interface LandParcelReportItem {
   upin: string;
   file_number: string;
@@ -84,36 +85,46 @@ export interface LandParcelReportItem {
   block: string | null;
   total_area_m2: number | null;
   land_use: string | null;
-  tenure_type: string | null;
   land_grade: number | null;
+  tender: string | null;
+  boundary_east: string | null;
+  boundary_north: string | null;
+  boundary_south: string | null;
+  boundary_west: string | null;
   status: string;
-  sub_city_name: string;
+  tenure_type: string | null;
+  sub_city: {
+    name: string;
+  };
   owners: Array<{
-    owner_id: string;
-    full_name: string;
-    national_id: string | null;
-    tin_number: string | null;
-    phone_number: string | null;
+    acquired_at: string;
+    owner: {
+      owner_id: string;
+      full_name: string;
+      national_id: string | null;
+      tin_number: string | null;
+      phone_number: string | null;
+    };
   }>;
-  buildings: Array<{
+  buildings?: Array<{
     building_id: string;
     usage_type: string | null;
     total_area: number;
     floor_count: number;
   }>;
-  encumbrances: Array<{
+  encumbrances?: Array<{
     encumbrance_id: string;
     type: string;
     status: string;
   }>;
-  lease: {
+  lease?: {
     lease_id: string;
     status: string;
     start_date: string;
     expiry_date: string | null;
     annual_lease_fee: number | null;
   } | null;
-  valuation: {
+  valuation?: {
     valuation_id: string;
     taxable_value: number;
     appraisal_date: string;
@@ -172,56 +183,6 @@ export interface LeaseInstallmentItem {
     acquired_at: string;
   }>;
 }
-
-
-// ... existing imports ...
-
-// Land Parcel Response Type (updated to match your backend response)
-export interface LandParcelReportItem {
-  upin: string;
-  file_number: string;
-  tabia: string | null;
-  ketena: string | null;
-  block: string | null;
-  total_area_m2: number | null;
-  land_use: string | null;
-  land_grade: number | null;
-  tender: string | null;
-  boundary_east: string | null;
-  boundary_north: string | null;
-  boundary_south: string | null;
-  boundary_west: string | null;
-  sub_city: {
-    name: string;
-  };
-  owners: Array<{
-    acquired_at: string;
-    owner: {
-      owner_id: string;
-      full_name: string;
-      national_id: string | null;
-      tin_number: string | null;
-      phone_number: string | null;
-    };
-  }>;
-}
-
-// Land Parcels Report Filters (updated)
-export interface LandParcelsReportFilters extends BaseReportFilters {
-  landUse?: string;
-  tenureType?: string;
-  tabia?: string;
-  ketena?: string;
-  block?: string;
-  minArea?: number;
-  maxArea?: number;
-  landGrade?: number;
-  status?: 'ACTIVE' | 'RETIRED' | 'PENDING';
-  tender?: string;
-}
-
-
-// src/types/reports.ts
 
 // Add Bill Report Item type
 export interface BillReportItem {

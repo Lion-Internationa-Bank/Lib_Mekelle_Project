@@ -113,24 +113,10 @@ const EncumbranceModal = ({
               approval_request_id: result.data.approval_request_id,
               ...result.data
             });
-          } else if (result.data?.encumbrance_id) {
-            // Immediate execution (self-approval or no approval needed)
-            toast.success(result.message || t('messages.createSuccess'));
-            await onSuccess({
-              encumbrance_id: result.data.encumbrance_id,
-              ...result.data
-            });
-          } else {
-            // Fallback - try to extract ID from response
-            const createdId = result.data?.encumbrance_id || result.data?.id || result.id;
-            toast.success(result.message || t('messages.createSuccess'));
-            await onSuccess({
-              encumbrance_id: createdId,
-              ...result.data
-            });
-          }
-        } else {
-          throw new Error(result.error || t('errors.createFailed'));
+          } 
+          } 
+        else {
+          throw new Error( t('errors.createFailed'));
         }
       }
 

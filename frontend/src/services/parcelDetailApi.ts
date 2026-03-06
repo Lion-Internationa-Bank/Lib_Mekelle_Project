@@ -239,25 +239,7 @@ export const updateOwnerApi = async (
   return json;
 };
 
-// ------------ Update parcel owner share (uses EditShareFormData) ------------
 
-export const updateOwnerShareApi = async (
-  parcel_owner_id: string,
-  share_ratio: EditShareFormData["share_ratio"]
-) => {
-  const apiRes = await apiFetch<any>(`/parcels/owners/${parcel_owner_id}/share`, {
-    method: "PUT",
-    body: JSON.stringify({ share_ratio }),
-  });
-  if (!apiRes.success) {
-    throw new Error(apiRes.error || "Failed to update share");
-  }
-  const json = apiRes.data;
-  if (!json.success) {
-    throw new Error(json.message || "Failed to update share");
-  }
-  return json;
-};
 
 // ------------ Update lease (uses EditLeaseFormData) ------------
 

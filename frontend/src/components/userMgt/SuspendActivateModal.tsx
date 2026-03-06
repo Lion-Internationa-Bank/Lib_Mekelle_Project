@@ -9,7 +9,7 @@ interface SuspendActivateModalProps {
   user: User | null;
   suspend: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (reason?: string) => Promise<void>;
   isSubmitting?: boolean;
 }
 
@@ -28,7 +28,7 @@ const SuspendActivateModal = ({
   if (!isOpen || !user) return null;
 
   const handleConfirm = async () => {
-    await onConfirm();
+    await onConfirm(reason);
     setReason('');
   };
 

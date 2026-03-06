@@ -75,7 +75,7 @@ export default function TransferOwnershipModal({
       try {
         setLoadingTypes(true);
         const res = await getConfig('TRANSFER_TYPE');
-        const options = res.data.options || [];
+        const options = res.data?.options || [];
         setTransferTypes(
           options.map((opt: any) => ({
             value: opt.value,
@@ -218,29 +218,20 @@ export default function TransferOwnershipModal({
       const result = await transferOwnershipApi(parcelUpin, payload);
       
       if (result.success) {
-        // Check if approval is required
+        // Always treat as requiring approval
         if (result.data?.approval_request_id) {
           toast.info(result.message || t('messages.submitted'));
           await handleTransferSuccess({
             approval_request_id: result.data.approval_request_id,
             ...result.data
           });
-        } else if (result.history?.history_id || result.data?.history_id) {
-          // Immediate execution
-          const historyId = result.history?.history_id || result.data?.history_id;
-          toast.success(result.message || t('messages.success'));
-          await handleTransferSuccess({
-            history_id: historyId,
-            ...result.data
-          });
         } else {
-          // Fallback
-          toast.success(result.message || t('messages.success'));
-          await onRefreshParcel();
-          onClose();
+          // This should not happen - backend should always return approval_request_id
+          console.error('Unexpected response - no approval_request_id:', result);
+          toast.error(t('errors.unexpectedResponse'));
         }
       } else {
-        throw new Error(result.error || t('errors.failed'));
+        throw new Error(t('errors.failed'));
       }
     } catch (err: any) {
       console.error('Transfer error:', err);

@@ -97,9 +97,6 @@ const OwnerDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
       const result = await deleteDocument('owner-docs', documentId);
       console.log("document delete result", result);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      if (result.success) {
-        toast.success(t('messages.deleteSuccess'));
-      }
     } catch (error: any) {
       toast.error(error.message || t('errors.deleteFailed'));
     }

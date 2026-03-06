@@ -8,7 +8,7 @@ interface DeleteUserModalProps {
   isOpen: boolean;
   user: User | null;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (reason?: string) => Promise<void>;
   isSubmitting?: boolean;
 }
 
@@ -20,7 +20,7 @@ const DeleteUserModal = ({ isOpen, user, onClose, onConfirm, isSubmitting = fals
   if (!isOpen || !user) return null;
 
   const handleConfirm = async () => {
-    await onConfirm();
+    await onConfirm(reason);
     setReason('');
   };
 

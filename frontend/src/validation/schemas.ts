@@ -17,33 +17,20 @@ export const ParcelFormSchema = z.object({
   tabia: z.string().min(1, { message: "Tabia/Woreda is required" }),
   ketena: z.string().min(1, { message: "Ketena is required" }),
   block: z.string().min(1, { message: "Block is required" }),
- tender: z.string().optional(),
-  total_area_m2: z.preprocess(
-    (val) => {
-      if (val === "" || val === null || val === undefined) return NaN;
-      const num = Number(val);
-      return isNaN(num) ? val : num;
-    },
-    z
-      .number()
-      .positive({ message: "Total area must be greater than 0" })
-  ),
+  tender: z.string().optional(),
+  
+  total_area_m2: z
+    .number()
+    .positive({ message: "Total area must be greater than 0" }),
 
   land_use: z.string().min(1, { message: "Please select a land use type" }),
 
-  land_grade: z.preprocess(
-    (val) => {
-      if (val === "" || val === null || val === undefined) return NaN;
-      const num = Number(val);
-      return isNaN(num) ? val : num;
-    },
-    z
-      .number()
-      .positive({ message: "Land grade must be greater than 0" })
-      .refine((val) => isFinite(val), {
-        message: "Land grade must be a finite number",
-      })
-  ),
+  land_grade: z
+    .number()
+    .positive({ message: "Land grade must be greater than 0" })
+    .refine((val) => isFinite(val), {
+      message: "Land grade must be a finite number",
+    }),
 
   tenure_type: z.string().min(1, { message: "Please select a tenure type" }),
 
@@ -61,11 +48,12 @@ export const ParcelFormSchema = z.object({
         });
       }
     }),
-    boundary_north: z.string().optional(),
-    boundary_east: z.string().optional(),
-    boundary_south: z.string().optional(),
-    boundary_west: z.string().optional(),
+  boundary_north: z.string().optional(),
+  boundary_east: z.string().optional(),
+  boundary_south: z.string().optional(),
+  boundary_west: z.string().optional(),
 });
+
 
 export type ParcelFormData = z.infer<typeof ParcelFormSchema>;
 
@@ -154,7 +142,7 @@ export const LeaseFormSchema = z.object({
     .min(0, { message: "Demarcation fee cannot be negative" })
     .optional(),
 
-  contract_registration_fee: z
+  contract_registration_fee: z.coerce
     .number()
     .min(0, { message: "Contract registration fee cannot be negative" })
     .optional(),
@@ -183,24 +171,29 @@ export const LeaseFormSchema = z.object({
 
   start_date: z
     .string()
-    .optional()
-    .refine(
-      (val, ctx) => {
-        if (!val) return true;
-        const contractDate = ctx.parent.contract_date;
-        return new Date(val) >= new Date(contractDate);
-      },
-      { message: "Start date must be on or after contract date" }
-    ),
-
+    .optional(),
+    
   legal_framework: z
     .string()
     .optional()
     .refine((val) => !val || val.length <= 500, {
       message: "Legal framework text is too long (max 500 characters)",
     }),
-});
-
+})
+.refine(
+  (data) => {
+    // Skip validation if start_date is not provided
+    if (!data.start_date) return true;
+    
+    const contractDate = new Date(data.contract_date);
+    const startDate = new Date(data.start_date);
+    return startDate >= contractDate;
+  },
+  {
+    message: "Start date must be on or after contract date",
+    path: ["start_date"], // This attaches the error to the start_date field
+  }
+);
 export type LeaseFormData = z.infer<typeof LeaseFormSchema>;
 
 export const OwnerStepFormSchema = z.object({
@@ -261,24 +254,24 @@ export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
 
 
 export const LeaseStepFormSchema = z.object({
-  price_per_m2: z.coerce
+  price_per_m2: z
     .number()
     .positive({ message: "Price per m² must be greater than 0" }),
   
-  total_lease_amount: z.coerce
+  total_lease_amount: z
     .number()
     .positive({ message: "Total lease amount must be greater than 0" }),
   
-  down_payment_amount: z.coerce
-    .number()
+  down_payment_amount: z
+   .number()
     .min(0, { message: "Down payment cannot be negative" }),
   
-  other_payment: z.coerce
+  other_payment: z
     .number()
     .min(0, { message: "Other payment cannot be negative" }),
   
   // New fee fields
-  demarcation_fee: z.coerce
+  demarcation_fee: z
     .number()
     .min(0, { message: "Demarcation fee cannot be negative" })
     .optional(),
@@ -288,17 +281,17 @@ export const LeaseStepFormSchema = z.object({
     .min(0, { message: "Contract registration fee  cannot be negative" })
     .optional(),
   
-  engineering_service_fee: z.coerce
+  engineering_service_fee: z
     .number()
     .min(0, { message: "Engineering service fee cannot be negative" })
     .optional(),
   
-  lease_period_years: z.coerce
+  lease_period_years: z
     .number()
     .int()
     .positive({ message: "Lease period (years) must be a positive integer" }),
   
-  payment_term_years: z.coerce
+  payment_term_years: z
     .number()
     .int()
     .positive({ message: "Payment term (years) must be a positive integer" }),

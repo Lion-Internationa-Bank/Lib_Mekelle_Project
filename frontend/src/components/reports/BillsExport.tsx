@@ -284,7 +284,7 @@ export const BillsExport: React.FC<BillsExportProps> = ({
       // Alternate row colors
       if (row.number % 2 === 0) {
         row.eachCell((cell) => {
-          if (!cell.fill || cell.fill.type === 'none') {
+          if (!cell.fill ) {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',

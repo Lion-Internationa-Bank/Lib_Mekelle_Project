@@ -156,7 +156,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             </div>
           ) : (
             <select
-              value={formData.sub_city_id}
+              value={formData.sub_city_id ?? ''}
               onChange={(e) => setFormData({...formData, sub_city_id: e.target.value})}
               className="w-full px-4 py-2 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] bg-white"
               required

@@ -1,5 +1,5 @@
 // src/components/userMgt/UsersTable.tsx
-import { User, Building, Eye, Shield, TrendingUp, UserX, UserCheck, Trash2 } from 'lucide-react';
+import {  Building, UserX, UserCheck, Trash2 } from 'lucide-react';
 import type { User as UserType } from '../../services/userService';
 import { useTranslate } from '../../i18n/useTranslate';
 
@@ -8,7 +8,7 @@ interface UsersTableProps {
   currentUserRole: string;
   onSuspendActivate: (user: UserType) => void;
   onDelete: (user: UserType) => void;
-  getRoleIcon: (role: string) => JSX.Element | null;
+  getRoleIcon: (role: string) => React.ReactNode | null;
   getRoleDisplayName: (role: string) => string;
 }
 
@@ -21,7 +21,7 @@ const UsersTable = ({
   getRoleDisplayName,
 }: UsersTableProps) => {
   const { t } = useTranslate('users');
-  const { t: tCommon } = useTranslate('common');
+  // const { t: tCommon } = useTranslate('common');
   
   const showSubCityColumn = currentUserRole !== 'REVENUE_ADMIN';
 

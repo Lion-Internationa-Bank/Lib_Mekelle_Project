@@ -155,24 +155,24 @@ export default function SubdivisionDocsUploadModal({
     }
   };
 
-  const handleDownload = async (document: ParcelDocument) => {
-    try {
-      const filename = document.file_url.split('/').pop() || document.file_name;
-      const { serveApprovalDocument } = await import('../../../services/approvalRequestApi');
-      const blobUrl = await serveApprovalDocument(approvalRequestId, filename);
-      
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = document.file_name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download document');
-    }
-  };
+  const handleDownload = async (doc: ParcelDocument) => {
+  try {
+    const filename = doc.file_url.split('/').pop() || doc.file_name;
+    const { serveApprovalDocument } = await import('../../../services/approvalRequestApi');
+    const blobUrl = await serveApprovalDocument(approvalRequestId, filename);
+    
+    const link = window.document.createElement('a');
+    link.href = blobUrl;
+    link.download = doc.file_name;
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch (error) {
+    console.error('Download error:', error);
+    toast.error('Failed to download document');
+  }
+};
 
   const getDocumentsForParcel = (parcelUpin: string) => {
     return documents.filter(d => d.parcel_upin === parcelUpin);

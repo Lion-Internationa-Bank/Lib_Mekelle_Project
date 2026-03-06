@@ -141,7 +141,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                 type="number"
                 step="0.01"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("price_per_m2")}
+                {...register("price_per_m2",{ valueAsNumber: true })}
               />
               {errors.price_per_m2 && (
                 <p className="mt-1 text-xs text-red-600">
@@ -153,13 +153,13 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
             {/* Total lease amount */}
             <div>
               <label className="block text-[#2a2718] mb-1">
-                {t('fields.totalLeaseAmount')} <span className="text-red-500">*</span>
+                {t('fields.totalLeaseAmount',{ valueAsNumber: true })} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 step="0.01"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("total_lease_amount")}
+                {...register("total_lease_amount",{ valueAsNumber: true })}
               />
               {errors.total_lease_amount && (
                 <p className="mt-1 text-xs text-red-600">
@@ -177,7 +177,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                 type="number"
                 step="0.01"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("down_payment_amount")}
+                {...register("down_payment_amount",{ valueAsNumber: true })}
               />
               {errors.down_payment_amount && (
                 <p className="mt-1 text-xs text-red-600">
@@ -195,7 +195,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                 type="number"
                 step="0.01"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("other_payment")}
+                {...register("other_payment",{ valueAsNumber: true })}
               />
               {errors.other_payment && (
                 <p className="mt-1 text-xs text-red-600">
@@ -206,7 +206,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
 
             {/* Demarcation Fee */}
             <div>
-              <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
+              <label className=" text-[#2a2718] mb-1 flex items-center gap-1">
                 <Ruler size={16} className="text-[#2a2718]" />
                 {t('fields.demarcationFee')}
               </label>
@@ -216,7 +216,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                 min="0"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder={tCommon('optional')}
-                {...register("demarcation_fee")}
+                {...register("demarcation_fee",{ valueAsNumber: true })}
               />
               {errors.demarcation_fee && (
                 <p className="mt-1 text-xs text-red-600">
@@ -227,7 +227,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
 
             {/* Engineering Service Fee */}
             <div>
-              <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
+              <label className=" text-[#2a2718] mb-1 flex items-center gap-1">
                 <FileText size={16} className="text-[#2a2718]" />
                 {t('fields.engineeringFee')}
               </label>
@@ -237,7 +237,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
                 min="0"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
                 placeholder="0.00"
-                {...register("engineering_service_fee")}
+                {...register("engineering_service_fee",{ valueAsNumber: true })}
               />
               {errors.engineering_service_fee && (
                 <p className="mt-1 text-xs text-red-600">
@@ -248,7 +248,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
 
             {/* Contract Registration Fee */}
             <div className="md:col-span-2">
-              <label className="block text-[#2a2718] mb-1 flex items-center gap-1">
+              <label className=" text-[#2a2718] mb-1 flex items-center gap-1">
                 <Receipt size={16} className="text-[#2a2718]" />
                 {t('fields.registrationFee')}
               </label>
@@ -275,7 +275,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               <input
                 type="number"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("lease_period_years")}
+                {...register("lease_period_years",{ valueAsNumber: true })}
               />
               {errors.lease_period_years && (
                 <p className="mt-1 text-xs text-red-600">
@@ -292,7 +292,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
               <input
                 type="number"
                 className="w-full border border-[#f0cd6e] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718]"
-                {...register("payment_term_years")}
+                {...register("payment_term_years",{ valueAsNumber: true })}
               />
               {errors.payment_term_years && (
                 <p className="mt-1 text-xs text-red-600">

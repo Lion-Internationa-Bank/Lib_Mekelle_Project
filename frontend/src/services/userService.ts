@@ -72,19 +72,30 @@ export const createUser = async (
  */
 export const suspendUser = async (
   userId: string,
-  suspend: boolean
-): Promise<ApiResponse<{ message: string }>> => {
-  return apiFetch<{ message: string }>(`/auth/users/${userId}/suspend`, {
+  suspend: boolean,
+  reason?: string  // Add optional reason parameter
+): Promise<ApiResponse<{ message: string } | ApprovalRequestResponse>> => {
+  return apiFetch<{ message: string } | ApprovalRequestResponse>(`/auth/users/${userId}/suspend`, {
     method: 'PATCH',
-    body: JSON.stringify({ suspend }),
+    body: JSON.stringify({ 
+      suspend,
+      reason  
+    }),
   });
 };
+
 
 /**
  * Soft-delete a user
  */
-export const deleteUser = async (userId: string): Promise<ApiResponse<{ message: string }>> => {
-  return apiFetch<{ message: string }>(`/auth/users/${userId}`, {
+export const deleteUser = async (
+  userId: string,
+  reason?: string  // Add optional reason parameter
+): Promise<ApiResponse<{ message: string } | ApprovalRequestResponse>> => {
+  return apiFetch<{ message: string } | ApprovalRequestResponse>(`/auth/users/${userId}`, {
     method: 'DELETE',
+    body: JSON.stringify({ 
+      reason 
+    }),
   });
 };

@@ -15,9 +15,6 @@ import {
   ACTION_TYPES,
   REQUEST_STATUSES,
   APPROVER_ROLES,
-  getStatusDisplayName,
-  getEntityDisplayName,
-  getActionDisplayName,
   DEFAULT_PAGE_SIZE_OPTIONS,
   DEFAULT_SORT_FIELD,
   DEFAULT_SORT_ORDER
