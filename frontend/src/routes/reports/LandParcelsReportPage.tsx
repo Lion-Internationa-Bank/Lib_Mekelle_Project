@@ -19,7 +19,7 @@ const STATUS_OPTIONS = [
   { value: 'RETIRED', label: 'Retired' },
   { value: 'PENDING', label: 'Pending' }
 ];
-
+type LandStatus = "ACTIVE" | "RETIRED" | "PENDING"
 interface ConfigOption {
   value: string;
   description?: string;
@@ -49,7 +49,7 @@ export const LandParcelsReportPage: React.FC = () => {
     minArea: undefined as number | undefined,
     maxArea: undefined as number | undefined,
     landGrade: undefined as number | undefined,
-    status: '',
+    status: 'ACTIVE' as LandStatus,
     tender: ''
   });
 
@@ -139,13 +139,13 @@ export const LandParcelsReportPage: React.FC = () => {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      await reportService.exportLandParcelsReport(filters);
-    } catch (error) {
-      console.error('Error exporting land parcels:', error);
-    }
-  };
+  // const handleExport = async () => {
+  //   try {
+  //     await reportService.exportLandParcelsReport(filters);
+  //   } catch (error) {
+  //     console.error('Error exporting land parcels:', error);
+  //   }
+  // };
 
   const columns: Column<LandParcelReportItem>[] = [
     {
@@ -439,7 +439,7 @@ export const LandParcelsReportPage: React.FC = () => {
     minArea: undefined,
     maxArea: undefined,
     landGrade: undefined,
-    status: '',
+    status: 'ACTIVE' as LandStatus,
     tender: ''
   })}
   onExport={null} // Remove the old export handler
@@ -449,7 +449,6 @@ export const LandParcelsReportPage: React.FC = () => {
   <LandParcelsExport
     data={data}
     filters={filters}
-    subCities={subCities}
     onExportStart={() => setIsExporting(true)}
     onExportComplete={() => setIsExporting(false)}
     onExportError={() => setIsExporting(false)}

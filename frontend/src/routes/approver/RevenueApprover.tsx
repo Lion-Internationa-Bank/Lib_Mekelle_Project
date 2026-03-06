@@ -1,12 +1,11 @@
 // src/routes/approver/RevenueApproverHome.tsx
-import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, 
   XCircle, 
   Clock, 
   Percent,
-  DollarSign,
+
   Eye,
   ArrowRight,
   AlertCircle,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 
 const RevenueApproverHome = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const pendingRequests = [

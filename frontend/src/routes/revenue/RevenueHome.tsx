@@ -1,11 +1,10 @@
 // src/routes/revenue/RevenueAdminHome.tsx
-import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, 
   TrendingUp, 
   Users, 
-  Settings,
+
   Clock,
   ArrowRight,
   Receipt,
@@ -15,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const RevenueAdminHome = () => {
-  const { user } = useAuth();
+ 
   const navigate = useNavigate();
 
   const quickActions = [

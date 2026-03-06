@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ReportsLayout } from '../../components/reports/ReportsLayout';
-import { BaseTable, type Column, ExpandableRow } from '../../components/reports/tables/BaseTable';
+import { BaseTable, type Column } from '../../components/reports/tables/BaseTable';
 import {
   SubCityFilter,
   FilterActions

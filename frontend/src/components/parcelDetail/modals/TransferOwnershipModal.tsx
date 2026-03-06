@@ -1,7 +1,7 @@
 // src/components/parcelDetail/modals/TransferOwnershipModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslate } from "../../../i18n/useTranslate";
-import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus, FileText, AlertCircle } from 'lucide-react';
+import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
 import GenericDocsUpload from "../../common/GenericDocsUpload";

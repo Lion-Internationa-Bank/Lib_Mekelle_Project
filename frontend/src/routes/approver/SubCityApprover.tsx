@@ -6,8 +6,6 @@ import {
   XCircle, 
   Clock, 
   MapPin,
-  Users,
-  FileText,
   Eye,
   ArrowRight,
   AlertCircle,
@@ -80,7 +78,7 @@ const SubCityApproverHome = () => {
           <div className="px-4 py-2 bg-[#f0cd6e] rounded-xl flex items-center gap-2">
             <Building2 className="w-4 h-4 text-[#2a2718]" />
             <span className="text-sm font-medium text-[#2a2718]">
-              {user?.sub_city_name || ''}
+              {user?.sub_city_id || ''}
             </span>
           </div>
         </div>

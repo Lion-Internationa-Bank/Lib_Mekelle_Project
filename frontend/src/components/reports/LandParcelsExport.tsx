@@ -16,6 +16,7 @@ interface LandParcelsExportProps {
 
 export const LandParcelsExport: React.FC<LandParcelsExportProps> = ({
   data,
+
   filters,
   fileName,
   onExportStart,
@@ -109,7 +110,7 @@ export const LandParcelsExport: React.FC<LandParcelsExportProps> = ({
       ['Land Grade:', filters.landGrade || 'All Grades']
     ];
 
-    infoRows.forEach((row, index) => {
+    infoRows.forEach((row) => {
       const addedRow = summarySheet.addRow(row);
       addedRow.getCell(1).font = { bold: true };
       addedRow.height = 20;

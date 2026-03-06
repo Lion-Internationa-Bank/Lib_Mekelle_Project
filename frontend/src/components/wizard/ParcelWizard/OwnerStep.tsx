@@ -25,7 +25,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<any | null>(null);
-  const [acquisitionDate, setAcquisitionDate] = useState(today);
+  const [acquisitionDate] = useState(today);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const {
@@ -34,7 +34,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    watch,
+
     trigger,
   } = useForm<OwnerFormData>({
     resolver: zodResolver(OwnerFormSchema),
@@ -49,8 +49,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     mode: "onChange",
   });
 
-  const acquired_at = watch("acquired_at");
-  const owner_id = watch("owner_id");
+ 
 
   // Load existing data if available
   useEffect(() => {

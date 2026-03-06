@@ -13,6 +13,7 @@ import { reportService } from '../../services/reportService';
 import { getSubCities } from '../../services/cityAdminService';
 import type { EncumbranceReportItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
+  type EncumbranceStatus = 'ACTIVE' | 'RELEASED' ;
 
 export const EncumbrancesReportPage: React.FC = () => {
   const { user } = useAuth();
@@ -21,15 +22,14 @@ export const EncumbrancesReportPage: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [subCities, setSubCities] = useState<Array<{ sub_city_id: string; name: string }>>([]);
-  
-  // Filter state with default values
-  const [filters, setFilters] = useState({
+
+const [filters, setFilters] = useState({
     subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
     from_date: '',
     to_date: '',
-    status: '',
+    status: 'ACTIVE' as EncumbranceStatus,
     type: ''
-  });
+});
 
   const activeFilterCount = Object.values(filters).filter(v => v && v !== '').length;
 
@@ -208,7 +208,7 @@ export const EncumbrancesReportPage: React.FC = () => {
               subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '', 
               from_date: '', 
               to_date: '', 
-              status: '', 
+              status: "ACTIVE", 
               type: '' 
             })}
             onExport={null} // Remove the old export handler

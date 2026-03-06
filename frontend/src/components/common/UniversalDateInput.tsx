@@ -389,7 +389,7 @@ const displayedValue = useMemo(() => {
   
   // Use inputFormatDate instead of compitableformatDate
   // because displayCal is already in the correct calendar type
-  return inputFormatDate(displayCal, calendarType, "short");
+  return inputFormatDate(displayCal, "short");
 }, [value, calendarType, parseExternalValue, toDisplayDate]);
 
   const getAdjustedPickerStyle = () => {

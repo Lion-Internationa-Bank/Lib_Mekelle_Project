@@ -223,7 +223,7 @@ export interface PendingRequestData {
   submitted_at?: string;
   maker: MakerInfo;
   sub_city?: SubCityInfo;
-  approver_role: UserRole;
+  approver_role?: UserRole;
 }
 
 // ============= API WRAPPER TYPES =============

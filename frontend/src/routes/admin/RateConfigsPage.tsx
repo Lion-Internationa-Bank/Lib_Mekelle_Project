@@ -7,7 +7,6 @@ import {
   getRateHistory,
   createRate,
   updateRate,
-  deactivateRate,
   type RateResponse,
   type RateHistoryItem,
 } from "../../services/revenueAdminService";
@@ -36,22 +35,22 @@ const RATE_TYPES = [
 
 type RateType = (typeof RATE_TYPES)[number];
 
-const rateMeta: Record<
-  RateType,
-  {
-    label: string;
-    desc: string;
-  }
-> = {
-  LEASE_INTEREST_RATE: {
-    label: "Lease Interest Rate",
-    desc: "Annual interest rate applied to lease agreements (%)",
-  },
-  PENALTY_RATE: {
-    label: "Penalty Rate",
-    desc: "Penalty rate for late payments or violations (%)",
-  },
-};
+// const rateMeta: Record<
+//   RateType,
+//   {
+//     label: string;
+//     desc: string;
+//   }
+// > = {
+//   LEASE_INTEREST_RATE: {
+//     label: "Lease Interest Rate",
+//     desc: "Annual interest rate applied to lease agreements (%)",
+//   },
+//   PENALTY_RATE: {
+//     label: "Penalty Rate",
+//     desc: "Penalty rate for late payments or violations (%)",
+//   },
+// };
 
 type FormMode = "view" | "edit-existing" | "create-new";
 
@@ -273,30 +272,30 @@ const RateConfigsPage: React.FC = () => {
     }
   };
 
-  const handleDeactivate = async () => {
-    if (!currentRate || !currentRate.effective_from) return;
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      // Use formatLocalDate for the effective_from date
-      const res = await deactivateRate(selectedRateType, {
-        effective_from: formatLocalDate(parseLocalDate(currentRate.effective_from) || new Date()),
-      });
-      if (res.success) {
-        setSuccess(t('messages.deactivateSuccess'));
-        setTimeout(() => setSuccess(""), 3000);
-        loadCurrent(selectedRateType);
-        loadHistory(selectedRateType);
-      } else {
-        setError(res.error || t('errors.deactivateFailed'));
-      }
-    } catch {
-      setError(t('errors.networkError'));
-    } finally {
-      setSaving(false);
-    }
-  };
+  // const handleDeactivate = async () => {
+  //   if (!currentRate || !currentRate.effective_from) return;
+  //   setSaving(true);
+  //   setError("");
+  //   setSuccess("");
+  //   try {
+  //     // Use formatLocalDate for the effective_from date
+  //     const res = await deactivateRate(selectedRateType, {
+  //       effective_from: formatLocalDate(parseLocalDate(currentRate.effective_from) || new Date()),
+  //     });
+  //     if (res.success) {
+  //       setSuccess(t('messages.deactivateSuccess'));
+  //       setTimeout(() => setSuccess(""), 3000);
+  //       loadCurrent(selectedRateType);
+  //       loadHistory(selectedRateType);
+  //     } else {
+  //       setError(res.error || t('errors.deactivateFailed'));
+  //     }
+  //   } catch {
+  //     setError(t('errors.networkError'));
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
 
   const startEditExisting = () => {
     if (!currentRate) return;

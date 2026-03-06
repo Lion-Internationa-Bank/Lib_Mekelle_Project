@@ -1,179 +1,391 @@
-// src/services/wizardApi.ts
-import { api, type ApiResponse } from './api';
-import type {
-  SaveStepData,
-  DocumentData,
+import { api } from './api';
+import type { 
   SessionData,
+  DocumentData,
   ValidationResult,
   SubmitResult,
-  ApprovalRequest
+  SessionApiData,
+  DeleteApiData,
+  WizardSession,
+  BackendResponse,
+  ApiResponse,
+  SaveStepData
 } from './api/wizardTypes';
 
-
-interface PaginationMetadata {
-  page: number;
-  limit: number;
-  totalCount: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
-interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  pagination: PaginationMetadata;
-  error?: string;
-}
-class WizardApi {
-  // Create new wizard session
-  async createSession(): Promise<ApiResponse<{ session_id: string; existing?: boolean }>> {
-    return await api.post('/wizard/sessions');
-  }
-
-  // Get session data
-  async getSession(sessionId: string): Promise<ApiResponse<SessionData>> {
-    return await api.get(`/wizard/sessions/${sessionId}`);
-  }
-
-
-   async getUserSessions(
-    page: number = 1, 
-    limit: number = 10, 
-    status?: string,
-    sortBy: string = 'created_at',
-    sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<ApiResponse<{
-    data: SessionData[];
-    pagination: PaginationMetadata;
-  }>> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      sortBy,
-      sortOrder
-    });
-    
-    if (status) {
-      params.append('status', status);
-    }
-
-    return await api.get(`/wizard/sessions?${params.toString()}`);
-  }
-
-
-  // Save step data
-  async saveStep(sessionId: string, data: SaveStepData): Promise<ApiResponse<{ message: string }>> {
-    return await api.post(`/wizard/sessions/${sessionId}/steps`, data);
-  }
-
-  // Upload document - FIXED VERSION
-  async uploadDocument(sessionId: string, formData: FormData): Promise<ApiResponse<DocumentData>> {
-    // The api.post method already sets method: 'POST'
-    return await api.post(`/wizard/sessions/${sessionId}/documents`, formData);
-  }
-
-  // Alternative upload method with explicit parameters
-  async uploadDocumentSimple(
-    sessionId: string, 
-    step: string, 
-    documentType: string, 
-    file: File
-  ): Promise<ApiResponse<DocumentData>> {
-    const formData = new FormData();
-    formData.append('step', step);
-    formData.append('document_type', documentType);
-    formData.append('file', file);
-
-    return await this.uploadDocument(sessionId, formData);
-  }
-
-  // Delete document
-  async deleteDocument(sessionId: string, documentId: string, step: string): Promise<ApiResponse<{ message: string }>> {
-    return await api.delete(`/wizard/sessions/${sessionId}/documents/${documentId}`, { step });
-  }
-
-  // Validate session
-  async validateSession(sessionId: string): Promise<ApiResponse<ValidationResult>> {
-    return await api.get(`/wizard/sessions/${sessionId}/validate`);
-  }
-
-  // Submit for approval
-  async submitForApproval(sessionId: string): Promise<ApiResponse<SubmitResult>> {
-    return await api.post(`/wizard/sessions/${sessionId}/submit`);
-  }
-
-  // RESUBMIT a rejected session
-  async resubmitSession(sessionId: string): Promise<ApiResponse<SubmitResult>> {
-    // Rejected sessions can be resubmitted using the same submit endpoint
-    // The backend will handle it appropriately based on session status
-    return await api.post(`/wizard/sessions/${sessionId}/submit`);
-  }
-
-
-  // Get pending requests (for approvers)
-  async getPendingRequests(): Promise<ApiResponse<ApprovalRequest[]>> {
-    return await api.get('/maker-checker/requests');
-  }
-
-  // Get request details
-  async getRequestDetails(requestId: string): Promise<ApiResponse<any>> {
-    return await api.get(`/maker-checker/requests/${requestId}`);
-  }
-
-  // Approve request
-  async approveRequest(requestId: string, comments?: string): Promise<ApiResponse<any>> {
-    return await api.post(`/maker-checker/requests/${requestId}/approve`, { comments });
-  }
-
-  // Reject request
-  async rejectRequest(requestId: string, rejectionReason: string): Promise<ApiResponse<any>> {
-    return await api.post(`/maker-checker/requests/${requestId}/reject`, { rejection_reason: rejectionReason });
-  }
-
-  // Get rejection reason for a session
-  async getRejectionReason(sessionId: string): Promise<ApiResponse<{ reason: string; rejected_at: string; rejected_by: string }>> {
-    return await api.get(`/wizard/sessions/${sessionId}/rejection-reason`);
-  }
-
-  // Check if session can be resubmitted
-  async canResubmitSession(sessionId: string): Promise<boolean> {
+const wizardApi = {
+  /**
+   * Create a new wizard session
+   */
+  createSession: async (): Promise<ApiResponse<SessionApiData>> => {
     try {
-      const session = await this.getSession(sessionId);
-      return session.success && session.data?.status === 'REJECTED';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // Serve document URL builder
-  getDocumentUrl(sessionId: string, step: string, filename: string): string {
-    return `${import.meta.env.VITE_API_URL}/wizard/sessions/${sessionId}/documents/${step}/${filename}`;
-  }
-
-  // View document directly
-  async viewDocument(sessionId: string, step: string, filename: string): Promise<Blob> {
-    const token = localStorage.getItem('authToken') || '';
-    const url = this.getDocumentUrl(sessionId, step, filename);
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+      const response = await api.post<BackendResponse<SessionApiData>>('/wizard/sessions');
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get SessionApiData
+        };
       }
-    });
+      
+      return {
+        success: false,
+        error: response.error || 'Failed to create session'
+      };
+    } catch (error: any) {
+      console.error('Create session error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch document: ${response.statusText}`);
+  /**
+   * Get an existing session
+   */
+  getSession: async (sessionId: string): Promise<ApiResponse<SessionData>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const response = await api.get<BackendResponse<SessionData>>(`/wizard/sessions/${sessionId}`);
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get SessionData
+        };
+      }
+      
+      return {
+        success: false,
+        error: response.error || 'Failed to load session'
+      };
+    } catch (error: any) {
+      console.error('Get session error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+
+
+
+ /**
+   * Get all sessions for the current user with pagination, filtering, and sorting
+   */
+getUserSessions: async (
+  page: number = 1,
+  limit: number = 10,
+  status?: string,
+  sortBy: string = 'created_at',
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<ApiResponse<WizardSession[]>> => {  // Returns array directly
+  try {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (status && status !== 'ALL') params.append('status', status);
+    params.append('sortBy', sortBy);
+    params.append('sortOrder', sortOrder);
+    
+    const response = await api.get<BackendResponse<WizardSession[]>>(`/wizard/sessions?${params.toString()}`);
+    
+    if (response.success && response.data) {
+      return {
+        success: true,
+        data: response.data.data  // This is the array of sessions
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to fetch user sessions'
+    };
+  } catch (error: any) {
+    console.error('Get user sessions error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+},
+
+  /**
+   * Save a step in the wizard
+   */
+  saveStep: async (sessionId: string, data: SaveStepData): Promise<ApiResponse<any>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const response = await api.post<BackendResponse<any>>(
+        `/wizard/sessions/${sessionId}/steps`, 
+        data
+      );
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get the saved data
+        };
+      }
+      
+      return {
+        success: false,
+        error: response.error || 'Failed to save step'
+      };
+    } catch (error: any) {
+      console.error('Save step error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+
+  /**
+   * Upload a document
+   */
+  uploadDocumentSimple: async (
+    sessionId: string,
+    step: string,
+    documentType: string,
+    file: File
+  ): Promise<ApiResponse<DocumentData>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('document_type', documentType);
+      formData.append('step', step);
+
+      const response = await api.post<BackendResponse<DocumentData>>(
+        `/wizard/sessions/${sessionId}/documents`,
+        formData
+      );
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get DocumentData
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to upload document'
+      };
+    } catch (error: any) {
+      console.error('Upload document error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+
+  /**
+   * Delete a document
+   */
+deleteDocument: async (
+  sessionId: string,
+  documentId: string,
+  step: string
+): Promise<ApiResponse<DeleteApiData>> => {
+  try {
+    if (!sessionId || sessionId === 'undefined') {
+      return {
+        success: false,
+        error: 'Invalid session ID'
+      };
     }
 
-    return await response.blob();
+    // Send step in the request body instead of query parameter
+    const response = await api.delete<BackendResponse<DeleteApiData>>(
+      `/wizard/sessions/${sessionId}/documents/${documentId}`,
+      { step }  // This will be sent in the request body
+    );
+
+    if (response.success && response.data) {
+      return {
+        success: true,
+        data: response.data.data  // Unwrap to get DeleteApiData
+      };
+    }
+
+    return {
+      success: false,
+      error: response.error || 'Failed to delete document'
+    };
+  } catch (error: any) {
+    console.error('Delete document error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
   }
+},
+
+  /**
+   * Validate a session
+   */
+  validateSession: async (sessionId: string): Promise<ApiResponse<ValidationResult>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const response = await api.get<BackendResponse<ValidationResult>>(
+        `/wizard/sessions/${sessionId}/validate`
+      );
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get ValidationResult
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to validate session'
+      };
+    } catch (error: any) {
+      console.error('Validate session error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+
+  /**
+   * Submit for approval
+   */
+  submitForApproval: async (sessionId: string): Promise<ApiResponse<SubmitResult>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const response = await api.post<BackendResponse<SubmitResult>>(
+        `/wizard/sessions/${sessionId}/submit`
+      );
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get SubmitResult
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to submit for approval'
+      };
+    } catch (error: any) {
+      console.error('Submit for approval error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+
+  /**
+   * Resubmit a session
+   */
+  resubmitSession: async (sessionId: string): Promise<ApiResponse<SubmitResult>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
+
+      const response = await api.post<BackendResponse<SubmitResult>>(
+        `/wizard/sessions/${sessionId}/resubmit`
+      );
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data  // Unwrap to get SubmitResult
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to resubmit session'
+      };
+    } catch (error: any) {
+      console.error('Resubmit session error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
 
 
-  // Delete a session (only if in DRAFT or REJECTED status)
-  async deleteSession(sessionId: string): Promise<ApiResponse<{ message: string }>> {
-    return await api.delete(`/wizard/sessions/${sessionId}`);
-  }
-}
+   /**
+   * Delete a session (only allowed for DRAFT or REJECTED status)
+   */
+  deleteSession: async (sessionId: string): Promise<ApiResponse<{ message: string }>> => {
+    try {
+      if (!sessionId || sessionId === 'undefined') {
+        return {
+          success: false,
+          error: 'Invalid session ID'
+        };
+      }
 
-export default new WizardApi();
+      const response = await api.delete<BackendResponse<{ message: string }>>(
+        `/wizard/sessions/${sessionId}`
+      );
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to delete session'
+      };
+    } catch (error: any) {
+      console.error('Delete session error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  },
+};
+
+export default wizardApi;

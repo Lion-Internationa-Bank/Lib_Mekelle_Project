@@ -4,7 +4,6 @@ import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import DocumentList from "../DocumentList";
 import { useCalendar } from "../../../contexts/CalendarContext";
 import DateDisplay from "../../common/DateDisplay";
-import { useAuth } from "../../../contexts/AuthContext";
 import { 
   CalendarDays, 
   FileText, 
@@ -21,9 +20,9 @@ interface LeaseCardProps {
 
 const LeaseCard = ({ lease }: LeaseCardProps) => {
   const { t } = useTranslate('leaseCard');
-  const { calendarType, isEthiopian } = useCalendar();
-  const { user } = useAuth();
-  const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
+  const {  isEthiopian } = useCalendar();
+
+
 
   const formatCurrency = (value: number) => {
     return Number(value).toLocaleString('en-ET', {

@@ -41,7 +41,7 @@ export const BillsExport: React.FC<BillsExportProps> = ({
       workbook.modified = new Date();
 
       // ============== SUMMARY SHEET ==============
-      await createSummarySheet(workbook, data, filters, subCities);
+      await createSummarySheet(workbook, data, filters);
 
       // ============== BILLS DETAILS SHEET ==============
       await createBillsSheet(workbook, data);
@@ -106,7 +106,6 @@ export const BillsExport: React.FC<BillsExportProps> = ({
     workbook: ExcelJS.Workbook, 
     data: BillReportItem[],
     filters: Record<string, any>,
-    subCities: Array<{ sub_city_id: string; name: string }>
   ) => {
     const summarySheet = workbook.addWorksheet('Summary', {
       properties: { defaultColWidth: 25 }

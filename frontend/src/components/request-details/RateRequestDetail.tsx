@@ -1,7 +1,6 @@
 // src/components/request-details/RateRequestDetail.tsx
 import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
-import DataDiffViewer from '../common/DataDiffViewer';
 import DateDisplay from '../common/DateDisplay';
 
 interface RateRequestDetailProps {

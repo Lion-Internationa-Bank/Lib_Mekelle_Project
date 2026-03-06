@@ -4,7 +4,7 @@ import { type ActionType } from '../../types/makerChecker';
 import DocumentList from '../common/DocumentList';
 import DateDisplay from '../common/DateDisplay';
 
-const VITE_API_PDF_URL = import.meta.env.VITE_API_PDF_URL || import.meta.env.VITE_API_URL || '';
+
 
 interface WizardRequestDetailProps {
   data: any;
@@ -46,33 +46,33 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
   };
 
   // Helper function to check if a field is a date field
-  const isDateField = (key: string): boolean => {
-    const dateKeywords = [
-      'date', 'acquired_at', 'created_at', 'updated_at', 
-      'contract_date', 'start_date', 'expiry_date', 'effective_date'
-    ];
-    return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
-  };
+  // const isDateField = (key: string): boolean => {
+  //   const dateKeywords = [
+  //     'date', 'acquired_at', 'created_at', 'updated_at', 
+  //     'contract_date', 'start_date', 'expiry_date', 'effective_date'
+  //   ];
+  //   return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
+  // };
 
   // Render value with appropriate formatting
-  const renderValue = (key: string, value: any): React.ReactNode => {
-    if (value === null || value === undefined) return 'N/A';
+  // const renderValue = (key: string, value: any): React.ReactNode => {
+  //   if (value === null || value === undefined) return 'N/A';
     
-    // Handle date fields
-    if (isDateField(key) && value) {
-      return (
-        <DateDisplay 
-          date={value}
-          format="medium"
-          showCalendarIndicator={true}
-          showTooltip={true}
-        />
-      );
-    }
+  //   // Handle date fields
+  //   if (isDateField(key) && value) {
+  //     return (
+  //       <DateDisplay 
+  //         date={value}
+  //         format="medium"
+  //         showCalendarIndicator={true}
+  //         showTooltip={true}
+  //       />
+  //     );
+  //   }
     
-    // Handle other types
-    return String(value);
-  };
+  //   // Handle other types
+  //   return String(value);
+  // };
 
   return (
     <div className="space-y-8">

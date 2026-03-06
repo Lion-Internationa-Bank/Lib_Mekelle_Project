@@ -3,6 +3,9 @@ import apiFetch,{type ApiResponse } from './api.ts';
 
 import { toast } from 'sonner';
 
+
+
+
 export interface ApprovalDocument {
   id: string;
   file_url: string;
@@ -11,7 +14,33 @@ export interface ApprovalDocument {
   mime_type: string;
   document_type: string;
   metadata?: any;
-  uploaded_at: string;
+  // uploaded_at: string;
+}
+
+export interface ApprovalDocumentsResponse {
+  approval_request_id: string;
+  document_count: number;
+  documents: ApprovalDocument[];
+}
+
+export interface UploadDocumentResponse {
+  document: ApprovalDocument;
+}
+
+export interface DeleteDocumentResponse {
+  remaining_documents: number;
+}
+
+
+export interface ApprovalDocument {
+  id: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  document_type: string;
+  metadata?: any;
+  // uploaded_at: string;
 }
 
 export interface ApprovalDocumentsResponse {
@@ -38,8 +67,23 @@ export interface DeleteDocumentResponse {
   };
 }
 
-// Upload single document to approval request
-// In approvalRequestApi.ts
+export interface ApprovalDocument {
+  id: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  document_type: string;
+  metadata?: any;
+  uploaded_at?: string;
+}
+
+export interface ApprovalDocumentsResponse {
+  approval_request_id: string;
+  document_count: number;
+  documents: ApprovalDocument[];
+}
+
 export const uploadApprovalDocument = async (
   approvalRequestId: string,
   file: File,
@@ -51,12 +95,12 @@ export const uploadApprovalDocument = async (
     formData.append('document', file);
     formData.append('document_type', documentType);
     
-    // Add metadata as JSON string
     if (metadata) {
       formData.append('metadata', JSON.stringify(metadata));
     }
 
-    const response = await apiFetch(
+    // apiFetch returns ApiResponse<ApprovalDocument>
+    const response = await apiFetch<ApprovalDocument>(
       `/doc-approval/${approvalRequestId}/documents`,
       {
         method: 'POST',
@@ -64,12 +108,14 @@ export const uploadApprovalDocument = async (
       }
     );
 
+    console.log("📤 API Response:", response); // Add this log
+
     if (response.success && response.data) {
-      const documentData = response.data.data || response.data;
       toast.success('Document uploaded successfully');
-      return documentData;
+      // Return the document data directly
+      return response.data;
     } else {
-      throw new Error(response.data?.message || response.error || 'Upload failed');
+      throw new Error(response.error || 'Upload failed');
     }
   } catch (error: any) {
     console.error('Upload approval document error:', error);
@@ -77,8 +123,30 @@ export const uploadApprovalDocument = async (
     throw error;
   }
 };
+// Get documents for an approval request
+export const getApprovalRequestDocuments = async (
+  approvalRequestId: string
+): Promise<ApprovalDocumentsResponse> => {
+  try {
+    const response = await apiFetch<any>(
+      `/doc-approval/${approvalRequestId}/documents`,
+      {
+        method: 'GET',
+      }
+    );
 
-
+    if (response.success && response.data) {
+      // Return the data directly which should have the structure:
+      // { approval_request_id, document_count, documents }
+      return response.data;
+    } else {
+      throw new Error(response.error || 'Failed to fetch documents');
+    }
+  } catch (error: any) {
+    console.error('Get approval request documents error:', error);
+    throw error;
+  }
+};
 // Upload multiple documents to approval request
 export const uploadMultipleApprovalDocuments = async (
   approvalRequestId: string,
@@ -116,30 +184,7 @@ export const uploadMultipleApprovalDocuments = async (
 };
 
 
-// Get documents for approval request
-// In approvalRequestApi.ts, update the getApprovalRequestDocuments function:
-export const getApprovalRequestDocuments = async (
-  approvalRequestId: string
-): Promise<{ documents: ApprovalDocument[], document_count: number }> => {
-  try {
-    const response = await apiFetch(
-      `/doc-approval/${approvalRequestId}/documents`
-    );
 
-    if (response.success && response.data) {
-      const data = response.data.data || response.data;
-      return {
-        documents: data.documents || [],
-        document_count: data.document_count || 0
-      };
-    } else {
-      throw new Error(response.data?.message || response.error || 'Failed to fetch documents');
-    }
-  } catch (error: any) {
-    console.error('Get approval documents error:', error);
-    throw error;
-  }
-};
 
 // Delete document from approval request
 export const deleteApprovalDocument = async (

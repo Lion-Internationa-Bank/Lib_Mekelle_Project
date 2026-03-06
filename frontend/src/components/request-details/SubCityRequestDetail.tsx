@@ -1,7 +1,7 @@
 // src/components/request-details/SubCityRequestDetail.tsx
 import React from 'react';
 import { type ActionType } from '../../types/makerChecker';
-import DataDiffViewer from '../common/DataDiffViewer';
+
 
 interface SubCityRequestDetailProps {
   data: any;  // This is request_data from the approval request

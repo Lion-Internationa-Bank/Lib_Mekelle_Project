@@ -29,7 +29,7 @@ type Step = (typeof STEPS)[number];
 const ParcelWizard = () => {
   const { t } = useTranslate('wizard');
   const { t: tCommon } = useTranslate('common');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionId: routeSessionId } = useParams();
   const { currentSession, createSession, loadSession, isLoading } = useWizard();

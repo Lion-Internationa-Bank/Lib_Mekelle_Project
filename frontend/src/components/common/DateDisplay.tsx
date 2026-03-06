@@ -32,9 +32,7 @@ const DateDisplay: React.FC<DateDisplayProps> = ({
 }) => {
   const { 
     formatDateForDisplay, 
-    isEthiopian, 
-    calendarType,
-    convertDateToCalendar 
+    isEthiopian,
   } = useCalendar();
   
   const displayText = formatDateForDisplay(date, format);
@@ -54,7 +52,7 @@ const DateDisplay: React.FC<DateDisplayProps> = ({
         // Current is Ethiopian, convert to Gregorian for tooltip
         if (typeof date === 'string' || date instanceof Date || 'month' in date && date.month <= 12) {
           // Input is Gregorian (from backend), use as-is
-          const formatted = inputFormatDate(date, 'GREGORIAN', 'full');
+          const formatted = inputFormatDate(date, 'full');
           oppositeDate = formatted;
         } else {
           // Input is Ethiopian, need to convert

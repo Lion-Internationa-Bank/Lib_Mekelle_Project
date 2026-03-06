@@ -37,10 +37,10 @@ export default function ParcelInfoCard({
   }
 
   // Pretty-print boundary_coords preview
-  const coordsPreview = data.boundary_coords
-    ? JSON.stringify(data.boundary_coords, null, 2).slice(0, 200) + 
-      (JSON.stringify(data.boundary_coords).length > 200 ? "..." : "")
-    : "—";
+  // const coordsPreview = data.boundary_coords
+  //   ? JSON.stringify(data.boundary_coords, null, 2).slice(0, 200) + 
+  //     (JSON.stringify(data.boundary_coords).length > 200 ? "..." : "")
+  //   : "—";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[#f0cd6e] p-6 relative">

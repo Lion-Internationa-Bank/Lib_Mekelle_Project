@@ -40,7 +40,7 @@ export interface CreateOwnerOnlyData {
   full_name: string;
   national_id: string;
   tin_number?: string;
-  phone_number: string;
+  phone_number?: string;
 }
 
 

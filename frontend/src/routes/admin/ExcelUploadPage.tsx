@@ -1,6 +1,6 @@
 // src/routes/admin/ExcelUploadPage.tsx
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ const ExcelUploadPage = () => {
   const [uploadStats, setUploadStats] = useState<UploadStats | null>(null);
   const [failedRows, setFailedRows] = useState<FailedRow[]>([]);
   const [skippedRows, setSkippedRows] = useState<SkippedRow[]>([]);
-  const [successfulRows, setSuccessfulRows] = useState<SuccessfulRow[]>([]);
+  const [, setSuccessfulRows] = useState<SuccessfulRow[]>([]);
   const [reportContent, setReportContent] = useState<string | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [errorGroups, setErrorGroups] = useState<Record<string, number>>({});

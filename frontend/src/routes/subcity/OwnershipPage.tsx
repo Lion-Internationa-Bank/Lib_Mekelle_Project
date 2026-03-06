@@ -154,52 +154,51 @@ const OwnershipPage = () => {
     });
   };
 
-  const handleCreateOwner = async () => {
-    try {
-      setSaving(true);
+ const handleCreateOwner = async () => {
+  try {
+    setSaving(true);
 
-      const parsed = CreateOwnerOnlySchema.parse({
-        full_name: createForm.full_name,
-        national_id: createForm.national_id,
-        tin_number: createForm.tin_number || undefined,
-        phone_number: createForm.phone_number || undefined,
+    const parsed = CreateOwnerOnlySchema.parse({
+      full_name: createForm.full_name,
+      national_id: createForm.national_id,
+      tin_number: createForm.tin_number || '', // Provide empty string if undefined
+      phone_number: createForm.phone_number || '', // Provide empty string if undefined
+    });
+
+    const result = await createOwnerOnly(parsed);
+    console.log("result", result)
+    
+    // Check if approval is required
+    if (result.data.approval_request_id) {
+      // Show document upload for approval request
+      setCurrentApprovalRequest({
+        id: result.data.approval_request_id,
+        title: t('docs.uploadTitle'),
+        description: t('docs.uploadDescription'),
       });
-
-      const result = await createOwnerOnly(parsed);
-      console.log("result",result)
-      
-      // Check if approval is required
-      if (result.data.approval_request_id) {
-        // Show document upload for approval request
-        setCurrentApprovalRequest({
-          id: result.data.approval_request_id,
-          title: t('docs.uploadTitle'),
-          description: t('docs.uploadDescription'),
-        });
-        setShowDocsModal(true);
-        toast.info(result.message || t('messages.creationSubmitted'));
-      } else if (result.data.owner_id) {
-        // Immediate execution (self-approval)
-        toast.success(result.message || t('messages.createSuccess'));
-      }
-
-      setShowCreate(false);
-      resetCreateForm();
-      await loadOwners(page, search);
-      await loadPendingRequests();
-    } catch (err: unknown) {
-      if (err instanceof ZodError) {
-        toast.error(err.issues[0]?.message || tCommon('validationError'));
-      } else if (err instanceof Error) {
-        toast.error(err.message || t('errors.createFailed'));
-      } else {
-        toast.error(t('errors.createFailed'));
-      }
-    } finally {
-      setSaving(false);
+      setShowDocsModal(true);
+      toast.info(result.message || t('messages.creationSubmitted'));
+    } else if (result.data.owner_id) {
+      // Immediate execution (self-approval)
+      toast.success(result.message || t('messages.createSuccess'));
     }
-  };
 
+    setShowCreate(false);
+    resetCreateForm();
+    await loadOwners(page, search);
+    await loadPendingRequests();
+  } catch (err: unknown) {
+    if (err instanceof ZodError) {
+      toast.error(err.issues[0]?.message || tCommon('validationError'));
+    } else if (err instanceof Error) {
+      toast.error(err.message || t('errors.createFailed'));
+    } else {
+      toast.error(t('errors.createFailed'));
+    }
+  } finally {
+    setSaving(false);
+  }
+};
   const handleUpdateOwner = async () => {
     if (!editingOwner) return;
     try {

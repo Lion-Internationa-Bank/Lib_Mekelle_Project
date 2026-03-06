@@ -28,8 +28,8 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
   const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSummary, setShowSummary] = useState(true);
-  const [rejectionInfo, setRejectionInfo] = useState<RejectionInfo | null>(null);
-  const [isLoadingRejection, setIsLoadingRejection] = useState(false);
+  const [rejectionInfo, ] = useState<RejectionInfo | null>(null);
+  const [, setIsLoadingRejection] = useState(false);
   const initialValidatedRef = useRef(false);
 
   const validateSession = useCallback(async (): Promise<ValidationResult> => {
@@ -46,10 +46,10 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
 
       if (response.success && response.data) {
         // Handle both nested and direct validation result structures
-        if (response.data.data && 
-            typeof response.data.data.valid === "boolean" && 
-            Array.isArray(response.data.data.missing)) {
-          return response.data.data as ValidationResult;
+        if (response.data && 
+            typeof response.data.valid === "boolean" && 
+            Array.isArray(response.data.missing)) {
+          return response.data as ValidationResult;
         } else if (typeof response.data.valid === "boolean" && 
                   Array.isArray(response.data.missing)) {
           return response.data as ValidationResult;
@@ -73,18 +73,12 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
     try {
       // First try to get rejection info from approval_request if available
       if (currentSession.approval_request) {
-        setRejectionInfo({
-          reason: currentSession.approval_request.rejection_reason || t('rejection.noReason'),
-          rejected_at: currentSession.approval_request.updated_at,
-          rejected_by: currentSession.approval_request.checker || currentSession.approval_request.maker
-        });
-      } else {
-        // Fallback to API call
-        const response = await wizardApi.getRejectionReason(currentSession.session_id);
-        if (response.success && response.data) {
-          setRejectionInfo(response.data.data);
-        }
-      }
+        // setRejectionInfo({
+        //   reason: currentSession.approval_request.rejection_reason || t('rejection.noReason'),
+        //   rejected_at: currentSession.approval_request.updated_at,
+        //   rejected_by: currentSession.approval_request.checker || currentSession.approval_request.maker
+        // });
+      } 
     } catch (error) {
       console.error("Failed to load rejection info:", error);
       // Don't show toast error for this, it's not critical
@@ -191,7 +185,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           onFinish();
         }, 2000);
       } else {
-        toast.error(result.error || t('errors.submissionFailed'));
+        toast.error(t('errors.submissionFailed'));
         setIsSubmitting(false);
       }
     } catch (error: any) {

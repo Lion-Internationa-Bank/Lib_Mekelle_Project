@@ -5,7 +5,6 @@ import type {
   OwnerWithParcels,
   OwnersPagination,
 } from "../../services/ownersApi";
-import { useAuth } from "../../contexts/AuthContext";
 
 type Props = {
   owners: OwnerWithParcels[];
@@ -34,8 +33,7 @@ const OwnershipTable = ({
   onDelete,
   onPageChange,
 }: Props) => {
-  const { t } = useTranslate('ownership');
-  const { user } = useAuth();
+
     
   return (
     <>
@@ -88,7 +86,7 @@ const ErrorBlock = ({
   error: string;
   onRetry: () => void;
 }) => {
-  const { t } = useTranslate('ownership');
+  
   const { t: tCommon } = useTranslate('common');
   
   return (

@@ -364,7 +364,7 @@ export function compitableformatDate(
  */
 export function inputFormatDate(
   date: Date | string | GregorianDate | EthiopianDate,
-  calendarType: CalendarType,
+
   format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
 ): string {
   // First, determine what type of date we have

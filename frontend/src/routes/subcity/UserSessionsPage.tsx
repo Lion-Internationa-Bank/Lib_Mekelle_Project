@@ -5,6 +5,7 @@ import { useTranslate } from "../../i18n/useTranslate";
 import wizardApi from "../../services/wizardApi";
 import { toast } from "sonner";
 
+// Update the WizardSession interface in UserSessionsPage.tsx
 interface WizardSession {
   session_id: string;
   status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "MERGED";
@@ -19,8 +20,15 @@ interface WizardSession {
     file_number: string;
     tenure_type: string;
     total_area_m2: number;
+    boundary_east?: string;
+    boundary_west?: string;
+    boundary_north?: string;
+    boundary_south?: string;
+    boundary_coords?: string;
+    tender?: string;
   } | null;
   owner_data?: Array<{
+    owner_id?: string;
     full_name: string;
     tin_number: string;
     national_id: string;
@@ -36,34 +44,67 @@ interface WizardSession {
     down_payment_amount: number;
     legal_framework: string;
     demarcation_fee?: number;
-    contract_registration_fee?: string;
+    contract_registration_fee?: number;  // Changed from string to number
     engineering_service_fee?: number;
+    contract_date?: string;
+    other_payment?: number;
   } | null;
   parcel_docs?: Array<{
+    id: string;
     document_type: string;
     file_name: string;
+    file_url: string;
+    file_size?: number;
+    mime_type?: string;
+    metadata?: any;
   }> | null;
   owner_docs?: Array<{
+    id: string;
     document_type: string;
     file_name: string;
+    file_url: string;
+    file_size?: number;
+    mime_type?: string;
+    metadata?: any;
   }> | null;
   lease_docs?: Array<{
+    id: string;
     document_type: string;
     file_name: string;
+    file_url: string;
+    file_size?: number;
+    mime_type?: string;
+    metadata?: any;
   }> | null;
   created_at: string;
   updated_at: string;
   expires_at?: string;
+  submitted_at?: string | null;
+  completed_at?: string | null;
+  approval_request_id?: string | null;
   approval_request?: {
     request_id: string;
     status: string;
     approver_role?: string;
-    rejection_reason?: string;
+    rejection_reason?: string | null;
+    maker?: {
+      user_id: string;
+      full_name: string;
+      username: string;
+    };
   } | null;
-  user_role: string;
-  sub_city_id: string;
-  approval_request_id: string | null;
-  submitted_at: string | null;
+  user_role?: string;
+  sub_city_id?: string;
+  user?: {
+    user_id: string;
+    username: string;
+    full_name: string;
+    role: string;
+  };
+  sub_city?: {
+    sub_city_id: string;
+    name: string;
+  };
 }
 
 interface Pagination {
@@ -75,6 +116,23 @@ interface Pagination {
   hasPreviousPage: boolean;
 }
 
+// interface SessionsResponse {
+//   sessions: WizardSession[];
+//   total: number;
+//   page: number;
+//   limit: number;
+//   totalPages: number;
+// }
+
+// Stats interface
+interface SessionStats {
+  total: number;
+  draft: number;
+  pending: number;
+  rejected: number;
+  completed: number;
+}
+
 const UserSessionsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslate('sessions');
@@ -82,6 +140,13 @@ const UserSessionsPage = () => {
   
   const [sessions, setSessions] = useState<WizardSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<SessionStats>({
+    total: 0,
+    draft: 0,
+    pending: 0,
+    rejected: 0,
+    completed: 0
+  });
   const [filter, setFilter] = useState<"all" | "draft" | "pending" | "completed" | "rejected">("all");
   
   // Pagination state
@@ -99,56 +164,98 @@ const UserSessionsPage = () => {
     loadSessions(pagination.page);
   }, [filter, pagination.page]);
 
-  const loadSessions = async (page: number = 1) => {
-    try {
-      setIsLoading(true);
+  // Load stats separately
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+const loadStats = async () => {
+  try {
+    // Load all sessions to calculate stats
+    const response = await wizardApi.getUserSessions(1, 1000, undefined, 'created_at', 'desc');
+    
+    if (response.success && response.data) {
+      const allSessions = response.data; // Direct array, not response.data.sessions
       
-      // Map filter to status parameter
-      let statusParam: string | undefined;
-      switch (filter) {
-        case "draft":
-          statusParam = "DRAFT";
-          break;
-        case "pending":
-          statusParam = "PENDING_APPROVAL";
-          break;
-        case "rejected":
-          statusParam = "REJECTED";
-          break;
-        case "completed":
-          statusParam = "COMPLETED"; // Meta-status for APPROVED and MERGED
-          break;
-        default:
-          statusParam = "ALL"; // Get all statuses
-      }
+      const newStats: SessionStats = {
+        total: allSessions.length,
+        draft: allSessions.filter(s => s.status === "DRAFT").length,
+        pending: allSessions.filter(s => s.status === "PENDING_APPROVAL").length,
+        rejected: allSessions.filter(s => s.status === "REJECTED").length,
+        completed: allSessions.filter(s => ["APPROVED"].includes(s.status)).length
+      };
       
-      const response = await wizardApi.getUserSessions(
-        page, 
-        pagination.limit, 
-        statusParam,
-        'created_at',
-        'desc'
-      );
-      
-      console.log('Sessions response:', response);
-      
-      if (response.success && response.data) {
-        setSessions(response.data.data || []);
-        if (response.data.pagination) {
-          setPagination(response.data.pagination);
-        }
-      } else {
-        toast.error(response.error || t('errors.loadFailed'));
-        setSessions([]);
-      }
-    } catch (error: any) {
-      console.error('Load sessions error:', error);
-      toast.error(error.message || t('errors.loadFailed'));
-      setSessions([]);
-    } finally {
-      setIsLoading(false);
+      setStats(newStats);
     }
-  };
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+};
+
+  const loadSessions = async (page: number = 1) => {
+  try {
+    setIsLoading(true);
+    
+    // Map filter to status parameter
+    let statusParam: string | undefined;
+    switch (filter) {
+      case "draft":
+        statusParam = "DRAFT";
+        break;
+      case "pending":
+        statusParam = "PENDING_APPROVAL";
+        break;
+      case "rejected":
+        statusParam = "REJECTED";
+        break;
+      case "completed":
+        statusParam = "APPROVED";
+        break;
+      default:
+        statusParam = undefined; // No status filter for "all"
+    }
+    
+    const response = await wizardApi.getUserSessions(
+      page, 
+      pagination.limit, 
+      statusParam,
+      'created_at',
+      'desc'
+    );
+    
+    console.log('Sessions response:', response);
+    
+    if (response.success && response.data) {
+      // The response.data is the array of sessions
+      const sessionsArray = response.data;
+      setSessions(sessionsArray);
+      
+      // You need to get pagination from somewhere
+      // This might come from response headers or a separate field
+      // For now, we'll calculate based on the array length
+      const totalCount = sessionsArray.length;
+      const totalPages = Math.ceil(totalCount / pagination.limit);
+      
+      setPagination({
+        page: page,
+        limit: pagination.limit,
+        totalCount: totalCount,
+        totalPages: totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      });
+    } else {
+      toast.error(response.error || t('errors.loadFailed'));
+      setSessions([]);
+    }
+  } catch (error: any) {
+    console.error('Load sessions error:', error);
+    toast.error(error.message || t('errors.loadFailed'));
+    setSessions([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleFilterChange = (newFilter: typeof filter) => {
     setFilter(newFilter);
@@ -295,8 +402,9 @@ const UserSessionsPage = () => {
       if (response.success) {
         setSessions(prev => prev.filter(s => s.session_id !== sessionId));
         toast.success(t('messages.deleteSuccess'));
-        // Refresh the current page to update counts
+        // Refresh the current page and stats
         loadSessions(pagination.page);
+        loadStats();
       } else {
         toast.error(response.error || t('errors.deleteFailed'));
       }
@@ -322,7 +430,7 @@ const UserSessionsPage = () => {
     return pages;
   };
 
-  if (isLoading) {
+  if (isLoading && sessions.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
@@ -357,7 +465,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              {t('filters.all')} ({pagination.totalCount})
+              {t('filters.all')} ({stats.total})
             </button>
             <button
               onClick={() => handleFilterChange("draft")}
@@ -367,7 +475,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              {t('filters.draft')}
+              {t('filters.draft')} ({stats.draft})
             </button>
             <button
               onClick={() => handleFilterChange("pending")}
@@ -377,7 +485,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              {t('filters.pending')}
+              {t('filters.pending')} ({stats.pending})
             </button>
             <button
               onClick={() => handleFilterChange("rejected")}
@@ -387,7 +495,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              {t('filters.rejected')}
+              {t('filters.rejected')} ({stats.rejected})
             </button>
             <button
               onClick={() => handleFilterChange("completed")}
@@ -397,7 +505,7 @@ const UserSessionsPage = () => {
                   : "bg-white text-[#2a2718] border border-[#f0cd6e] hover:bg-[#f0cd6e]/20"
               }`}
             >
-              {t('filters.completed')}
+              {t('filters.completed')} ({stats.completed})
             </button>
           </div>
 
@@ -604,7 +712,20 @@ const UserSessionsPage = () => {
 
                     {/* Progress and Documents */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  
+                      {/* Progress Bar */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-[#2a2718]/70">{t('progress')}</span>
+                          <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+                        </div>
+                        <div className="w-full bg-[#f0cd6e]/20 rounded-full h-2.5">
+                          <div 
+                            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      
                       {/* Documents */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
@@ -792,26 +913,26 @@ const UserSessionsPage = () => {
         )}
 
         {/* Stats */}
-        {pagination.totalCount > 0 && (
+        {stats.total > 0 && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-[#2a2718]">{pagination.totalCount}</div>
+              <div className="text-2xl font-bold text-[#2a2718]">{stats.total}</div>
               <div className="text-sm text-[#2a2718]/70">{t('stats.total')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-[#f0cd6e]">-</div>
+              <div className="text-2xl font-bold text-[#f0cd6e]">{stats.draft}</div>
               <div className="text-sm text-[#2a2718]/70">{t('stats.draft')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-blue-600">-</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.pending}</div>
               <div className="text-sm text-[#2a2718]/70">{t('stats.pending')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-red-600">-</div>
+              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
               <div className="text-sm text-[#2a2718]/70">{t('stats.rejected')}</div>
             </div>
             <div className="bg-white/80 rounded-xl p-4 border border-[#f0cd6e]">
-              <div className="text-2xl font-bold text-green-600">-</div>
+              <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
               <div className="text-sm text-[#2a2718]/70">{t('stats.completed')}</div>
             </div>
           </div>

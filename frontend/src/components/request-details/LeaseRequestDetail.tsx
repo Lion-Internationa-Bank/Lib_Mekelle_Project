@@ -37,29 +37,29 @@ const renderCreate = () => {
   ];
   
   // Fields to exclude from display
-  const excludedFields = [
-    'parcel_sub_city_id',
-    'sub_city_id',
-    'maker_id',
-    'approver_id',
-    'request_id',
-    'entity_id',
-    'last_document_update',
-    'created_at',
-    'updated_at'
-  ];
+  // const excludedFields = [
+  //   'parcel_sub_city_id',
+  //   'sub_city_id',
+  //   'maker_id',
+  //   'approver_id',
+  //   'request_id',
+  //   'entity_id',
+  //   'last_document_update',
+  //   'created_at',
+  //   'updated_at'
+  // ];
 
   // Extract lease details
   const leaseDetails = requestData.lease_details || {};
   
   // Regular fields (exclude documents, lease_details, and excluded fields)
-  const regularEntries = Object.entries(requestData).filter(
-    ([key]) => !documentFieldNames.includes(key) && 
-               !key.toLowerCase().includes('document') &&
-               !key.includes('lease_details') &&
-               !excludedFields.includes(key) &&
-               typeof requestData[key] !== 'object'
-  );
+  // const regularEntries = Object.entries(requestData).filter(
+  //   ([key]) => !documentFieldNames.includes(key) && 
+  //              !key.toLowerCase().includes('document') &&
+  //              !key.includes('lease_details') &&
+  //              !excludedFields.includes(key) &&
+  //              typeof requestData[key] !== 'object'
+  // );
   
   const documentEntries = Object.entries(requestData).filter(
     ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')

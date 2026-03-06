@@ -86,9 +86,8 @@ export const openDocument = async (filename: string) => {
   } catch (error) {
     console.error('❌ Error in openDocument:', error);
     console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: error,
+      
     });
     alert('Failed to open document. Check console for details.');
   }

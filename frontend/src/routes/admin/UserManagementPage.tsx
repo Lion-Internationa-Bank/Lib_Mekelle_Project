@@ -28,7 +28,7 @@ import ApprovalPendingModal from '../../components/userMgt/ApprovalPendingModal'
 const UserManagementPage = () => {
   const { user: currentUser } = useAuth();
   const { t } = useTranslate('users');
-  const { t: tCommon } = useTranslate('common');
+
   
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);

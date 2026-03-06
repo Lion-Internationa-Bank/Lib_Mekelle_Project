@@ -11,6 +11,16 @@ interface ParcelRequestDetailProps {
   entityId: string;
 }
 
+interface Owner {
+  id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  [key: string]: any; // For any other dynamic properties
+}
+
+
+
 const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({ 
   data, 
   actionType, 
@@ -290,16 +300,16 @@ const renderAddOwner = () => {
   const existingOwners = requestData.existing_owners || [];
   
   // Regular fields (exclude documents, complex objects, and IDs)
-  const regularEntries = Object.entries(requestData).filter(
-    ([key]) => !documentFieldNames.includes(key) && 
-               !key.toLowerCase().includes('document') &&
-               !key.includes('owner_details') &&
-               !key.includes('parcel_details') &&
-               !key.includes('existing_owners') &&
-               !key.includes('owner_id') &&
-               !key.includes('last_document_update') &&
-               typeof requestData[key] !== 'object'
-  );
+  // const regularEntries = Object.entries(requestData).filter(
+  //   ([key]) => !documentFieldNames.includes(key) && 
+  //              !key.toLowerCase().includes('document') &&
+  //              !key.includes('owner_details') &&
+  //              !key.includes('parcel_details') &&
+  //              !key.includes('existing_owners') &&
+  //              !key.includes('owner_id') &&
+  //              !key.includes('last_document_update') &&
+  //              typeof requestData[key] !== 'object'
+  // );
   
   const documentEntries = Object.entries(requestData).filter(
     ([key]) => documentFieldNames.includes(key) || key.toLowerCase().includes('document')
@@ -381,33 +391,26 @@ const renderAddOwner = () => {
       )}
 
       {/* Existing Owners */}
-      {existingOwners.length > 0 && (
-        <div className="bg-[#f0cd6e]/5 p-5 rounded-lg border border-[#f0cd6e]">
-          <h4 className="text-sm font-semibold text-[#2a2718] mb-3 flex items-center gap-2">
-            <span className="text-[#2a2718]">👥</span>
-            Existing Owners ({existingOwners.length})
-          </h4>
-          <div className="space-y-3">
-            {existingOwners.map((owner, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg border border-[#f0cd6e]">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(owner).map(([key, value]) => (
-                    <div key={key}>
-                      <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
-                        {key.replace(/_/g, ' ')
-                            .replace(/\b\w/g, l => l.toUpperCase())}
-                      </div>
-                      <div className="text-sm font-medium text-[#2a2718] break-words">
-                        {renderValue(key, value)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+     {/* // At the top of your renderAddOwner function or at the component level */}
+
+
+{existingOwners.map((owner: Owner, index: number) => (
+  <div key={index} className="bg-white p-4 rounded-lg border border-[#f0cd6e]">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Object.entries(owner).map(([key, value]) => (
+        <div key={key}>
+          <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
+            {key.replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())}
+          </div>
+          <div className="text-sm font-medium text-[#2a2718] break-words">
+            {renderValue(key, value)}
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+))}
 
       {/* Documents sections */}
       {documentEntries.map(([key, value]) => {
@@ -451,7 +454,6 @@ const renderSubdivide = () => {
     parent_details,
     childParcels = [],
     parcel_documents = {},
-    validation = {}
   } = requestData;
 
   // Calculate total child area

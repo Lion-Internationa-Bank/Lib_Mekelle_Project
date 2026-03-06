@@ -24,7 +24,6 @@ const leaseDocumentTypes = [
 
 const LeaseDocsStep = ({ nextStep, prevStep }: SimpleStepProps) => {
   const { t } = useTranslate('leaseDocsStep');
-  const { t: tCommon } = useTranslate('common');
   const { currentSession, uploadDocument, deleteDocument, isLoading } = useWizard();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);

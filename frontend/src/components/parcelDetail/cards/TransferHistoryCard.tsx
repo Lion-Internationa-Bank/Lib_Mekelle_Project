@@ -13,8 +13,7 @@ interface TransferHistoryCardProps {
 const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
   const { t } = useTranslate('transferHistoryCard');
 
-  const formatDate = (dateStr: string | null) =>
-    dateStr ? new Date(dateStr).toLocaleDateString("en-GB") : "-";
+
 
   // FIXED: Properly handle transfer_price as string | null
   const formatPrice = (price: string | null) => {

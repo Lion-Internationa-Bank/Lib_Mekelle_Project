@@ -2,7 +2,6 @@
 import type {
   EditParcelFormData,
   EditOwnerFormData,
-  TransferOwnershipFormData,
   EditLeaseFormData,
   EncumbranceFormData,
 } from "../validation/schemas";

@@ -32,7 +32,7 @@ export interface SubCity {
 }
 
 class ReportApiService {
-  private baseEndpoint = '/reports';
+ 
 
   // Get bills data
   async getBills(filters: BillFilters): Promise<ApiResponse<BillRecord[]>> {
@@ -88,27 +88,27 @@ class ReportApiService {
   }
 
   // Future report methods
-  async getPaymentsReport(filters: any): Promise<ApiResponse<any[]>> {
+  async getPaymentsReport(): Promise<ApiResponse<any[]>> {
     // To be implemented
     return api.get<any[]>('/reports/payments');
   }
 
-  async getParcelsReport(filters: any): Promise<ApiResponse<any[]>> {
+  async getParcelsReport(): Promise<ApiResponse<any[]>> {
     // To be implemented
     return api.get<any[]>('/reports/parcels');
   }
 
-  async getOwnersReport(filters: any): Promise<ApiResponse<any[]>> {
+  async getOwnersReport(): Promise<ApiResponse<any[]>> {
     // To be implemented
     return api.get<any[]>('/reports/owners');
   }
 
-  async getLeasesReport(filters: any): Promise<ApiResponse<any[]>> {
+  async getLeasesReport(): Promise<ApiResponse<any[]>> {
     // To be implemented
     return api.get<any[]>('/reports/leases');
   }
 
-  async getRevenueReport(filters: any): Promise<ApiResponse<any[]>> {
+  async getRevenueReport(): Promise<ApiResponse<any[]>> {
     // To be implemented
     return api.get<any[]>('/reports/revenue');
   }

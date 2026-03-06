@@ -111,7 +111,7 @@ export const EncumbrancesExport: React.FC<EncumbrancesExportProps> = ({
       ['Type Filter:', filters.type || 'All Types']
     ];
 
-    infoRows.forEach((row, index) => {
+    infoRows.forEach((row) => {
       const addedRow = summarySheet.addRow(row);
       addedRow.getCell(1).font = { bold: true };
       addedRow.height = 20;
@@ -139,7 +139,7 @@ export const EncumbrancesExport: React.FC<EncumbrancesExportProps> = ({
     });
 
     // Style the sheet
-    summarySheet.eachRow((row, rowNumber) => {
+    summarySheet.eachRow((row) => {
       row.eachCell((cell) => {
         cell.border = {
           top: { style: 'thin' },

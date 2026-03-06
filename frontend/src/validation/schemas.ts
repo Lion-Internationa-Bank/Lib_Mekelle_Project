@@ -73,7 +73,9 @@ export const OwnerFormSchema = z.object({
   full_name: z
     .string()
     .min(1, { message: "Full name is required" })
-    .regex(/^[a-zA-Z\s]+$/, { message: "Name should only contain letters and spaces" }),
+    .regex(/^[\p{L}\s]+$/u, { 
+      message: "Name should only contain letters and spaces" 
+    }),
 
   national_id: z
     .string()
@@ -117,6 +119,7 @@ export const OwnerFormSchema = z.object({
     message: "Invalid owner data",
   }
 );
+
 
 export type OwnerFormData = z.infer<typeof OwnerFormSchema>;
 
@@ -200,41 +203,50 @@ export const OwnerStepFormSchema = z.object({
   owner_id: z
     .string()
     .trim()
-    .min(1, { message: "Full name is required and cannot be empty" }).optional,
+    .min(1, { message: "Owner ID is required and cannot be empty" })
+    .optional(),
+
   full_name: z
     .string()
     .trim()
-    .min(1, { message: "Full name is required and cannot be empty" }).optional,
+    .min(1, { message: "Full name is required and cannot be empty" })
+    .min(2, { message: "Full name must be at least 2 characters" })
+    .max(100, { message: "Full name cannot exceed 100 characters" })
+    .optional(),
 
   national_id: z
     .string()
     .trim()
-    .min(1, { message: "National ID is required and cannot be empty" }).optional,
+    .min(1, { message: "National ID is required and cannot be empty" })
+    .optional(),
 
-  tin_number: z.string().trim().optional(),
+  tin_number: z
+    .string()
+    .trim()
+    .optional(),
 
-phone_number: z
-  .string()
-  .trim()
-  .min(1, { message: "Phone number is required" })
-  .regex(
-    /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
-    {
-      message:
-        "Invalid phone number. Use +251911223344 or 0911223344 format",
-    }
-  )
-  .transform((val) => {
-    // Normalize to international format: always return +251...
-    if (val.startsWith("0")) {
-      return "+251" + val.slice(1);
-    }
-    if (val.startsWith("+251")) {
+  phone_number: z
+    .string()
+    .trim()
+    .min(1, { message: "Phone number is required" })
+    .regex(
+      /^(\+251|0)(9[1-9]|7[0-9])\d{7}$/,
+      {
+        message: "Invalid phone number. Use +251911223344 or 0911223344 format",
+      }
+    )
+    .transform((val) => {
+      // Normalize to international format: always return +251...
+      if (val.startsWith("0")) {
+        return "+251" + val.slice(1);
+      }
+      if (val.startsWith("+251")) {
+        return val;
+      }
+      // Fallback (should not happen due to regex)
       return val;
-    }
-    // Fallback (should not happen due to regex)
-    return val;
-  }).optional,
+    })
+    .optional(),
 
   // keep as string for date input, but validate similar to backend
   acquired_at: z
@@ -243,8 +255,7 @@ phone_number: z
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid acquisition date format",
     }),
-}).optional;
-
+}).optional();
 export type OwnerStepFormData = z.infer<typeof OwnerStepFormSchema>;
 
 /**

@@ -25,7 +25,7 @@ const formatCurrency = (value: number) => {
 
 const BillingSection = ({ data }: Props) => {
   const { t } = useTranslate('billingSection');
-  const { billing_records, lease_agreement: lease, owners, upin, file_number, sub_city, tabia, ketena, block, total_area_m2 } = data;
+  const { billing_records, lease_agreement: lease, owners, } = data;
   const now = new Date();
 
   // Check if we have valid lease data

@@ -10,8 +10,6 @@ import {
   Clock,
   ArrowRight,
   Globe,
-  FileText,
-  UserCog
 } from 'lucide-react';
 
 const CityAdminHome = () => {

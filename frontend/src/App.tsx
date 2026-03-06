@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Routes, Route, Navigate, replace } from 'react-router-dom';
+import { Routes, Route, Navigate} from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
@@ -21,9 +21,7 @@ import UserSessionsPage from './routes/subcity/UserSessionsPage';
 import PendingRequestsPage from './routes/admin/PendingRequestsPage';
 import RequestDetailPage from './routes/admin/RequestDetailPage';
 import ExcelUploadPage from './routes/admin/ExcelUploadPage';
-import CityApproverHome from './routes/approver/CityApprover';
-import SubCityApproverHome from './routes/approver/SubCityApprover';
-import RevenueApproverHome from './routes/approver/RevenueApprover';
+
 
 import { ReportsRoutes } from './routes/reports'; // Import the ReportsRoutes component
 

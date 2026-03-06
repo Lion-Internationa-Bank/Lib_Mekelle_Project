@@ -1,10 +1,11 @@
-// src/pages/RequestDetailPage.tsx - Updated with safe null checks
+// src/pages/RequestDetailPage.tsx - Updated with proper type mapping
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   getRequestDetails, 
   approveRequest, 
-  rejectRequest 
+  rejectRequest,
+  type RequestDetails 
 } from '../../services/makerCheckerService';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -17,7 +18,6 @@ import {
   getActionDisplayName,
   getEntityIcon,
   getStatusColor,
-  getActionColor
 } from '../../types/makerChecker';
 import UserRequestDetail from '../../components/request-details/UserRequestDetail';
 import SubCityRequestDetail from '../../components/request-details/SubCityRequestDetail';
@@ -30,6 +30,35 @@ import LeaseRequestDetail from '../../components/request-details/LeaseRequestDet
 import EncumbranceRequestDetail from '../../components/request-details/EncumbranceRequestDetail';
 import DateDisplay from '../../components/common/DateDisplay';
 
+// Function to map backend request to ApprovalRequestData type
+const mapToApprovalRequestData = (data: RequestDetails): ApprovalRequestData => {
+  return {
+    request_id: data.request_id,
+    entity_type: data.entity_type as any, // Type assertion needed if string literal mismatch
+    entity_id: data.entity_id,
+    action_type: data.action_type as any,
+    request_data: data.request_data,
+    status: data.status as any,
+    maker_id: data.maker_id,
+    maker_role: data.maker_role,
+    approver_role: data.approver_role,
+    approver_id: data.approver_id,
+    sub_city_id: data.sub_city_id,
+    rejection_reason: data.rejection_reason,
+    approver_comments: data.approver_comments,
+    metadata: data.metadata,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    submitted_at: data.submitted_at,
+    approved_at: data.approved_at,
+    rejected_at: data.rejected_at,
+    deleted_at: data.deleted_at,
+    is_deleted: data.is_deleted,
+    maker: data.maker,
+    sub_city: data.sub_city,
+    approver: data.approver
+  };
+};
 
 // Dialog Component with Tailwind CSS
 const ActionDialog: React.FC<{
@@ -152,9 +181,12 @@ const RequestDetailPage: React.FC = () => {
         }
 
         const response = await getRequestDetails(requestId);
-        console.log("response",response)
-        if (response.success && response.data.data) {
-          setRequest(response.data.data);
+        console.log("response", response);
+        
+        if (response.success && response.data) {
+          // Map the backend response to ApprovalRequestData type
+          const mappedRequest = mapToApprovalRequestData(response.data);
+          setRequest(mappedRequest);
         } else {
           toast.error(response.error || 'Failed to fetch request details');
           navigate('/pending-requests');
@@ -171,7 +203,7 @@ const RequestDetailPage: React.FC = () => {
     fetchRequest();
   }, [requestId, navigate]);
 
-  const handleApproveSubmit = async (reason: string, comments: string) => {
+  const handleApproveSubmit = async ( comments: string) => {
     if (!requestId) return;
     
     setIsSubmitting(true);
@@ -268,7 +300,7 @@ const RequestDetailPage: React.FC = () => {
             entityId={entity_id}
           />
         );
-         case 'USERS':
+      case 'USERS':
         return (
           <UserRequestDetail 
             data={request_data || {}}
@@ -276,34 +308,30 @@ const RequestDetailPage: React.FC = () => {
             entityId={entity_id}
           />
         );
-        case 'RATE_CONFIGURATION':
-         return (
+      case 'RATE_CONFIGURATION':
+        return (
           <RateRequestDetail
             data={request_data || {}}
             actionType={action_type}
             entityId={entity_id}
           />
         );
-
-        case 'SUBCITY':
-          return(
-        <SubCityRequestDetail 
-         data={request_data || {}}
-         actionType={action_type}
-         entityId={entity_id}
-          />
-
-          );
-        case 'CONFIGURATIONS':
-          return(
-          <ConfigurationRequestDetail 
-          data={request_data || {}}
-          actionType={action_type}
+      case 'SUBCITY':
+        return (
+          <SubCityRequestDetail 
+            data={request_data || {}}
+            actionType={action_type}
             entityId={entity_id}
-            />
-          )
-
-
+          />
+        );
+      case 'CONFIGURATIONS':
+        return (
+          <ConfigurationRequestDetail 
+            data={request_data || {}}
+            actionType={action_type}
+            entityId={entity_id}
+          />
+        );
       default:
         return (
           <div className="space-y-4">
@@ -391,16 +419,18 @@ const RequestDetailPage: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-3 mt-4 text-sm text-gray-600">
-              <span>📅 Created: {request.created_at ?(   <span className="font-medium">
-                <DateDisplay 
-                  date={request.created_at} 
-                  format="medium"
-                  showCalendarIndicator={true}
-                  showTooltip={true}
-                />
-              </span>) : 'N/A'}</span>
+              <span>📅 Created: {request.created_at ? (
+                <span className="font-medium">
+                  <DateDisplay 
+                    date={request.created_at} 
+                    format="medium"
+                    showCalendarIndicator={true}
+                    showTooltip={true}
+                  />
+                </span>
+              ) : 'N/A'}</span>
               <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-              <span>👤 By: {request.maker?.full_name || 'Unknown'} ({request.maker?.role?.replace('_', ' ') || 'Unknown'})</span>
+              <span>👤 By: {request.maker?.full_name || 'Unknown'} ({request.maker?.role?.replace(/_/g, ' ') || 'Unknown'})</span>
               {request.sub_city && (
                 <>
                   <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
@@ -473,14 +503,14 @@ const RequestDetailPage: React.FC = () => {
                 <p className="text-red-700">{request.rejection_reason}</p>
                 {request.rejected_at && (
                   <p className="text-sm text-red-600 mt-2">
-                    Rejected on:    <span className="font-medium">
-                <DateDisplay 
-                  date={request.rejected_at} 
-                  format="medium"
-                  showCalendarIndicator={true}
-                  showTooltip={true}
-                />
-              </span>
+                    Rejected on: <span className="font-medium">
+                      <DateDisplay 
+                        date={request.rejected_at} 
+                        format="medium"
+                        showCalendarIndicator={true}
+                        showTooltip={true}
+                      />
+                    </span>
                   </p>
                 )}
               </div>
@@ -496,14 +526,14 @@ const RequestDetailPage: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-green-800 mb-2">Approved</h4>
                 <p className="text-green-700">
-                     <span className="font-medium">
-                <DateDisplay 
-                  date={request.approved_at} 
-                  format="medium"
-                  showCalendarIndicator={true}
-                  showTooltip={true}
-                />
-              </span>
+                  <span className="font-medium">
+                    <DateDisplay 
+                      date={request.approved_at} 
+                      format="medium"
+                      showCalendarIndicator={true}
+                      showTooltip={true}
+                    />
+                  </span>
                 </p>
               </div>
             </div>

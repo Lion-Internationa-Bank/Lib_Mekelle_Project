@@ -83,7 +83,7 @@ const ConfigsPage: React.FC = () => {
   const [categories, setCategories] = useState<AllowedCategory[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<AllowedCategory | null>(null);
-  const [config, setConfig] = useState<Config | null>(null);
+  const [, setConfig] = useState<Config | null>(null);
   const [options, setOptions] = useState<ConfigOption[]>([]);
   const [description, setDescription] = useState<string>("");
   const [loading, setLoading] = useState(false);

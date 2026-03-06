@@ -7,10 +7,7 @@ import {
   FileText, 
   Clock,
   ArrowRight,
-  Home,
   UserPlus,
-  Eye,
-  AlertCircle,
   Building2,
   Landmark
 } from 'lucide-react';
@@ -91,14 +88,6 @@ const SubCityAdminHome = () => {
           <p className="text-[#2a2718]/60 mt-1">
             Manage land, owners, and users in your sub-city
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-[#f0cd6e] rounded-xl flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-[#2a2718]" />
-            <span className="text-sm font-medium text-[#2a2718]">
-              {user?.sub_city_name || 'Bole Sub-city'}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -221,7 +210,7 @@ const SubCityAdminHome = () => {
                   <Building2 className="w-6 h-6 text-[#2a2718]" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#2a2718]">{user?.sub_city_name || 'Bole Sub-city'}</p>
+                  <p className="font-medium text-[#2a2718]">{user?.sub_city_id || 'Bole Sub-city'}</p>
                   <p className="text-sm text-[#2a2718]/60">ID: {user?.sub_city_id || 'SUB-001'}</p>
                 </div>
               </div>

@@ -7,6 +7,7 @@ export interface BaseReportFilters {
 
 // Encumbrances Report Filters
 export interface EncumbrancesReportFilters extends BaseReportFilters {
+  subCityId?:string;
   from_sate?: string;
   to_sate?: string;
   status?: 'ACTIVE' | 'RELEASED';

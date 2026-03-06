@@ -1,5 +1,5 @@
 // src/contexts/WizardContext.tsx - UPDATED FOR response.data.data STRUCTURE
-import React, { createContext, useContext, useState, useEffect,useCallback } from 'react';
+import React, { createContext, useContext, useState,useCallback } from 'react';
 import wizardApi from '../services/wizardApi';
 import { toast } from 'sonner';
 
@@ -44,11 +44,11 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await wizardApi.createSession();
       console.log('Create session response:', response);
       
-      if (response.success && response.data?.data) {
-        const sessionId = response.data.data.session_id;
+      if (response.success && response.data) {
+        const sessionId = response.data.session_id;
         console.log("Session ID from createSession:", sessionId);
         
-        if (response.data.data.existing) {
+        if (response.data.existing) {
           toast.info('Resumed existing draft session');
         } else {
           toast.success('New wizard session created');
@@ -80,9 +80,9 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await wizardApi.getSession(sessionId);
       console.log('Load session response:', response);
       
-      if (response.success && response.data?.data) {
-        setCurrentSession(response.data.data);
-        console.log('Session loaded successfully:', response.data.data.session_id);
+      if (response.success && response.data) {
+        setCurrentSession(response.data);
+        console.log('Session loaded successfully:', response.data.session_id);
       } else {
         console.error('Failed to load session:', response.error);
         toast.error(response.error || 'Failed to load session');
@@ -146,19 +146,19 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       );
       console.log("Upload document response:", response);
 
-      if (response.success && response.data?.data) {
+      if (response.success && response.data) {
         const stepField = getDocumentsField(step);
         setCurrentSession(prev => {
           if (!prev) return null;
           const currentDocs = prev[stepField] || [];
           return {
             ...prev,
-            [stepField]: [...currentDocs, response.data.data],
+            [stepField]: [...currentDocs, response.data],
             updated_at: new Date().toISOString()
           };
         });
         toast.success('Document uploaded successfully');
-        return response.data.data;
+        return response.data;
       } else {
         throw new Error(response.error || 'Failed to upload document');
       }
@@ -180,7 +180,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       const response = await wizardApi.deleteDocument(currentSession.session_id, documentId, step);
       console.log("delete result",response)
-      if (response.data.success && response.data.message) {
+      if (response.success && response.message) {
         console.log("internal if ")
         const stepField = getDocumentsField(step);
         setCurrentSession(prev => {
@@ -215,8 +215,8 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const response = await wizardApi.resubmitSession(currentSession.session_id);
     console.log("Resubmit for approval response:", response);
     
-    if (response.success && response.data?.data) {
-      const newStatus = response.data.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
+    if (response.success && response.data) {
+      const newStatus = response.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
       setCurrentSession(prev => {
         if (!prev) return null;
         return {
@@ -226,12 +226,12 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         };
       });
       
-      const message = response.data.data.requiresApproval 
+      const message = response.data.requiresApproval 
         ? 'Resubmitted for approval' 
         : 'Parcel registered successfully';
       toast.success(message);
       
-      return response.data.data;
+      return response.data;
     } else {
       toast.error(response.error || 'Failed to resubmit for approval');
       throw new Error(response.error || 'Failed to resubmit for approval');
@@ -284,7 +284,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await wizardApi.submitForApproval(currentSession.session_id);
       console.log("Submit for approval response:", response);
       
-      if (response.success && response.data?.data) {
+      if (response.success && response.data) {
         // const newStatus = response.data.data.requiresApproval ? 'PENDING_APPROVAL' : 'MERGED';
         setCurrentSession(prev => {
           if (!prev) return null;
@@ -302,7 +302,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // toast.success(message);
            toast.success('Submitted for approval' );
         
-        return response.data.data;
+        return response.data;
       } else {
         toast.error(response.error || 'Failed to submit for approval');
         throw new Error(response.error || 'Failed to submit for approval');

@@ -10,7 +10,7 @@ interface DocumentListProps {
 
 const DocumentList = ({ documents, title }: DocumentListProps) => {
   const { t } = useTranslate('parcelDetail');
-  const { t: tCommon } = useTranslate('common');
+
   
   const handleViewDocument = (doc: ParcelDocument) => {
     openDocument(doc.file_url);

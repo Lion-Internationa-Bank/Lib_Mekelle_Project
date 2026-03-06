@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import { 
   type CalendarType, 
   type GregorianDate,
-  inputFormatDate,
    compitableformatDate,
   parseDateString,
   gregorianToEthiopian,
@@ -66,20 +65,20 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     }
   };
 
-    const formatDate = (
-    date: Date | string | GregorianDate | null, 
-    format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
-  ): string => {
-    if (!date) return '-';
+  //   const formatDate = (
+  //   date: Date | string | GregorianDate | null, 
+  //   format: 'short' | 'medium' | 'full' | 'iso' = 'medium'
+  // ): string => {
+  //   if (!date) return '-';
     
-    try {
-      // Use the updated formatDate from calendarUtils
-      return inputFormatDate(date, calendarType, format);
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '-';
-    }
-  };
+  //   try {
+  //     // Use the updated formatDate from calendarUtils
+  //     return inputFormatDate(date, calendarType, format);
+  //   } catch (error) {
+  //     console.error('Error formatting date:', error);
+  //     return '-';
+  //   }
+  // };
 
   /**
    * Parse display date string to Date object

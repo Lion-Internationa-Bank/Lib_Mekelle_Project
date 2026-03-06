@@ -19,7 +19,7 @@ type Namespace =
    | 'parcleDetail'
    | 'parcelInfo'
    | 'parcelSearch'
-   | 'parcleTable'
+   | 'parcelTable'
    | 'rates'
    | 'requests'
    | 'sessions'

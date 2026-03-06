@@ -99,9 +99,12 @@ const GenericDocsUpload = ({
     
     try {
       setLoading(true);
+      console.log("📥 Loading existing documents for approval request:", approvalRequestId);
       const response = await getApprovalRequestDocuments(approvalRequestId);
       
-      if (response.documents && Array.isArray(response.documents)) {
+      console.log("📄 Load documents response:", response);
+      
+      if (response?.documents && Array.isArray(response.documents)) {
         const existingDocs: UploadedDocument[] = response.documents.map((doc: any) => ({
           id: doc.id,
           document_type: doc.document_type,
@@ -112,153 +115,215 @@ const GenericDocsUpload = ({
           status: "existing"
         }));
         
+        console.log("✅ Mapped existing documents:", existingDocs);
         setDocuments(existingDocs);
+        
+        // Notify parent with loaded documents
+        if (onUploadSuccess) {
+          onUploadSuccess(existingDocs);
+        }
+      } else {
+        console.log("ℹ️ No documents found or invalid response format");
+        setDocuments([]);
       }
     } catch (error: any) {
-      console.error("Failed to load existing documents:", error);
+      console.error("❌ Failed to load existing documents:", error);
       toast.error(error.message || "Failed to load documents");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    docType: GenericDocType
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const handleFileUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>,
+  docType: GenericDocType
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
-      e.target.value = "";
-      return;
-    }
+  console.log("📤 Starting upload for file:", {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    docType: docType
+  });
 
-    // Check maximum files
-    if (maxFiles && documents.length >= maxFiles) {
-      toast.error(`Maximum ${maxFiles} files allowed`);
-      e.target.value = "";
-      return;
-    }
+  // Check file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    toast.error("File size must be less than 10MB");
+    e.target.value = "";
+    return;
+  }
 
-    // Prevent re-uploading same type + filename if already exists
-    const alreadyExists = documents.some(
-      (d) => d.document_type === docType && 
-             d.file_name === file.name && 
-             (d.status === "success" || d.status === "existing")
-    );
-    
-    if (alreadyExists) {
-      toast.warning(`"${file.name}" has already been uploaded`);
-      e.target.value = "";
-      return;
-    }
+  // Check maximum files
+  if (maxFiles && documents.length >= maxFiles) {
+    toast.error(`Maximum ${maxFiles} files allowed`);
+    e.target.value = "";
+    return;
+  }
 
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newDoc: UploadedDocument = {
-      id: tempId,
-      document_type: docType,
-      file_name: file.name,
-      file_size: file.size,
-      mime_type: file.type,
-      status: "uploading",
-    };
+  // Prevent re-uploading same type + filename if already exists
+  const alreadyExists = documents.some(
+    (d) => d.document_type === docType && 
+           d.file_name === file.name && 
+           (d.status === "success" || d.status === "existing")
+  );
+  
+  if (alreadyExists) {
+    toast.warning(`"${file.name}" has already been uploaded`);
+    e.target.value = "";
+    return;
+  }
 
-    setDocuments((prev) => [...prev, newDoc]);
-    setUploadingDoc(newDoc);
-
-    try {
-      if (isApprovalRequest && approvalRequestId) {
-        // Upload to approval request
-        await uploadApprovalDocument(approvalRequestId, file, docType);
-        
-        // After successful upload, refresh the document list from server
-        await loadExistingDocuments();
-        
-        // Remove the temporary document
-        setDocuments((prev) => prev.filter((doc) => doc.id !== tempId));
-        
-        toast.success("Document uploaded successfully");
-      } else {
-        // Legacy upload (for immediate execution)
-        const formData = new FormData();
-        formData.append("document", file);
-        formData.append("document_type", docType);
-        
-        if (upin) formData.append("upin", upin);
-        if (subCity) formData.append("sub_city", subCity);
-        if (ownerId) formData.append("owner_id", ownerId);
-        if (leaseId) formData.append("lease_id", leaseId);
-        if (encumbranceId) formData.append("encumbrance_id", encumbranceId);
-        if (historyId) formData.append("history_id", historyId);
-
-        // Import your API function for legacy uploads
-        const { apiFetch } = await import("../../services/api");
-        const response = await apiFetch('/api/documents/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (response.success && response.data) {
-          const uploadedDoc = response.data;
-          
-          // Update document with real ID from backend
-          setDocuments((prevDocs) =>
-            prevDocs.map((doc) =>
-              doc.id === tempId
-                ? {
-                    id: uploadedDoc.id || tempId,
-                    document_type: uploadedDoc.document_type || docType,
-                    file_name: uploadedDoc.file_name || file.name,
-                    file_url: uploadedDoc.file_url,
-                    file_size: uploadedDoc.file_size || file.size,
-                    mime_type: uploadedDoc.mime_type || file.type,
-                    status: "success"
-                  }
-                : doc
-            )
-          );
-
-          // Get updated documents for callback
-          const updatedDocs = documents.map((doc) =>
-            doc.id === tempId
-              ? {
-                  id: uploadedDoc.id || tempId,
-                  document_type: uploadedDoc.document_type || docType,
-                  file_name: uploadedDoc.file_name || file.name,
-                  file_url: uploadedDoc.file_url,
-                  file_size: uploadedDoc.file_size || file.size,
-                  mime_type: uploadedDoc.mime_type || file.type,
-                  status: "success"
-                }
-              : doc
-          ).filter(doc => doc.id !== tempId || doc.status === "success");
-
-          onUploadSuccess?.(updatedDocs);
-          toast.success("Document uploaded successfully");
-        } else {
-          throw new Error(response.error || 'Upload failed');
-        }
-      }
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      // Remove the uploading document on error
-      setDocuments((prevDocs) => prevDocs.filter((doc) => doc.id !== tempId));
-      toast.error(error.message || "Upload failed. Please try again.");
-    } finally {
-      setUploadingDoc(null);
-      e.target.value = ""; // Clear file input
-    }
+  const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const newDoc: UploadedDocument = {
+    id: tempId,
+    document_type: docType,
+    file_name: file.name,
+    file_size: file.size,
+    mime_type: file.type,
+    status: "uploading",
   };
 
+  setDocuments((prev) => [...prev, newDoc]);
+  setUploadingDoc(newDoc);
+
+  try {
+    if (isApprovalRequest && approvalRequestId) {
+      console.log("📤 Uploading to approval request:", approvalRequestId);
+      
+      // Upload to approval request
+      const result = await uploadApprovalDocument(approvalRequestId, file, docType);
+      
+      console.log("✅ Upload successful, received result:", result);
+      
+      // Handle both possible response formats
+      let uploadedDoc: any = result;
+      
+      // If result has a data property (wrapped response), extract it
+      if (result && typeof result === 'object' && 'data' in result && result.data) {
+        uploadedDoc = result.data;
+        console.log("📄 Extracted document from data property:", uploadedDoc);
+      }
+      
+      // Add the uploaded document to the local state
+      const newUploadedDoc: UploadedDocument = {
+        id: uploadedDoc.id,
+        document_type: uploadedDoc.document_type,
+        file_name: uploadedDoc.file_name,
+        file_url: uploadedDoc.file_url,
+        file_size: uploadedDoc.file_size,
+        mime_type: uploadedDoc.mime_type,
+        status: "success"
+      };
+      
+      console.log("📄 Adding document to state:", newUploadedDoc);
+      
+      // Remove temp document and add the real one
+      setDocuments((prev) => {
+        const filtered = prev.filter((doc) => doc.id !== tempId);
+        const updated = [...filtered, newUploadedDoc];
+        console.log("📊 Updated documents state:", updated);
+        return updated;
+      });
+      
+      // Notify parent with updated documents
+      if (onUploadSuccess) {
+        // Get all current documents (excluding temp)
+        const currentDocs = documents.filter(doc => doc.id !== tempId);
+        const allDocs = [...currentDocs, newUploadedDoc];
+        console.log("📢 Notifying parent with documents:", allDocs);
+        onUploadSuccess(allDocs);
+      }
+      
+      toast.success("Document uploaded successfully");
+    } else {
+      // Legacy upload code...
+      const formData = new FormData();
+      formData.append("document", file);
+      formData.append("document_type", docType);
+      
+      if (upin) formData.append("upin", upin);
+      if (subCity) formData.append("sub_city", subCity);
+      if (ownerId) formData.append("owner_id", ownerId);
+      if (leaseId) formData.append("lease_id", leaseId);
+      if (encumbranceId) formData.append("encumbrance_id", encumbranceId);
+      if (historyId) formData.append("history_id", historyId);
+
+      const { default: apiFetch } = await import("../../services/api");
+      const response = await apiFetch('/documents/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+     if (response.success && response.data) {
+  const uploadedDoc = response.data as {
+    id?: string;
+    document_type?: string;
+    file_name?: string;
+    file_url?: string;
+    file_size?: number;
+    mime_type?: string;
+  };
+  
+  // Update document with real ID from backend
+  setDocuments((prevDocs) =>
+    prevDocs.map((doc) =>
+      doc.id === tempId
+        ? {
+            id: uploadedDoc.id || tempId,
+            document_type: uploadedDoc.document_type || docType,
+            file_name: uploadedDoc.file_name || file.name,
+            file_url: uploadedDoc.file_url,
+            file_size: uploadedDoc.file_size || file.size,
+            mime_type: uploadedDoc.mime_type || file.type,
+            status: "success" as const
+          }
+        : doc
+    )
+  );
+
+  // Get updated documents for callback
+  const updatedDocs = documents
+    .map((doc) =>
+      doc.id === tempId
+        ? {
+            id: uploadedDoc.id || tempId,
+            document_type: uploadedDoc.document_type || docType,
+            file_name: uploadedDoc.file_name || file.name,
+            file_url: uploadedDoc.file_url,
+            file_size: uploadedDoc.file_size || file.size,
+            mime_type: uploadedDoc.mime_type || file.type,
+            status: "success" as const
+          }
+        : doc
+    )
+    .filter((doc) => doc.id !== tempId || doc.status === "success");
+
+  onUploadSuccess?.(updatedDocs);
+  toast.success("Document uploaded successfully");
+} else {
+  throw new Error(response.error || 'Upload failed');
+}
+    }
+  } catch (error: any) {
+    console.error("❌ Upload error:", error);
+    // Remove the uploading document on error
+    setDocuments((prevDocs) => prevDocs.filter((doc) => doc.id !== tempId));
+    toast.error(error.message || "Upload failed. Please try again.");
+  } finally {
+    setUploadingDoc(null);
+    e.target.value = ""; // Clear file input
+  }
+};
   const handleDeleteDocument = async (documentId: string) => {
     if (!isApprovalRequest || !approvalRequestId || !allowDelete) {
       return;
     }
 
     try {
+      console.log("🗑️ Attempting to delete document:", { documentId, approvalRequestId });
+      
       // Show confirmation dialog
       if (!window.confirm("Are you sure you want to delete this document?")) {
         return;
@@ -266,19 +331,32 @@ const GenericDocsUpload = ({
 
       await deleteApprovalDocument(approvalRequestId, documentId);
       
-      // After successful deletion, refresh the document list
-      await loadExistingDocuments();
+      console.log("✅ Document deleted successfully from backend");
+      
+      // Remove from local state immediately for better UX
+      setDocuments((prev) => {
+        const updated = prev.filter((doc) => doc.id !== documentId);
+        console.log("📊 Updated documents after deletion:", updated);
+        return updated;
+      });
       
       toast.success("Document deleted successfully");
+      
+      // Refresh from server to ensure consistency
+      await loadExistingDocuments();
       
       // Notify parent with updated documents
       if (onUploadSuccess) {
         const response = await getApprovalRequestDocuments(approvalRequestId);
-        onUploadSuccess(response.documents || []);
+        const updatedDocs = response?.documents || [];
+        console.log("📢 Notifying parent after deletion:", updatedDocs);
+        onUploadSuccess(updatedDocs);
       }
     } catch (error: any) {
-      console.error("Delete error:", error);
+      console.error("❌ Delete error:", error);
       toast.error(error.message || "Failed to delete document");
+      // Refresh to restore state in case of error
+      await loadExistingDocuments();
     }
   };
 
@@ -290,6 +368,18 @@ const GenericDocsUpload = ({
     
     console.log("📄 Opening document:", file_url);
     openDocument(file_url);
+  };
+
+  const formatDocumentType = (docType: string | undefined) => {
+    if (!docType) return 'Unknown';
+    return docType.replace(/_/g, ' ');
+  };
+
+  const formatFileSize = (bytes?: number): string => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const hasErrors = documents.some((d) => d.status === "error");
@@ -394,12 +484,12 @@ const GenericDocsUpload = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-[#2a2718] truncate">
-                    {doc.document_type.replace(/_/g, " ")}
+                    {formatDocumentType(doc.document_type)}
                   </div>
                   <div className="text-sm text-[#2a2718]/70 truncate">{doc.file_name}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-[#2a2718]/70">
-                      {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : ''}
+                      {formatFileSize(doc.file_size)}
                     </span>
                     {doc.status === "uploading" && (
                       <span className="text-xs text-[#f0cd6e] animate-pulse">Uploading...</span>
@@ -431,7 +521,7 @@ const GenericDocsUpload = ({
                   </button>
                 )}
               
-                {allowDelete && doc.status === "existing" && isApprovalRequest && (
+                {allowDelete && (doc.status === "existing" || doc.status === "success") && isApprovalRequest && (
                   <button
                     onClick={() => handleDeleteDocument(doc.id)}
                     className="px-3 py-1.5 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors flex items-center gap-1 border border-red-200"

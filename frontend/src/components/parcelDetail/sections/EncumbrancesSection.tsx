@@ -1,5 +1,5 @@
 // src/components/parcelDetail/sections/EncumbrancesSection.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslate } from "../../../i18n/useTranslate";
 import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
@@ -16,7 +16,6 @@ type Props = {
 
 const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
   const { t } = useTranslate('encumbrancesSection');
-  const { t: tCommon } = useTranslate('common');
   const [editing, setEditing] = useState<ParcelDetail["encumbrances"][number] | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const { user } = useAuth();

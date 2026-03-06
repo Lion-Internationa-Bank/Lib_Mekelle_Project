@@ -20,7 +20,7 @@ const ConfigurationRequestDetail: React.FC<ConfigurationRequestDetailProps> = ({
   };
 
   // Render options as a table
-  const renderOptionsTable = (options: any, variant: 'current' | 'proposed' = 'current') => {
+  const renderOptionsTable = (options: any) => {
     if (!options) return <div className="text-gray-500 italic">No options configured</div>;
     
     // Handle array of options
@@ -165,7 +165,7 @@ const ConfigurationRequestDetail: React.FC<ConfigurationRequestDetailProps> = ({
               <span className="text-sm font-medium text-gray-700">Options</span>
             </div>
             <div className="p-4">
-              {renderOptionsTable(currentOptions, 'current')}
+              {renderOptionsTable(currentOptions)}
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@ const ConfigurationRequestDetail: React.FC<ConfigurationRequestDetailProps> = ({
               <span className="text-sm font-medium text-gray-700">Options</span>
             </div>
             <div className="p-4">
-              {renderOptionsTable(options, 'proposed')}
+              {renderOptionsTable(options)}
             </div>
           </div>
         </div>

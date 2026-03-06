@@ -23,7 +23,6 @@ type DetailTab = "parcel" | "lease" | "encumbrances" | "history" | "buildings" |
 const ParcelDetailPage = () => {
   const { user } = useAuth();
   const { t } = useTranslate('parcelDetail');
-  const { t: tCommon } = useTranslate('common');
   
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const navigate = useNavigate();

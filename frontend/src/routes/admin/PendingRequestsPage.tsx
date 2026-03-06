@@ -1,16 +1,14 @@
-// src/pages/PendingRequestsPage.tsx - Updated with Tailwind CSS and fixed map error
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPendingRequests, getMakerPendingRequests } from '../../services/makerCheckerService';
+import { getPendingRequests, getMakerPendingRequests, type PendingRequest } from '../../services/makerCheckerService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslate } from '../../i18n/useTranslate';
 import { 
-  type PendingRequestData,
-  type ApiResponse,
   type EntityType,
   type ActionType,
   type RequestStatus,
   type UserRole,
+  type PaginationMetadata,
   ENTITY_TYPES,
   ACTION_TYPES,
   REQUEST_STATUSES,
@@ -28,17 +26,21 @@ const DEFAULT_LIMIT = 12;
 const MAX_VISIBLE_PAGES = 5;
 
 const PendingRequestsPage: React.FC = () => {
-  const [requests, setRequests] = useState<PendingRequestData[]>([]);
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(DEFAULT_PAGE);
   const [limit, setLimit] = useState<number>(DEFAULT_LIMIT);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
-  const [hasPreviousPage, setHasPreviousPage] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<PaginationMetadata>({
+    page: DEFAULT_PAGE,
+    limit: DEFAULT_LIMIT,
+    totalCount: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false
+  });
   
   // Filter state
   const [statusFilter, setStatusFilter] = useState<RequestStatus | ''>('');
@@ -51,7 +53,7 @@ const PendingRequestsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslate('requests');
   const { t: tCommon } = useTranslate('common');
-  const { t: tAuth } = useTranslate('auth'); // Add this for roles
+  const { t: tAuth } = useTranslate('auth');
 
   // Determine if user is approver or maker
   const isApprover = user?.role ? APPROVER_ROLES.includes(user.role as UserRole) : false;
@@ -62,7 +64,7 @@ const PendingRequestsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      let response: ApiResponse<PendingRequestData[]>;
+      let response;
       
       if (isApprover) {
         response = await getPendingRequests(currentPage, limit, {
@@ -87,24 +89,21 @@ const PendingRequestsPage: React.FC = () => {
         );
       }
 
+      console.log("Response from pending requests:", response);
+
       if (response.success && response.data) {
-        // Ensure response.data is an array
-      console.log("response from pending request",response)
-        console.log("response data  from pending request",response.data)
-        if (Array.isArray(response.data.data)) {
-          setRequests(response.data.data);
+        // response.data is already the array
+        if (Array.isArray(response.data)) {
+          setRequests(response.data);
         } else {
           console.error('Response data is not an array:', response.data);
           setRequests([]);
           toast.error(tCommon('error'));
         }
         
-        // Update pagination info
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.totalPages);
-          setTotalCount(response.data.pagination.totalCount);
-          setHasNextPage(response.data.pagination.hasNextPage);
-          setHasPreviousPage(response.data.pagination.hasPreviousPage);
+        // Update pagination info if available
+        if (response.pagination) {
+          setPagination(response.pagination);
         }
       } else {
         setError(response.error || t('errors.fetchFailed'));
@@ -138,14 +137,14 @@ const PendingRequestsPage: React.FC = () => {
   };
 
   const handleNextPage = () => {
-    if (hasNextPage) {
+    if (pagination.hasNextPage) {
       setCurrentPage(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePreviousPage = () => {
-    if (hasPreviousPage) {
+    if (pagination.hasPreviousPage) {
       setCurrentPage(prev => prev - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -157,7 +156,7 @@ const PendingRequestsPage: React.FC = () => {
   };
 
   const handleLastPage = () => {
-    setCurrentPage(totalPages);
+    setCurrentPage(pagination.totalPages);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -194,13 +193,13 @@ const PendingRequestsPage: React.FC = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     
-    if (totalPages <= MAX_VISIBLE_PAGES) {
-      for (let i = 1; i <= totalPages; i++) {
+    if (pagination.totalPages <= MAX_VISIBLE_PAGES) {
+      for (let i = 1; i <= pagination.totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
       let startPage = Math.max(1, currentPage - Math.floor(MAX_VISIBLE_PAGES / 2));
-      let endPage = Math.min(totalPages, startPage + MAX_VISIBLE_PAGES - 1);
+      let endPage = Math.min(pagination.totalPages, startPage + MAX_VISIBLE_PAGES - 1);
       
       if (endPage - startPage + 1 < MAX_VISIBLE_PAGES) {
         startPage = Math.max(1, endPage - MAX_VISIBLE_PAGES + 1);
@@ -215,14 +214,19 @@ const PendingRequestsPage: React.FC = () => {
   };
 
   // UI Helper functions
-  const getEntityIcon = (entityType: EntityType): string => {
-    const icons: Record<EntityType, string> = {
+  const getEntityIcon = (entityType: string): string => {
+    const icons: Record<string, string> = {
       'WIZARD_SESSION': '🪄',
       'LAND_PARCELS': '🏞️',
       'OWNERS': '👤',
       'LEASE_AGREEMENTS': '📄',
       'ENCUMBRANCES': '🔒',
-      'APPROVAL_REQUEST': '✅'
+      'APPROVAL_REQUEST': '✅',
+      'USERS': '👥',
+      'CONFIGURATIONS': '⚙️',
+      'RATE_CONFIGURATION': '📊',
+      'SUBCITY': '🏛️',
+      'REVENUE': '💰'
     };
     return icons[entityType] || '📋';
   };
@@ -249,7 +253,10 @@ const PendingRequestsPage: React.FC = () => {
       'MERGE': 'bg-gray-100 text-gray-800',
       'TERMINATE': 'bg-red-100 text-red-800',
       'EXTEND': 'bg-green-100 text-green-800',
-      'ADD_OWNER': 'bg-green-100 text-green-800'
+      'ADD_OWNER': 'bg-green-100 text-green-800',
+      'SUSPEND': 'bg-orange-100 text-orange-800',
+      'ACTIVATE': 'bg-green-100 text-green-800',
+      'DEACTIVATE': 'bg-gray-100 text-gray-800'
     };
     return colors[actionType] || 'bg-gray-100 text-gray-800';
   };
@@ -279,7 +286,7 @@ const PendingRequestsPage: React.FC = () => {
           </h1>
           <div className="flex items-center gap-4 mt-2">
             <p className="text-[#2a2718]/70 m-0">
-              {t('count', { count: totalCount })}
+              {t('count', { count: pagination.totalCount })}
             </p>
             {(statusFilter || entityTypeFilter || actionTypeFilter) && (
               <button
@@ -468,9 +475,9 @@ const PendingRequestsPage: React.FC = () => {
           {/* Results Summary */}
           <div className="flex justify-between items-center mb-6">
             <div className="text-sm text-[#2a2718]/70">
-              {tCommon('pagination.showing')} <strong className="text-[#2a2718]">{totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> {tCommon('pagination.to')}{' '}
-              <strong className="text-[#2a2718]">{Math.min(currentPage * limit, totalCount)}</strong> {tCommon('pagination.of')}{' '}
-              <strong className="text-[#2a2718]">{totalCount.toLocaleString()}</strong> {tCommon('pagination.results')}
+              {tCommon('pagination.showing')} <strong className="text-[#2a2718]">{pagination.totalCount > 0 ? ((currentPage - 1) * limit) + 1 : 0}</strong> {tCommon('pagination.to')}{' '}
+              <strong className="text-[#2a2718]">{Math.min(currentPage * limit, pagination.totalCount)}</strong> {tCommon('pagination.of')}{' '}
+              <strong className="text-[#2a2718]">{pagination.totalCount.toLocaleString()}</strong> {tCommon('pagination.results')}
             </div>
             
             {/* Page Size Selector */}
@@ -490,7 +497,7 @@ const PendingRequestsPage: React.FC = () => {
 
           {/* Request Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {requests && requests.map((req) => {
+            {requests.map((req) => {
               if (!req) return null;
               
               return (
@@ -564,11 +571,11 @@ const PendingRequestsPage: React.FC = () => {
           </div>
 
           {/* Pagination Controls */}
-          {totalPages > 1 && (
+          {pagination.totalPages > 1 && (
             <div className="flex flex-col items-center gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
               {/* Pagination Info */}
               <div className="text-sm text-[#2a2718]/70">
-                {tCommon('pagination.page')} {currentPage} {tCommon('pagination.of')} {totalPages}
+                {tCommon('pagination.page')} {currentPage} {tCommon('pagination.of')} {pagination.totalPages}
               </div>
 
               {/* Pagination Buttons */}
@@ -589,9 +596,9 @@ const PendingRequestsPage: React.FC = () => {
                 {/* Previous Page */}
                 <button
                   onClick={handlePreviousPage}
-                  disabled={!hasPreviousPage}
+                  disabled={!pagination.hasPreviousPage}
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
-                    ${!hasPreviousPage 
+                    ${!pagination.hasPreviousPage 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
@@ -619,9 +626,9 @@ const PendingRequestsPage: React.FC = () => {
                 {/* Next Page */}
                 <button
                   onClick={handleNextPage}
-                  disabled={!hasNextPage}
+                  disabled={!pagination.hasNextPage}
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
-                    ${!hasNextPage 
+                    ${!pagination.hasNextPage 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
@@ -632,9 +639,9 @@ const PendingRequestsPage: React.FC = () => {
                 {/* Last Page */}
                 <button
                   onClick={handleLastPage}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === pagination.totalPages}
                   className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-1 transition-colors
-                    ${currentPage === totalPages 
+                    ${currentPage === pagination.totalPages 
                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
                       : 'bg-white text-[#2a2718] border-[#f0cd6e] hover:bg-[#f0cd6e]/20'
                     }`}
@@ -649,17 +656,17 @@ const PendingRequestsPage: React.FC = () => {
                 <input
                   type="number"
                   min={1}
-                  max={totalPages}
+                  max={pagination.totalPages}
                   value={currentPage}
                   onChange={(e) => {
                     const page = parseInt(e.target.value);
-                    if (page >= 1 && page <= totalPages) {
+                    if (page >= 1 && page <= pagination.totalPages) {
                       handlePageChange(page);
                     }
                   }}
                   className="w-16 px-3 py-2 rounded-lg border border-[#f0cd6e] text-sm text-center focus:ring-2 focus:ring-[#f0cd6e] focus:border-[#2a2718] transition-colors"
                 />
-                <span className="text-sm text-[#2a2718]/70">{tCommon('pagination.of')} {totalPages}</span>
+                <span className="text-sm text-[#2a2718]/70">{tCommon('pagination.of')} {pagination.totalPages}</span>
               </div>
             </div>
           )}

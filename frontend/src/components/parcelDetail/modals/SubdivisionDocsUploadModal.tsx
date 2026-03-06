@@ -1,5 +1,5 @@
 // src/components/modals/SubdivisionDocsUploadModal.tsx
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { uploadApprovalDocument, getApprovalRequestDocuments, deleteApprovalDocument } from '../../../services/approvalRequestApi';
 import { toast } from 'sonner';
@@ -68,7 +68,7 @@ export default function SubdivisionDocsUploadModal({
       setLoading(true);
       const response = await getApprovalRequestDocuments(approvalRequestId);
       
-      if (response.documents) {
+      if (response?.documents) {
         // Filter documents that have parcel_upin metadata
         const parcelDocs = response.documents
           .filter((doc: any) => doc.metadata?.parcel_upin)
@@ -80,6 +80,7 @@ export default function SubdivisionDocsUploadModal({
       }
     } catch (error) {
       console.error('Failed to load documents:', error);
+      toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
@@ -156,23 +157,23 @@ export default function SubdivisionDocsUploadModal({
   };
 
   const handleDownload = async (doc: ParcelDocument) => {
-  try {
-    const filename = doc.file_url.split('/').pop() || doc.file_name;
-    const { serveApprovalDocument } = await import('../../../services/approvalRequestApi');
-    const blobUrl = await serveApprovalDocument(approvalRequestId, filename);
-    
-    const link = window.document.createElement('a');
-    link.href = blobUrl;
-    link.download = doc.file_name;
-    window.document.body.appendChild(link);
-    link.click();
-    window.document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-  } catch (error) {
-    console.error('Download error:', error);
-    toast.error('Failed to download document');
-  }
-};
+    try {
+      const filename = doc.file_url.split('/').pop() || doc.file_name;
+      const { serveApprovalDocument } = await import('../../../services/approvalRequestApi');
+      const blobUrl = await serveApprovalDocument(approvalRequestId, filename);
+      
+      const link = window.document.createElement('a');
+      link.href = blobUrl;
+      link.download = doc.file_name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
+    }
+  };
 
   const getDocumentsForParcel = (parcelUpin: string) => {
     return documents.filter(d => d.parcel_upin === parcelUpin);
@@ -184,6 +185,11 @@ export default function SubdivisionDocsUploadModal({
 
   const toggleParcel = (upin: string) => {
     setExpandedParcel(expandedParcel === upin ? null : upin);
+  };
+
+  const formatDocumentType = (docType: string | undefined) => {
+    if (!docType) return 'Unknown';
+    return docType.replace(/_/g, ' ');
   };
 
   const documentTypeOptions = [
@@ -305,7 +311,7 @@ export default function SubdivisionDocsUploadModal({
                                     <div>
                                       <p className="text-sm font-medium text-[#2a2718]">{doc.file_name}</p>
                                       <p className="text-xs text-[#2a2718]/70">
-                                        {doc.document_type.replace(/_/g, ' ')} • {(doc.file_size / 1024).toFixed(0)} KB
+                                        {formatDocumentType(doc.document_type)} • {(doc.file_size / 1024).toFixed(0)} KB
                                       </p>
                                     </div>
                                   </div>
