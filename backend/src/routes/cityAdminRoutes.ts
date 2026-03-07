@@ -28,7 +28,7 @@ const cityAdminOnly = authorize(['CITY_ADMIN'] as UserRole[]);
 
 // Config routes
 // router.get('/configs/:category', authenticate, cityAdminOnly, getConfig);
-router.get('/configs/:category', authenticate, cityAdminOnly, getConfig);
+router.get('/configs/:category', authenticate, getConfig);
 
 router.post(
   '/configs/:category',
