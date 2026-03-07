@@ -7,6 +7,7 @@ import prisma from '../config/prisma.ts';
 import { UserRole, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.ts'; 
 import { MakerCheckerService } from '../services/makerCheckerService.ts';
 import { AuditService } from '../services/auditService.ts';
+import { findApproverRoleForRequest } from '../utils/roleHelper.ts';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN  || '7d';
@@ -35,20 +36,21 @@ const generateToken = (userId: string) => {
 
 // Helper to check if role is an approver
 const isApproverRole = (role: UserRole): boolean => {
-  return [
+  const approverRoles: UserRole[] = [
     UserRole.CITY_APPROVER,
     UserRole.SUBCITY_APPROVER,
     UserRole.REVENUE_APPROVER
-  ].includes(role );
+  ];
+  return approverRoles.includes(role);
 };
-
 // Helper to check if role is an admin
 const isAdminRole = (role: UserRole): boolean => {
-  return [
+  const adminRoles: UserRole[] = [
     UserRole.CITY_ADMIN,
     UserRole.SUBCITY_ADMIN,
     UserRole.REVENUE_ADMIN
-  ].includes(role);
+  ];
+  return adminRoles.includes(role);
 };
 
 // Helper to get approver role for a specific admin role
@@ -65,29 +67,7 @@ const getApproverRoleForAdmin = (adminRole: UserRole): UserRole | null => {
   }
 };
 
-// Helper to find the approver role for a request (returns role, not ID)
-const findApproverRoleForRequest = (
-  adminRole: UserRole,
-  targetRole?: UserRole,
-  subCityId?: string | null
-): UserRole | null => {
-  // For City Admin creating/ managing users
-  if (adminRole === UserRole.CITY_ADMIN) {
-    return UserRole.CITY_APPROVER;
-  }
-  
-  // For Sub-city Admin creating/ managing users in their sub-city
-  if (adminRole === UserRole.SUBCITY_ADMIN) {
-    return UserRole.SUBCITY_APPROVER;
-  }
-  
-  // For Revenue Admin creating/ managing revenue users
-  if (adminRole === UserRole.REVENUE_ADMIN) {
-    return UserRole.REVENUE_APPROVER;
-  }
 
-  return null;
-};
 
 // Helper to get creatable roles based on creator's role
 const getCreatableRoles = (creatorRole: UserRole): UserRole[] => {
@@ -317,7 +297,6 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       requestData: userData,
       makerId: creator.user_id,
       makerRole: creator.role,
-      approver_role: approverRole, // Pass the approver role
       subCityId: sub_city_id || creator.sub_city_id,
       comments: `Create new ${role} user: ${username}`
     });
@@ -422,7 +401,7 @@ export const suspendUser = async (req: AuthRequest, res: Response) => {
       },
       makerId: actor.user_id,
       makerRole: actor.role,
-      approver_role: approverRole, // Pass the approver role
+      
       subCityId: targetUser.sub_city_id || actor.sub_city_id,
       comments: reason || `Request to ${suspend ? 'suspend' : 'activate'} user ${targetUser.username}`
     });
@@ -525,7 +504,6 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
       },
       makerId: actor.user_id,
       makerRole: actor.role,
-      approver_role: approverRole, // Pass the approver role
       subCityId: targetUser.sub_city_id || actor.sub_city_id,
       comments: reason || `Request to delete user ${targetUser.username}`
     });
@@ -810,7 +788,6 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
 
 
-// Helper: Check if actor can view target user
 function canViewUser(
   actor: { role: UserRole; sub_city_id?: string; user_id?: string },
   target: { role: UserRole; sub_city_id: string | null; user_id: string }
@@ -831,22 +808,38 @@ function canViewUser(
   }
 
   // Sub-city admin can view all users in their sub-city (normal, auditor, approver)
+  const subCityRolesForAdmin: UserRole[] = [
+    UserRole.SUBCITY_NORMAL, 
+    UserRole.SUBCITY_AUDITOR, 
+    UserRole.SUBCITY_APPROVER
+  ];
+  
   if (actor.role === UserRole.SUBCITY_ADMIN && 
       target.sub_city_id === actor.sub_city_id &&
-      [UserRole.SUBCITY_NORMAL, UserRole.SUBCITY_AUDITOR, UserRole.SUBCITY_APPROVER].includes(target.role)) {
+      subCityRolesForAdmin.includes(target.role)) {
     return true;
   }
 
   // Sub-city approver can view normal users and auditors in their sub-city (for approval)
+  const subCityRolesForApprover: UserRole[] = [
+    UserRole.SUBCITY_NORMAL, 
+    UserRole.SUBCITY_AUDITOR
+  ];
+  
   if (actor.role === UserRole.SUBCITY_APPROVER && 
       target.sub_city_id === actor.sub_city_id &&
-      [UserRole.SUBCITY_NORMAL, UserRole.SUBCITY_AUDITOR].includes(target.role)) {
+      subCityRolesForApprover.includes(target.role)) {
     return true;
   }
 
   // Revenue admin can view revenue users and revenue approvers
+  const revenueRolesForAdmin: UserRole[] = [
+    UserRole.REVENUE_USER, 
+    UserRole.REVENUE_APPROVER
+  ];
+  
   if (actor.role === UserRole.REVENUE_ADMIN && 
-      [UserRole.REVENUE_USER, UserRole.REVENUE_APPROVER].includes(target.role)) {
+      revenueRolesForAdmin.includes(target.role)) {
     return true;
   }
 
@@ -879,9 +872,15 @@ function canManageUser(
   }
 
   // Sub-city Admin can manage all users in their sub-city (normal, auditor, approver)
+  const subCityRoles: UserRole[] = [
+    UserRole.SUBCITY_NORMAL, 
+    UserRole.SUBCITY_AUDITOR, 
+    UserRole.SUBCITY_APPROVER
+  ];
+  
   if (
     actor.role === UserRole.SUBCITY_ADMIN &&
-    [UserRole.SUBCITY_NORMAL, UserRole.SUBCITY_AUDITOR, UserRole.SUBCITY_APPROVER].includes(target.role) &&
+    subCityRoles.includes(target.role) &&
     target.sub_city_id !== null &&
     actor.sub_city_id !== undefined &&
     target.sub_city_id === actor.sub_city_id
@@ -896,7 +895,6 @@ function canManageUser(
 
   return false;
 }
-
 export default {
   login,
   createUser,

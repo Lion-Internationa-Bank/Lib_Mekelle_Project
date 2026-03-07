@@ -110,7 +110,6 @@ export const createLease = async (
       entityType: 'LEASE_AGREEMENTS',
       entityId, // Temporary ID, will be replaced with actual lease_id after approval
       actionType: 'CREATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         lease_details: {
           upin,
@@ -461,7 +460,6 @@ export const updateLease = async (
       entityType: 'LEASE_AGREEMENTS',
       entityId: lease_id,
       actionType: 'UPDATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         // ONLY the changed fields
         changes: changesForRequest,
@@ -620,7 +618,6 @@ export const deleteLease = async (req: AuthRequest, res: Response) => {
       entityType: 'LEASE_AGREEMENTS',
       entityId: lease_id,
       actionType: 'DELETE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         reason: req.body.reason,
         lease_details: {

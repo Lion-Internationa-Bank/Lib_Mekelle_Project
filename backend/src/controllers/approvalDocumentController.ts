@@ -6,6 +6,17 @@ import { ApprovalDocumentStorageService } from '../services/approvalDocumentStor
 import prisma from '../config/prisma.ts';
 import { RequestStatus } from '../generated/prisma/enums.ts';
 import fs from 'fs';
+import path from 'path';
+
+
+interface DocumentMetadata {
+  parcel_upin?: string;
+  uploaded_by?: string;
+  uploaded_by_role?: string;
+  uploaded_at?: string;
+  [key: string]: any; // Allow other properties
+}
+
 
 export class ApprovalDocumentController {
   private docService: ApprovalDocumentStorageService;
@@ -60,7 +71,7 @@ export class ApprovalDocumentController {
       }
       console.log("document type",document_type)
        // Parse metadata if it's a string
-    let parsedMetadata = {};
+    let parsedMetadata : DocumentMetadata = {};
     if (metadata) {
       try {
         parsedMetadata = typeof metadata === 'string' 

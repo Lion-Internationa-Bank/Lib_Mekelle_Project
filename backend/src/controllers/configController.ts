@@ -20,6 +20,7 @@ const CONFIG_KEYS: Record<ConfigCategory, string> = {
   PAYMENT_METHOD: 'payment_method_options',
   GENERAL: 'general_options',
   REVENUE_RATES: 'revenue_rates',
+  ORDER_NUMBER_FORMAT: 'order_format'
 };
 
 // Helper to get config by category
@@ -31,7 +32,7 @@ const getConfigByCategory = async (category: ConfigCategory) => {
 };
 
 // GET /api/v1/city-admin/configs/:category
-export const getConfig = async (req: Request<{ category: ConfigCategory }>, res: Response) => {
+export const getConfig = async (req: AuthRequest<{ category: ConfigCategory }>, res: Response) => {
   const { category } = req.params;
 
   const config = await getConfigByCategory(category);
@@ -51,7 +52,7 @@ export const getConfig = async (req: Request<{ category: ConfigCategory }>, res:
 
 // POST /api/v1/city-admin/configs/:category - with maker-checker
 export const createOrUpdateConfig = async (
-  req: AuthRequest & { params: { category: ConfigCategory } },
+  req: AuthRequest<{ category: ConfigCategory }>,
   res: Response
 ) => {
   const { category } = req.params;
@@ -228,7 +229,7 @@ export const createSubCity = async (req: AuthRequest, res: Response) => {
 };
 
 // PATCH /api/v1/city-admin/sub-cities/:id - with maker-checker
-export const updateSubCity = async (req: AuthRequest & { params: { id: string } }, res: Response) => {
+export const updateSubCity = async ( req: AuthRequest<{ id: string }>, res: Response) => {
   const { id } = req.params;
   const { name, description } = req.body;
   const actor = req.user!;
@@ -329,7 +330,7 @@ export const updateSubCity = async (req: AuthRequest & { params: { id: string } 
 };
 
 // DELETE /api/v1/city-admin/sub-cities/:id (soft delete) - with maker-checker
-export const deleteSubCity = async (req: AuthRequest & { params: { id: string } }, res: Response) => {
+export const deleteSubCity = async (  req: AuthRequest<{ id: string }>, res: Response) => {
   const { id } = req.params;
   const actor = req.user!;
   const { reason } = req.body;

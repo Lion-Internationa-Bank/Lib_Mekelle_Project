@@ -127,7 +127,7 @@ export class ParcelController {
     }
   }
 
-  static async getOwnersWithMultipleParcels(req: Request, res: Response) {
+  static async getOwnersWithMultipleParcels(req:AuthRequest, res: Response) {
     try {
       const query: GetOwnersWithMultipleParcelsQuery = req.query;
       const user = (req as any).user;

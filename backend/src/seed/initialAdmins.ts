@@ -44,7 +44,7 @@ const adminsToSeed: AdminConfig[] = [
   },
 ];
 
-// Configuration keys mapping (same as in your controller)
+// Configuration keys mapping
 const CONFIG_KEYS: Record<ConfigCategory, string> = {
   LAND_TENURE: 'land_tenure_options',
   LAND_USE: 'land_use_options',
@@ -55,6 +55,7 @@ const CONFIG_KEYS: Record<ConfigCategory, string> = {
   PAYMENT_METHOD: 'payment_method_options',
   GENERAL: 'general_options',
   REVENUE_RATES: 'revenue_rates',
+  ORDER_NUMBER_FORMAT: 'ORDER_NUMBER_FORMAT'
 };
 
 // Configuration value item interface
@@ -63,7 +64,7 @@ interface ConfigValueItem {
   description: string;
 }
 
-// Initial configuration values (with the format you specified)
+// Initial configuration values
 interface InitialConfig {
   category: ConfigCategory;
   options: ConfigValueItem[];
@@ -285,22 +286,22 @@ export async function seedOnlyConfigs() {
         continue;
       }
 
-      // Create new configuration with the value in the format: [{ value: "", description: "" }]
+      // Create new configuration - use type assertion for JSON fields
       const created = await prisma.configurations.create({
         data: {
           key,
-          value: config.options, // This will be stored as JSON array of {value, description}
+          value: config.options as any, // Type assertion for JSON
           category: config.category,
           description: config.description,
           is_active: config.is_active,
         },
       });
 
-      // Create audit log for config creation
+      // Create audit log for config creation with stringified values
       await prisma.audit_logs.create({
         data: {
           user_id: systemUser.user_id,
-          action_type: AuditAction.CONFIG_CHANGE,
+          action_type: 'CONFIG_CHANGE' as AuditAction,
           entity_type: 'configurations',
           entity_id: created.config_id,
           changes: {
@@ -308,7 +309,7 @@ export async function seedOnlyConfigs() {
             category: config.category,
             key,
             previous_value: null,
-            new_value: config.options,
+            new_value: JSON.stringify(config.options),
             previous_description: null,
             new_description: config.description,
             previous_is_active: null,
@@ -316,7 +317,7 @@ export async function seedOnlyConfigs() {
             actor_id: systemUser.user_id,
             actor_role: systemUser.role,
             timestamp: new Date().toISOString(),
-          },
+          } as any, // Type assertion for changes JSON
           timestamp: new Date(),
           ip_address: '127.0.0.1', // System seed IP
         },
@@ -367,7 +368,7 @@ export async function seedConfigsWithUser(userId: string) {
       const created = await prisma.configurations.create({
         data: {
           key,
-          value: config.options,
+          value: config.options as any,
           category: config.category,
           description: config.description,
           is_active: config.is_active,
@@ -378,7 +379,7 @@ export async function seedConfigsWithUser(userId: string) {
       await prisma.audit_logs.create({
         data: {
           user_id: user.user_id,
-          action_type: AuditAction.CONFIG_CHANGE,
+          action_type: 'CONFIG_CHANGE' as AuditAction,
           entity_type: 'configurations',
           entity_id: created.config_id,
           changes: {
@@ -386,7 +387,7 @@ export async function seedConfigsWithUser(userId: string) {
             category: config.category,
             key,
             previous_value: null,
-            new_value: config.options,
+            new_value: JSON.stringify(config.options),
             previous_description: null,
             new_description: config.description,
             previous_is_active: null,
@@ -394,7 +395,7 @@ export async function seedConfigsWithUser(userId: string) {
             actor_id: user.user_id,
             actor_role: user.role,
             timestamp: new Date().toISOString(),
-          },
+          } as any,
           timestamp: new Date(),
           ip_address: '127.0.0.1',
         },
@@ -450,14 +451,14 @@ export async function resetConfigsToDefault() {
       const updated = await prisma.configurations.upsert({
         where: { key },
         update: {
-          value: JSON.stringify(config.options),
+          value: config.options as any,
           description: config.description,
           is_active: config.is_active,
           updated_at: new Date(),
         },
         create: {
           key,
-          value: JSON.stringify(config.options),
+          value: config.options as any,
           category: config.category,
           description: config.description,
           is_active: config.is_active,
@@ -468,15 +469,15 @@ export async function resetConfigsToDefault() {
       await prisma.audit_logs.create({
         data: {
           user_id: systemUser.user_id,
-          action_type: AuditAction.CONFIG_CHANGE,
+          action_type: 'CONFIG_CHANGE' as AuditAction,
           entity_type: 'configurations',
           entity_id: updated.config_id,
           changes: {
             action: 'reset_config',
             category: config.category,
             key,
-            previous_value: existingConfig?.value || null,
-            new_value: config.options,
+            previous_value: existingConfig?.value ? JSON.stringify(existingConfig.value) : null,
+            new_value: JSON.stringify(config.options),
             previous_description: existingConfig?.description || null,
             new_description: config.description,
             previous_is_active: existingConfig?.is_active || null,
@@ -484,7 +485,7 @@ export async function resetConfigsToDefault() {
             actor_id: systemUser.user_id,
             actor_role: systemUser.role,
             timestamp: new Date().toISOString(),
-          },
+          } as any,
           timestamp: new Date(),
           ip_address: '127.0.0.1',
         },

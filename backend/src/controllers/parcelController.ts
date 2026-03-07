@@ -242,7 +242,7 @@ export const createParcel = async (req: AuthRequest, res: Response) => {
       entityType: 'LAND_PARCELS',
       entityId: upin,
       actionType: 'CREATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
+    
       requestData: {
         upin,
         file_number,
@@ -492,7 +492,6 @@ export const updateParcel = async (req: AuthRequest, res: Response) => {
       entityType: 'LAND_PARCELS',
       entityId: upin,
       actionType: 'UPDATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         // Only the changed fields
         changes: changesForRequest,
@@ -645,7 +644,6 @@ export const deleteParcel = async (req: AuthRequest, res: Response) => {
       entityType: 'LAND_PARCELS',
       entityId: upin,
       actionType: 'DELETE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         parcel_details: {
           file_number: currentParcel.file_number,
@@ -1239,7 +1237,6 @@ export const transferOwnership = async (
       entityType: EntityType.LAND_PARCELS,
       entityId: upin as string,
       actionType: ActionType.TRANSFER,
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         from_owner_id,
         to_owner_id,
@@ -1438,7 +1435,6 @@ export const addParcelOwner = async (req: Request, res: Response) => {
       entityType: EntityType.LAND_PARCELS,
       entityId: upin,
       actionType: ActionType.ADD_OWNER,
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         owner_id,
         acquired_at: acquiredDate.toISOString(),
@@ -1635,7 +1631,6 @@ export const subdivideParcel = async (req: AuthRequest, res: Response) => {
       entityType: 'LAND_PARCELS',
       entityId: upin,
       actionType: 'SUBDIVIDE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         childParcels: childParcels.map(p => ({
           ...p,
@@ -1775,7 +1770,6 @@ export const createEncumbrance = async (
       entityType: 'ENCUMBRANCES',
       entityId: `${upin}_${type}_${issuing_entity}`, // Unique identifier for the request
       actionType: 'CREATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         upin,
         type,
@@ -2004,7 +1998,6 @@ export const updateEncumbrance = async (
       entityType: 'ENCUMBRANCES',
       entityId: encumbrance_id,
       actionType: 'UPDATE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         // Only the changed fields
         changes: changesForRequest,
@@ -2085,7 +2078,7 @@ export const updateEncumbrance = async (
 };
 
 export const deleteEncumbrance = async (req: AuthRequest, res: Response) => {
-  const  encumbrance_id  = req.params as string;
+  const  encumbrance_id  = req.params.encumbrance_id as string;
   const { reason } = req.body;
   const actor = (req as any).user;
 
@@ -2121,7 +2114,6 @@ export const deleteEncumbrance = async (req: AuthRequest, res: Response) => {
       entityType: 'ENCUMBRANCES',
       entityId: encumbrance_id,
       actionType: 'DELETE',
-      approver_role:UserRole.SUBCITY_APPROVER,
       requestData: {
         encumbrance_details: {
           upin: existingEncumbrance.upin,
@@ -2214,7 +2206,7 @@ export const deleteEncumbrance = async (req: AuthRequest, res: Response) => {
 
 export const getEncumbrancesByParcel = async (req: AuthRequest, res: Response) => {
   try {
-    const upin  = req.params as string;
+    const upin  = req.params.upin as string;
 
     const encumbrances = await prisma.encumbrances.findMany({
       where: {

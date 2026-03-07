@@ -40,35 +40,35 @@ const CITY_ADMIN_ALLOWED = [
 //   ConfigCategory.REVENUE_TYPE,
 // ] as const;
 
-export const roleBasedConfigAccess = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  const user = req.user!;
-  const category = req.params.category as ConfigCategory;
+// export const roleBasedConfigAccess = (
+//   req: AuthRequest,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const user = req.user!;
+//   const category = req.params.category as ConfigCategory;
 
-  if (user.role === UserRole.CITY_ADMIN) {
-    if (!CITY_ADMIN_ALLOWED.includes(category)) {
-      return res.status(403).json({
-        message: `City Admin can only update: ${CITY_ADMIN_ALLOWED.join(', ')}`,
-      });
-    }
-  // } else if (user.role === UserRole.REVENUE_ADMIN) {
-  //   if (!REVENUE_ADMIN_ALLOWED.includes(category)) {
-  //     return res.status(403).json({
-  //       message: `Revenue Admin can only update: ${REVENUE_ADMIN_ALLOWED.join(', ')}`,
-  //     });
-  //   }
-  }
-   else {
-    return res.status(403).json({
-      message: 'You are not authorized to update configurations',
-    });
-  }
+//   if (user.role === UserRole.CITY_ADMIN) {
+//     if (!CITY_ADMIN_ALLOWED.includes(category)) {
+//       return res.status(403).json({
+//         message: `City Admin can only update: ${CITY_ADMIN_ALLOWED.join(', ')}`,
+//       });
+//     }
+//   // } else if (user.role === UserRole.REVENUE_ADMIN) {
+//   //   if (!REVENUE_ADMIN_ALLOWED.includes(category)) {
+//   //     return res.status(403).json({
+//   //       message: `Revenue Admin can only update: ${REVENUE_ADMIN_ALLOWED.join(', ')}`,
+//   //     });
+//   //   }
+//   }
+//    else {
+//     return res.status(403).json({
+//       message: 'You are not authorized to update configurations',
+//     });
+//   }
 
-  next();
-};
+//   next();
+// };
 
 
 

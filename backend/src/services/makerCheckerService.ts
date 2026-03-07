@@ -8,11 +8,10 @@ export interface CreateApprovalRequestParams {
   entityType: EntityType;
   entityId: string;
   actionType: ActionType;
-  approver_role:UserRole;
   requestData: any;
   makerId: string;
   makerRole: UserRole;
-  subCityId?: string;
+  subCityId?: string| null ;
   comments?: string;
 }
 

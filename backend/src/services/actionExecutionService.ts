@@ -512,7 +512,7 @@ private async createPermanentDocuments(tx: any, wizardData: WizardExecutionData,
         permanentDocs.push(permanentDoc);
       }
     }
-  } else if (isExistingOwner && wizardData.owner_docs?.length > 0) {
+  } else if (isExistingOwner && (wizardData.owner_docs?.length ?? 0) > 0) {
     console.log('Skipping owner document creation for existing owner. Owner ID:', firstOwner.owner_id);
     // Optionally, you could log this for auditing
     await tx.audit_logs.create({

@@ -7,10 +7,10 @@ export const GetEncumbrancesSchema = z.object({
   query: z.object({
     from_date: z.coerce
       .date()
-      .transform(date => date.toISOString()), // Returns YYYY-MM-DDTHH:mm:ss.sssZ
+      .transform(date => date.toISOString()).optional(), // Returns YYYY-MM-DDTHH:mm:ss.sssZ
     to_date: z.coerce
       .date()
-      .transform(date => date.toISOString()),
+      .transform(date => date.toISOString()).optional(),
     status: z.enum(['ACTIVE', 'RELEASED']).optional(),
     type: z.string().optional()
   }),
@@ -47,11 +47,8 @@ export const GetLandParcelsSchema = z.object({
 export const GetOwnersWithMultipleParcelsSchema = z.object({
   query: z.object({
     minParcels: z.coerce
-      .number()
-      .int()
-      .min(2)
-      .optional()
-      .default(2),
+      .string()
+      .optional(),
     subCityId: z.string().uuid().optional(),
   }),
 });
@@ -63,12 +60,12 @@ export const GetLeaseAnnualInstallmentRangeSchema = z.object({
     min: z.coerce
       .number()
       .positive({ message: 'Minimum value must be positive' })
-      .min(0, { message: 'Minimum value cannot be negative' }),
+      .min(0, { message: 'Minimum value cannot be negative' }).optional(),
     
     max: z.coerce
       .number()
       .positive({ message: 'Maximum value must be positive' })
-      .min(0, { message: 'Maximum value cannot be negative' }),
+      .min(0, { message: 'Maximum value cannot be negative' }).optional(),
     
     subCityId: z.string().uuid().optional(),
   }),

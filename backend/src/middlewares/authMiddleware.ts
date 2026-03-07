@@ -2,7 +2,7 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.ts';
-import { UserRole } from '../generated/prisma/enums.ts';
+import { UserRole,ConfigCategory } from '../generated/prisma/enums.ts';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -12,22 +12,11 @@ if (!JWT_SECRET) {
 
 // ← THIS IS THE FIX: add generics to AuthRequest
 export interface AuthRequest<
-  P = {
-    request_id?: string;
-    session_id?: string;
-    document_id?:string;
-    step?:string;
-    filename?:string;
-    lease_id?:string;
-    upin?:string;
-    encumbrance_id?:string;
-    owner_id?:string;
-    maker_id?:string;
-    transactionId?:string;
-  },
+  P = Record<string, any>,
   ResBody = any,
   ReqBody = any,
   ReqQuery = {
+    
     page?: string;
     limit?: string;
     sortOrder?:string;
@@ -44,6 +33,9 @@ export interface AuthRequest<
     from_date?:string;
     to_date?:string;
     type?: string ;
+    minParcels?:string;
+
+    // minParcels?:string;
     
   }
 > extends Request<P, ResBody, ReqBody, ReqQuery> {

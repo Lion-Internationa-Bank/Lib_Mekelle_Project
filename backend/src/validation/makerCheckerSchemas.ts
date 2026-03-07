@@ -64,7 +64,7 @@ export const createApprovalRequestSchema = z.object({
     entity_type: EntityTypeEnum,
     entity_id: z.string().min(1, 'Entity ID is required'),
     action_type: ActionTypeEnum,
-    request_data: z.record(z.any()),
+    request_data: z.record(z.string(), z.any()),
     comments: z.string().max(500).optional(),
     sub_city_id: z.string().uuid().optional(),
     approver_role: z.enum(['CITY_APPROVER', 'SUBCITY_APPROVER', 'REVENUE_APPROVER']).optional()
@@ -108,7 +108,7 @@ export const updateApprovalRequestSchema = z.object({
     request_id: z.string().uuid('Invalid request ID')
   }),
   body: z.object({
-    request_data: z.record(z.any()).optional(),
+    request_data: z.record(z.string(), z.any()).optional(),
     comments: z.string().max(500).optional()
   })
 });
@@ -129,7 +129,7 @@ export const saveWizardStepSchema = z.object({
   }),
   body: z.object({
     step: WizardStepEnum,
-    data: z.record(z.any())
+    data: z.record(z.string(), z.any())
   })
 });
 
