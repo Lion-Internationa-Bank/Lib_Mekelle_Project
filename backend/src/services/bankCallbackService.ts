@@ -1,6 +1,6 @@
 // src/services/bankCallbackService.ts
-import prisma from '../config/prisma.ts';
-import { PaymentStatus } from '../generated/prisma/enums.ts';
+import prisma from '../config/prisma.js';
+import { PaymentStatus } from '../generated/prisma/enums.js';
 
 export interface BankCallbackDto {
   transactionId: string;

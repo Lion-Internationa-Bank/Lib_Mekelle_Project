@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import https from 'https';
-import app from './src/app.ts';
-import prisma from "./src/config/prisma.ts";
-import { seedInitialAdmins, seedOnlyConfigs } from './src/seed/initialAdmins.ts';
-import { cronScheduler } from './src/cron/index.ts';
+import app from './app.js';
+import prisma from "./config/prisma.js";
+import { seedInitialAdmins, seedOnlyConfigs } from './seed/initialAdmins.js';
+import { cronScheduler } from './cron/index.js';
 import fs from 'fs'
 
 const PORT = process.env.PORT || 5000;

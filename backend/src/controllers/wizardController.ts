@@ -1,15 +1,14 @@
 // src/controllers/wizardController.ts
-import type { Request, Response } from 'express';
+import type {  Response } from 'express';
 import multer from 'multer';
-import { WizardSessionService } from '../services/wizardSessionService.ts';
-import { DocumentStorageService } from '../services/documentStorageService.ts';
-import type { AuthRequest } from '../middlewares/authMiddleware.ts';
-import { ActionExecutionService } from '../services/actionExecutionService.ts';
+import { WizardSessionService } from '../services/wizardSessionService.js';
+import { DocumentStorageService } from '../services/documentStorageService.js';
+import type { AuthRequest } from '../middlewares/authMiddleware.js';
+import { ActionExecutionService } from '../services/actionExecutionService.js';
 import path from 'path';
 import fs from 'fs';
-import prisma from '../config/prisma.ts';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
 
 
 // Initialize services

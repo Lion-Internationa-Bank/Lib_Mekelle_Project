@@ -1,5 +1,5 @@
-import prisma from '../config/prisma.ts';
-import { RateType } from '../generated/prisma/enums.ts';
+import prisma from '../config/prisma.js';
+import { RateType } from '../generated/prisma/enums.js';
 
 export class RateConfigService {
   static async getCurrentRate(rateType: RateType): Promise<number> {

@@ -1,7 +1,7 @@
 // src/controllers/parcelController.ts
 
 import type { Request, Response } from 'express';
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 import { 
   UserRole, 
   AuditAction, 
@@ -10,10 +10,10 @@ import {
   EncumbranceStatus,
   EntityType,
   ActionType
-} from '../generated/prisma/enums.ts';
-import {type AuthRequest } from '../middlewares/authMiddleware.ts';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
+} from '../generated/prisma/enums.js';
+import {type AuthRequest } from '../middlewares/authMiddleware.js';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
 
 // Initialize services
 const auditService = new AuditService();

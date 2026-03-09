@@ -1,8 +1,8 @@
 // src/controllers/bankController.ts
 import type { Request, Response } from 'express';
-import { BankCallbackService } from '../services/bankCallbackService.ts';
-import prisma from '../config/prisma.ts';
-import type { AuthRequest } from '../middlewares/authMiddleware.ts';
+import { BankCallbackService } from '../services/bankCallbackService.js';
+import prisma from '../config/prisma.js';
+import type { AuthRequest } from '../middlewares/authMiddleware.js';
 
 export class BankCallbackController {
   /**

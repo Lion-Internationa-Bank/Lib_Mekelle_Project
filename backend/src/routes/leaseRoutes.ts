@@ -6,17 +6,17 @@ import {
   createLease,
   updateLease,
   deleteLease,
-} from '../controllers/leaseController.ts';
+} from '../controllers/leaseController.js';
 
 import {
   CreateLeaseSchema,
   UpdateLeaseSchema,
   DeleteLeaseSchema,
-} from '../validation/leaseSchemas.ts';
+} from '../validation/leaseSchemas.js';
 
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 
 const router = Router({ mergeParams: true });
 router.use(authenticate);

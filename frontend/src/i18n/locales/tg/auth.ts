@@ -1,0 +1,32 @@
+export const auth = {
+  login: {
+    welcome: 'እንቋዕ ብደሓን መጻእኩም',
+    subtitle: 'ናብ ሕሳብኩም እተዉ',
+    username: 'መለለዪ ስም (Username)',
+    usernamePlaceholder: 'መለለዪ ስምኩም የእትዉ',
+    password: 'መሕለፊ ቃል (Password)',
+    passwordPlaceholder: 'መሕለፊ ቃልኩም የእትዉ',
+    rememberMe: 'ዘክረኒ',
+    forgotPassword: 'መሕለፊ ቃል ረሲዕካ?',
+    button: 'እቶ',
+    buttonLoading: 'ይኣቱ ኣሎ...',
+    error: 'ጌጋ መለለዪ ስም ወይ መሕለፊ ቃል',
+  },
+  logout: 'ውጻእ',
+  profile: 'ፕሮፋይል',
+  views: {
+    maker: 'መዳልዊ ርእይቶ',
+    approver: 'መጽደቂ ርእይቶ',
+  },
+  roles: {
+    CITY_ADMIN: 'ምምሕዳር ከተማ',
+    CITY_APPROVER: 'መጽደቂ ከተማ',
+    SUBCITY_ADMIN: 'ምምሕዳር ክፍለ ከተማ',
+    SUBCITY_APPROVER: 'መጽደቂ ክፍለ ከተማ',
+    SUBCITY_NORMAL: 'ክፍለ ከተማ ተራ ተጠቃሚ',
+    SUBCITY_AUDITOR: 'ኦዲተር ክፍለ ከተማ',
+    REVENUE_ADMIN: 'ምምሕዳር ኣታዊ',
+    REVENUE_APPROVER: 'መጽደቂ ኣታዊ',
+    REVENUE_USER: 'ተጠቃሚ ኣታዊ',
+  },
+};

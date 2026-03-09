@@ -1,8 +1,8 @@
 // src/services/makerCheckerService.ts
-import prisma from '../config/prisma.ts';
-import { UserRole, RequestStatus, ApprovalAction, AuditAction,ActionType, EntityType } from '../generated/prisma/enums.ts';
-import { AuditService } from './auditService.ts';
-import { ActionExecutionService } from './actionExecutionService.ts';
+import prisma from '../config/prisma.js';
+import { UserRole, RequestStatus, ApprovalAction, AuditAction,ActionType, EntityType } from '../generated/prisma/enums.js';
+import { AuditService } from './auditService.js';
+import { ActionExecutionService } from './actionExecutionService.js';
 
 export interface CreateApprovalRequestParams {
   entityType: EntityType;

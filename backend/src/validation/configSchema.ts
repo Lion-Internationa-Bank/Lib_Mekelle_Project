@@ -1,6 +1,6 @@
 // src/validation/configSchema.ts
 import { z } from 'zod';
-import { ConfigCategory } from '../generated/prisma/enums.ts';
+
 
 const configOptionSchema = z.object({
   value: z.string().trim().min(1, 'Option value is required'),

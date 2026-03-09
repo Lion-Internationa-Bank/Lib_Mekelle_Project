@@ -1,10 +1,10 @@
 // src/controllers/approvalDocumentController.ts
 import {type Response } from 'express';
 // 
-import {type AuthRequest } from '../middlewares/authMiddleware.ts';
-import { ApprovalDocumentStorageService } from '../services/approvalDocumentStorageService.ts';
-import prisma from '../config/prisma.ts';
-import { RequestStatus } from '../generated/prisma/enums.ts';
+import {type AuthRequest } from '../middlewares/authMiddleware.js';
+import { ApprovalDocumentStorageService } from '../services/approvalDocumentStorageService.js';
+import prisma from '../config/prisma.js';
+import { RequestStatus } from '../generated/prisma/enums.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -447,6 +447,7 @@ async listDocuments(req: AuthRequest, res: Response) {
   // Serve approval document
   async serveDocument(req: AuthRequest, res: Response) {
     try {
+
      const request_id = req.params.request_id as string;
      const filename =   req.params.request_id as string;
      const user = req.user!;

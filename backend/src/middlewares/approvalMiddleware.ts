@@ -1,8 +1,8 @@
 // src/middleware/approvalMiddleware.ts
 import type { Response, NextFunction } from 'express';
-import prisma from '../config/prisma.ts';
-import { UserRole } from '../generated/prisma/enums.ts';
-import type { AuthRequest } from './authMiddleware.ts';
+import prisma from '../config/prisma.js';
+import { UserRole } from '../generated/prisma/enums.js';
+import type { AuthRequest } from './authMiddleware.js';
 
 export interface ApprovalConfig {
   entityType: string;

@@ -1,9 +1,9 @@
 // src/controllers/makerCheckerController.ts
 import type { Request, Response } from 'express';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { WizardSessionService } from '../services/wizardSessionService.ts';
-import type { AuthRequest } from '../middlewares/authMiddleware.ts';
-import { UserRole, EntityType } from '../generated/prisma/enums.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { WizardSessionService } from '../services/wizardSessionService.js';
+import type { AuthRequest } from '../middlewares/authMiddleware.js';
+import { UserRole, EntityType } from '../generated/prisma/enums.js';
 type Sort = "asc" | "desc";
 
 export class MakerCheckerController {

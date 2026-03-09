@@ -1,5 +1,5 @@
 import type{ Request, Response } from 'express';
-import { cronScheduler } from '../cron/scheduler.ts';
+import { cronScheduler } from '../cron/scheduler.js';
 
 export class CronController {
   // Get status of all cron tasks

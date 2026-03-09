@@ -1,7 +1,7 @@
 
-import prisma from '../../config/prisma.ts';
-import { dateHelpers } from '../../utils/dateHelpers.ts';
-import { PaymentStatus } from '../../generated/prisma/enums.ts';
+import prisma from '../../config/prisma.js';
+import { dateHelpers } from '../../utils/dateHelpers.js';
+import { PaymentStatus } from '../../generated/prisma/enums.js';
 
 export async function updateBillStatusToOverdue() {
   const startTime = Date.now();

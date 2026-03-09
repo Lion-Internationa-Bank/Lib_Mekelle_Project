@@ -1,20 +1,20 @@
 // src/routes/index.ts 
 import express from 'express';
 import type { Request, Response, Router } from 'express';
-import parcelRoutes from './parcelRoutes.ts';
-import ownerRouter from './ownerRoutes.ts';
-import leaseRouter from './leaseRoutes.ts';
-import uploadRouter from './uploadRoutes.ts';
-import authRoutes from './authRoutes.ts';
-import cityAdminRoutes from './cityAdminRoutes.ts';
-import revenueAdminRoutes from './revenueAdminRoutes.ts';
-import makerCheckerRoutes from './makerCheckerRoutes.ts'; 
-import wizardRoutes from './wizardRoutes.ts'; 
-import docApproval from './approvalDocuments.ts'
-import bankRoutes from './bankRoutes.ts';
-import billRoutes from './reportRoutes.ts';
-import cronRoutes from './cronRoutes.ts'
-import parcelReportRoutes from './parcelReportRoutes.ts'
+import parcelRoutes from './parcelRoutes.js';
+import ownerRouter from './ownerRoutes.js';
+import leaseRouter from './leaseRoutes.js';
+import uploadRouter from './uploadRoutes.js';
+import authRoutes from './authRoutes.js';
+import cityAdminRoutes from './cityAdminRoutes.js';
+import revenueAdminRoutes from './revenueAdminRoutes.js';
+import makerCheckerRoutes from './makerCheckerRoutes.js'; 
+import wizardRoutes from './wizardRoutes.js'; 
+import docApproval from './approvalDocuments.js'
+import bankRoutes from './bankRoutes.js';
+import billRoutes from './reportRoutes.js';
+import cronRoutes from './cronRoutes.js'
+import parcelReportRoutes from './parcelReportRoutes.js'
 
 const router: Router = express.Router();
 

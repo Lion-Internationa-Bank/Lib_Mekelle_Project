@@ -1,5 +1,5 @@
 // src/services/billService.ts
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 import ExcelJS from 'exceljs';
 
 interface BillFilterOptions {

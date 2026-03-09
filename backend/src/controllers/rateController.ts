@@ -1,18 +1,13 @@
 // src/controllers/rateController.ts
 import type { Request, Response } from "express";
-import prisma from "../config/prisma.ts";
-import type { AuthRequest } from "../middlewares/authMiddleware.ts";
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
+import prisma from "../config/prisma.js";
+import type { AuthRequest } from "../middlewares/authMiddleware.js";
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
 import { 
-  UserRole, 
-  AuditAction, 
   ActionType,
   EntityType,
-  ConfigCategory, 
-  PaymentStatus, 
-  EncumbranceStatus 
-} from '../generated/prisma/enums.ts';
+} from '../generated/prisma/enums.js';
 
 // Initialize services
 const auditService = new AuditService();

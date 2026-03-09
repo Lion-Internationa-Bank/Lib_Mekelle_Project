@@ -168,10 +168,10 @@ const Sidebar = () => {
   const reportVisibilityByRole: Record<string, string[]> = {
     CITY_ADMIN: [ 'encumbrances', 'parcels', 'owners-multiple', 'payments', ],
     REVENUE_ADMIN: ['bills', 'payments', 'revenue'],
-    SUBCITY_ADMIN: ['encumbrances', 'parcels', 'owners-multiple'],
+    SUBCITY_ADMIN: ['encumbrances', 'parcels', 'owners-multiple','lease-installments',],
     SUBCITY_NORMAL: ['encumbrances', 'parcels', 'owners-multiple', ],
     SUBCITY_AUDITOR: ['encumbrances', 'parcels', 'owners-multiple', ],
-    REVENUE_USER: ['bills', 'payments', 'revenue'],
+    REVENUE_USER: ['bills', 'payments', 'revenue','lease-installments',],
   };
 
   const activeMenu = menuItems.find((item) => item.href === location.pathname)?.id || 

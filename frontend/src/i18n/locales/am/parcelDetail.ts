@@ -40,6 +40,20 @@ export const parcelDetail = {
     button: 'ይህን የመሬት ቦታ ሰርዝ',
   },
   
+    deleteModal: {
+    title: 'የመሬት ቦታ መሰረዣ ማረጋገጫ',
+    warning: 'ይህ እርምጃ',
+    cannotUndo: 'መቀልበስ አይቻልም።',
+    description: 'ሁሉም ተያያዥ ውሂቦች በቋሚነት ይወገዳሉ።',
+    confirmPrompt: 'ለማረጋገጥ ዩፒን ይተይቡ:',
+    inputPlaceholder: 'ዩፒን ያስገቡ',
+    cancel: 'ሰርዝ',
+    confirmDelete: 'በቋሚነት ሰርዝ',
+    deleting: 'በመሰረዝ ላይ...',
+    success: 'የመሬት ቦታ በተሳካ ሁኔታ ተሰርዟል',
+    error: 'መሰረዝ አልተሳካም',
+  },
+  
   // Errors
   errors: {
     loadFailed: 'የመሬት ቦታ ዝርዝር መረጃ ማምጣት አልተሳካም',

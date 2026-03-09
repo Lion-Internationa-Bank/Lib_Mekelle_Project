@@ -1,11 +1,11 @@
 // src/controllers/leaseController.ts - Updated for Maker-Checker System
 import type { Request, Response } from 'express';
-import prisma from '../config/prisma.ts';
-import { AuditAction } from '../generated/prisma/enums.ts';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
-import { type AuthRequest } from '../middlewares/authMiddleware.ts';
-import { UserRole } from '../generated/prisma/enums.ts';
+import prisma from '../config/prisma.js';
+import { AuditAction } from '../generated/prisma/enums.js';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
+import { type AuthRequest } from '../middlewares/authMiddleware.js';
+
 
 
 // Initialize services

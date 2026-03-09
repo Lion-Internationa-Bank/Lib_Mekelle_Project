@@ -48,6 +48,12 @@ type Namespace =
    | 'ownerDocsStep'
    | 'parcelStep'
    | 'parcelDocsStep'
+   | 'encumbrancesReport'
+   | 'reportFilters'
+   | 'landParcelsReport'
+   | 'ownersMultipleParcels'
+   | 'billsReport'
+   | 'requestDetail'
    ;
 
 export const useTranslate = (namespace?: Namespace) => {

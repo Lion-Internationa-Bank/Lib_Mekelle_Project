@@ -1,7 +1,7 @@
 export const encumbranceModal = {
   title: {
-    edit: 'እንቅፋት አርትዕ',
-    create: 'አዲስ እንቅፋት ጨምር',
+    edit: 'እግድ አርትዕ',
+    create: 'አዲስ እግድ ጨምር',
   },
   
   // Fields
@@ -32,16 +32,16 @@ export const encumbranceModal = {
   
   // Messages
   messages: {
-    updateSuccess: 'እንቅፋት በተሳካ ሁኔታ ተዘምኗል',
-    createSuccess: 'እንቅፋት በተሳካ ሁኔታ ተፈጥሯል',
-    submitted: 'የእንቅፋት መፍጠር ጥያቄ ለማፅደቅ ቀርቧል',
+    updateSuccess: 'እግድ በተሳካ ሁኔታ ተዘምኗል',
+    createSuccess: 'እግድ በተሳካ ሁኔታ ተፈጥሯል',
+    submitted: 'የእግድ መፍጠር ጥያቄ ለማፅደቅ ቀርቧል',
   },
   
   // Errors
   errors: {
-    loadTypes: 'የእንቅፋት አይነቶችን ማምጣት አልተሳካም',
-    updateFailed: 'እንቅፋት ማዘመን አልተሳካም',
-    createFailed: 'እንቅፋት መፍጠር አልተሳካም',
+    loadTypes: 'የእግድ አይነቶችን ማምጣት አልተሳካም',
+    updateFailed: 'እግድ ማዘመን አልተሳካም',
+    createFailed: 'እግድ መፍጠር አልተሳካም',
     validation: 'ማረጋገጫ አልተሳካም',
     operationFailed: 'ክዋኔው አልተሳካም',
     unexpected: 'ያልተጠበቀ ስህተት ተከስቷል',

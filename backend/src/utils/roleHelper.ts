@@ -1,4 +1,4 @@
-import { UserRole } from "../generated/prisma/enums.ts";
+import { UserRole } from "../generated/prisma/enums.js";
 // Helper to find the approver role for a request (returns role, not ID)
 export const findApproverRoleForRequest = (
   adminRole: UserRole,

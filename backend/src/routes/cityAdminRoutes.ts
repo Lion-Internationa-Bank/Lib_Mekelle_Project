@@ -7,18 +7,18 @@ import {
   createSubCity,
   updateSubCity,
   deleteSubCity,
-} from '../controllers/configController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+} from '../controllers/configController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 import {
   configListSchema,
   configUpdateSchema,
   createSubCitySchema,
   updateSubCitySchema,
   subCityIdParamSchema,
-} from '../validation/configSchema.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { UserRole, ConfigCategory } from '../generated/prisma/enums.ts';
+} from '../validation/configSchema.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { UserRole, ConfigCategory } from '../generated/prisma/enums.js';
 
 
 const router: Router = express.Router();

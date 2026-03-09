@@ -1,5 +1,5 @@
 // src/utils/approvalHelpers.ts
-import { UserRole } from '../generated/prisma/enums.ts';
+import { UserRole } from '../generated/prisma/enums.js';
 
 export interface ApprovalRules {
   requiresApproval: boolean;

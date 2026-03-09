@@ -2,17 +2,17 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { UPLOAD_PATHS, ensureUploadDirectoriesExist } from '../config/uploadPaths.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Ensure all upload directories exist
+ensureUploadDirectoriesExist();
 
-export const UPLOADS_BASE = path.join(process.cwd(), 'uploads');
-const TEMP_UPLOADS = path.join(UPLOADS_BASE, 'temp');
+// Export base paths for backward compatibility
+export const UPLOADS_BASE = UPLOAD_PATHS.BASE;
+export const TEMP_UPLOADS = UPLOAD_PATHS.TEMP_UPLOADS;
 
-[UPLOADS_BASE, TEMP_UPLOADS].forEach((dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+// Note: Directories are now created by ensureUploadDirectoriesExist()
+// No need for manual creation here
 
 export function sanitizeFileName(name: string): string {
   return (
@@ -108,9 +108,15 @@ export function resolveDocumentConfig(documentType: string): DocConfig {
   return DOCUMENT_TYPE_CONFIG.OTHER as DocConfig;
 }
 
-// Multer setup (unchanged)
+// Multer setup using configured temp uploads path
 const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, TEMP_UPLOADS),
+  destination: (_, __, cb) => {
+    // Ensure temp directory exists (it should from ensureUploadDirectoriesExist)
+    if (!fs.existsSync(TEMP_UPLOADS)) {
+      fs.mkdirSync(TEMP_UPLOADS, { recursive: true });
+    }
+    cb(null, TEMP_UPLOADS);
+  },
   filename: (_, file, cb) => {
     const ext = path.extname(file.originalname) || '';
     const base = path.basename(file.originalname, ext);
@@ -122,7 +128,7 @@ const storage = multer.diskStorage({
 
 export const uploadDocument = multer({
   storage,
-  limits: { fileSize: 30 * 1024 * 1024 },
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30MB limit
   fileFilter: (_, file, cb) => {
     const allowed = /\.(jpe?g|png|pdf|docx?|xlsx?|pptx?)$/i;
     if (allowed.test(file.originalname)) {
@@ -132,3 +138,26 @@ export const uploadDocument = multer({
     }
   },
 }).single('document');
+
+// Optional: Export a cleanup function for temporary files older than X days
+export async function cleanupOldTempFiles(maxAgeDays: number = 7): Promise<void> {
+  try {
+    if (!fs.existsSync(TEMP_UPLOADS)) return;
+    
+    const files = await fs.promises.readdir(TEMP_UPLOADS);
+    const now = Date.now();
+    const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+    
+    for (const file of files) {
+      const filePath = path.join(TEMP_UPLOADS, file);
+      const stat = await fs.promises.stat(filePath);
+      
+      if (stat.isFile() && (now - stat.mtimeMs) > maxAgeMs) {
+        await fs.promises.unlink(filePath);
+        console.log(`Cleaned up old temp file: ${file}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up temp files:', error);
+  }
+}

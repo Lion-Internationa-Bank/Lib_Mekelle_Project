@@ -1,5 +1,5 @@
 export const encumbranceCard = {
-  editButton: 'እንቅፋት አርትዕ',
+  editButton: 'እግድ አርትዕ',
   
   // Fields
   fields: {
@@ -17,12 +17,12 @@ export const encumbranceCard = {
   
   // Documents
   documents: {
-    title: 'የእንቅፋት ሰነዶች',
+    title: 'የእግድ ሰነዶች',
   },
   
   // Empty state
   empty: {
-    message: 'እስካሁን ምንም እንቅፋቶች አልተመዘገቡም።',
+    message: 'እስካሁን ምንም እግዶች አልተመዘገቡም።',
     addButton: 'አዲስ እንቅፋት ጨምር',
   },
 };

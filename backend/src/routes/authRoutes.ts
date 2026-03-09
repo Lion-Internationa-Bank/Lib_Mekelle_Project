@@ -8,18 +8,18 @@ import {
   getUsers,
   suspendUser,
   deleteUser,
-} from '../controllers/authController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+} from '../controllers/authController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 import {
   loginSchema,
   changePasswordSchema,
   createUserSchema,
   userIdParamSchema,
   suspendUserSchema,
-} from '../validation/authSchema.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { UserRole } from '../generated/prisma/enums.ts';
+} from '../validation/authSchema.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { UserRole } from '../generated/prisma/enums.js';
 
 const router: Router = express.Router();
 

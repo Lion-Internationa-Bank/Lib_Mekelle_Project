@@ -1,5 +1,5 @@
 // src/services/leaseBillingService.ts
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 
 // Types
 type PrismaClientType = typeof prisma;

@@ -10,7 +10,7 @@ import {
   deleteOwner,
   getOwnersWithParcels,
   searchOwnersLite,
-} from '../controllers/ownerController.ts';
+} from '../controllers/ownerController.js';
 
 import {
   CreateOwnerSchema,
@@ -19,11 +19,11 @@ import {
   DeleteOwnerSchema,
   GetOwnersWithParcelsQuerySchema,
   SearchOwnersLiteQuerySchema,
-} from '../validation/ownerSchemas.ts';
+} from '../validation/ownerSchemas.js';
 
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+
 
 const router = Router({ mergeParams: true });
 router.use(authenticate);

@@ -1,6 +1,6 @@
-import prisma from '../../config/prisma.ts';
-import { dateHelpers } from '../../utils/dateHelpers.ts';
-import { RateConfigService } from '../../services/rateConfigService.ts';
+import prisma from '../../config/prisma.js';
+import { dateHelpers } from '../../utils/dateHelpers.js';
+import { RateConfigService } from '../../services/rateConfigService.js';
 
 export async function calculateAndUpdateInterest() {
   const startTime = Date.now();

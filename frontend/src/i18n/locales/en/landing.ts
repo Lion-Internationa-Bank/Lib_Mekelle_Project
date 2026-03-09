@@ -1,26 +1,26 @@
 export const landing = {
-  hero: {
-    title: 'Mekelle Land',
-    subtitle: 'Management',
-    description: 'An integrated digital platform for managing Mekelle City land records, property ownership, and land administration services.',
-  },
-  features: {
-    secure: {
-      title: 'Secure Land Records',
-      description: 'Blockchain-backed documentation',
-    },
-    valuation: {
-      title: 'Property Valuation',
-      description: 'Real-time market analysis',
-    },
-    services: {
-      title: 'Citizen Services',
-      description: '24/7 online assistance',
-    },
-  },
-  stats: {
-    properties: 'Properties',
-    satisfaction: 'Satisfaction',
-    support: 'Support',
-  },
+hero: {
+title: 'የመቀሌ መሬት',
+subtitle: 'አስተዳደር',
+description: 'የመቀሌ ከተማ የመሬት መዝገቦችን፣ የንብረት ባለቤትነትን እና የመሬት አስተዳደር አገልግሎቶችን ለማስተዳደር የተዘጋጀ የተቀናጀ የዲጂታል ፕላትፎርም::',
+},
+features: {
+secure: {
+title: 'ደህንነቱ የተጠበቀ የመሬት መዝገብ',
+description: 'በባሎክቼይን ቴክኖሎጂ የተደገፈ ሰነድ',
+},
+valuation: {
+title: 'የንብረት ግምት',
+description: 'ወቅታዊ የገበያ ትንተና',
+},
+services: {
+title: 'የዜጎች አገልግሎት',
+description: 'የ24/7 የመስመር ላይ ድጋፍ',
+},
+},
+stats: {
+properties: 'ንብረቶች',
+satisfaction: 'እርካታ',
+support: 'ድጋፍ',
+},
 };

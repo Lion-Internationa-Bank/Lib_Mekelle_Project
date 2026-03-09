@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
-import { ParcelService } from '../services/parcelReportService.ts';
+import { ParcelService } from '../services/parcelReportService.js';
 import { 
 type  GetEncumbrancesQuery,
  type GetLandParcelsQuery,
  type GetOwnersWithMultipleParcelsQuery,
  type GetLeaseAnnualInstallmentRange
-} from '../validation/parcelReportSchemas.ts';
-import {  type AuthRequest } from '../middlewares/authMiddleware.ts';
+} from '../validation/parcelReportSchemas.js';
+import {  type AuthRequest } from '../middlewares/authMiddleware.js';
 // Interface for query filters
 interface BillQueryFilters {
   subcityId?: string;

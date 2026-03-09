@@ -1,8 +1,8 @@
 // src/controllers/billController.ts
 import type { Request, Response } from 'express';
 // import { BillService } from '../services/billService.ts';
-import { BillService } from '../services/reportService.ts';
-import prisma from '../config/prisma.ts';
+import { BillService } from '../services/reportService.js';
+import prisma from '../config/prisma.js';
 
 // Interface for query filters
 interface BillQueryFilters {

@@ -1,6 +1,6 @@
 // src/validation/authSchema.ts
 import { z } from 'zod';
-import { UserRole } from '../generated/prisma/enums.ts';
+import { UserRole } from '../generated/prisma/enums.js';
 
 export const loginSchema = z.object({
   body: z.object({

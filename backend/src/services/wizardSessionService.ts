@@ -1,9 +1,9 @@
 // src/services/wizardSessionService.ts
-import prisma from '../config/prisma.ts';
-import { UserRole, SessionStatus, AuditAction } from '../generated/prisma/enums.ts';
-import { AuditService } from './auditService.ts';
-import { MakerCheckerService } from './makerCheckerService.ts';
-import { ActionExecutionService } from './actionExecutionService.ts';
+import prisma from '../config/prisma.js';
+import { UserRole, SessionStatus, AuditAction } from '../generated/prisma/enums.js';
+import { AuditService } from './auditService.js';
+import { MakerCheckerService } from './makerCheckerService.js';
+import { ActionExecutionService } from './actionExecutionService.js';
 
 
 // Define interfaces for the data structures

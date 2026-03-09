@@ -16,7 +16,7 @@ import {
   getEncumbrancesByParcel,
   addParcelOwner,
   subdivideParcel
-} from '../controllers/parcelController.ts';
+} from '../controllers/parcelController.js';
 
 import {
   CreateParcelSchema,
@@ -28,11 +28,11 @@ import {
   UpdateEncumbranceSchema,
   DeleteEncumbranceSchema,
   GetEncumbrancesByUpinSchema,
-} from '../validation/parcelSchemas.ts';
+} from '../validation/parcelSchemas.js';
 
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 
 const router = Router({ mergeParams: true });
 

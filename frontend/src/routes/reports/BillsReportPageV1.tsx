@@ -13,16 +13,12 @@ import { reportService } from '../../services/reportService';
 import { getSubCities } from '../../services/cityAdminService';
 import type { BillReportItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslate } from '../../i18n/useTranslate';
 
-// Status options for bills
-const BILL_STATUS_OPTIONS = [
-  { value: 'PAID', label: 'Paid' },
-  { value: 'UNPAID', label: 'Unpaid' },
-  { value: 'OVERDUE', label: 'Overdue' },
-  { value: 'PARTIAL', label: 'Partial' }
-];
+
 
 export const BillsReportPage: React.FC = () => {
+  const { t } = useTranslate('billsReport');
   const { user } = useAuth();
   const [data, setData] = useState<BillReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,12 +46,12 @@ export const BillsReportPage: React.FC = () => {
           const response = await getSubCities();
           setSubCities(response.data?.sub_cities || []);
         } catch (error) {
-          console.error('Error fetching sub-cities:', error);
+          console.error(t('errors.subCitiesFailed'), error);
         }
       };
       fetchSubCities();
     }
-  }, [user]);
+  }, [user, t]);
 
   // Auto-fetch data on component mount
   useEffect(() => {
@@ -73,7 +69,7 @@ export const BillsReportPage: React.FC = () => {
       const to = new Date(filters.toDate);
       
       if (from > to) {
-        setValidationError('From date cannot be greater than to date');
+        setValidationError(t('validation.dateRange'));
         return false;
       }
     }
@@ -90,7 +86,7 @@ export const BillsReportPage: React.FC = () => {
         setData(response.data);
       }
     } catch (error) {
-      console.error('Error fetching bills:', error);
+      console.error(t('errors.fetchFailed'), error);
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
@@ -100,65 +96,68 @@ export const BillsReportPage: React.FC = () => {
   const columns: Column<BillReportItem>[] = [
     {
       key: 'upin',
-      header: 'UPIN',
+      header: t('columns.upin'),
       render: (item) => (
         <div>
-          <div className="font-medium">{item.upin}</div>
-          <div className="text-xs text-gray-500">Installment #{item.installment_number}</div>
+          <div className="font-medium">{t('upin.upin', { upin: item.upin })}</div>
+          <div className="text-xs text-gray-500">{t('upin.installment', { number: item.installment_number })}</div>
         </div>
       )
     },
     {
       key: 'owner',
-      header: 'Owner',
+      header: t('columns.owner'),
       render: (item) => (
         <div>
-          <div className="font-medium">{item.full_name}</div>
-          <div className="text-xs text-gray-500">{item.phone_number}</div>
+          <div className="font-medium">{t('owner.name', { name: item.full_name })}</div>
+          <div className="text-xs text-gray-500">{t('owner.phone', { phone: item.phone_number })}</div>
         </div>
       )
     },
     {
       key: 'subcity',
-      header: 'Sub City',
+      header: t('columns.subCity'),
       render: (item) => item.subcity_name
     },
     {
       key: 'amount',
-      header: 'Amount Due',
+      header: t('columns.amountDue'),
       render: (item) => (
         <div className="font-medium text-gray-900">
-          {item.amount_due.toLocaleString()} ETB
+          {t('amount.due', { amount: item.amount_due.toLocaleString() })}
         </div>
       )
     },
     {
       key: 'due_date',
-      header: 'Due Date',
+      header: t('columns.dueDate'),
       render: (item) => new Date(item.due_date).toLocaleDateString()
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       render: (item) => {
         const statusColors = {
-          PAID: 'bg-green-100 text-green-800',
-          UNPAID: 'bg-yellow-100 text-yellow-800',
-          OVERDUE: 'bg-red-100 text-red-800',
-          PARTIAL: 'bg-blue-100 text-blue-800'
+          PAID: t('status.colors.paid'),
+          UNPAID: t('status.colors.unpaid'),
+          OVERDUE: t('status.colors.overdue'),
+          PARTIAL: t('status.colors.partial')
         };
         const colorClass = statusColors[item.payment_status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
         
         return (
           <span className={`px-2 py-1 text-xs rounded-full ${colorClass}`}>
-            {item.payment_status}
+            {item.payment_status === 'PAID' ? t('status.paid') :
+             item.payment_status === 'UNPAID' ? t('status.unpaid') :
+             item.payment_status === 'OVERDUE' ? t('status.overdue') :
+             item.payment_status === 'PARTIAL' ? t('status.partial') : item.payment_status}
           </span>
         );
       }
     },
     {
       key: 'fiscal_year',
-      header: 'Fiscal Year',
+      header: t('columns.fiscalYear'),
       render: (item) => item.fiscal_year || '-'
     }
   ];
@@ -168,45 +167,50 @@ export const BillsReportPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-6">
         {/* Bill Details */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Bill Details</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('expandedRow.billDetails')}</h4>
           <div className="space-y-2">
-            <ExpandableRow label="UPIN" value={item.upin} />
-            <ExpandableRow label="Installment Number" value={item.installment_number.toString()} />
-            <ExpandableRow label="Fiscal Year" value={item.fiscal_year || '-'} />
-            <ExpandableRow label="Base Payment" value={`${item.base_payment.toLocaleString()} ETB`} />
-            <ExpandableRow label="Amount Due" value={`${item.amount_due.toLocaleString()} ETB`} />
-            <ExpandableRow label="Due Date" value={new Date(item.due_date).toLocaleDateString()} />
-            <ExpandableRow label="Payment Status" value={item.payment_status} />
+            <ExpandableRow label={t('expandedRow.upin')} value={item.upin} />
+            <ExpandableRow label={t('expandedRow.installmentNumber')} value={item.installment_number.toString()} />
+            <ExpandableRow label={t('expandedRow.fiscalYear')} value={item.fiscal_year || t('expandedRow.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.basePayment')} value={t('expandedRow.value', { value: item.base_payment.toLocaleString() })} />
+            <ExpandableRow label={t('expandedRow.amountDue')} value={t('expandedRow.value', { value: item.amount_due.toLocaleString() })} />
+            <ExpandableRow label={t('expandedRow.dueDate')} value={new Date(item.due_date).toLocaleDateString()} />
+            <ExpandableRow label={t('expandedRow.paymentStatus')} value={
+              item.payment_status === 'PAID' ? t('status.paid') :
+              item.payment_status === 'UNPAID' ? t('status.unpaid') :
+              item.payment_status === 'OVERDUE' ? t('status.overdue') :
+              item.payment_status === 'PARTIAL' ? t('status.partial') : item.payment_status
+            } />
           </div>
         </div>
 
         {/* Interest & Penalty */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Interest & Penalty</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('expandedRow.interestAndPenalty')}</h4>
           <div className="space-y-2">
-            <ExpandableRow label="Interest Amount" value={`${item.interest_amount?.toLocaleString() || 0} ETB`} />
-            <ExpandableRow label="Interest Rate" value={item.interest_rate_used ? `${item.interest_rate_used}%` : '-'} />
-            <ExpandableRow label="Penalty Amount" value={`${item.penalty_amount?.toLocaleString() || 0} ETB`} />
-            <ExpandableRow label="Penalty Rate" value={item.penalty_rate_used ? `${item.penalty_rate_used}%` : '-'} />
+            <ExpandableRow label={t('expandedRow.interestAmount')} value={t('expandedRow.value', { value: item.interest_amount?.toLocaleString() || 0 })} />
+            <ExpandableRow label={t('expandedRow.interestRate')} value={item.interest_rate_used ? t('expandedRow.rate', { rate: item.interest_rate_used }) : t('expandedRow.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.penaltyAmount')} value={t('expandedRow.value', { value: item.penalty_amount?.toLocaleString() || 0 })} />
+            <ExpandableRow label={t('expandedRow.penaltyRate')} value={item.penalty_rate_used ? t('expandedRow.rate', { rate: item.penalty_rate_used }) : t('expandedRow.notAvailable')} />
           </div>
         </div>
       </div>
 
       {/* Owner Information */}
       <div className="mt-6">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Owner Information</h4>
+        <h4 className="text-sm font-medium text-gray-900 mb-3">{t('expandedRow.ownerInformation')}</h4>
         <div className="bg-white rounded border border-gray-200 p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-xs text-gray-500">Full Name</div>
+              <div className="text-xs text-gray-500">{t('expandedRow.fullName')}</div>
               <div className="text-sm font-medium">{item.full_name}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500">Phone Number</div>
+              <div className="text-xs text-gray-500">{t('expandedRow.phoneNumber')}</div>
               <div className="text-sm">{item.phone_number}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500">Sub City</div>
+              <div className="text-xs text-gray-500">{t('expandedRow.subCity')}</div>
               <div className="text-sm">{item.subcity_name}</div>
             </div>
           </div>
@@ -217,8 +221,8 @@ export const BillsReportPage: React.FC = () => {
 
   return (
     <ReportsLayout
-      title="Bills Report"
-      description="View and filter bills by sub-city, date range, and payment status"
+      title={t('title')}
+      description={t('description')}
       filterCount={activeFilterCount}
       onRefresh={fetchData}
       isLoading={isLoading || isExporting}
@@ -232,10 +236,15 @@ export const BillsReportPage: React.FC = () => {
             />
             
             <StatusFilter
-              label="Payment Status"
+              label={t('filters.paymentStatus.label')}
               value={filters.status}
               onChange={(v) => handleFilterChange('status', v)}
-              options={BILL_STATUS_OPTIONS}
+              options={[
+                { value: 'PAID', label: t('statusOptions.paid') },
+                { value: 'UNPAID', label: t('statusOptions.unpaid') },
+                { value: 'OVERDUE', label: t('statusOptions.overdue') },
+                { value: 'PARTIAL', label: t('statusOptions.partial') }
+              ]}
             />
           </div>
 
@@ -280,7 +289,7 @@ export const BillsReportPage: React.FC = () => {
         data={data}
         columns={columns}
         isLoading={isLoading && !initialLoadDone}
-        emptyMessage="No bills found"
+        emptyMessage={t('empty')}
         onRowClick={renderExpandedRow}
       />
     </ReportsLayout>

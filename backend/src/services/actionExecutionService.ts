@@ -1,18 +1,17 @@
 // src/services/actionExecutionService.ts
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 import { 
   UserRole, 
   AuditAction, 
   ConfigCategory, 
   PaymentStatus, 
   EncumbranceStatus,
-  LeaseStatus,
   ParcelStatus,
   EntityType
-} from '../generated/prisma/enums.ts';
-import { generateLeaseBillsInTx, calculateLeasePaymentDetails } from './leaseBillingService.ts';
-import { DocumentStorageService } from './documentStorageService.ts'; 
-import { ApprovalDocumentStorageService } from './approvalDocumentStorageService.ts';
+} from '../generated/prisma/enums.js';
+import { generateLeaseBillsInTx, calculateLeasePaymentDetails } from './leaseBillingService.js';
+import { DocumentStorageService } from './documentStorageService.js'; 
+import { ApprovalDocumentStorageService } from './approvalDocumentStorageService.js';
 // Types for different entities
 interface CreateParcelData {
   upin: string;

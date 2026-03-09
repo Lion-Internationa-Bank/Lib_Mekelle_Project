@@ -8,14 +8,17 @@ import {
   StatusFilter,
   FilterActions
 } from '../../components/reports/filters/BaseFilters';
-import { EncumbrancesExport } from '../../components/reports/EncumbrancesExport'; // Import the new component
+import { EncumbrancesExport } from '../../components/reports/EncumbrancesExport';
 import { reportService } from '../../services/reportService';
 import { getSubCities } from '../../services/cityAdminService';
 import type { EncumbranceReportItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
-  type EncumbranceStatus = 'ACTIVE' | 'RELEASED' ;
+import { useTranslate } from '../../i18n/useTranslate';
+
+type EncumbranceStatus = 'ACTIVE' | 'RELEASED';
 
 export const EncumbrancesReportPage: React.FC = () => {
+  const { t } = useTranslate('encumbrancesReport');
   const { user } = useAuth();
   const [data, setData] = useState<EncumbranceReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +44,7 @@ const [filters, setFilters] = useState({
           const response = await getSubCities();
           setSubCities(response.data?.sub_cities || []);
         } catch (error) {
-          console.error('Error fetching sub-cities:', error);
+          console.error(t('errors.subCitiesFailed'), error);
         }
       };
       fetchSubCities();
@@ -65,7 +68,7 @@ const [filters, setFilters] = useState({
         setData(response.data);
       }
     } catch (error) {
-      console.error('Error fetching encumbrances:', error);
+      console.error(t('errors.fetchFailed'), error);
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
@@ -75,7 +78,7 @@ const [filters, setFilters] = useState({
   const columns: Column<EncumbranceReportItem>[] = [
     {
       key: 'parcel',
-      header: 'Parcel',
+      header: t('columns.parcel'),
       render: (item) => (
         <div>
           <div className="font-medium">{item.land_parcel.upin}</div>
@@ -85,7 +88,7 @@ const [filters, setFilters] = useState({
     },
     {
       key: 'location',
-      header: 'Location',
+      header: t('columns.location'),
       render: (item) => (
         <div>
           <div>{item.land_parcel.sub_city.name}</div>
@@ -99,7 +102,7 @@ const [filters, setFilters] = useState({
     },
     {
       key: 'owners',
-      header: 'Owners',
+      header: t('columns.owners'),
       render: (item) => (
         <> 
           <div className="font-bold mb-2">
@@ -122,25 +125,25 @@ const [filters, setFilters] = useState({
     },
     {
       key: 'issuing_entity',
-      header: 'Issuing Entity',
+      header: t('columns.issuingEntity'),
       render: (item) => item.issuing_entity || '-'
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       render: (item) => (
         <span className={`px-2 py-1 text-xs rounded-full ${
           item.status === 'ACTIVE' 
             ? 'bg-green-100 text-green-800' 
             : 'bg-gray-100 text-gray-800'
         }`}>
-          {item.status}
+          {item.status === 'ACTIVE' ? t('status.active') : t('status.released')}
         </span>
       )
     },
     {
       key: 'registration_date',
-      header: 'Registration Date',
+      header: t('columns.registrationDate'),
       render: (item) => new Date(item.registration_date).toLocaleDateString()
     }
   ];
@@ -149,9 +152,9 @@ const [filters, setFilters] = useState({
     <div className="p-4 bg-gray-50 border-t border-gray-200">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Reference Information</h4>
-          <ExpandableRow label="Reference No" value={item.reference_number || '-'} />
-          <ExpandableRow label="Issuing Entity" value={item.issuing_entity || '-'} />
+          <h4 className="text-sm font-medium text-gray-900 mb-2">{t('expandedRow.referenceInfo')}</h4>
+          <ExpandableRow label={t('expandedRow.referenceNo')} value={item.reference_number || '-'} />
+          <ExpandableRow label={t('expandedRow.issuingEntity')} value={item.issuing_entity || '-'} />
         </div>
       </div>
     </div>
@@ -159,8 +162,8 @@ const [filters, setFilters] = useState({
 
   return (
     <ReportsLayout
-      title="Encumbrances Report"
-      description="View and filter encumbrances with optional date range"
+      title={t('title')}
+      description={t('description')}
       filterCount={activeFilterCount}
       onRefresh={fetchData}
       isLoading={isLoading || isExporting}
@@ -174,7 +177,7 @@ const [filters, setFilters] = useState({
             />
             
             <StatusFilter
-              label="Encumbrance Status"
+              label={t('filters.encumbranceStatus.label')}
               value={filters.status}
               onChange={(v) => handleFilterChange('status', v)}
               options={[
@@ -184,12 +187,12 @@ const [filters, setFilters] = useState({
             />
             
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Encumbrance Type</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.encumbranceType.label')}</label>
               <input
                 type="text"
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
-                placeholder="e.g., Mortgage, Lien"
+                placeholder={t('filters.encumbranceType.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>
@@ -211,11 +214,10 @@ const [filters, setFilters] = useState({
               status: "ACTIVE", 
               type: '' 
             })}
-            onExport={null} // Remove the old export handler
+            onExport={null}
             isLoading={isLoading}
             activeFilterCount={activeFilterCount}
           >
-            {/* Add the new export component as a child */}
             <EncumbrancesExport
               data={data}
               filters={filters}
@@ -232,7 +234,7 @@ const [filters, setFilters] = useState({
         data={data}
         columns={columns}
         isLoading={isLoading && !initialLoadDone}
-        emptyMessage="No encumbrances found"
+        emptyMessage={t('empty')}
         onRowClick={renderExpandedRow}
       />
     </ReportsLayout>

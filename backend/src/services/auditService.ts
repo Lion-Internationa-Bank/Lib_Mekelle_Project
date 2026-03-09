@@ -1,6 +1,6 @@
 // src/services/auditService.ts
-import prisma from '../config/prisma.ts';
-import { AuditAction } from '../generated/prisma/enums.ts';
+import prisma from '../config/prisma.js';
+import { AuditAction } from '../generated/prisma/enums.js';
 
 export interface AuditLogParams {
   userId: string;

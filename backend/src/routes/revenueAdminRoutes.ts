@@ -1,17 +1,17 @@
 // src/routes/revenueAdminRoutes.ts
 import express from "express";
-import { authenticate } from "../middlewares/authMiddleware.ts";
+import { authenticate } from "../middlewares/authMiddleware.js";
 import {
   // revenueAdminRateAccess,
   authorize,
-} from "../middlewares/roleMiddleware.ts";
+} from "../middlewares/roleMiddleware.js";
 import {
   getCurrentRate,
   getRateHistoryByType,
   createRate,
   updateRate,
   deactivateRate,
-} from "../controllers/rateController.ts";
+} from "../controllers/rateController.js";
 
 const router = express.Router();
 

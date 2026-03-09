@@ -1,7 +1,7 @@
 import express from 'express';
-import { CronController } from '../controllers/cronController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+import { CronController } from '../controllers/cronController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 
 const router = express.Router();
 

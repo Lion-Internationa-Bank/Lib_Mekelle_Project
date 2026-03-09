@@ -1,5 +1,5 @@
 // src/utils/approverUtils.ts
-import { EntityType, UserRole } from '../generated/prisma/enums.ts';
+import { EntityType, UserRole } from '../generated/prisma/enums.js';
 
 /**
  * Get the approver role for a given entity type

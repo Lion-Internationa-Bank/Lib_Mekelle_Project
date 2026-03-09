@@ -1,7 +1,7 @@
 // src/middleware/roleMiddleware.ts
 import { type Response, type NextFunction } from 'express';
-import {type AuthRequest } from './authMiddleware.ts';
-import { UserRole, ConfigCategory } from '../generated/prisma/enums.ts';
+import {type AuthRequest } from './authMiddleware.js';
+import { UserRole, ConfigCategory } from '../generated/prisma/enums.js';
 
 export const authorize = (allowedRoles: UserRole[]) => {
 

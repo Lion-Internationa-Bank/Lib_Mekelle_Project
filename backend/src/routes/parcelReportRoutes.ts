@@ -1,14 +1,14 @@
 import express from 'express';
-import { ParcelController } from '../controllers/parcelReportController.ts';
-import { authenticate} from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
+import { ParcelController } from '../controllers/parcelReportController.js';
+import { authenticate} from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
 import {
   GetEncumbrancesSchema,
   GetLandParcelsSchema,
   GetOwnersWithMultipleParcelsSchema,
  GetLeaseAnnualInstallmentRangeSchema,
-} from '../validation/parcelReportSchemas.ts';
+} from '../validation/parcelReportSchemas.js';
 
 const router = express.Router();
 

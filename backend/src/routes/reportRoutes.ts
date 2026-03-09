@@ -1,10 +1,8 @@
 // src/routes/billRoutes.ts
 import express from 'express';
-import { BillController } from '../controllers/reportController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
-import { DownloadBillsSchema } from '../validation/billSchemas.ts';
+import { BillController } from '../controllers/reportController.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { DownloadBillsSchema } from '../validation/billSchemas.js';
 
 const router = express.Router();
 

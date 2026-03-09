@@ -1,5 +1,7 @@
+// src/components/reports/filters/BaseFilters.tsx
 import React from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTranslate } from '../../../i18n/useTranslate';
 
 export interface FilterProps {
   filters: Record<string, any>;
@@ -15,6 +17,7 @@ export const SubCityFilter: React.FC<{
   subCities?: Array<{ sub_city_id: string; name: string }>;
   disabled?: boolean;
 }> = ({ value, onChange, subCities = [], disabled = false }) => {
+  const { t } = useTranslate('reportFilters');
   const { user } = useAuth();
 
   // If user is not CITY_ADMIN, they can only see their own sub-city
@@ -24,14 +27,14 @@ export const SubCityFilter: React.FC<{
 
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700">Sub City</label>
+      <label className="block text-sm font-medium text-gray-700">{t('subCity.label')}</label>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
       >
-        <option value="">All Sub Cities</option>
+        <option value="">{t('subCity.all')}</option>
         {subCities.map((sc) => (
           <option key={sc.sub_city_id} value={sc.sub_city_id}>
             {sc.name}
@@ -49,10 +52,12 @@ export const DateRangeFilter: React.FC<{
   onToDateChange: (value: string) => void;
   disabled?: boolean;
 }> = ({ from_date, to_date, onFromDateChange, onToDateChange, disabled = false }) => {
+  const { t } = useTranslate('reportFilters');
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">From Date</label>
+        <label className="block text-sm font-medium text-gray-700">{t('dateRange.from')}</label>
         <input
           type="date"
           value={from_date || ''}
@@ -62,7 +67,7 @@ export const DateRangeFilter: React.FC<{
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">To Date</label>
+        <label className="block text-sm font-medium text-gray-700">{t('dateRange.to')}</label>
         <input
           type="date"
           value={to_date || ''}
@@ -85,13 +90,15 @@ export const NumberRangeFilter: React.FC<{
   onMaxChange: (value: number | undefined) => void;
   disabled?: boolean;
 }> = ({ label, minName, maxName, minValue, maxValue, onMinChange, onMaxChange, disabled = false }) => {
+  const { t } = useTranslate('reportFilters');
+
   return (
     <div className="space-y-1">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
       <div className="grid grid-cols-2 gap-2">
         <input
           type="number"
-          placeholder={`Min ${minName}`}
+          placeholder={t('numberRange.min', { name: minName })}
           value={minValue || ''}
           onChange={(e) => onMinChange(e.target.value ? Number(e.target.value) : undefined)}
           disabled={disabled}
@@ -100,7 +107,7 @@ export const NumberRangeFilter: React.FC<{
         />
         <input
           type="number"
-          placeholder={`Max ${maxName}`}
+          placeholder={t('numberRange.max', { name: maxName })}
           value={maxValue || ''}
           onChange={(e) => onMaxChange(e.target.value ? Number(e.target.value) : undefined)}
           disabled={disabled}
@@ -118,17 +125,20 @@ export const StatusFilter: React.FC<{
   options: Array<{ value: string; label: string }>;
   label?: string;
   disabled?: boolean;
-}> = ({ value, onChange, options, label = 'Status', disabled = false }) => {
+}> = ({ value, onChange, options, label, disabled = false }) => {
+  const { t } = useTranslate('reportFilters');
+  const filterLabel = label || t('status.label');
+
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-medium text-gray-700">{filterLabel}</label>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
       >
-        <option value="">All</option>
+        <option value="">{t('status.all')}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -147,6 +157,8 @@ export const FilterActions: React.FC<{
   activeFilterCount?: number;
   children?: React.ReactNode;
 }> = ({ onApply, onClear, onExport, isLoading = false, activeFilterCount = 0, children }) => {
+  const { t } = useTranslate('reportFilters');
+
   return (
     <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
       <button
@@ -154,14 +166,14 @@ export const FilterActions: React.FC<{
         disabled={isLoading}
         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
       >
-        Apply Filters
+        {t('filterActions.apply')}
       </button>
       <button
         onClick={onClear}
         disabled={isLoading}
         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
       >
-        Clear
+        {t('filterActions.clear')}
       </button>
       
       {/* Use either the onExport prop or children for export functionality */}
@@ -171,7 +183,7 @@ export const FilterActions: React.FC<{
           disabled={isLoading}
           className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 ml-auto"
         >
-          Export to Excel
+          {t('filterActions.export')}
         </button>
       )}
       
@@ -179,7 +191,10 @@ export const FilterActions: React.FC<{
       
       {activeFilterCount > 0 && (
         <span className="text-xs text-gray-500">
-          {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''}
+          {activeFilterCount === 1 
+            ? t('filterActions.activeFilter', { count: activeFilterCount })
+            : t('filterActions.activeFilters', { count: activeFilterCount })
+          }
         </span>
       )}
     </div>

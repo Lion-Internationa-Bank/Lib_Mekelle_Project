@@ -19,6 +19,7 @@ import {
   getEntityIcon,
   getStatusColor,
 } from '../../types/makerChecker';
+import { useTranslate } from '../../i18n/useTranslate';
 import UserRequestDetail from '../../components/request-details/UserRequestDetail';
 import SubCityRequestDetail from '../../components/request-details/SubCityRequestDetail';
 import ConfigurationRequestDetail from '../../components/request-details/ConfigurationRequestDetail';
@@ -69,12 +70,13 @@ const ActionDialog: React.FC<{
   onSubmit: (reason: string, comments: string) => void;
   isSubmitting: boolean;
 }> = ({ isOpen, onClose, title, type, onSubmit, isSubmitting }) => {
+  const { t } = useTranslate('requestDetail');
   const [reason, setReason] = useState('');
   const [comments, setComments] = useState('');
 
   const handleSubmit = () => {
     if (type === 'reject' && !reason.trim()) {
-      toast.error('Please provide a rejection reason');
+      toast.error(t('actionDialog.reject.reason.required'));
       return;
     }
     onSubmit(reason, comments);
@@ -98,13 +100,13 @@ const ActionDialog: React.FC<{
         {type === 'reject' && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason for Rejection <span className="text-red-500">*</span>
+              {t('actionDialog.reject.reason.label')} <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full min-h-[120px] px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
-              placeholder="Please provide a detailed reason for rejection..."
+              placeholder={t('actionDialog.reject.reason.placeholder')}
               required
             />
           </div>
@@ -112,15 +114,15 @@ const ActionDialog: React.FC<{
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Comments {type === 'approve' ? '(Optional)' : '(Optional)'}
+            {t('actionDialog.comments.label')} {t('actionDialog.comments.optional')}
           </label>
           <textarea
             value={comments}
             onChange={(e) => setComments(e.target.value)}
             className="w-full min-h-[100px] px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
             placeholder={type === 'approve' 
-              ? "Add any comments for this approval..." 
-              : "Add any additional comments..."}
+              ? t('actionDialog.comments.approvePlaceholder')
+              : t('actionDialog.comments.rejectPlaceholder')}
           />
         </div>
 
@@ -130,7 +132,7 @@ const ActionDialog: React.FC<{
             disabled={isSubmitting}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Cancel
+            {t('actionDialog.cancel')}
           </button>
           
           <button
@@ -146,8 +148,8 @@ const ActionDialog: React.FC<{
             `}
           >
             {isSubmitting 
-              ? type === 'approve' ? 'Approving...' : 'Rejecting...' 
-              : type === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
+              ? type === 'approve' ? t('actionDialog.approve.processing') : t('actionDialog.reject.processing')
+              : type === 'approve' ? t('actionDialog.approve.confirm') : t('actionDialog.reject.confirm')}
           </button>
         </div>
       </div>
@@ -156,6 +158,7 @@ const ActionDialog: React.FC<{
 };
 
 const RequestDetailPage: React.FC = () => {
+  const { t } = useTranslate('requestDetail');
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   const [request, setRequest] = useState<ApprovalRequestData | null>(null);
@@ -175,7 +178,7 @@ const RequestDetailPage: React.FC = () => {
     const fetchRequest = async () => {
       try {
         if (!requestId) {
-          toast.error('Request ID is required');
+          toast.error(t('errors.requestIdRequired'));
           navigate('/pending-requests');
           return;
         }
@@ -188,12 +191,12 @@ const RequestDetailPage: React.FC = () => {
           const mappedRequest = mapToApprovalRequestData(response.data);
           setRequest(mappedRequest);
         } else {
-          toast.error(response.error || 'Failed to fetch request details');
+          toast.error(response.error || t('errors.fetchFailed'));
           navigate('/pending-requests');
         }
       } catch (err) {
         console.error('Fetch error:', err);
-        toast.error('An unexpected error occurred');
+        toast.error(t('errors.unexpectedError'));
         navigate('/pending-requests');
       } finally {
         setLoading(false);
@@ -201,24 +204,24 @@ const RequestDetailPage: React.FC = () => {
     };
 
     fetchRequest();
-  }, [requestId, navigate]);
+  }, [requestId, navigate, t]);
 
-  const handleApproveSubmit = async ( comments: string) => {
+  const handleApproveSubmit = async (reason: string, comments: string) => {
     if (!requestId) return;
     
     setIsSubmitting(true);
     try {
       const response = await approveRequest(requestId, { comments });
       if (response.success && response.data) {
-        toast.success(response.data.message || 'Request approved successfully');
+        toast.success(response.data.message || t('success.approved'));
         setApproveDialogOpen(false);
         navigate('/pending-requests');
       } else {
-        toast.error(response.error || 'Failed to approve request');
+        toast.error(response.error || t('errors.approveFailed'));
       }
     } catch (err) {
       console.error('Approve error:', err);
-      toast.error('An unexpected error occurred');
+      toast.error(t('errors.unexpectedError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -233,15 +236,15 @@ const RequestDetailPage: React.FC = () => {
         rejection_reason: reason || comments 
       });
       if (response.success && response.data) {
-        toast.success(response.data.message || 'Request rejected successfully');
+        toast.success(response.data.message || t('success.rejected'));
         setRejectDialogOpen(false);
         navigate('/pending-requests');
       } else {
-        toast.error(response.error || 'Failed to reject request');
+        toast.error(response.error || t('errors.rejectFailed'));
       }
     } catch (err) {
       console.error('Reject error:', err);
-      toast.error('An unexpected error occurred');
+      toast.error(t('errors.unexpectedError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -255,7 +258,7 @@ const RequestDetailPage: React.FC = () => {
     if (!entity_type) {
       return (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <p className="text-yellow-800">Entity type not specified</p>
+          <p className="text-yellow-800">{t('entityDetail.notSpecified')}</p>
         </div>
       );
     }
@@ -335,7 +338,7 @@ const RequestDetailPage: React.FC = () => {
       default:
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Request Data</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('entityDetail.title')}</h3>
             <pre className="bg-gray-50 p-6 rounded-lg overflow-auto max-h-[500px] text-sm font-mono border border-gray-200">
               {JSON.stringify(request_data || {}, null, 2)}
             </pre>
@@ -349,7 +352,7 @@ const RequestDetailPage: React.FC = () => {
       <div className="flex justify-center items-center h-[70vh]">
         <div className="text-center">
           <div className="text-5xl mb-4">⏳</div>
-          <div className="text-xl text-gray-700">Loading request details...</div>
+          <div className="text-xl text-gray-700">{t('loading')}</div>
         </div>
       </div>
     );
@@ -360,12 +363,12 @@ const RequestDetailPage: React.FC = () => {
       <div className="flex justify-center items-center h-[70vh]">
         <div className="text-center">
           <div className="text-5xl mb-4">❓</div>
-          <div className="text-xl text-gray-700">Request not found</div>
+          <div className="text-xl text-gray-700">{t('notFound')}</div>
           <button
             onClick={() => navigate('/pending-requests')}
             className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Back to Pending Requests
+            {t('backButton')}
           </button>
         </div>
       </div>
@@ -378,7 +381,7 @@ const RequestDetailPage: React.FC = () => {
       <ActionDialog
         isOpen={approveDialogOpen}
         onClose={() => setApproveDialogOpen(false)}
-        title="Approve Request"
+        title={t('actionDialog.approve.title')}
         type="approve"
         onSubmit={handleApproveSubmit}
         isSubmitting={isSubmitting}
@@ -387,7 +390,7 @@ const RequestDetailPage: React.FC = () => {
       <ActionDialog
         isOpen={rejectDialogOpen}
         onClose={() => setRejectDialogOpen(false)}
-        title="Reject Request"
+        title={t('actionDialog.reject.title')}
         type="reject"
         onSubmit={handleRejectSubmit}
         isSubmitting={isSubmitting}
@@ -398,7 +401,7 @@ const RequestDetailPage: React.FC = () => {
         onClick={() => navigate('/pending-requests')}
         className="mb-6 px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center gap-2 transition-colors"
       >
-        <span>←</span> Back to Pending Requests
+        <span>←</span> {t('backButton')}
       </button>
 
       {/* Main Content Card */}
@@ -411,7 +414,10 @@ const RequestDetailPage: React.FC = () => {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {getEntityDisplayName(request.entity_type)} - {getActionDisplayName(request.action_type)}
+                {t('header.title', { 
+                  entity: getEntityDisplayName(request.entity_type), 
+                  action: getActionDisplayName(request.action_type) 
+                })}
               </h1>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(request.status)}`}>
                 {getStatusDisplayName(request.status)}
@@ -419,7 +425,7 @@ const RequestDetailPage: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-3 mt-4 text-sm text-gray-600">
-              <span>📅 Created: {request.created_at ? (
+              <span>{t('header.created')} {request.created_at ? (
                 <span className="font-medium">
                   <DateDisplay 
                     date={request.created_at} 
@@ -428,13 +434,13 @@ const RequestDetailPage: React.FC = () => {
                     showTooltip={true}
                   />
                 </span>
-              ) : 'N/A'}</span>
+              ) : t('header.n/a')}</span>
               <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-              <span>👤 By: {request.maker?.full_name || 'Unknown'} ({request.maker?.role?.replace(/_/g, ' ') || 'Unknown'})</span>
+              <span>{t('header.by')} {request.maker?.full_name || t('header.unknown')} ({request.maker?.role?.replace(/_/g, ' ') || t('header.unknown')})</span>
               {request.sub_city && (
                 <>
                   <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                  <span>📍 Sub-city: {request.sub_city.name}</span>
+                  <span>{t('header.subcity')} {request.sub_city.name}</span>
                 </>
               )}
             </div>
@@ -445,10 +451,10 @@ const RequestDetailPage: React.FC = () => {
         <details className="mb-6 group">
           <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 transition-colors list-none flex items-center gap-2">
             <span className="transform group-open:rotate-90 transition-transform">▶</span>
-            Show Request ID
+            {t('requestId.show')}
           </summary>
           <code className="block mt-3 p-4 bg-gray-50 rounded-lg text-xs font-mono border border-gray-200 break-all">
-            {request.request_id || 'N/A'}
+            {t('requestId.value', { id: request.request_id || t('header.n/a') })}
           </code>
         </details>
 
@@ -460,21 +466,21 @@ const RequestDetailPage: React.FC = () => {
         {/* Action Buttons - Only for Approvers and PENDING status */}
         {isApprover && request.status === 'PENDING' && (
           <div className="border-t border-gray-200 pt-8 mt-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Take Action</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">{t('action.title')}</h3>
             
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => setApproveDialogOpen(true)}
                 className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-3 transition-colors shadow-md hover:shadow-lg"
               >
-                <span className="text-xl">✓</span> Approve Request
+                <span className="text-xl">{t('action.approveIcon')}</span> {t('action.approve')}
               </button>
               
               <button
                 onClick={() => setRejectDialogOpen(true)}
                 className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold flex items-center gap-3 transition-colors shadow-md hover:shadow-lg"
               >
-                <span className="text-xl">✗</span> Reject Request
+                <span className="text-xl">{t('action.rejectIcon')}</span> {t('action.reject')}
               </button>
             </div>
           </div>
@@ -484,10 +490,10 @@ const RequestDetailPage: React.FC = () => {
         {!isApprover && request.status === 'PENDING' && (
           <div className="border-t border-gray-200 pt-8 mt-8">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-              <span className="text-3xl mb-3 block">👁️</span>
-              <h4 className="text-lg font-semibold text-blue-800 mb-2">View Only Mode</h4>
+              <span className="text-3xl mb-3 block">{t('viewOnly.icon')}</span>
+              <h4 className="text-lg font-semibold text-blue-800 mb-2">{t('viewOnly.title')}</h4>
               <p className="text-blue-600">
-                You are viewing this request in read-only mode. Only approvers can take action on this request.
+                {t('viewOnly.description')}
               </p>
             </div>
           </div>
@@ -499,11 +505,11 @@ const RequestDetailPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <span className="text-2xl">❌</span>
               <div>
-                <h4 className="font-semibold text-red-800 mb-2">Rejection Reason</h4>
+                <h4 className="font-semibold text-red-800 mb-2">{t('status.rejected.title')}</h4>
                 <p className="text-red-700">{request.rejection_reason}</p>
                 {request.rejected_at && (
                   <p className="text-sm text-red-600 mt-2">
-                    Rejected on: <span className="font-medium">
+                    {t('status.rejected.rejectedOn')} <span className="font-medium">
                       <DateDisplay 
                         date={request.rejected_at} 
                         format="medium"
@@ -524,15 +530,17 @@ const RequestDetailPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <span className="text-2xl">✅</span>
               <div>
-                <h4 className="font-semibold text-green-800 mb-2">Approved</h4>
+                <h4 className="font-semibold text-green-800 mb-2">{t('status.approved.title')}</h4>
                 <p className="text-green-700">
                   <span className="font-medium">
-                    <DateDisplay 
-                      date={request.approved_at} 
-                      format="medium"
-                      showCalendarIndicator={true}
-                      showTooltip={true}
-                    />
+                    {t('status.approved.approvedOn', { 
+                      date: <DateDisplay 
+                        date={request.approved_at} 
+                        format="medium"
+                        showCalendarIndicator={true}
+                        showTooltip={true}
+                      />
+                    })}
                   </span>
                 </p>
               </div>
@@ -546,9 +554,9 @@ const RequestDetailPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <span className="text-2xl">↩️</span>
               <div>
-                <h4 className="font-semibold text-blue-800 mb-2">Returned for Revision</h4>
+                <h4 className="font-semibold text-blue-800 mb-2">{t('status.returned.title')}</h4>
                 <p className="text-blue-700">
-                  This request has been returned for modifications.
+                  {t('status.returned.description')}
                 </p>
               </div>
             </div>

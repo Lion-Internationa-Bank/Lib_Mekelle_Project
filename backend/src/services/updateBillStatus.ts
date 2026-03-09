@@ -1,4 +1,4 @@
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 // Runs daily at 6 AM
 // Purpose: Mark unpaid bills as OVERDUE after due date
 async function updateOverdueBills() {

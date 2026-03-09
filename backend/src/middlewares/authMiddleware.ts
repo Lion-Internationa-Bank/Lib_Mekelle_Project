@@ -1,8 +1,8 @@
 // src/middleware/authMiddleware.ts
 import { type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import prisma from '../config/prisma.ts';
-import { UserRole,ConfigCategory } from '../generated/prisma/enums.ts';
+import prisma from '../config/prisma.js';
+import { UserRole,ConfigCategory } from '../generated/prisma/enums.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

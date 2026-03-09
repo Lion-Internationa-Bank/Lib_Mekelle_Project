@@ -39,6 +39,21 @@ export const parcelDetail = {
     description: 'Once you delete a parcel, there is no going back. All data will be permanently removed.',
     button: 'Delete this parcel',
   },
+    // Delete Modal
+  deleteModal: {
+    title: 'Confirm Parcel Deletion',
+    warning: 'This action',
+    cannotUndo: 'cannot be undone.',
+    description: 'All associated data will be permanently deleted.',
+    confirmPrompt: 'Type the UPIN to confirm:',
+    inputPlaceholder: 'Enter UPIN',
+    cancel: 'Cancel',
+    confirmDelete: 'Permanently Delete',
+    deleting: 'Deleting...',
+    success: 'Successfully deleted Land parcel',
+    error: 'Failed to delete',
+  },
+  
   
   // Errors
   errors: {

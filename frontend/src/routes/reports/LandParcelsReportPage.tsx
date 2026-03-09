@@ -12,13 +12,9 @@ import { getSubCities,getConfig } from '../../services/cityAdminService';
 import type { LandParcelReportItem } from '../../types/reports';
 import { useAuth } from '../../contexts/AuthContext';
 import { LandParcelsExport } from '../../components/reports/LandParcelsExport';
+import { useTranslate } from '../../i18n/useTranslate';
 
-// Status options 
-const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'RETIRED', label: 'Retired' },
-  { value: 'PENDING', label: 'Pending' }
-];
+
 type LandStatus = "ACTIVE" | "RETIRED" | "PENDING"
 interface ConfigOption {
   value: string;
@@ -26,6 +22,7 @@ interface ConfigOption {
 }
 
 export const LandParcelsReportPage: React.FC = () => {
+  const { t } = useTranslate('landParcelsReport');
   const { user } = useAuth();
   const [data, setData] = useState<LandParcelReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +84,7 @@ export const LandParcelsReportPage: React.FC = () => {
           setLandUseOptions(landUseConfig.data.options || []);
         }
       } catch (error) {
-        console.error('Error fetching land use options:', error);
+        console.error(t('errors.fetchLandUseFailed'), error);
         // Fallback options if API fails
         setLandUseOptions([
           { value: 'Residential', description: 'Residential' },
@@ -105,7 +102,7 @@ export const LandParcelsReportPage: React.FC = () => {
           setTenureTypeOptions(tenureConfig.data.options || []);
         }
       } catch (error) {
-        console.error('Error fetching tenure type options:', error);
+        console.error(t('errors.fetchTenureFailed'), error);
         // Fallback options if API fails
         setTenureTypeOptions([
           { value: 'LEASEHOLD', description: 'Leasehold' },
@@ -114,7 +111,7 @@ export const LandParcelsReportPage: React.FC = () => {
         ]);
       }
     } catch (error) {
-      console.error('Error fetching filter options:', error);
+      console.error(t('errors.fetchOptionsFailed'), error);
     } finally {
       setIsLoadingOptions(false);
     }
@@ -132,25 +129,17 @@ export const LandParcelsReportPage: React.FC = () => {
         setData(response.data);
       }
     } catch (error) {
-      console.error('Error fetching land parcels:', error);
+      console.error(t('errors.fetchFailed'), error);
     } finally {
       setIsLoading(false);
       setInitialLoadDone(true);
     }
   };
 
-  // const handleExport = async () => {
-  //   try {
-  //     await reportService.exportLandParcelsReport(filters);
-  //   } catch (error) {
-  //     console.error('Error exporting land parcels:', error);
-  //   }
-  // };
-
   const columns: Column<LandParcelReportItem>[] = [
     {
       key: 'upin',
-      header: 'UPIN',
+      header: t('columns.upin'),
       render: (item) => (
         <div>
           <div className="font-medium">{item.upin}</div>
@@ -160,66 +149,70 @@ export const LandParcelsReportPage: React.FC = () => {
     },
     {
       key: 'location',
-      header: 'Location',
+      header: t('columns.location'),
       render: (item) => (
         <div>
-          <div>{item.sub_city?.name || 'N/A'}</div>
+          <div>{item.sub_city?.name || t('columns.notAvailable')}</div>
           <div className="text-xs text-gray-500">
-            {[item.tabia, item.ketena, item.block].filter(Boolean).join(' / ') || 'N/A'}
+            {[item.tabia, item.ketena, item.block].filter(Boolean).join(' / ') || t('columns.notAvailable')}
           </div>
         </div>
       )
     },
     {
       key: 'land_details',
-      header: 'Land Details',
+      header: t('columns.landDetails'),
       render: (item) => (
         <div>
-          <div className="text-sm">{item.land_use || 'N/A'}</div>
+          <div className="text-sm">{item.land_use || t('columns.notAvailable')}</div>
           <div className="text-xs text-gray-500">
-            Area: {item.total_area_m2 ? `${item.total_area_m2.toLocaleString()} m²` : 'N/A'}
+            {t('landDetails.area', { area: item.total_area_m2?.toLocaleString() || 'N/A' })}
           </div>
           {item.land_grade && (
-            <div className="text-xs text-gray-500">Grade: {item.land_grade}</div>
+            <div className="text-xs text-gray-500">
+              {t('landDetails.grade', { grade: item.land_grade })}
+            </div>
           )}
         </div>
       )
     },
     {
       key: 'tenure',
-      header: 'Tenure',
-      render: (item) => item.tenure_type || 'N/A'
+      header: t('columns.tenure'),
+      render: (item) => item.tenure_type || t('columns.notAvailable')
     },
     {
       key: 'tender',
-      header: 'Tender',
+      header: t('columns.tender'),
       render: (item) => item.tender || '-'
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       render: (item) => {
         const statusColors = {
-          ACTIVE: 'bg-green-100 text-green-800',
-          RETIRED: 'bg-gray-100 text-gray-800',
-          PENDING: 'bg-yellow-100 text-yellow-800'
+          ACTIVE: t('status.colors.active'),
+          RETIRED: t('status.colors.retired'),
+          PENDING: t('status.colors.pending')
         };
         const colorClass = statusColors[item.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
         
         return (
           <span className={`px-2 py-1 text-xs rounded-full ${colorClass}`}>
-            {item.status}
+            {item.status === 'ACTIVE' ? t('status.active') : 
+             item.status === 'RETIRED' ? t('status.retired') : 
+             item.status === 'PENDING' ? t('status.pending') : item.status}
           </span>
         );
       }
     },
     {
       key: 'owners_count',
-      header: 'Owners',
+      header: t('columns.owners'),
       render: (item) => (
         <div className="text-center">
           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-            {item.owners?.length || 0}
+            {t('owners.count', { count: item.owners?.length || 0 })}
           </span>
         </div>
       )
@@ -231,30 +224,32 @@ export const LandParcelsReportPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-6">
         {/* Parcel Details */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Parcel Details</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('expandedRow.parcelDetails')}</h4>
           <div className="space-y-2">
-            <ExpandableRow label="UPIN" value={item.upin} />
-            <ExpandableRow label="File Number" value={item.file_number} />
-            <ExpandableRow label="Sub City" value={item.sub_city?.name || 'N/A'} />
-            <ExpandableRow label="Tabia" value={item.tabia || 'N/A'} />
-            <ExpandableRow label="Ketena" value={item.ketena || 'N/A'} />
-            <ExpandableRow label="Block" value={item.block || 'N/A'} />
-            <ExpandableRow label="Total Area" value={item.total_area_m2 ? `${item.total_area_m2.toLocaleString()} m²` : 'N/A'} />
-            <ExpandableRow label="Land Use" value={item.land_use || 'N/A'} />
-            <ExpandableRow label="Land Grade" value={item.land_grade?.toString() || 'N/A'} />
-            <ExpandableRow label="Tender" value={item.tender || 'N/A'} />
-            <ExpandableRow label="Status" value={item.status} />
+            <ExpandableRow label={t('expandedRow.upin')} value={item.upin} />
+            <ExpandableRow label={t('expandedRow.fileNumber')} value={item.file_number} />
+            <ExpandableRow label={t('expandedRow.subCity')} value={item.sub_city?.name || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.tabia')} value={item.tabia || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.ketena')} value={item.ketena || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.block')} value={item.block || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.totalArea')} value={item.total_area_m2 ? `${item.total_area_m2.toLocaleString()} m²` : t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.landUse')} value={item.land_use || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.landGrade')} value={item.land_grade?.toString() || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.tender')} value={item.tender || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.status')} value={item.status === 'ACTIVE' ? t('status.active') : 
+             item.status === 'RETIRED' ? t('status.retired') : 
+             item.status === 'PENDING' ? t('status.pending') : item.status} />
           </div>
         </div>
 
         {/* Boundaries */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Boundaries</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('expandedRow.boundaries')}</h4>
           <div className="space-y-2">
-            <ExpandableRow label="East" value={item.boundary_east || 'N/A'} />
-            <ExpandableRow label="North" value={item.boundary_north || 'N/A'} />
-            <ExpandableRow label="South" value={item.boundary_south || 'N/A'} />
-            <ExpandableRow label="West" value={item.boundary_west || 'N/A'} />
+            <ExpandableRow label={t('expandedRow.east')} value={item.boundary_east || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.north')} value={item.boundary_north || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.south')} value={item.boundary_south || t('columns.notAvailable')} />
+            <ExpandableRow label={t('expandedRow.west')} value={item.boundary_west || t('columns.notAvailable')} />
           </div>
         </div>
       </div>
@@ -262,16 +257,16 @@ export const LandParcelsReportPage: React.FC = () => {
       {/* Owners Section */}
       {item.owners && item.owners.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Owners ({item.owners.length})</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('owners.section', { count: item.owners.length })}</h4>
           <div className="bg-white rounded border border-gray-200 divide-y max-h-80 overflow-y-auto">
             {item.owners.map((ownerRelation, index) => (
               <div key={index} className="p-3 hover:bg-gray-50">
                 <div className="font-medium">{ownerRelation.owner.full_name}</div>
                 <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 mt-1">
-                  <span>ID: {ownerRelation.owner.national_id || 'N/A'}</span>
-                  <span>TIN: {ownerRelation.owner.tin_number || 'N/A'}</span>
-                  <span>Phone: {ownerRelation.owner.phone_number || 'N/A'}</span>
-                  <span>Acquired: {new Date(ownerRelation.acquired_at).toLocaleDateString()}</span>
+                  <span>{t('owners.id', { id: ownerRelation.owner.national_id || t('columns.notAvailable') })}</span>
+                  <span>{t('owners.tin', { tin: ownerRelation.owner.tin_number || t('columns.notAvailable') })}</span>
+                  <span>{t('owners.phone', { phone: ownerRelation.owner.phone_number || t('columns.notAvailable') })}</span>
+                  <span>{t('owners.acquired', { date: new Date(ownerRelation.acquired_at).toLocaleDateString() })}</span>
                 </div>
               </div>
             ))}
@@ -283,8 +278,8 @@ export const LandParcelsReportPage: React.FC = () => {
 
   return (
     <ReportsLayout
-      title="Land Parcels Report"
-      description="Comprehensive report on land parcels with detailed filters"
+      title={t('title')}
+      description={t('description')}
       filterCount={activeFilterCount}
       onRefresh={fetchData}
       isLoading={isLoading}
@@ -292,7 +287,7 @@ export const LandParcelsReportPage: React.FC = () => {
         <div className="space-y-4">
           {/* Show loading state for options */}
           {isLoadingOptions && (
-            <div className="text-sm text-gray-500 italic">Loading filter options...</div>
+            <div className="text-sm text-gray-500 italic">{t('loadingOptions')}</div>
           )}
 
           {/* Row 1: Basic filters */}
@@ -304,24 +299,24 @@ export const LandParcelsReportPage: React.FC = () => {
             />
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Tabia</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.tabia.label')}</label>
               <input
                 type="text"
                 value={filters.tabia}
                 onChange={(e) => handleFilterChange('tabia', e.target.value)}
-                placeholder="Enter tabia"
+                placeholder={t('filters.tabia.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Ketena</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.ketena.label')}</label>
               <input
                 type="text"
                 value={filters.ketena}
                 onChange={(e) => handleFilterChange('ketena', e.target.value)}
-                placeholder="Enter ketena"
+                placeholder={t('filters.ketena.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               />
@@ -331,32 +326,36 @@ export const LandParcelsReportPage: React.FC = () => {
           {/* Row 2: More filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Block</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.block.label')}</label>
               <input
                 type="text"
                 value={filters.block}
                 onChange={(e) => handleFilterChange('block', e.target.value)}
-                placeholder="Enter block"
+                placeholder={t('filters.block.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               />
             </div>
 
             <StatusFilter
-              label="Parcel Status"
+              label={t('filters.parcelStatus.label')}
               value={filters.status}
               onChange={(v) => handleFilterChange('status', v)}
-              options={STATUS_OPTIONS}
+              options={[
+                { value: 'ACTIVE', label: t('statusOptions.active') },
+                { value: 'RETIRED', label: t('statusOptions.retired') },
+                { value: 'PENDING', label: t('statusOptions.pending') }
+              ]}
               disabled={isLoadingOptions}
             />
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Tender Number</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.tenderNumber.label')}</label>
               <input
                 type="text"
                 value={filters.tender}
                 onChange={(e) => handleFilterChange('tender', e.target.value)}
-                placeholder="Enter tender number"
+                placeholder={t('filters.tenderNumber.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               />
@@ -366,14 +365,14 @@ export const LandParcelsReportPage: React.FC = () => {
           {/* Row 3: Select filters from config */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Land Use</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.landUse.label')}</label>
               <select
                 value={filters.landUse}
                 onChange={(e) => handleFilterChange('landUse', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               >
-                <option value="">All Land Uses</option>
+                <option value="">{t('filters.landUse.all')}</option>
                 {landUseOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.description || option.value}
@@ -383,14 +382,14 @@ export const LandParcelsReportPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Tenure Type</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.tenureType.label')}</label>
               <select
                 value={filters.tenureType}
                 onChange={(e) => handleFilterChange('tenureType', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               >
-                <option value="">All Tenure Types</option>
+                <option value="">{t('filters.tenureType.all')}</option>
                 {tenureTypeOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.description || option.value}
@@ -400,7 +399,7 @@ export const LandParcelsReportPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Land Grade</label>
+              <label className="block text-sm font-medium text-gray-700">{t('filters.landGrade.label')}</label>
               <input
                 type="number"
                 min={0}
@@ -408,7 +407,7 @@ export const LandParcelsReportPage: React.FC = () => {
                 step={0.1}
                 value={filters.landGrade || ''}
                 onChange={(e) => handleFilterChange('landGrade', e.target.value ? parseFloat(e.target.value) : undefined)}
-                placeholder="Enter land grade"
+                placeholder={t('filters.landGrade.placeholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoadingOptions}
               />
@@ -417,9 +416,9 @@ export const LandParcelsReportPage: React.FC = () => {
 
           {/* Row 4: Area range */}
           <NumberRangeFilter
-            label="Area Range (m²)"
-            minName="Area"
-            maxName="Area"
+            label={t('filters.areaRange.label')}
+            minName={t('filters.areaRange.label')}
+            maxName={t('filters.areaRange.label')}
             minValue={filters.minArea}
             maxValue={filters.maxArea}
             onMinChange={(v) => handleFilterChange('minArea', v)}
@@ -427,33 +426,33 @@ export const LandParcelsReportPage: React.FC = () => {
             disabled={isLoadingOptions}
           />
 
-       <FilterActions
-  onApply={fetchData}
-  onClear={() => setFilters({
-    subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
-    landUse: '',
-    tenureType: '',
-    tabia: '',
-    ketena: '',
-    block: '',
-    minArea: undefined,
-    maxArea: undefined,
-    landGrade: undefined,
-    status: 'ACTIVE' as LandStatus,
-    tender: ''
-  })}
-  onExport={null} // Remove the old export handler
-  isLoading={isLoading || isLoadingOptions || isExporting}
-  activeFilterCount={activeFilterCount}
->
-  <LandParcelsExport
-    data={data}
-    filters={filters}
-    onExportStart={() => setIsExporting(true)}
-    onExportComplete={() => setIsExporting(false)}
-    onExportError={() => setIsExporting(false)}
-  />
-</FilterActions>
+          <FilterActions
+            onApply={fetchData}
+            onClear={() => setFilters({
+              subCityId: user?.role !== 'CITY_ADMIN' ? user?.sub_city_id || '' : '',
+              landUse: '',
+              tenureType: '',
+              tabia: '',
+              ketena: '',
+              block: '',
+              minArea: undefined,
+              maxArea: undefined,
+              landGrade: undefined,
+              status: 'ACTIVE' as LandStatus,
+              tender: ''
+            })}
+            onExport={null}
+            isLoading={isLoading || isLoadingOptions || isExporting}
+            activeFilterCount={activeFilterCount}
+          >
+            <LandParcelsExport
+              data={data}
+              filters={filters}
+              onExportStart={() => setIsExporting(true)}
+              onExportComplete={() => setIsExporting(false)}
+              onExportError={() => setIsExporting(false)}
+            />
+          </FilterActions>
         </div>
       }
     >
@@ -461,7 +460,7 @@ export const LandParcelsReportPage: React.FC = () => {
         data={data}
         columns={columns}
         isLoading={isLoading && !initialLoadDone}
-        emptyMessage="No land parcels found"
+        emptyMessage={t('empty')}
         onRowClick={renderExpandedRow}
       />
     </ReportsLayout>

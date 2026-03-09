@@ -1,25 +1,25 @@
 // src/routes/makerCheckerRoutes.ts
 import express from 'express';
-import { MakerCheckerController } from '../controllers/makerCheckerController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
-import { canApproveRequest } from '../middlewares/approvalMiddleware.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
+import { MakerCheckerController } from '../controllers/makerCheckerController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
+import { canApproveRequest } from '../middlewares/approvalMiddleware.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
 import {
   approveRequestSchema,
   rejectRequestSchema,
   validateMakerPendingRequestsQuery,
   validateApproverPendingRequestsQuery
-} from '../validation/makerCheckerSchemas.ts';
+} from '../validation/makerCheckerSchemas.js';
 
 
 // Initialize services
 
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { WizardSessionService } from '../services/wizardSessionService.ts';
-import { AuditService } from '../services/auditService.ts';
-import { DocumentStorageService } from '../services/documentStorageService.ts';
-import { ActionExecutionService } from '../services/actionExecutionService.ts';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { WizardSessionService } from '../services/wizardSessionService.js';
+import { AuditService } from '../services/auditService.js';
+import { DocumentStorageService } from '../services/documentStorageService.js';
+import { ActionExecutionService } from '../services/actionExecutionService.js';
 
 const auditService = new AuditService();
 const makerCheckerService = new MakerCheckerService( auditService);

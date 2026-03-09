@@ -1,11 +1,11 @@
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 import { 
   type GetEncumbrancesQuery,
   type GetLandParcelsQuery,
   type GetOwnersWithMultipleParcelsQuery,
   type GetLeaseAnnualInstallmentRange
-} from '../validation/parcelReportSchemas.ts';
-import { Prisma } from '../generated/prisma/client.ts';
+} from '../validation/parcelReportSchemas.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 interface BillData {
   upin: string;

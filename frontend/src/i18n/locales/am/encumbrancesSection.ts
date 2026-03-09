@@ -1,20 +1,20 @@
 export const encumbrancesSection = {
   // Buttons
   buttons: {
-    addFirst: 'የመጀመሪያ እንቅፋት ጨምር',
-    addNew: 'አዲስ እንቅፋት ጨምር',
+    addFirst: 'የመጀመሪያ እግድ ጨምር',
+    addNew: 'አዲስ እግድ ጨምር',
   },
   
   // Upload
   upload: {
-    title: 'እንቅፋት ተመዝግቧል ✓',
+    title: 'እግድ ተመዝግቧል ✓',
     description: 'ለዚህ መሬት ቦታ ደጋፊ ሰነዶችን ይስቀሉ',
     optional: 'አማራጭ ደረጃ',
-    docsTitle: 'የእንቅፋት ደጋፊ ሰነዶች',
+    docsTitle: 'የእግድ ደጋፊ ሰነዶች',
     skip: 'ለአሁን ዝለል',
     done: 'ተከናውኗል – ዝጋ',
     docTypes: {
-      certificate: 'የእንቅፋት ሰርተፍኬት',
+      certificate: 'የእግድ ሰርተፍኬት',
       courtOrder: 'የፍርድ ቤት ትእዛዝ',
       bankLetter: 'የባንክ/ማስያዣ ደብዳቤ',
       releaseLetter: 'የመልቀቂያ ደብዳቤ (ካለ)',
@@ -24,7 +24,7 @@ export const encumbrancesSection = {
   
   // Approval
   approval: {
-    title: 'የእንቅፋት ሰነዶችን ይስቀሉ',
-    description: 'ለእንቅፋት ማፅደቅ ጥያቄ ደጋፊ ሰነዶችን ይስቀሉ',
+    title: 'የእግድ ሰነዶችን ይስቀሉ',
+    description: 'ለእግድ ማፅደቅ ጥያቄ ደጋፊ ሰነዶችን ይስቀሉ',
   },
 };

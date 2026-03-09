@@ -3,11 +3,11 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken'; 
-import prisma from '../config/prisma.ts';
-import { UserRole, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.ts'; 
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
-import { findApproverRoleForRequest } from '../utils/roleHelper.ts';
+import prisma from '../config/prisma.js';
+import { UserRole, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.js'; 
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
+import { findApproverRoleForRequest } from '../utils/roleHelper.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN  || '7d';

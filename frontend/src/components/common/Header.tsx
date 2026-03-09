@@ -61,8 +61,9 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
               onChange={(e) => changeLanguage(e.target.value)}
               className="bg-transparent border border-[#f0cd6e] rounded-lg px-2 py-1 text-sm text-[#2a2718] focus:outline-none focus:ring-2 focus:ring-[#f0cd6e]"
             >
-              <option value="en">🇬🇧 English</option>
-              <option value="am">🇪🇹 አማርኛ</option>
+              <option value="en"> English</option>
+              <option value="am"> አማርኛ</option>
+              <option value="tg"> ትግሪኛ</option>
             </select>
             
             {/* Utility Group: Calendar & Notifications */}

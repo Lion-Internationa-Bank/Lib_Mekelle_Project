@@ -1,10 +1,10 @@
 // src/controllers/configController.ts
 import { type Request, type Response } from 'express';
-import prisma from '../config/prisma.ts';
-import { ConfigCategory, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.ts';
-import { type AuthRequest } from '../middlewares/authMiddleware.ts';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
+import prisma from '../config/prisma.js';
+import { ConfigCategory, AuditAction, ActionType, EntityType } from '../generated/prisma/enums.js';
+import { type AuthRequest } from '../middlewares/authMiddleware.js';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
 
 // Initialize services
 const auditService = new AuditService();
@@ -17,10 +17,8 @@ const CONFIG_KEYS: Record<ConfigCategory, string> = {
   TRANSFER_TYPE: 'transfer_type_options',
   REVENUE_TYPE: 'revenue_type_options',
   DOCUMENT_TYPE: 'document_type_options',
-  PAYMENT_METHOD: 'payment_method_options',
   GENERAL: 'general_options',
   REVENUE_RATES: 'revenue_rates',
-  ORDER_NUMBER_FORMAT: 'order_format'
 };
 
 // Helper to get config by category

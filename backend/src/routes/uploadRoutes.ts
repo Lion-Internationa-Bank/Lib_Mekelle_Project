@@ -1,10 +1,9 @@
 // src/routes/uploadRoutes.ts (Updated)
 import express from 'express';
-import { uploadDocument, serveWizardDocument, uploadMiddleware,uploadExcel, validateUpload,uploadExcelMiddleware} from '../controllers/uploadController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
+import { uploadDocument, serveWizardDocument, uploadMiddleware,uploadExcel, validateUpload,uploadExcelMiddleware} from '../controllers/uploadController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { authorize } from '../middlewares/roleMiddleware.js';
 import path from 'path';
-import upload from '../middlewares/uploadMiddleware.ts';
 const router = express.Router();
 const uploadsPath = path.join(process.cwd());
 

@@ -1,6 +1,4 @@
-import prisma from '../../config/prisma.ts';
-import { dateHelpers } from '../../utils/dateHelpers.ts';
-import { LeaseStatus, PaymentStatus } from '../../generated/prisma/enums.ts';
+import prisma from '../../config/prisma.js';
 export async function updateLeaseStatus() {
   const startTime = Date.now();
   console.log(`[${new Date().toISOString()}] Starting lease status update task...`);

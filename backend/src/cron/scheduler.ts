@@ -1,9 +1,9 @@
 import cron from 'node-cron';
-import { cronConfig, cronOptions } from '../config/cron.ts';
-import { updateBillStatusToOverdue } from './tasks/billStatusUpdate.ts';
-import { calculateAndUpdatePenalty } from './tasks/penaltyCalculation.ts';
-import { calculateAndUpdateInterest } from './tasks/interestCalculation.ts';
-import { updateLeaseStatus } from './tasks/leaseStatusUpdate.ts';
+import { cronConfig, cronOptions } from '../config/cron.js';
+import { updateBillStatusToOverdue } from './tasks/billStatusUpdate.js';
+import { calculateAndUpdatePenalty } from './tasks/penaltyCalculation.js';
+import { calculateAndUpdateInterest } from './tasks/interestCalculation.js';
+import { updateLeaseStatus } from './tasks/leaseStatusUpdate.js';
 
 class CronScheduler {
   private static instance: CronScheduler;

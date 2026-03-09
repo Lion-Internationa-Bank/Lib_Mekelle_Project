@@ -1,8 +1,8 @@
 // src/routes/approvalDocuments.ts
 import { Router } from 'express';
 import multer from 'multer';
-import { ApprovalDocumentController } from '../controllers/approvalDocumentController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
+import { ApprovalDocumentController } from '../controllers/approvalDocumentController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 const controller = new ApprovalDocumentController();

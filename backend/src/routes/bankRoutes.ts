@@ -1,14 +1,14 @@
 // src/routes/bankRoutes.ts
 import express from 'express';
-import { BankCallbackController } from '../controllers/bankController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { validateRequest } from '../middlewares/validateRequest.ts';
+import { BankCallbackController } from '../controllers/bankController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { validateRequest } from '../middlewares/validateRequest.js';
 import {
   BankCallbackSchema,
   GetUnpaidBillsSchema,
   GetTransactionsByUpinSchema,
   GetTransactionByIdSchema
-} from '../validation/bankSchemas.ts';
+} from '../validation/bankSchemas.js';
 
 
 const router = express.Router();

@@ -1,4 +1,4 @@
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 
 /**
  * Calculates the penalty amount for a bill based on the principal (base payment + interest),

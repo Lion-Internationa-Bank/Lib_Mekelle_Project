@@ -1,22 +1,15 @@
 // src/routes/wizardRoutes.ts
 import express from 'express';
-import { WizardController, uploadMiddleware } from '../controllers/wizardController.ts';
-import { authenticate } from '../middlewares/authMiddleware.ts';
-import { authorize } from '../middlewares/roleMiddleware.ts';
-import {
-  createWizardSessionSchema,
-  saveWizardStepSchema,
-  uploadDocumentSchema,
-  submitWizardSchema
-} from '../validation/makerCheckerSchemas.ts';
+import { WizardController, uploadMiddleware } from '../controllers/wizardController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
 
 // Initialize services
 // import prisma from '../config/prisma.ts';
-import { WizardSessionService } from '../services/wizardSessionService.ts';
-import { MakerCheckerService } from '../services/makerCheckerService.ts';
-import { AuditService } from '../services/auditService.ts';
-import { DocumentStorageService } from '../services/documentStorageService.ts';
-import { ActionExecutionService } from '../services/actionExecutionService.ts';
+import { WizardSessionService } from '../services/wizardSessionService.js';
+import { MakerCheckerService } from '../services/makerCheckerService.js';
+import { AuditService } from '../services/auditService.js';
+import { DocumentStorageService } from '../services/documentStorageService.js';
+import { ActionExecutionService } from '../services/actionExecutionService.js';
 
 const auditService = new AuditService();
 const makerCheckerService = new MakerCheckerService( auditService);

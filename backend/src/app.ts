@@ -3,7 +3,7 @@ import type { Request, Response, Application } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import routes from './routes/index.ts';
+import routes from './routes/index.js';
 
 
 const app: Application = express();

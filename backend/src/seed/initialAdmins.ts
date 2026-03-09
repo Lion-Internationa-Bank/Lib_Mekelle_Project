@@ -1,7 +1,7 @@
 // src/seed/initialAdmins.ts
-import prisma from '../config/prisma.ts';
+import prisma from '../config/prisma.js';
 import bcrypt from 'bcrypt';
-import { UserRole, ConfigCategory, AuditAction } from '../generated/prisma/enums.ts';
+import { UserRole, ConfigCategory, AuditAction } from '../generated/prisma/enums.js';
 
 const saltRounds = 12;
 
@@ -52,10 +52,8 @@ const CONFIG_KEYS: Record<ConfigCategory, string> = {
   TRANSFER_TYPE: 'transfer_type_options',
   REVENUE_TYPE: 'revenue_type_options',
   DOCUMENT_TYPE: 'document_type_options',
-  PAYMENT_METHOD: 'payment_method_options',
   GENERAL: 'general_options',
   REVENUE_RATES: 'revenue_rates',
-  ORDER_NUMBER_FORMAT: 'ORDER_NUMBER_FORMAT'
 };
 
 // Configuration value item interface
@@ -137,18 +135,6 @@ const initialConfigs: InitialConfig[] = [
       { value: 'BANK_GUARANTEE', description: 'Bank guarantee document' }
     ],
     description: 'Types of documents that can be uploaded',
-    is_active: true,
-  },
-  {
-    category: 'PAYMENT_METHOD',
-    options: [
-      { value: 'CASH', description: 'Cash payment' },
-      { value: 'BANK_TRANSFER', description: 'Bank transfer' },
-      { value: 'CHEQUE', description: 'Cheque payment' },
-      { value: 'MOBILE_MONEY', description: 'Mobile money payment' },
-      { value: 'CREDIT_CARD', description: 'Credit card payment' }
-    ],
-    description: 'Available payment methods',
     is_active: true,
   },
   {

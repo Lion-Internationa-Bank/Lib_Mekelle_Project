@@ -1,5 +1,5 @@
-export { cronScheduler } from './scheduler.ts';
-export { updateBillStatusToOverdue } from './tasks/billStatusUpdate.ts';
-export { calculateAndUpdatePenalty } from './tasks/penaltyCalculation.ts';
-export { calculateAndUpdateInterest } from './tasks/interestCalculation.ts';
-export { updateLeaseStatus } from './tasks/leaseStatusUpdate.ts';
+export { cronScheduler } from './scheduler.js';
+export { updateBillStatusToOverdue } from './tasks/billStatusUpdate.js';
+export { calculateAndUpdatePenalty } from './tasks/penaltyCalculation.js';
+export { calculateAndUpdateInterest } from './tasks/interestCalculation.js';
+export { updateLeaseStatus } from './tasks/leaseStatusUpdate.js';
