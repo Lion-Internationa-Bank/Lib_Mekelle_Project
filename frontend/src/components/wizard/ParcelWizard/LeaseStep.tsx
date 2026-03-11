@@ -424,7 +424,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
+            className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
             {isSubmitting ? tCommon('saving') : t('actions.saveAndContinue')}
           </button>

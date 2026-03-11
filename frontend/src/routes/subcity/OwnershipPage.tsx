@@ -302,7 +302,7 @@ const OwnershipPage = () => {
           
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-lg transition-all"
           >
             <span className="text-lg">+</span>
             {t('actions.addOwner')}

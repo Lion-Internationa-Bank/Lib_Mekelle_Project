@@ -188,7 +188,7 @@ export default function SubdivideParcelModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 <FileText size={24} />
@@ -419,7 +419,7 @@ export default function SubdivideParcelModal({
               <button
                 onClick={handleSubmit}
                 disabled={loading || !isValidArea}
-                className="px-10 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+                className="px-10 py-3 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
               >
                 {loading ? (
                   <>

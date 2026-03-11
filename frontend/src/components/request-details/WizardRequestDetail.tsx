@@ -96,7 +96,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Key parcel identifiers - emphasized */}
-            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e] col-span-1 md:col-span-2 lg:col-span-1">
+            <div className="bg-linear-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e] col-span-1 md:col-span-2 lg:col-span-1">
               <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 UPIN
               </div>
@@ -105,7 +105,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
+            <div className="bg-linear-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
               <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 File Number
               </div>
@@ -114,7 +114,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
+            <div className="bg-linear-to-r from-[#f0cd6e]/5 to-white p-4 rounded-lg border border-[#f0cd6e]">
               <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                 Total Area
               </div>
@@ -197,7 +197,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                 className="bg-white p-6 rounded-lg border border-[#f0cd6e] shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start gap-4 mb-4 pb-4 border-b border-[#f0cd6e]">
-                  <div className="shrink-0 w-12 h-12 bg-gradient-to-br from-[#f0cd6e] to-[#2a2718] text-white rounded-full flex items-center justify-center font-bold text-lg">
+                  <div className="shrink-0 w-12 h-12 bg-linear-to-br from-[#f0cd6e] to-[#2a2718] text-white rounded-full flex items-center justify-center font-bold text-lg">
                     {owner.full_name?.charAt(0) || 'O'}
                   </div>
                   <div className="flex-1">
@@ -279,7 +279,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
     
     {/* Lease Summary Cards */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+      <div className="bg-linear-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
         <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Lease Period
         </div>
@@ -293,7 +293,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
         )}
       </div>
       
-      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+      <div className="bg-linear-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
         <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Total Amount
         </div>
@@ -307,7 +307,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
         )}
       </div>
       
-      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+      <div className="bg-linear-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
         <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Down Payment
         </div>
@@ -316,7 +316,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
         </div>
       </div>
       
-      <div className="bg-gradient-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
+      <div className="bg-linear-to-br from-[#f0cd6e]/10 to-white p-4 rounded-lg border border-[#f0cd6e]">
         <div className="text-xs text-[#2a2718] mb-1 font-medium uppercase tracking-wider">
           Other Payment
         </div>

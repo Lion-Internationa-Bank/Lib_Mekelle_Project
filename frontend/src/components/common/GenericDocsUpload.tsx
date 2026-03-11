@@ -541,9 +541,9 @@ const handleFileUpload = async (
 
       {/* Upload Grid (only show if not at max files) */}
       {(!maxFiles || documents.length < maxFiles) && (
-        <div className="border-2 border-dashed border-[#f0cd6e] rounded-2xl p-8 hover:border-[#2a2718] transition-all duration-200 hover:shadow-md bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
+        <div className="border-2 border-dashed border-[#f0cd6e] rounded-2xl p-8 hover:border-[#2a2718] transition-all duration-200 hover:shadow-md bg-linear-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
+            <div className="w-20 h-20 mx-auto mb-4 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-xl">
               📄
             </div>
             <h3 className="text-xl font-semibold text-[#2a2718] mb-2">Upload Documents</h3>
@@ -629,7 +629,7 @@ const handleFileUpload = async (
           <button
             onClick={onAllUploaded}
             disabled={!!uploadingDoc}
-            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
+            className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70"
           >
             Continue →
             {uploadingDoc && (

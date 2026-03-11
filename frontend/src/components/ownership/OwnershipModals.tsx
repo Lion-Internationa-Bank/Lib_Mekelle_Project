@@ -93,7 +93,7 @@ export const CreateOwnerModal = ({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
           >
             {saving ? tCommon('submitting') : tCommon('submit')}
           </button>
@@ -120,7 +120,7 @@ export const OwnerDocsUploadModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/20 to-[#2a2718]/20">
+        <div className="p-8 border-b border-[#f0cd6e] bg-linear-to-r from-[#f0cd6e]/20 to-[#2a2718]/20">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
@@ -182,7 +182,7 @@ export const OwnerDocsUploadModal = ({
               onClose();
               onRefresh();
             }}
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            className="px-8 py-3 rounded-xl bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
             {t('docs.doneClose')}
             <span className="text-lg">→</span>
@@ -270,7 +270,7 @@ export const EditOwnerModal = ({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
           >
             {saving ? tCommon('saving') : tCommon('save')}
           </button>

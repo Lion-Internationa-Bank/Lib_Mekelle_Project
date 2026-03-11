@@ -398,7 +398,7 @@ export const BillsReportPage: React.FC = () => {
         <button
           onClick={handleDownload}
          disabled={isLoading || Boolean(filters.fromDate && filters.toDate && new Date(filters.fromDate) > new Date(filters.toDate))}
-          className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-2 text-sm font-medium text-white bg-linear-to-r from-[#f0cd6e] to-[#2a2718] rounded-lg hover:from-[#2a2718] hover:to-[#f0cd6e] focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isLoading ? (
             <>

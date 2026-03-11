@@ -266,7 +266,7 @@ const EncumbranceModal = ({
           <button
             onClick={handleSubmit}
             disabled={saving || !form.type || !form.issuing_entity}
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
+            className="px-6 py-2 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50"
           >
             {saving
               ? tCommon('saving')

@@ -30,7 +30,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) => {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#a68f4e] to-[#6d5f35] rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-[#f0cd6e]/30">
+              <div className="w-10 h-10 bg-linear-to-br from-[#a68f4e] to-[#6d5f35] rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-[#f0cd6e]/30">
                 ML
               </div>
               <div className="hidden sm:block">

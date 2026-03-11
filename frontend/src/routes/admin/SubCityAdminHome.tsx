@@ -253,7 +253,7 @@ const SubCityAdminHome = () => {
           </div>
 
           {/* System Status */}
-          <div className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-xl p-6 text-white">
+          <div className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] rounded-xl p-6 text-white">
             <h3 className="font-semibold mb-2">System Status</h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between">

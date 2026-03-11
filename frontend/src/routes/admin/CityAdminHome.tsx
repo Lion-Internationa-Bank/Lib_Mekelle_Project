@@ -186,7 +186,7 @@ const CityAdminHome = () => {
       </div>
 
       {/* User Info Card */}
-      <div className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] rounded-xl p-6 text-white">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
             {user?.full_name?.charAt(0)}

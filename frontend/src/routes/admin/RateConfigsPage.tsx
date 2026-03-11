@@ -82,7 +82,7 @@ const RateConfigsPage: React.FC = () => {
 
   if (!user || user.role !== "REVENUE_ADMIN") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-[#2a2718] mb-3">
@@ -325,7 +325,7 @@ const RateConfigsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-to-br from-[#f0cd6e]/10 to-[#2a2718]/10 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -417,7 +417,7 @@ const RateConfigsPage: React.FC = () => {
             }
           >
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#f0cd6e]">
-              <div className="border-b border-[#f0cd6e] px-6 py-6 bg-gradient-to-r from-[#f0cd6e]/5 to-white">
+              <div className="border-b border-[#f0cd6e] px-6 py-6 bg-linear-to-r from-[#f0cd6e]/5 to-white">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-[#f0cd6e]/10 text-[#2a2718] rounded-xl">
@@ -577,7 +577,7 @@ const RateConfigsPage: React.FC = () => {
                             !value.trim() ||
                             !effectiveFrom
                           }
-                          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 transition-all shadow hover:shadow-lg"
+                          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] disabled:opacity-50 transition-all shadow hover:shadow-lg"
                         >
                           {saving ? (
                             <>

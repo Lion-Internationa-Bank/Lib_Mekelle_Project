@@ -304,7 +304,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                   setShowAddCoOwnerSearch(false);
                   setShowCreateOwner(true);
                 }}
-                className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Plus size={18} />
                 {t('coowner.createNew')}
@@ -361,7 +361,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
                 <button
                   onClick={handleAddExistingOwner}
                   disabled={!acquiredAt || addingOwner}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {addingOwner ? (
                     <>

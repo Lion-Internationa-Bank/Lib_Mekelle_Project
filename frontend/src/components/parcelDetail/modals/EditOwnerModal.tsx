@@ -105,7 +105,7 @@ const EditOwnerModal = ({ owner, open, onClose, onSuccess }: Props) => {
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e]"
+            className="px-6 py-2 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white hover:from-[#2a2718] hover:to-[#f0cd6e]"
           >
             {tCommon('save')}
           </button>

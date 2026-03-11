@@ -188,7 +188,7 @@ const RevenueApproverHome = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] rounded-lg p-4 text-white">
+              <div className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] rounded-lg p-4 text-white">
                 <p className="text-sm opacity-90">Average response time</p>
                 <p className="text-2xl font-bold">3.2 hours</p>
               </div>

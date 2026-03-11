@@ -338,7 +338,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
               <div className="mt-6 pt-4 border-t border-[#f0cd6e]">
                 <button
                   onClick={handleCreateNew}
-                  className="w-full py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <UserPlus size={18} />
                   {t('actions.createNew')}
@@ -543,7 +543,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
+            className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
           >
             {isSubmitting ? tCommon('saving') : selectedOwner ? t('actions.linkAndContinue') : t('actions.saveAndContinue')}
           </button>

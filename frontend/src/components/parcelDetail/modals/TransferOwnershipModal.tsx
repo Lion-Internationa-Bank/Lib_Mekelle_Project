@@ -4,7 +4,6 @@ import { useTranslate } from "../../../i18n/useTranslate";
 import { X, AlertTriangle, UserPlus, UserMinus, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import { searchOwnersLiteApi, transferOwnershipApi, type LiteOwner } from "../../../services/parcelDetailApi";
 import { getConfig } from "../../../services/cityAdminService";
-import GenericDocsUpload from "../../common/GenericDocsUpload";
 import ApprovalRequestDocsModal from "../../../components/common/ApprovalRequestDocsModal";
 import { toast } from 'sonner';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -43,10 +42,6 @@ export default function TransferOwnershipModal({
   // Dynamic transfer types
   const [transferTypes, setTransferTypes] = useState<{ value: string; label: string }[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
-
-  // Document upload step after immediate execution
-  const [showUploadStep, setShowUploadStep] = useState(false);
-  const [latestHistoryId, setLatestHistoryId] = useState<string | null>(null);
 
   // Approval request document upload
   const [showApprovalDocsModal, setShowApprovalDocsModal] = useState(false);
@@ -163,18 +158,6 @@ export default function TransferOwnershipModal({
     } 
   };
 
-  const handleUploadComplete = async () => {
-    setShowUploadStep(false);
-    setLatestHistoryId(null);
-    onClose();
-  };
-
-  const handleSkipUpload = async () => {
-    setShowUploadStep(false);
-    setLatestHistoryId(null);
-
-    onClose();
-  };
 
   const handleApprovalDocsModalClose = () => {
     setShowApprovalDocsModal(false);
@@ -241,71 +224,7 @@ export default function TransferOwnershipModal({
 
   const selectedBuyer = searchResults.find(o => o.owner_id === formData.to_owner_id);
 
-  // ──────────────────────────────────────────────
-  // Show document upload step after successful immediate transfer
-  // ──────────────────────────────────────────────
-  if (showUploadStep && latestHistoryId) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-                  {t('upload.title')}
-                </h2>
-                <p className="text-[#2a2718]/70">
-                  {t('upload.description')}{' '}
-                  <span className="font-mono font-bold text-[#f0cd6e]">{parcelUpin}</span>
-                </p>
-              </div>
-              <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full">
-                {t('upload.optionalStep')}
-              </span>
-            </div>
-          </div>
-
-          {/* Upload Area */}
-          <div className="p-8">
-            <GenericDocsUpload
-              title={t('upload.docsTitle')}
-              upin={parcelUpin}
-              subCity=""
-              historyId={latestHistoryId}
-              hideTitle={true}
-              allowedDocTypes={[
-                { value: "TRANSFER_CONTRACT", label: t('upload.docTypes.contract') },
-                { value: "ID_COPY", label: t('upload.docTypes.idCopy') },
-                { value: "PAYMENT_PROOF", label: t('upload.docTypes.paymentProof') },
-                { value: "POWER_OF_ATTORNEY", label: t('upload.docTypes.powerOfAttorney') },
-                { value: "OTHER", label: t('upload.docTypes.other') },
-              ]}
-              onUploadSuccess={handleUploadComplete}
-            />
-          </div>
-
-          {/* Footer */}
-          <div className="p-8 border-t border-[#f0cd6e] bg-[#f0cd6e]/5 rounded-b-2xl flex justify-between items-center">
-            <button
-              onClick={handleSkipUpload}
-              className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
-            >
-              {t('upload.skip')}
-            </button>
-
-            <button
-              onClick={handleUploadComplete}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-            >
-              {t('upload.done')}
-              <span className="text-lg">→</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+ 
 
   // ──────────────────────────────────────────────
   // Main transfer form (shown before submission)
@@ -526,7 +445,7 @@ export default function TransferOwnershipModal({
               <button
                 type="submit"
                 disabled={loading || !formData.to_owner_id || !formData.transfer_type || loadingTypes}
-                className="flex-1 px-6 py-2.5 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-2.5 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white rounded-lg font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

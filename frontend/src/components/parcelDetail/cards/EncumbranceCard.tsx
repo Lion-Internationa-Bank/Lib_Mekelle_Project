@@ -30,7 +30,7 @@ const EncumbranceCard = ({ encumbrance, onEdit, onAddNew, isNew = false }: Encum
   return (
     <div className="bg-white/80 border border-[#f0cd6e] rounded-2xl overflow-hidden">
       {/* Header with Edit Button */}
-      <div className="bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 px-6 py-4 border-b border-[#f0cd6e] flex justify-between items-center">
+      <div className="bg-linear-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 px-6 py-4 border-b border-[#f0cd6e] flex justify-between items-center">
         <h3 className="text-lg font-semibold text-[#2a2718]">
           {encumbrance!.type} ({encumbrance!.status})
         </h3>

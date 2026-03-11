@@ -633,7 +633,7 @@ const renderSubdivide = () => {
                   className="bg-white rounded-lg border border-[#f0cd6e] shadow-sm hover:shadow-md transition-shadow overflow-hidden"
                 >
                   {/* Child Header */}
-                  <div className="bg-gradient-to-r from-[#f0cd6e]/10 to-white p-5 border-b border-[#f0cd6e]">
+                  <div className="bg-linear-to-r from-[#f0cd6e]/10 to-white p-5 border-b border-[#f0cd6e]">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
                         <div className="shrink-0 w-10 h-10 bg-[#f0cd6e] text-[#2a2718] rounded-full flex items-center justify-center font-bold text-lg">

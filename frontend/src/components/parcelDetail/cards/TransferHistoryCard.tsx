@@ -33,7 +33,7 @@ const TransferHistoryCard = ({ entry }: TransferHistoryCardProps) => {
   return (
     <div className="bg-white border border-[#f0cd6e] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 px-6 py-4 border-b border-[#f0cd6e]">
+      <div className="bg-linear-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 px-6 py-4 border-b border-[#f0cd6e]">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-[#2a2718]">

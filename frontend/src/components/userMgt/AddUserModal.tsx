@@ -313,7 +313,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
             <button
               type="submit"
               disabled={creatingUser || (shouldShowSubCityField(formData.role) && !formData.sub_city_id)}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white rounded-xl hover:from-[#2a2718] hover:to-[#f0cd6e] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {creatingUser ? (
                 <>

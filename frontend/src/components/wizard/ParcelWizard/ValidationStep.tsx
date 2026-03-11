@@ -694,8 +694,8 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
               disabled={isSubmitting || isLoading}
               className={`px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-70 flex items-center gap-2 ${
                 isRejected
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                  : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  ? "bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                  : "bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
               } text-white`}
             >
               {isSubmitting ? (
@@ -713,7 +713,7 @@ const ValidationStep = ({ prevStep, onFinish }: FinishStepProps) => {
           {(isPending || isCompleted) && (
             <button
               onClick={onFinish}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="px-8 py-3 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               {t('actions.returnToDashboard')}
             </button>

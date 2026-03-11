@@ -327,7 +327,7 @@ const ParcelWizard = () => {
   // Show loading state
   if (isInitializing || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-linear-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f0cd6e] mx-auto mb-4"></div>
@@ -343,7 +343,7 @@ const ParcelWizard = () => {
   // Show error if no session loaded
   if (!currentSession || !hasSessionLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-linear-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#f0cd6e]/30 p-8 text-center">
             <h3 className="text-2xl font-bold text-[#2a2718] mb-2">{t('errors.sessionError')}</h3>
@@ -374,7 +374,7 @@ const ParcelWizard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-[#f0cd6e]/10 via-[#f0cd6e]/20 to-[#2a2718]/10 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Session Info */}
         {currentSession && (
@@ -429,7 +429,7 @@ const ParcelWizard = () => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div
-              className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] h-3 rounded-full shadow-lg transition-all duration-500"
+              className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] h-3 rounded-full shadow-lg transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -452,7 +452,7 @@ const ParcelWizard = () => {
                 className={[
                   "px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all",
                   isActive
-                    ? "bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white shadow-md"
+                    ? "bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white shadow-md"
                     : isDone && hasRequiredData
                     ? "bg-green-100 text-green-800 hover:bg-green-200"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60",
@@ -462,21 +462,6 @@ const ParcelWizard = () => {
               </button>
             );
           })}
-        </div>
-
-        {/* Debug info (temporary) - remove in production */}
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-          <div className="font-medium text-yellow-800 mb-1">{t('debug.title')}:</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <div>{t('debug.step')}: <span className="font-bold">{currentStep}</span></div>
-            <div>{t('debug.existingOwner')}: <span className={shouldSkipOwnerDocs ? "text-purple-600" : "text-gray-600"}>{shouldSkipOwnerDocs ? t('common.yes') : t('common.no')}</span></div>
-            <div>{t('debug.isLease')}: <span className={!shouldSkipLeaseSteps ? "text-green-600" : "text-gray-600"}>{!shouldSkipLeaseSteps ? t('common.yes') : t('common.no')}</span></div>
-            <div>{t('debug.tenure')}: <span className="font-medium">{currentSession.parcel_data?.[0]?.tenure_type || t('common.na')}</span></div>
-            <div>{t('debug.parcel')}: <span className={currentSession.parcel_data ? "text-green-600" : "text-red-600"}>{currentSession.parcel_data ? "✓" : "✗"}</span></div>
-            <div>{t('debug.owner')}: <span className={currentSession.owner_data ? "text-green-600" : "text-red-600"}>{currentSession.owner_data ? "✓" : "✗"}</span></div>
-            <div>{t('debug.ownerId')}: <span className={currentSession.owner_data?.[0]?.owner_id ? "text-green-600" : "text-gray-600"}>{currentSession.owner_data?.[0]?.owner_id || t('common.none')}</span></div>
-            <div>{t('debug.lease')}: <span className={currentSession.lease_data ? "text-green-600" : "text-red-600"}>{currentSession.lease_data ? "✓" : "✗"}</span></div>
-          </div>
         </div>
 
         {/* Card */}

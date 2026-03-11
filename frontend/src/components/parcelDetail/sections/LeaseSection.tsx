@@ -108,7 +108,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
             </p>
             <button
               onClick={handleCreateLeaseClick}
-              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
+              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
             >
               + {t('empty.createButton')}
             </button>

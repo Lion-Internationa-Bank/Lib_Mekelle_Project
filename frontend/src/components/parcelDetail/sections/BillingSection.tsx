@@ -86,7 +86,7 @@ const BillingSection = ({ data }: Props) => {
 
       {/* Owner Information Card */}
       {owners && owners.length > 0 && (
-        <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white rounded-xl border border-[#f0cd6e] p-4">
+        <div className="bg-linear-to-r from-[#f0cd6e]/5 to-white rounded-xl border border-[#f0cd6e] p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#f0cd6e]/20 rounded-lg">
               <FileText className="w-4 h-4 text-[#2a2718]" />
@@ -109,7 +109,7 @@ const BillingSection = ({ data }: Props) => {
 
       {/* Lease Summary Card */}
       {hasValidLease ? (
-        <div className="bg-gradient-to-r from-[#f0cd6e]/5 to-white rounded-xl border border-[#f0cd6e] p-6">
+        <div className="bg-linear-to-r from-[#f0cd6e]/5 to-white rounded-xl border border-[#f0cd6e] p-6">
           <div className="flex items-center gap-2 mb-6">
             <FileText className="w-5 h-5 text-[#f0cd6e]" />
             <div>

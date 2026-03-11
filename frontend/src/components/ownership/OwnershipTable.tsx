@@ -107,7 +107,7 @@ const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => {
   const { t } = useTranslate('ownership');
   
   return (
-    <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-gradient-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
+    <div className="p-16 text-center border-t border-[#f0cd6e]/30 bg-linear-to-br from-[#f0cd6e]/10 to-[#2a2718]/10">
       <span className="text-6xl mb-4 block">👥</span>
       <h3 className="text-2xl font-bold text-[#2a2718] mb-3">{t('table.empty.title')}</h3>
       <p className="text-[#2a2718]/70 mb-6">
@@ -115,7 +115,7 @@ const EmptyOwnersBlock = ({ onCreate }: { onCreate: () => void }) => {
       </p>
       <button
         onClick={onCreate}
-        className="bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+        className="bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
       >
         {t('table.empty.addButton')}
       </button>

@@ -65,7 +65,7 @@ const Sidebar = () => {
       label: t('pendingRequests'),
       icon: '⏳',
       href: '/pending-requests',
-      allowedRoles: ['SUBCITY_APPROVER','CITY_APPROVER','REVENUE_APPROVER','CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN','SUBCITY_'],
+      allowedRoles: ['SUBCITY_APPROVER','CITY_APPROVER','REVENUE_APPROVER','CITY_ADMIN', 'SUBCITY_ADMIN', 'REVENUE_ADMIN','SUBCITY_NORMAL'],
     },
     {
       id: 'ownership',

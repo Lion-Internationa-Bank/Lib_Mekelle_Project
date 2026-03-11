@@ -127,7 +127,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
             </p>
             <button
               onClick={handleOpenAddOwner}
-              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
+              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white text-sm font-medium shadow-sm"
             >
               + {t('empty.addButton')}
             </button>
@@ -180,7 +180,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
       {showUploadStep && latestTransferHistoryId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
-            <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
+            <div className="p-8 border-b border-[#f0cd6e] bg-linear-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-[#2a2718] mb-2">
@@ -235,7 +235,7 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
 
               <button
                 onClick={handleUploadComplete}
-                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
                 {t('transfer.upload.done')}
                 <span className="text-lg">→</span>

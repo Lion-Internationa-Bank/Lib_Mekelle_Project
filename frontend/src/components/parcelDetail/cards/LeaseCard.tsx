@@ -34,7 +34,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
   return (
     <div className="bg-white rounded-xl border border-[#f0cd6e] shadow-sm overflow-hidden">
       {/* Header with Calendar Indicator */}
-      <div className="px-6 py-4 bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 border-b border-[#f0cd6e]">
+      <div className="px-6 py-4 bg-linear-to-r from-[#f0cd6e]/10 to-[#2a2718]/10 border-b border-[#f0cd6e]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#f0cd6e]/20 rounded-lg">
@@ -240,7 +240,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-white border border-red-100 rounded-lg bg-red-50">
+                  <div className="flex items-center justify-between p-3  border border-red-100 rounded-lg bg-red-50">
                     <div className="flex items-center gap-3">
                       <div className="p-1.5 bg-red-100 rounded">
                         <CalendarDays className="w-3 h-3 text-red-600" />
@@ -274,7 +274,7 @@ const LeaseCard = ({ lease }: LeaseCardProps) => {
               {/* Calendar Tooltip Hint */}
               <div className="p-4 bg-[#f0cd6e]/10 rounded-lg border border-[#f0cd6e]">
                 <div className="flex items-start gap-3">
-                  <Info className="w-4 h-4 text-[#2a2718] mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-[#2a2718] mt-0.5 shrink-0" />
                   <div>
                     <div className="text-sm font-medium text-[#2a2718] mb-1">
                       {t('calendar.infoTitle')}
