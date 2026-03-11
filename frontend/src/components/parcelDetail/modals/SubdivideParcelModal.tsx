@@ -154,12 +154,8 @@ export default function SubdivideParcelModal({
         setSubmittedChildParcels(children);
         setShowDocsUpload(true); // Show the document upload modal
         toast.success(response.message || t('messages.submitted'));
-      } else {
-        // Immediate execution (self-approval)
-        toast.success(response.message || t('messages.success'));
-        await onSuccess();
-        onClose();
-      }
+      } 
+      
     } catch (err: any) {
       toast.error(err.message || t('errors.failed'));
     } finally {

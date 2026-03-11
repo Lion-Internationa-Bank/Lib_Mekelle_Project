@@ -311,10 +311,7 @@ export const createEncumbranceApi = async (
   if (json.data.approval_request_id) {
     // Approval required
     toast.info(json.message || 'Encumbrance creation request submitted for approval');
-  } else {
-    // Immediate execution
-    toast.success(json.message || 'Encumbrance created successfully');
-  }
+  } 
   
   return json;
 };
@@ -415,10 +412,7 @@ export const transferOwnershipApi = async (
   if (json.data.approval_request_id) {
     // Approval required
     toast.info(json.message || 'Transfer request submitted for approval');
-  } else {
-    // Immediate execution (for self-approval)
-    toast.success(json.message || 'Transfer completed successfully');
-  }
+  } 
   
   return json;
 };
@@ -481,11 +475,7 @@ export const addOwnerToParcel = async (
   if (json.data.approval_request_id) {
     // Approval required
     toast.info(json.message || 'Owner addition request submitted for approval');
-  } else {
-    // Immediate execution
-    toast.success(json.message || 'Owner added successfully');
-  }
-  
+  } 
   return json;
 };
 
@@ -548,10 +538,7 @@ export const subdivideParcel = async (
   if (json.data.approval_request_id) {
     // Approval required
     toast.info(json.message || 'Subdivision request submitted for approval');
-  } else {
-    // Immediate execution
-    toast.success(json.message || 'Parcel subdivided successfully');
-  }
+  } 
   
   return json;
 };

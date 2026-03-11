@@ -161,35 +161,25 @@ export default function TransferOwnershipModal({
       });
       setShowApprovalDocsModal(true);
     } 
-    // If immediate execution (self-approval or no approval needed)
-    else if (result?.history_id) {
-      setLatestHistoryId(result.history_id);
-      setShowUploadStep(true);
-      
-      if (onSuccess) onSuccess(result.history_id);
-    }
-    
-    await onRefreshParcel();
   };
 
   const handleUploadComplete = async () => {
     setShowUploadStep(false);
     setLatestHistoryId(null);
-    await onRefreshParcel();
     onClose();
   };
 
   const handleSkipUpload = async () => {
     setShowUploadStep(false);
     setLatestHistoryId(null);
-    await onRefreshParcel();
+
     onClose();
   };
 
   const handleApprovalDocsModalClose = () => {
     setShowApprovalDocsModal(false);
     setCurrentApprovalRequest(null);
-    onRefreshParcel();
+
     onClose();
   };
 

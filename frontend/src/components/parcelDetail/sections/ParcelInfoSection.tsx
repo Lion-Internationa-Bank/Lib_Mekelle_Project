@@ -115,11 +115,7 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
         });
         setShowApprovalDocsModal(true);
         toast.success(result.message || t('coowner.submitted'));
-      } else {
-        // Immediate execution
-        toast.success(result.message || t('coowner.added'));
-        await onReload();
-      }
+      } 
       
       // Reset state
       setShowAddAcquiredDate(false);
@@ -163,16 +159,8 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
         });
         setShowApprovalDocsModal(true);
         toast.success(response.message || t('newowner.submitted'));
-      } else {
-        // Immediate execution
-        const ownerId = response.data.owner_id;
-        setNewOwnerId(ownerId);
-        setShowCreateOwner(false);
-        setShowOwnerDocsUpload(true);
-        toast.success(response.message || t('newowner.created'));
-      }
-      
-      await onReload();
+      } 
+    
       
     } catch (err: any) {
       toast.error(err.message || t('newowner.createFailed'));
@@ -416,17 +404,6 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
         />
       )}
 
-      {/* Document Upload after new owner creation (immediate execution) */}
-      {isSubcityNormal && showOwnerDocsUpload && newOwnerId && (
-        <OwnerDocsUploadModal
-          ownerId={newOwnerId}
-          onClose={() => {
-            setShowOwnerDocsUpload(false);
-            setNewOwnerId(null);
-          }}
-          onRefresh={onReload}
-        />
-      )}
 
       {/* Approval Request Document Upload Modal for Add Owner */}
       {isSubcityNormal && showApprovalDocsModal && currentApprovalRequest && (

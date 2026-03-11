@@ -121,9 +121,6 @@ export const createOwnerOnly = async (data: CreateOwnerOnlyData): Promise<Create
   if (json.data.approval_request_id) {
     // Approval required
     toast.info(json.message || 'Owner creation request submitted for approval');
-  } else {
-    // Immediate execution
-    toast.success(json.message || 'Owner created successfully');
   }
   
   return json;

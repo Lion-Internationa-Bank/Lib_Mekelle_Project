@@ -178,10 +178,7 @@ const OwnershipPage = () => {
       });
       setShowDocsModal(true);
       toast.info(result.message || t('messages.creationSubmitted'));
-    } else if (result.data.owner_id) {
-      // Immediate execution (self-approval)
-      toast.success(result.message || t('messages.createSuccess'));
-    }
+    } 
 
     setShowCreate(false);
     resetCreateForm();

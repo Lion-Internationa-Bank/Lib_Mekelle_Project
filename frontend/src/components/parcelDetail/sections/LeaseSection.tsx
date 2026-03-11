@@ -18,15 +18,13 @@ type Props = {
 
 const LeaseSection = ({ parcel, lease, onReload }: Props) => {
   const { t } = useTranslate('leaseSection');
-  const { t: tCommon } = useTranslate('common');
+
   const [editing, setEditing] = useState(false);
   const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   const [showCreateLease, setShowCreateLease] = useState(false);
   
-  // State for immediate execution document upload
-  const [showLeaseDocsUpload, setShowLeaseDocsUpload] = useState(false);
-  const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
+
   
   // State for approval request document upload
   const [showApprovalDocsModal, setShowApprovalDocsModal] = useState(false);
@@ -55,27 +53,10 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
       setShowApprovalDocsModal(true);
       toast.success(result.message || t('messages.submitted'));
     } 
-    // If immediate execution (self-approval or no approval needed)
-    else if (result?.lease_id) {
-      setCreatedLeaseId(result.lease_id);
-      setShowLeaseDocsUpload(true);
-      toast.success(result.message || t('messages.created'));
-    }
-    
-    await onReload();
+   
+ 
   };
 
-  const handleLeaseDocsDone = async () => {
-    setShowLeaseDocsUpload(false);
-    setCreatedLeaseId(null);
-    await onReload();
-  };
-
-  const handleSkipUpload = async () => {
-    setShowLeaseDocsUpload(false);
-    setCreatedLeaseId(null);
-    await onReload();
-  };
 
   const handleApprovalDocsModalClose = () => {
     setShowApprovalDocsModal(false);
@@ -155,69 +136,7 @@ const LeaseSection = ({ parcel, lease, onReload }: Props) => {
         />
       )}
 
-      {/* Lease docs upload after immediate execution (no approval needed) */}
-      {isSubcityNormal && showLeaseDocsUpload && createdLeaseId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
-            <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-[#2a2718] mb-2">
-                    {t('upload.title')}
-                  </h2>
-                  <p className="text-[#2a2718]/70">
-                    {t('upload.description')}{" "}
-                    <span className="font-mono font-bold text-[#f0cd6e]">
-                      {parcel.upin}
-                    </span>
-                  </p>
-                </div>
-                <span className="inline-block px-4 py-1.5 text-sm font-semibold bg-[#f0cd6e] text-[#2a2718] rounded-full whitespace-nowrap">
-                  {t('upload.optional')}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 md:p-8">
-              <GenericDocsUpload
-                title={t('upload.docsTitle')}
-                upin={parcel.upin}
-                subCity={parcel.sub_city?.name || tCommon('notAvailable')}
-                leaseId={createdLeaseId}
-                hideTitle={true}
-                allowedDocTypes={[
-                  { value: "LEASE_CONTRACT", label: t('upload.docTypes.contract') },
-                  { value: "PAYMENT_PROOF", label: t('upload.docTypes.paymentProof') },
-                  {
-                    value: "COUNCIL_DECISION",
-                    label: t('upload.docTypes.councilDecision'),
-                  },
-                  { value: "OTHER", label: t('upload.docTypes.other') },
-                ]}
-                onUploadSuccess={handleLeaseDocsDone}
-              />
-            </div>
-
-            <div className="p-6 md:p-8 border-t border-[#f0cd6e] bg-[#f0cd6e]/5 rounded-b-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
-              <button
-                onClick={handleSkipUpload}
-                className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
-              >
-                {t('upload.skip')}
-              </button>
-
-              <button
-                onClick={handleLeaseDocsDone}
-                className="w-full sm:w-auto px-10 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                {t('upload.done')}
-                <span className="text-lg">→</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+  
       {/* Approval Request Document Upload Modal */}
       {isSubcityNormal && showApprovalDocsModal && currentApprovalRequest && (
         <ApprovalRequestDocsModal

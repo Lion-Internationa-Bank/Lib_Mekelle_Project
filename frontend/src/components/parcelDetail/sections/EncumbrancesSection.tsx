@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useTranslate } from "../../../i18n/useTranslate";
 import EncumbranceCard from "../cards/EncumbranceCard";
 import EncumbranceModal from "../modals/EncumbranceModal";
-import GenericDocsUpload from "../../common/GenericDocsUpload";
 import ApprovalRequestDocsModal from "../../common/ApprovalRequestDocsModal";
 import type { ParcelDetail } from "../../../services/parcelDetailApi";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -21,9 +20,6 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
   const { user } = useAuth();
   const isSubcityNormal = user?.role === "SUBCITY_NORMAL";
   
-  // State for post-creation upload step (for immediate execution)
-  const [showUploadStep, setShowUploadStep] = useState(false);
-  const [latestEncumbranceId, setLatestEncumbranceId] = useState<string | null>(null);
   
   // State for approval request document upload
   const [showApprovalDocsModal, setShowApprovalDocsModal] = useState(false);
@@ -49,27 +45,12 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
       setAddingNew(false);
       setEditing(null);
     } 
-    // If immediate execution (self-approval or no approval needed)
-    else if (result?.encumbrance_id) {
-      setLatestEncumbranceId(result.encumbrance_id);
-      setAddingNew(false);
-      setEditing(null);
-      setShowUploadStep(true); // Show immediate document upload
-    }
+ 
     
     await onReload();
   };
 
-  const handleUploadComplete = async () => {
-    setShowUploadStep(false);
-    setLatestEncumbranceId(null);
-    await onReload();
-  };
 
-  const handleSkipUpload = () => {
-    setShowUploadStep(false);
-    setLatestEncumbranceId(null);
-  };
 
   const handleApprovalDocsModalClose = () => {
     setShowApprovalDocsModal(false);
@@ -137,65 +118,7 @@ const EncumbrancesSection = ({ encumbrances, upin, onReload }: Props) => {
         )}
       </div>
 
-      {/* === Document Upload Modal After Immediate Creation === */}
-      {isSubcityNormal && showUploadStep && latestEncumbranceId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-8 border-b border-[#f0cd6e] bg-gradient-to-r from-[#f0cd6e]/10 to-[#2a2718]/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold text-[#2a2718] mb-2">
-                    {t('upload.title')}
-                  </h2>
-                  <p className="text-[#2a2718]/70">
-                    {t('upload.description')}{" "}
-                    <span className="font-mono font-bold text-[#f0cd6e]">{upin}</span>
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="inline-block px-4 py-2 text-sm font-bold bg-[#f0cd6e] text-[#2a2718] rounded-full">
-                    {t('upload.optional')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-8">
-              <GenericDocsUpload
-                title={t('upload.docsTitle')}
-                upin={upin}
-                subCity=""
-                encumbranceId={latestEncumbranceId}
-                hideTitle={true}
-                allowedDocTypes={[
-                  { value: "ENCUMBRANCE_CERT", label: t('upload.docTypes.certificate') },
-                  { value: "COURT_ORDER", label: t('upload.docTypes.courtOrder') },
-                  { value: "BANK_LETTER", label: t('upload.docTypes.bankLetter') },
-                  { value: "RELEASE_LETTER", label: t('upload.docTypes.releaseLetter') },
-                  { value: "OTHER", label: t('upload.docTypes.other') },
-                ]}
-                onUploadSuccess={onReload}
-              />
-            </div>
-
-            <div className="p-8 border-t border-[#f0cd6e] bg-[#f0cd6e]/5 rounded-b-2xl flex justify-between items-center">
-              <button
-                onClick={handleSkipUpload}
-                className="text-sm text-[#2a2718] hover:text-[#2a2718]/80 underline transition"
-              >
-                {t('upload.skip')}
-              </button>
-              <button
-                onClick={handleUploadComplete}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-              >
-                {t('upload.done')}
-                <span className="text-lg">→</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+   
 
       {/* === Approval Request Document Upload Modal === */}
       {isSubcityNormal && showApprovalDocsModal && currentApprovalRequest && (

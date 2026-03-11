@@ -67,20 +67,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
           approval_request_id: response.data.approval_request_id,
           ...response.data
         });
-      } else if (response.data?.lease_id) {
-        // Immediate execution
-        toast.success(response.message || t('messages.created'));
-        await onCreated({
-          lease_id: response.data.lease_id,
-          ...response.data
-        });
-      } else {
-        // Fallback - try to extract ID from response
-        const leaseId = response.data?.lease_id || response.data?.id || response.id;
-        toast.success(response.message || t('messages.created'));
-        await onCreated({ lease_id: leaseId, ...response.data });
-      }
-
+      } else if (response.data?.lease_id) 
       reset();
       onClose();
     } catch (err: any) {
@@ -93,7 +80,7 @@ const CreateLeaseModal = ({ parcel, open, onClose, onCreated }: Props) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header with gradient */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 rounded-t-2xl">
+        <div className="sticky top-0 z-10 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] text-white px-6 py-5 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold">
