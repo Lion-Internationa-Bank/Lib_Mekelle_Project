@@ -20,8 +20,12 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
   
   const [editingOwner, setEditingOwner] =
     useState<ParcelDetail["owners"][number] | null>(null);
-  const [transferFrom, setTransferFrom] =
-    useState<ParcelDetail["owners"][number] | null>(null);
+  
+  // Store the selected owner for transfer
+  const [transferFrom, setTransferFrom] = useState<{
+    owner_id: string;
+    full_name: string;
+  } | null>(null);
 
   const [showUploadStep, setShowUploadStep] = useState(false);
   const [latestTransferHistoryId, setLatestTransferHistoryId] =
@@ -137,7 +141,13 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
                   key={po.parcel_owner_id}
                   ownerRelation={po}
                   onEditOwner={() => setEditingOwner(po)}
-                  onTransfer={() => setTransferFrom(po)}
+                  onTransfer={() => {
+                    // Set the clicked owner for transfer
+                    setTransferFrom({
+                      owner_id: po.owner.owner_id,
+                      full_name: po.owner.full_name,
+                    });
+                  }}
                 />
               ))}
           </div>
@@ -154,18 +164,13 @@ const OwnersSection = ({ parcel, onReload }: Props) => {
         />
       )}
 
-      {/* Transfer ownership */}
+      {/* Transfer ownership - Now passes single owner instead of list */}
       {transferFrom && (
         <TransferOwnershipModal
           isOpen={!!transferFrom}
           onClose={() => setTransferFrom(null)}
           parcelUpin={parcel.upin}
-          currentOwners={parcel.owners
-            .filter((o) => o?.owner)
-            .map((o) => ({
-              owner_id: o.owner.owner_id,
-              full_name: o.owner.full_name,
-            }))}
+          currentOwner={transferFrom} // Pass the single selected owner
           onRefreshParcel={onReload}
           onSuccess={handleTransferSuccess}
         />

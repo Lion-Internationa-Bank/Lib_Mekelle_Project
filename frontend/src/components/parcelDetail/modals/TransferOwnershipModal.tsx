@@ -13,7 +13,7 @@ interface TransferOwnershipModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcelUpin: string;
-  currentOwners: Array<{ owner_id: string; full_name: string }>;
+  currentOwner: { owner_id: string; full_name: string } | null; // Change to single owner
   onSuccess?: (historyId: string) => void;
   onRefreshParcel: () => Promise<void>;
 }
@@ -22,7 +22,7 @@ export default function TransferOwnershipModal({
   isOpen,
   onClose,
   parcelUpin,
-  currentOwners,
+  currentOwner, // Now it's a single owner, not an array
   onSuccess,
   onRefreshParcel,
 }: TransferOwnershipModalProps) {
@@ -30,7 +30,7 @@ export default function TransferOwnershipModal({
   const { t: tCommon } = useTranslate('common');
   
   const [formData, setFormData] = useState({
-    from_owner_id: '',
+    from_owner_id: currentOwner?.owner_id || '',
     to_owner_id: '',
     transfer_type: '',
     transfer_price: '',
@@ -66,6 +66,16 @@ export default function TransferOwnershipModal({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  // Update form when currentOwner changes
+  useEffect(() => {
+    if (isOpen && currentOwner) {
+      setFormData(prev => ({
+        ...prev,
+        from_owner_id: currentOwner.owner_id,
+      }));
+    }
+  }, [isOpen, currentOwner]);
 
   // Fetch transfer types
   useEffect(() => {
@@ -201,9 +211,6 @@ export default function TransferOwnershipModal({
 
     if (!formData.to_owner_id) return setError(t('errors.buyerRequired'));
     if (!formData.transfer_type) return setError(t('errors.typeRequired'));
-    if (formData.from_owner_id && formData.from_owner_id === formData.to_owner_id) {
-      return setError(t('errors.samePerson'));
-    }
 
     try {
       setLoading(true);
@@ -242,7 +249,6 @@ export default function TransferOwnershipModal({
     }
   };
 
-  const fromOwnerName = currentOwners.find(o => o.owner_id === formData.from_owner_id)?.full_name;
   const selectedBuyer = searchResults.find(o => o.owner_id === formData.to_owner_id);
 
   // ──────────────────────────────────────────────
@@ -355,24 +361,22 @@ export default function TransferOwnershipModal({
               </div>
             </div>
 
-            {/* From Owner */}
+            {/* From Owner - Disabled text field showing the current owner */}
             <div>
               <label className="block text-sm font-medium text-[#2a2718] dark:text-gray-300 mb-1.5">
-                {t('fields.fromOwner')} <span className="text-[#2a2718]/70 font-normal">{t('optional')}</span>
+                {t('fields.fromOwner')}
               </label>
-              <select
-                name="from_owner_id"
-                value={formData.from_owner_id}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-[#f0cd6e] dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f0cd6e] text-[#2a2718]"
-              >
-                <option value="">— {t('wholeParcel')} —</option>
-                {currentOwners.map(owner => (
-                  <option key={owner.owner_id} value={owner.owner_id}>
-                    {owner.full_name}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value={currentOwner?.full_name || t('wholeParcel')}
+                disabled
+                className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-[#2a2718] dark:text-gray-300 cursor-not-allowed"
+              />
+              {!currentOwner && (
+                <p className="text-xs text-[#2a2718]/60 mt-1">
+                  {t('transferringWholeParcel')}
+                </p>
+              )}
             </div>
 
             {/* Buyer Search */}
@@ -513,7 +517,9 @@ export default function TransferOwnershipModal({
             {formData.to_owner_id && selectedBuyer && (
               <div className="text-sm bg-[#f0cd6e]/10 p-3 rounded-lg text-center border border-[#f0cd6e] text-[#2a2718]">
                 {t('transferringTo')} <strong>{selectedBuyer.full_name}</strong>
-                {formData.from_owner_id && <> {t('from')} <strong>{fromOwnerName}</strong></>}
+                {currentOwner && (
+                  <> {t('from')} <strong>{currentOwner.full_name}</strong></>
+                )}
               </div>
             )}
 
