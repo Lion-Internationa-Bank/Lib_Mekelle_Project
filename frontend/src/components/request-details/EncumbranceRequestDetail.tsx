@@ -62,7 +62,7 @@ const EncumbranceRequestDetail: React.FC<EncumbranceRequestDetailProps> = ({
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-base font-semibold text-[#2a2718] break-words">
+                <div className="text-base font-semibold text-[#2a2718] wrap-break-word">
                   {isDateField(key) && value ? (
                     <DateDisplay 
                       date={value as string} 
@@ -125,7 +125,7 @@ const EncumbranceRequestDetail: React.FC<EncumbranceRequestDetailProps> = ({
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}:
                 </div>
-                <div className="break-words text-[#2a2718]">
+                <div className="wrap-break-word text-[#2a2718]">
                   {isDateField(key) && value ? (
                     <DateDisplay 
                       date={value as string} 

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useTranslate } from "../../../i18n/useTranslate";
 import ParcelInfoCard from "../cards/ParcelInfoCard";
 import EditParcelModal from "../modals/EditParcelModal";
-import { CreateOwnerModal, OwnerDocsUploadModal } from "../../ownership/OwnershipModals";
+import { CreateOwnerModal } from "../../ownership/OwnershipModals";
 import SubdivideParcelModal from "../modals/SubdivideParcelModal";
 import ApprovalRequestDocsModal from "../../../components/common/ApprovalRequestDocsModal";
 import { searchOwnersLiteApi, addOwnerToParcel } from "../../../services/parcelDetailApi";
@@ -27,8 +27,6 @@ const ParcelInfoSection = ({ parcel, onReload }: Props) => {
   const [showEditParcel, setShowEditParcel] = useState(false);
   const [showAddCoOwnerSearch, setShowAddCoOwnerSearch] = useState(false);
   const [showCreateOwner, setShowCreateOwner] = useState(false);
-  const [showOwnerDocsUpload, setShowOwnerDocsUpload] = useState(false);
-  const [newOwnerId, setNewOwnerId] = useState<string | null>(null);
   const [showSubdivide, setShowSubdivide] = useState(false);
   
   // New state for approval request document upload

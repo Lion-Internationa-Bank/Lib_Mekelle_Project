@@ -143,7 +143,7 @@ const BillingSection = ({ data }: Props) => {
                     {formatCurrency(Number(lease.other_payment) || 0)} ETB
                   </span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
+                <div className="flex justify-between items-center p-3  rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
                   <span className="text-sm text-[#2a2718]/70">{t('leaseOverview.annualInstallment')}</span>
                   <span className="font-semibold text-[#f0cd6e]">
                     {formatCurrency(Number(lease.annual_installment) || 0)} ETB
@@ -159,13 +159,13 @@ const BillingSection = ({ data }: Props) => {
                 <h4 className="text-sm font-medium text-[#2a2718]">{t('leaseOverview.paymentTerms')}</h4>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
+                <div className="flex justify-between items-center p-3  rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
                   <span className="text-sm text-[#2a2718]/70">{t('leaseOverview.paymentTerm')}</span>
                   <span className="font-bold text-[#f0cd6e]">
                     {t('years', { count: lease.payment_term_years || 0 })}
                   </span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-[#f0cd6e]">
+                <div className="flex justify-between items-center p-3  rounded-lg border border-[#f0cd6e]">
                   <span className="text-sm text-[#2a2718]/70">{t('leaseOverview.leasePeriod')}</span>
                   <span className="font-semibold text-[#2a2718]">
                     {t('years', { count: lease.lease_period_years || 0 })}
@@ -187,7 +187,7 @@ const BillingSection = ({ data }: Props) => {
                 <h4 className="text-sm font-medium text-[#2a2718]">{t('leaseOverview.timeline')}</h4>
               </div>
               <div className="space-y-3">
-                <div className="p-3 bg-white rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
+                <div className="p-3  rounded-lg border border-[#f0cd6e] bg-[#f0cd6e]/5">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-medium text-[#2a2718]/70">{t('leaseOverview.startDate')}</span>
                     {lease.start_date ? (
@@ -221,7 +221,7 @@ const BillingSection = ({ data }: Props) => {
                   <div className="text-xs text-[#2a2718]/70 mt-1">{t('leaseOverview.contractDateHint')}</div>
                 </div>
                 
-                <div className="p-3 bg-white rounded-lg border border-red-200 bg-red-50">
+                <div className="p-3  rounded-lg border border-red-200 bg-red-50">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-medium text-[#2a2718]/70">{t('leaseOverview.expiryDate')}</span>
                     {lease.expiry_date ? (
