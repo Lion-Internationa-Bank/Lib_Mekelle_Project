@@ -19,7 +19,7 @@ export const reportFilters = {
   filterActions: {
     apply: 'ማጣሪያ ተግብር',
     clear: 'አጽዳ',
-    export: '�ወጣ አድርግ',
+    export: 'ወጣ አድርግ',
     activeFilter: '{{count}} ንቁ ማጣሪያ',
     activeFilters: '{{count}} ንቁ ማጣሪያዎች'
   }

@@ -1,26 +1,26 @@
-// src/i18n/locales/en/reportFilters.ts
+// src/i18n/locales/ti/reportFilters.ts
 export const reportFilters = {
   subCity: {
-    label: 'Sub City',
-    all: 'All Sub Cities'
+    label: 'ክፍለ ከተማ',
+    all: 'ኩሎም ክፍለ ከተማታት'
   },
   dateRange: {
-    from: 'From Date',
-    to: 'To Date'
+    from: 'ካብ ዕለት',
+    to: 'ክሳብ ዕለት'
   },
   numberRange: {
-    min: 'Min {{name}}',
-    max: 'Max {{name}}'
+    min: 'ትሑት {{name}}',
+    max: 'ልዑል {{name}}'
   },
   status: {
-    label: 'Status',
-    all: 'All'
+    label: 'ኩነታት',
+    all: 'ኩሎም'
   },
   filterActions: {
-    apply: 'Apply Filters',
-    clear: 'Clear',
-    export: 'Export to Excel',
-    activeFilter: '{{count}} active filter',
-    activeFilters: '{{count}} active filters'
+    apply: 'መፃረዪታት ተግብር',
+    clear: 'አጽሪ',
+    export: 'ናብ Excel ለውጥ',
+    activeFilter: '{{count}} ንጡፍ መፃረዪ',
+    activeFilters: '{{count}} ንጡፋት መፃረዪታት'
   }
 };

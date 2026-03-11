@@ -23,6 +23,6 @@ export const encumbranceCard = {
   // Empty state
   empty: {
     message: 'እስካሁን ምንም እግዶች አልተመዘገቡም።',
-    addButton: 'አዲስ እንቅፋት ጨምር',
+    addButton: 'አዲስ እግድ ጨምር',
   },
 };

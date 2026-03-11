@@ -22,7 +22,7 @@ export const configs = {
       description: 'የተፈቀዱ የመሬት አጠቃቀሞች (ለምሳሌ፡ መኖሪያ፣ ንግድ)',
     },
     ENCUMBRANCE_TYPE: {
-      label: 'የእንቅፋት አይነቶች',
+      label: 'እግድ አይነቶች',
       description: 'የእገዳ/የማስያዣ አይነቶች (ለምሳሌ፡ ብድር ማስያዣ፣ የፍርድ ቤት እገዳ)',
     },
     TRANSFER_TYPE: {

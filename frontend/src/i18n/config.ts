@@ -48,6 +48,8 @@ import { landParcelsReport as enLandParcelsReport } from './locales/en/landParce
 import { ownersMultipleParcels as enOwnersMultipleParcels } from './locales/en/ownersMultipleParcels';
 import { billsReport as enBillsReport } from './locales/en/billsReport';
 import { requestDetail as enRequestDetail } from './locales/en/requestDetail';
+import { leaseInstallmentRange as enLeaseInstallementRange } from './locales/en/leaseInstallmentRange';
+import { reportsLayout as enReportsLayout } from './locales/en/reportsLayout';
 
 // Import amharic translations
 import { navigation as amNavigation } from './locales/am/navigation';
@@ -95,6 +97,8 @@ import { landParcelsReport as amLandParcelsReport } from './locales/am/landParce
 import { ownersMultipleParcels as amOwnersMultipleParcels } from './locales/am/ownersMultipleParcels';
 import { billsReport as amBillsReport } from './locales/am/billsReport';
 import { requestDetail as amRequestDetail } from './locales/am/requestDetail';
+import { leaseInstallmentRange as amLeaseInstallementRange } from './locales/am/leaseInstallmentRange';
+import { reportsLayout as amReportsLayout } from './locales/am/reportsLayout';
 
 // Import tigrinya (tg) translations
 import { navigation as tgNavigation } from './locales/tg/navigation';
@@ -142,6 +146,8 @@ import { landParcelsReport as tgLandParcelsReport } from './locales/tg/landParce
 import { ownersMultipleParcels as tgOwnersMultipleParcels } from './locales/tg/ownersMultipleParcels';
 import { billsReport as tgBillsReport } from './locales/tg/billsReport';
 import { requestDetail as tgRequestDetail } from './locales/tg/requestDetail';
+import { leaseInstallmentRange as tgLeaseInstallementRange } from './locales/tg/leaseInstallmentRange';
+import { reportsLayout as tgReportsLayout } from './locales/tg/reportsLayout';
 
 const resources = {
   en: {
@@ -190,6 +196,8 @@ const resources = {
     ownersMultipleParcels: enOwnersMultipleParcels,
     billsReport: enBillsReport,
     requestDetail: enRequestDetail,
+    leaseInstallmentRange:enLeaseInstallementRange,
+    reportsLayout:enReportsLayout
   },
 
   am: {
@@ -238,6 +246,8 @@ const resources = {
     ownersMultipleParcels: amOwnersMultipleParcels,
     billsReport: amBillsReport,
     requestDetail: amRequestDetail,
+    leaseInstallmentRange:amLeaseInstallementRange,
+     reportsLayout:amReportsLayout
   },
 
   // Tigrinya (tg)
@@ -287,6 +297,8 @@ const resources = {
     ownersMultipleParcels: tgOwnersMultipleParcels,
     billsReport: tgBillsReport,
     requestDetail: tgRequestDetail,
+    leaseInstallmentRange:tgLeaseInstallementRange,
+     reportsLayout:tgReportsLayout
   },
 };
 

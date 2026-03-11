@@ -54,6 +54,8 @@ type Namespace =
    | 'ownersMultipleParcels'
    | 'billsReport'
    | 'requestDetail'
+   | 'leaseInstallmentRange'
+   | 'reportsLayout'
    ;
 
 export const useTranslate = (namespace?: Namespace) => {

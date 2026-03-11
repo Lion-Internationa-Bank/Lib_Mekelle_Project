@@ -7,14 +7,14 @@ export const parcelTable = {
     area: 'ስፋት (ሜ²)',
     landUse: 'የመሬት አጠቃቀም',
     tenureType: 'የይዞታ አይነት',
-    encumbrance: 'እንቅፋት',
+    encumbrance: 'እግድ',
     owners: 'ባለቤት(ዎች)',
   },
   empty: {
     message: 'ምንም የመሬት ቦታዎች አልተገኙም',
   },
   encumbrance: {
-    clear: 'ጸድቷል',
-    encumbered: 'እንቅፋት አለበት',
+    clear: 'እግድ የለበትም',
+    encumbered: 'እግድ አለበት',
   },
 };

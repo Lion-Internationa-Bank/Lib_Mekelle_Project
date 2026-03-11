@@ -606,22 +606,58 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 export const getUsers = async (req: AuthRequest, res: Response) => {
   const creator = req.user!;
 
-  let where: any = { is_deleted: false };
-
-  // Role-based filtering using helper
-  const viewableRoles = getViewableRoles(creator.role, creator.sub_city_id);
-  
-  if (viewableRoles.sub_city_id) {
-    where.sub_city_id = viewableRoles.sub_city_id;
-  }
-  
-  if (viewableRoles.role) {
-    where.role = viewableRoles.role;
-  }
-
   try {
+    let where: any = { is_deleted: false };
+
+    // Build WHERE clause based on role permissions
+    if (creator.role === UserRole.CITY_ADMIN) {
+      // City Admin can view: CITY_APPROVER, SUBCITY_ADMIN, SUBCITY_APPROVER
+      where.role = {
+        in: [UserRole.CITY_APPROVER, UserRole.SUBCITY_ADMIN, UserRole.SUBCITY_APPROVER]
+      };
+    } 
+    else if (creator.role === UserRole.CITY_APPROVER) {
+      // City Approver can view: SUBCITY_ADMIN
+      where.role = UserRole.SUBCITY_ADMIN;
+    }
+    else if (creator.role === UserRole.SUBCITY_ADMIN) {
+      // Sub-city Admin can view: SUBCITY_NORMAL, SUBCITY_AUDITOR, SUBCITY_APPROVER in their sub-city
+      where.role = {
+        in: [UserRole.SUBCITY_NORMAL, UserRole.SUBCITY_AUDITOR, UserRole.SUBCITY_APPROVER]
+      };
+      where.sub_city_id = creator.sub_city_id;
+    }
+    else if (creator.role === UserRole.SUBCITY_APPROVER) {
+      // Sub-city Approver can view: SUBCITY_NORMAL, SUBCITY_AUDITOR in their sub-city
+      where.role = {
+        in: [UserRole.SUBCITY_NORMAL, UserRole.SUBCITY_AUDITOR]
+      };
+      where.sub_city_id = creator.sub_city_id;
+    }
+    else if (creator.role === UserRole.REVENUE_ADMIN) {
+      // Revenue Admin can view: REVENUE_USER, REVENUE_APPROVER
+      where.role = {
+        in: [UserRole.REVENUE_USER, UserRole.REVENUE_APPROVER]
+      };
+    }
+    else if (creator.role === UserRole.REVENUE_APPROVER) {
+      // Revenue Approver can view: REVENUE_USER
+      where.role = UserRole.REVENUE_USER;
+    }
+    else {
+      // For other roles, they can only see themselves
+      where.user_id = creator.user_id;
+    }
+
+    // Always include the creator themselves in the results
+    // This handles the case where the creator's role doesn't match the viewable roles
     const users = await prisma.users.findMany({
-      where,
+      where: {
+        OR: [
+          where,
+          { user_id: creator.user_id } // Always include self
+        ]
+      },
       select: {
         user_id: true,
         username: true,
@@ -641,7 +677,24 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    const adjustedUsers = users.map(user => ({
+    // Post-filter to ensure only viewable users are returned
+    // This handles edge cases where the OR condition might include users that shouldn't be viewable
+    const viewableUsers = users.filter(target => 
+      canViewUser(
+        { 
+          role: creator.role, 
+          sub_city_id: creator.sub_city_id || undefined,
+          user_id: creator.user_id 
+        },
+        { 
+          role: target.role, 
+          sub_city_id: target.sub_city_id,
+          user_id: target.user_id 
+        }
+      )
+    );
+
+    const adjustedUsers = viewableUsers.map(user => ({
       user_id: user.user_id,
       username: user.username,
       full_name: user.full_name,
@@ -664,7 +717,6 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 // GET /auth/users/:id - Get single user
 export const getUserById = async (req: AuthRequest, res: Response) => {
   const { id } = req.params as { id: string };
@@ -797,53 +849,60 @@ function canViewUser(
     return true;
   }
 
-  // City admin can view all users
+  // City Admin can view City Approver, Sub-city Admin, and Sub-city Approver
   if (actor.role === UserRole.CITY_ADMIN) {
-    return true;
+    const viewableByCityAdmin: UserRole[] = [
+      UserRole.CITY_APPROVER,
+      UserRole.SUBCITY_ADMIN,
+      UserRole.SUBCITY_APPROVER
+    ];
+    if (viewableByCityAdmin.includes(target.role)) {
+      return true;
+    }
   }
 
-  // City approver can view sub-city admins (for approval oversight)
+  // City Approver can view Sub-city Admins (for approval oversight)
   if (actor.role === UserRole.CITY_APPROVER && target.role === UserRole.SUBCITY_ADMIN) {
     return true;
   }
 
-  // Sub-city admin can view all users in their sub-city (normal, auditor, approver)
+  // Sub-city Admin can view all users in their sub-city (normal, auditor, approver)
   const subCityRolesForAdmin: UserRole[] = [
-    UserRole.SUBCITY_NORMAL, 
-    UserRole.SUBCITY_AUDITOR, 
+    UserRole.SUBCITY_NORMAL,
+    UserRole.SUBCITY_AUDITOR,
     UserRole.SUBCITY_APPROVER
   ];
-  
-  if (actor.role === UserRole.SUBCITY_ADMIN && 
-      target.sub_city_id === actor.sub_city_id &&
-      subCityRolesForAdmin.includes(target.role)) {
+  if (
+    actor.role === UserRole.SUBCITY_ADMIN &&
+    target.sub_city_id === actor.sub_city_id &&
+    subCityRolesForAdmin.includes(target.role)
+  ) {
     return true;
   }
 
-  // Sub-city approver can view normal users and auditors in their sub-city (for approval)
+  // Sub-city Approver can view normal users and auditors in their sub-city (for approval)
   const subCityRolesForApprover: UserRole[] = [
-    UserRole.SUBCITY_NORMAL, 
+    UserRole.SUBCITY_NORMAL,
     UserRole.SUBCITY_AUDITOR
   ];
-  
-  if (actor.role === UserRole.SUBCITY_APPROVER && 
-      target.sub_city_id === actor.sub_city_id &&
-      subCityRolesForApprover.includes(target.role)) {
+  if (
+    actor.role === UserRole.SUBCITY_APPROVER &&
+    target.sub_city_id === actor.sub_city_id &&
+    subCityRolesForApprover.includes(target.role)
+  ) {
     return true;
   }
 
-  // Revenue admin can view revenue users and revenue approvers
+  // Revenue Admin can view Revenue Users and Revenue Approvers
   const revenueRolesForAdmin: UserRole[] = [
-    UserRole.REVENUE_USER, 
+    UserRole.REVENUE_USER,
     UserRole.REVENUE_APPROVER
   ];
-  
-  if (actor.role === UserRole.REVENUE_ADMIN && 
-      revenueRolesForAdmin.includes(target.role)) {
+  if (actor.role === UserRole.REVENUE_ADMIN && revenueRolesForAdmin.includes(target.role)) {
     return true;
   }
 
-  // Revenue approver can view revenue users (for approval)
+  // Revenue Approver can view Revenue Users (for approval)
   if (actor.role === UserRole.REVENUE_APPROVER && target.role === UserRole.REVENUE_USER) {
     return true;
   }
@@ -866,21 +925,22 @@ function canManageUser(
     return false;
   }
 
-  // City Admin can manage Sub-city Admin only (not Sub-city Approver)
-  if (actor.role === UserRole.CITY_ADMIN && target.role === UserRole.SUBCITY_ADMIN) {
+  // City Admin can manage Sub-city Admin and Sub-city Approver
+  if (
+    actor.role === UserRole.CITY_ADMIN &&
+    (target.role === UserRole.SUBCITY_ADMIN || target.role === UserRole.SUBCITY_APPROVER)
+  ) {
     return true;
   }
 
-  // Sub-city Admin can manage all users in their sub-city (normal, auditor, approver)
-  const subCityRoles: UserRole[] = [
-    UserRole.SUBCITY_NORMAL, 
-    UserRole.SUBCITY_AUDITOR, 
-    UserRole.SUBCITY_APPROVER
+  // Sub-city Admin can manage only Normal and Auditor users in their sub-city (not Approver)
+  const subCityRolesManage: UserRole[] = [
+    UserRole.SUBCITY_NORMAL,
+    UserRole.SUBCITY_AUDITOR
   ];
-  
   if (
     actor.role === UserRole.SUBCITY_ADMIN &&
-    subCityRoles.includes(target.role) &&
+    subCityRolesManage.includes(target.role) &&
     target.sub_city_id !== null &&
     actor.sub_city_id !== undefined &&
     target.sub_city_id === actor.sub_city_id
@@ -888,7 +948,7 @@ function canManageUser(
     return true;
   }
 
-  // Revenue Admin can manage Revenue users only (not Revenue Approver)
+  // Revenue Admin can manage Revenue Users only (not Revenue Approver)
   if (actor.role === UserRole.REVENUE_ADMIN && target.role === UserRole.REVENUE_USER) {
     return true;
   }

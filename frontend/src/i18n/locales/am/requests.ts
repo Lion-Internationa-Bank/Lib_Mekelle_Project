@@ -61,7 +61,7 @@ export const requests = {
     LAND_PARCELS: 'የመሬት ቦታ',
     OWNERS: 'ባለቤት',
     LEASE_AGREEMENTS: 'የሊዝ ስምምነት',
-    ENCUMBRANCES: 'እንቅፋት',
+    ENCUMBRANCES: 'እግድ',
     APPROVAL_REQUEST: 'የማፅደቅ ጥያቄ',
     WIZARD_SESSION: 'ዊዛርድ ክፍለ ጊዜ',
   },

@@ -14,7 +14,7 @@ export const navigation = {
   // Reports Submenu - Fixed duplicate key
   reportItems: {
     bills: 'የክፍያ መጠየቂያ ሪፖርት',
-    encumbrances: 'እንቅፋቶች',
+    encumbrances: 'እግዶች',
     parcels: 'የመሬት ቦታዎች ሪፖርት',
     ownersMultiple: 'በርካታ ቦታዎች ባለቤቶች',
     leaseInstallments: 'የሊዝ ክፍያዎች',
@@ -22,7 +22,7 @@ export const navigation = {
     revenue: 'የገቢ ትንተና',
     descriptions: {
       bills: 'ክፍያዎችን ይመልከቱ እና ያውርዱ',
-      encumbrances: 'እንቅፋቶችን በቀን ማጣሪያ ይመልከቱ',
+      encumbrances: 'እግዶችን በቀን ማጣሪያ ይመልከቱ',
       parcels: 'የመሬት ቦታዎች እና ሁኔታቸው',
       ownersMultiple: 'ከአንድ በላይ ቦታ ያላቸው ባለቤቶች',
       leaseInstallments: 'በክፍያ ክልል ያጣሩ',

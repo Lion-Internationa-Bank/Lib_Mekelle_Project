@@ -15,7 +15,7 @@ export const parcelDetail = {
   tabs: {
     parcel: 'መሬት ቦታ እና ባለቤቶች',
     lease: 'ሊዝ',
-    encumbrances: 'እንቅፋቶች',
+    encumbrances: 'እግዶች',
     history: 'የዝውውር ታሪክ',
     buildings: 'ህንጻዎች',
     billing: 'ክፍያ',
