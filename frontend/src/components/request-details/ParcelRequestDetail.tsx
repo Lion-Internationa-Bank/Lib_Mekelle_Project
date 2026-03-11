@@ -100,7 +100,7 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
                 {key.replace(/_/g, ' ')
                     .replace(/\b\w/g, l => l.toUpperCase())}
               </div>
-              <div className="text-base font-semibold text-[#2a2718] break-words">
+              <div className="text-base font-semibold text-[#2a2718] wrap-break-word">
                 {renderValue(key, value)}
               </div>
             </div>
@@ -127,7 +127,7 @@ const ParcelRequestDetail: React.FC<ParcelRequestDetailProps> = ({
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="break-words text-[#2a2718]">
+                <div className="wrap-break-word text-[#2a2718]">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -190,7 +190,7 @@ const renderTransfer = () => {
             <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
               Owner Name
             </div>
-            <div className="text-lg font-semibold text-[#2a2718] break-words">
+            <div className="text-lg font-semibold text-[#2a2718] wrap-break-word">
               {ownerDetails.from_owner_name || 'N/A'}
             </div>
           </div>
@@ -207,7 +207,7 @@ const renderTransfer = () => {
             <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
               Owner Name
             </div>
-            <div className="text-lg font-semibold text-[#2a2718] break-words">
+            <div className="text-lg font-semibold text-[#2a2718] wrap-break-word">
               {ownerDetails.to_owner_name || 'N/A'}
             </div>
           </div>
@@ -228,7 +228,7 @@ const renderTransfer = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -248,7 +248,7 @@ const renderTransfer = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -333,7 +333,7 @@ const renderAddOwner = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -366,7 +366,7 @@ const renderAddOwner = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -403,7 +403,7 @@ const renderAddOwner = () => {
             {key.replace(/_/g, ' ')
                 .replace(/\b\w/g, l => l.toUpperCase())}
           </div>
-          <div className="text-sm font-medium text-[#2a2718] break-words">
+          <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
             {renderValue(key, value)}
           </div>
         </div>
@@ -713,7 +713,7 @@ const renderSubdivide = () => {
                               <div className="w-2 h-2 bg-[#f0cd6e] rounded-full"></div>
                               <div>
                                 <div className="text-xs text-[#2a2718]/70">North</div>
-                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_north}>
+                                <div className="text-sm truncate max-w-37.5 text-[#2a2718]" title={child.boundary_north}>
                                   {child.boundary_north}
                                 </div>
                               </div>
@@ -724,7 +724,7 @@ const renderSubdivide = () => {
                               <div className="w-2 h-2 bg-[#2a2718] rounded-full"></div>
                               <div>
                                 <div className="text-xs text-[#2a2718]/70">South</div>
-                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_south}>
+                                <div className="text-sm truncate max-w-37.5 text-[#2a2718]" title={child.boundary_south}>
                                   {child.boundary_south}
                                 </div>
                               </div>
@@ -735,7 +735,7 @@ const renderSubdivide = () => {
                               <div className="w-2 h-2 bg-[#f0cd6e] rounded-full"></div>
                               <div>
                                 <div className="text-xs text-[#2a2718]/70">East</div>
-                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_east}>
+                                <div className="text-sm truncate max-w-37.5 text-[#2a2718]" title={child.boundary_east}>
                                   {child.boundary_east}
                                 </div>
                               </div>
@@ -746,7 +746,7 @@ const renderSubdivide = () => {
                               <div className="w-2 h-2 bg-[#2a2718] rounded-full"></div>
                               <div>
                                 <div className="text-xs text-[#2a2718]/70">West</div>
-                                <div className="text-sm truncate max-w-[150px] text-[#2a2718]" title={child.boundary_west}>
+                                <div className="text-sm truncate max-w-37.5 text-[#2a2718]" title={child.boundary_west}>
                                   {child.boundary_west}
                                 </div>
                               </div>
@@ -899,7 +899,7 @@ const renderSubdivide = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>
@@ -1019,7 +1019,7 @@ const renderSubdivide = () => {
                   {key.replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
-                <div className="text-sm font-medium text-[#2a2718] break-words">
+                <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                   {renderValue(key, value)}
                 </div>
               </div>

@@ -45,34 +45,6 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
     return `${area.toFixed(2)} m²`;
   };
 
-  // Helper function to check if a field is a date field
-  // const isDateField = (key: string): boolean => {
-  //   const dateKeywords = [
-  //     'date', 'acquired_at', 'created_at', 'updated_at', 
-  //     'contract_date', 'start_date', 'expiry_date', 'effective_date'
-  //   ];
-  //   return dateKeywords.some(keyword => key.toLowerCase().includes(keyword));
-  // };
-
-  // Render value with appropriate formatting
-  // const renderValue = (key: string, value: any): React.ReactNode => {
-  //   if (value === null || value === undefined) return 'N/A';
-    
-  //   // Handle date fields
-  //   if (isDateField(key) && value) {
-  //     return (
-  //       <DateDisplay 
-  //         date={value}
-  //         format="medium"
-  //         showCalendarIndicator={true}
-  //         showTooltip={true}
-  //       />
-  //     );
-  //   }
-    
-  //   // Handle other types
-  //   return String(value);
-  // };
 
   return (
     <div className="space-y-8">
@@ -137,7 +109,7 @@ const WizardRequestDetail: React.FC<WizardRequestDetailProps> = ({ data, actionT
                   <div className="text-xs text-[#2a2718]/70 mb-1 font-medium uppercase tracking-wider">
                     {item.label}
                   </div>
-                  <div className="text-sm font-medium text-[#2a2718] break-words">
+                  <div className="text-sm font-medium text-[#2a2718] wrap-break-word">
                     {item.value}
                   </div>
                 </div>

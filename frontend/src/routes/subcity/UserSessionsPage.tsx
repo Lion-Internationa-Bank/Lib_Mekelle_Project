@@ -760,7 +760,7 @@ const loadStats = async () => {
                       {session.status === "DRAFT" && !isExpired && (
                         <button
                           onClick={() => handleContinueSession(session.session_id)}
-                          className="flex-1 min-w-[140px] bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
+                          className="flex-1 min-w-35 bg-linear-to-r from-[#f0cd6e] to-[#2a2718] hover:from-[#2a2718] hover:to-[#f0cd6e] text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -772,7 +772,7 @@ const loadStats = async () => {
                       {session.status === "REJECTED" && (
                         <button
                           onClick={() => handleResubmitSession(session.session_id)}
-                          className="flex-1 min-w-[140px] bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
+                          className="flex-1 min-w-35 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -784,7 +784,7 @@ const loadStats = async () => {
                       {["PENDING_APPROVAL", "APPROVED", "MERGED"].includes(session.status) && (
                         <button
                           onClick={() => handleViewDetails(session.session_id)}
-                          className={`flex-1 min-w-[140px] font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2 ${
+                          className={`flex-1 min-w-35 font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2 ${
                             session.status === "PENDING_APPROVAL"
                               ? "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
                               : session.status === "APPROVED" || session.status === "MERGED"

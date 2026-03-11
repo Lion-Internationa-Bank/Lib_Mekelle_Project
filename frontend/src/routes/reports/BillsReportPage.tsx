@@ -1,7 +1,6 @@
 // src/routes/reports/BillsReportPage.tsx
 import React, { useState, useEffect } from 'react';
 import { ReportsLayout } from '../../components/reports/ReportsLayout';
-// import { reportApi, type BillFilters } from '../../services/reportApi';
 import { reportApi,type BillFilters } from '../../services/api/reportApi';
 import { getSubCities, type SubCity } from '../../services/cityAdminService';
 
@@ -216,7 +215,7 @@ export const BillsReportPage: React.FC = () => {
         </button>
 
         {isOpen && (
-          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-lg border border-[#f0cd6e] p-3 min-w-[280px]">
+          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-lg border border-[#f0cd6e] p-3 min-w-70">
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}

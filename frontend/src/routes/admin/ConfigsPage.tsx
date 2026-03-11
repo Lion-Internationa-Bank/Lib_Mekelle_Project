@@ -410,7 +410,7 @@ const ConfigsPage: React.FC = () => {
                               key={index}
                               className="flex items-start gap-4 bg-[#f0cd6e]/5 p-4 rounded-xl border border-[#f0cd6e] hover:border-[#2a2718] transition-all"
                             >
-                              <div className="w-8 h-8 bg-white border border-[#f0cd6e] rounded-full flex items-center justify-center font-medium text-[#2a2718] flex-shrink-0">
+                              <div className="w-8 h-8 bg-white border border-[#f0cd6e] rounded-full flex items-center justify-center font-medium text-[#2a2718] shrink-0">
                                 {index + 1}
                               </div>
 

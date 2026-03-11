@@ -177,7 +177,7 @@ const RevenueApproverHome = () => {
             <div className="space-y-4">
               <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-amber-700">
                       {stats.pending} rate changes need review

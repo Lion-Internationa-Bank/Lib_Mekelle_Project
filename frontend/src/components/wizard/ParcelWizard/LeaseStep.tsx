@@ -206,7 +206,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Demarcation Fee */}
             <div>
-              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+              <label className=" text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <Ruler size={16} className="text-[#2a2718]" />
                 {t('fields.demarcationFee')}
               </label>
@@ -227,7 +227,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Engineering Service Fee */}
             <div>
-              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+              <label className=" text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <FileText size={16} className="text-[#2a2718]" />
                 {t('fields.engineeringFee')}
               </label>
@@ -248,7 +248,7 @@ const LeaseStep = ({ nextStep, prevStep }: LeaseStepProps) => {
 
             {/* Contract Registration Fee */}
             <div>
-              <label className="block text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
+              <label className=" text-sm font-medium text-[#2a2718] mb-2 flex items-center gap-1">
                 <Receipt size={16} className="text-[#2a2718]" />
                 {t('fields.registrationFee')}
               </label>

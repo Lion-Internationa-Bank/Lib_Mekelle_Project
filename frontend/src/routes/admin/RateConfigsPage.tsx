@@ -560,7 +560,7 @@ const RateConfigsPage: React.FC = () => {
                       <textarea
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] min-h-[80px] resize-none disabled:bg-[#f0cd6e]/5"
+                        className="w-full p-3 border border-[#f0cd6e] rounded-xl focus:ring-2 focus:ring-[#f0cd6e] min-h-20 resize-none disabled:bg-[#f0cd6e]/5"
                         placeholder={t('placeholders.source')}
                         disabled={isReadOnly}
                       />
