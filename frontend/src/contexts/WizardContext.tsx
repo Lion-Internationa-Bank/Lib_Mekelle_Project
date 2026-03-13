@@ -107,7 +107,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await wizardApi.saveStep(currentSession.session_id, { step, data });
       console.log("Save step response:", response);
 
-      if (response.success && response.data) {
+      if (response.success ) {
         const stepField = getStepField(step);
         setCurrentSession(prev => {
           if (!prev) return null;
@@ -180,7 +180,7 @@ export const WizardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       const response = await wizardApi.deleteDocument(currentSession.session_id, documentId, step);
       console.log("delete result",response)
-      if (response.success && response.message) {
+      if (response.success ) {
         console.log("internal if ")
         const stepField = getDocumentsField(step);
         setCurrentSession(prev => {

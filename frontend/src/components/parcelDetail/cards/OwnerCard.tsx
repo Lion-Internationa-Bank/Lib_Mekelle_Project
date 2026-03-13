@@ -112,7 +112,7 @@ const OwnerCard = ({
         {/* Right: Owner Documents - Slightly shifted left, more compact */}
         <div className="lg:pl-6">
           <h4 className="text-base font-semibold text-[#2a2718] mb-4">{t('documents.title')}</h4>
-          <div className="bg-[#f0cd6e]/5 rounded-xl p-5 min-h-[160px] border border-[#f0cd6e]">
+          <div className="bg-[#f0cd6e]/5 rounded-xl p-5 min-h-40 border border-[#f0cd6e]">
             <DocumentList documents={owner.documents || []} />
           </div>
         </div>

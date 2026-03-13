@@ -1,96 +1,96 @@
 export const subcity = {
-  pageTitle: 'Sub-cities Management',
-  pageDescription: 'Manage all sub-cities within the city administration',
+  pageTitle: 'ምሕደራ ክፍለ-ከተማታት',
+  pageDescription: 'ኣብ ውሽጢ ምሕደራ ከተማ ዝርከቡ ኩሎም ክፍለ-ከተማታት ኣብዚ የመሓድሩ',
   
   // Stats
   stats: {
-    total: '{{count}} sub-city',
-    total_plural: '{{count}} sub-cities',
+    total: '{{count}} ክፍለ-ከተማ',
+    total_plural: '{{count}} ክፍለ-ከተማታት',
   },
   
   // Actions
   actions: {
-    add: 'Add Sub-city',
-    edit: 'Edit sub-city',
-    delete: 'Delete sub-city',
+    add: 'ክፍለ-ከተማ ወስኽ',
+    edit: 'ክፍለ-ከተማ ኣስተኻኽል',
+    delete: 'ክፍለ-ከተማ ሰርዝ',
   },
   
   // Form
   form: {
-    createTitle: 'Add New Sub-city',
-    editTitle: 'Edit Sub-city',
-    name: 'Sub-city Name',
-    namePlaceholder: 'e.g., Bole, Kirkos, Lideta',
-    nameHint: 'Enter the official name of the sub-city',
-    description: 'Description',
-    descriptionPlaceholder: 'Brief description about this sub-city...',
-    descriptionHint: 'Add any relevant details about this sub-city',
-    create: 'Create Sub-city',
-    update: 'Update Sub-city',
+    createTitle: 'ሓድሽ ክፍለ-ከተማ ወስኽ',
+    editTitle: 'ክፍለ-ከተማ ኣስተኻኽል',
+    name: 'ስም ክፍለ-ከተማ',
+    namePlaceholder: 'ንኣብነት፡ ቦሌ፡ ቂርቆስ፡ ልደታ',
+    nameHint: 'ወግዓዊ ስም እቲ ክፍለ-ከተማ የእትዉ',
+    description: 'መግለጺ',
+    descriptionPlaceholder: 'ብዛዕባ እዚ ክፍለ-ከተማ ዝሓጸረ መግለጺ...',
+    descriptionHint: 'ብዛዕባ እዚ ክፍለ-ከተማ ዝኾነ ኣገዳሲ ሓበሬታ ወስኽ',
+    create: 'ክፍለ-ከተማ ፍጠር',
+    update: 'ክፍለ-ከተማ ኣሐድስ',
   },
   
   // Search
   search: {
-    placeholder: 'Search sub-cities by name or description...',
-    showing: 'Showing {{filtered}} of {{total}}',
-    resultsFor: 'Showing results for: "{{term}}"',
+    placeholder: 'ብሽም ወይ ብመግለጺ ድለ...',
+    showing: 'ካብ {{total}} እቲ {{filtered}} ይርአ ኣሎ',
+    resultsFor: 'ናይ "{{term}}" ውጽኢት ይርአ ኣሎ',
   },
   
   // Table
   table: {
-    title: 'All Sub-cities',
-    name: 'Name',
-    description: 'Description',
-    created: 'Created',
-    actions: 'Actions',
-    noDescription: 'No description',
-    total: '{{count}} sub-city',
-    total_plural: '{{count}} sub-cities',
-    footer: 'Total sub-cities: {{count}}',
+    title: 'ኩሎም ክፍለ-ከተማታት',
+    name: 'ስም',
+    description: 'መግለጺ',
+    created: 'ዝተፈጥረሉ ዕለት',
+    actions: 'ተግባራት',
+    noDescription: 'መግለጺ የለን',
+    total: '{{count}} ክፍለ-ከተማ',
+    total_plural: '{{count}} ክፍለ-ከተማታት',
+    footer: 'ጠቕላላ ክፍለ-ከተማታት: {{count}}',
   },
   
   // Empty states
   empty: {
-    noData: 'No sub-cities yet',
-    noDataDescription: 'Get started by adding your first sub-city using the "Add Sub-city" button above.',
-    search: 'No matching sub-cities found',
-    searchDescription: 'Try adjusting your search terms or filters',
-    addFirst: 'Add Your First Sub-city',
+    noData: 'ዛጊት ዝተመዝገበ ክፍለ-ከተማ የለን',
+    noDataDescription: 'ኣብ ላዕሊ ዘሎ "ክፍለ-ከተማ ወስኽ" ዝብል መጠወቂ ብምጥቃም ይጀምሩ።',
+    search: 'ዝተደለየ ክፍለ-ከተማ ኣይተረኽበን',
+    searchDescription: 'ካልእ ቃላት ተጠቒምካ ድለ',
+    addFirst: 'ቀዳማይ ክፍለ-ከተማ ወስኽ',
   },
   
   // Loading
-  loading: 'Loading sub-cities...',
+  loading: 'ክፍለ-ከተማታት ይጽዓኑ ኣለዉ...',
   
   // Messages
   messages: {
-    createSuccess: 'Sub-city created successfully!',
-    updateSuccess: 'Sub-city updated successfully!',
-    deleteSuccess: 'Sub-city deleted successfully!',
+    createSuccess: 'ክፍለ-ከተማ ብዓወት ተፈጢሩ ኣሎ!',
+    updateSuccess: 'ክፍለ-ከተማ ብዓወት ተሓዲሱ ኣሎ!',
+    deleteSuccess: 'ክፍለ-ከተማ ብዓወት ተሰሪዙ ኣሎ!',
   },
   
   // Errors
   errors: {
-    fetchFailed: 'Failed to load sub-cities',
-    operationFailed: 'Operation failed',
-    deleteFailed: 'Failed to delete sub-city',
-    networkError: 'Network error occurred',
+    fetchFailed: 'ክፍለ-ከተማታት ንምጽዓን ኣይተኻእለን',
+    operationFailed: 'እቲ ተግባር ኣይተዓወተን',
+    deleteFailed: 'ክፍለ-ከተማ ንምስራዝ ኣይተኻእለን',
+    networkError: 'ናይ ኢንተርኔት ጸገም ኣጋጢሙ',
   },
   
   // Validation
   validation: {
-    nameRequired: 'Sub-city name is required',
+    nameRequired: 'ስም ክፍለ-ከተማ ኣድላዪ እዩ',
   },
   
   // Confirmations
   confirm: {
-    delete: 'Are you sure you want to delete this sub-city? This action cannot be undone.',
+    delete: 'ነዚ ክፍለ-ከተማ ክትሰርዞ ርግጸኛ ዲኻ? እዚ ተግባር ክምለስ ኣይክእልን እዩ።',
   },
   
   // Access denied
   accessDenied: {
-    title: 'Access Denied',
-    message: 'This page is only accessible to City Administrators.',
-    currentRole: 'Your current role:',
-    notAuthenticated: 'Not authenticated',
+    title: 'ፍቓድ የብልካን',
+    message: 'እዚ ገጽ ንሓለፍቲ ምሕደራ ከተማ ጥራይ ዝፍቀድ እዩ።',
+    currentRole: 'ናይ ሕጂ ግደኻ (Role):',
+    notAuthenticated: 'መንነትካ ኣይተረጋገጸን',
   },
 };

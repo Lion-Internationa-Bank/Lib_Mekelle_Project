@@ -481,13 +481,13 @@ export class ApprovalDocumentStorageService {
       case 'LAND_PARCELS':
         return { parcel: { connect: { upin: entityId } } };
       case 'OWNERS':
-        return { owner: { connect: { owner_id: parseInt(entityId) || entityId } } };
+        return { owner: { connect: { owner_id:  entityId } } };
       case 'ENCUMBRANCES':
         return { encumbrance: { connect: { encumbrance_id: entityId } } };
       case 'LEASE_AGREEMENTS':
-        return { lease: { connect: { lease_id: parseInt(entityId) || entityId } } };
+        return { lease: { connect: { lease_id:  entityId } } };
       case 'HISTORY':
-        return { history: { connect: { history_id: parseInt(entityId) || entityId } } };
+        return { history: { connect: { history_id:   entityId } } };
       default:
         return {};
     }

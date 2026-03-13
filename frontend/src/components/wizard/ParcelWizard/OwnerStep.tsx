@@ -34,7 +34,6 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     formState: { errors, isSubmitting },
     reset,
     setValue,
-
     trigger,
   } = useForm<OwnerFormData>({
     resolver: zodResolver(OwnerFormSchema),
@@ -48,8 +47,6 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     },
     mode: "onChange",
   });
-
- 
 
   // Load existing data if available
   useEffect(() => {
@@ -79,14 +76,14 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
           owner_id: ownerData.owner_id,
         });
       } else {
-        // This is a new owner being created
+        // This is a new owner being created - ensure no owner_id
         reset({
           full_name: ownerData.full_name || "",
           national_id: ownerData.national_id || "",
           tin_number: ownerData.tin_number || "",
           phone_number: ownerData.phone_number || "",
           acquired_at: ownerData.acquired_at || today,
-          owner_id: undefined,
+          owner_id: undefined, // Explicitly set to undefined for new owners
         });
         setIsCreatingNew(true);
       }
@@ -153,14 +150,14 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
     setSearchTerm("");
     setSearchResults([]);
     
-    // Reset form for new owner
+    // Reset form for new owner - explicitly set owner_id to undefined
     reset({
       full_name: "",
       national_id: "",
       tin_number: "",
       phone_number: "",
       acquired_at: today,
-      owner_id: undefined,
+      owner_id: undefined, // Make sure owner_id is undefined for new owners
     });
   };
 
@@ -173,7 +170,7 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
       tin_number: "",
       phone_number: "",
       acquired_at: today,
-      owner_id: undefined,
+      owner_id: undefined, // Make sure owner_id is undefined
     });
   };
 
@@ -196,15 +193,19 @@ const OwnerStep = ({ nextStep, prevStep }: OwnerStepProps) => {
         }];
         console.log("existing owner", ownerData);
       } else {
-        // Case 2: Creating new owner - send all fields
+        // Case 2: Creating new owner - send all fields EXCEPT owner_id
+        // Create a new object without owner_id to ensure it's not sent
+        const { owner_id, ...newOwnerData } = data;
+        
         ownerData = [{
-          full_name: data.full_name,
-          national_id: data.national_id,
-          tin_number: data.tin_number || null,
-          phone_number: data.phone_number,
-          acquired_at: data.acquired_at || today,
+          full_name: newOwnerData.full_name,
+          national_id: newOwnerData.national_id,
+          tin_number: newOwnerData.tin_number || null,
+          phone_number: newOwnerData.phone_number,
+          acquired_at: newOwnerData.acquired_at || today,
+          // owner_id is intentionally omitted for new registrations
         }];
-        console.log("creating new user", ownerData);
+        console.log("creating new user (no id)", ownerData);
       }
 
       // Save to backend

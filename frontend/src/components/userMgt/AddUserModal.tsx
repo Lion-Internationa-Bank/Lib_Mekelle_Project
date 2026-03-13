@@ -219,7 +219,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, currentUser, creatingUser }: 
         {selectedRoleRequiresApproval && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm text-amber-700 font-medium">
                   {t('addUser.requiresApproval')}
