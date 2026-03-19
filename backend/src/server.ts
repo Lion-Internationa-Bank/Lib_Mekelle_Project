@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import https from 'https';
+import http from 'http';
 import app from './app.js';
 import prisma from "./config/prisma.js";
 import { seedInitialAdmins, seedOnlyConfigs } from './seed/initialAdmins.js';
 import { cronScheduler } from './cron/index.js';
-import fs from 'fs'
+
 
 const PORT = process.env.PORT || 5000;
 const SKIP_ADMIN_SEED = process.env.SKIP_ADMIN_SEED === 'true';
@@ -12,12 +12,12 @@ const SKIP_CONFIG_SEED = process.env.SKIP_CONFIG_SEED === 'true';
 const ENABLE_CRON_JOBS = process.env.ENABLE_CRON_JOBS !== 'false'; // Enabled by default
 
 
-const sslOptions = {
-  key: fs.readFileSync('./key.pem'),
-  cert: fs.readFileSync('./cert.pem')
-};
+// const sslOptions = {
+//   key: fs.readFileSync('./key.pem'),
+//   cert: fs.readFileSync('./cert.pem')
+// };
 
-const server = https.createServer(sslOptions,app);
+const server = http.createServer(app);
 console.log("working direc", process.cwd());
 
 const startServer = async () => {

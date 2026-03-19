@@ -3,59 +3,213 @@ import type { Request, Response } from 'express';
 import { BankCallbackService } from '../services/bankCallbackService.js';
 import prisma from '../config/prisma.js';
 import type { AuthRequest } from '../middlewares/authMiddleware.js';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 export class BankCallbackController {
   /**
    * Handle bank transaction callback webhook
    */
-  static async handleTransactionCallback(req: Request, res: Response) {
-    try {
-      const callbackData = req.body;
-      
-      // Log incoming callback for audit
-      console.log('Bank callback received:', {
-        transactionId: callbackData.transactionId,
-        upin: callbackData.upin,
-        number: callbackData.number,
-        timestamp: new Date().toISOString()
+static async handleTransactionCallback(req: AuthRequest, res: Response) {
+  try {
+    // Client info from token middleware
+    const callbackData = req.body;
+    
+    // 1. Verify signature only
+    const signature = req.headers['x-signature'] as string;
+    
+    if (!signature) {
+      console.warn('Missing signature header:', {
+        ip: req.ip
       });
-
-      const bankService = new BankCallbackService();
-      const result = await bankService.processBankCallback(callbackData);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Bank callback processed successfully',
-        data: result
-      });
-    } catch (error: any) {
-      console.error('Bank callback error:', error);
       
-      // Determine appropriate error message
-      let errorMessage = error.message || 'Failed to process bank callback';
-      
-      // Handle specific error cases
-      if (errorMessage.includes('Payment amount mismatch')) {
-        errorMessage = 'Partial payments are not allowed. The payment amount must exactly match the total of the selected bills.';
-      } else if (errorMessage.includes('already processed')) {
-        errorMessage = 'This transaction has already been processed.';
-      } else if (errorMessage.includes('No parcel found')) {
-        errorMessage = 'Invalid UPIN. No parcel found.';
-      } else if (errorMessage.includes('No unpaid bills')) {
-        errorMessage = 'No unpaid bills found for this UPIN.';
-      } else if (errorMessage.includes('No bills to update')) {
-        errorMessage = 'No bills match the selected payment option.';
-      }
-      
-      // Always return 200 to bank to acknowledge receipt
       return res.status(200).json({
         success: false,
-        message: errorMessage,
-        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        message: 'Missing x-signature header'
       });
     }
-  }
 
+    // 2. Reconstruct the string that was signed
+    // Simple format: JSON.stringify(body)
+    const bodyString = JSON.stringify(callbackData);
+    
+    // 3. Compute expected signature using client secret
+    // The client secret is shared between you and the API user
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.WEBHOOK_SECRET as string)
+      .update(bodyString)
+      .digest('hex');
+
+    // 4. Constant-time comparison
+    const providedSignature = Buffer.from(signature);
+    const expectedSignatureBuffer = Buffer.from(expectedSignature);
+    
+    const isValidSignature = providedSignature.length === expectedSignatureBuffer.length && 
+                             crypto.timingSafeEqual(providedSignature, expectedSignatureBuffer);
+
+    if (!isValidSignature) {
+      console.warn('Invalid signature:', {
+        transactionId: callbackData.transactionId,
+        ip: req.ip
+      });
+      
+      return res.status(200).json({
+        success: false,
+        message: 'Invalid request signature'
+      });
+    }
+
+    // Log with client context
+    console.log('Bank callback received:', {
+      transactionId: callbackData.transactionId,
+      upin: callbackData.upin,
+      timestamp: new Date().toISOString()
+    });
+
+    // Validate required fields
+    if (!callbackData.transactionId || !callbackData.upin) {
+      return res.status(200).json({
+        success: false,
+        message: 'Missing required fields: transactionId and upin are required'
+      });
+    }
+
+    const bankService = new BankCallbackService();
+    const result = await bankService.processBankCallback(callbackData);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Bank callback processed successfully',
+      data: result
+    });
+    
+  } catch (error: any) {
+    console.error('Bank callback error:', {
+      error: error.message,
+      transactionId: req.body?.transactionId
+    });
+    
+    // Error message mapping
+    const errorMessages: Record<string, string> = {
+      'Payment amount mismatch': 'Partial payments are not allowed. The payment amount must exactly match the total of the selected bills.',
+      'already processed': 'This transaction has already been processed.',
+      'No parcel found': 'Invalid UPIN. No parcel found.',
+      'No unpaid bills': 'No unpaid bills found for this UPIN.',
+      'No bills to update': 'No bills match the selected payment option.'
+    };
+
+    let errorMessage = error.message || 'Failed to process bank callback';
+    for (const [key, msg] of Object.entries(errorMessages)) {
+      if (errorMessage.includes(key)) {
+        errorMessage = msg;
+        break;
+      }
+    }
+    
+    return res.status(200).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+}
+
+static async generateToken(req: Request, res: Response): Promise<void> {
+  try {
+    // Security headers
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+
+    // Validate environment configuration
+    if (!process.env.BANK_JWT_SECRET) {
+      console.error('JWT_SECRET not configured');
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
+    }
+
+    if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET) {
+      console.error('API credentials not configured');
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
+    }
+
+    const { client_id, client_secret } = req.body;
+
+    // Input validation
+    if (!client_id || !client_secret) {
+      res.status(400).json({ error: 'Missing credentials' });
+      return;
+    }
+
+    if (typeof client_id !== 'string' || typeof client_secret !== 'string') {
+      res.status(400).json({ error: 'Invalid credential format' });
+      return;
+    }
+
+    // Length limits to prevent DoS
+    if (client_id.length > 255 || client_secret.length > 255) {
+      res.status(400).json({ error: 'Credential too long' });
+      return;
+    }
+
+    // Constant-time comparison   
+    const expectedId = Buffer.from(process.env.CLIENT_ID);
+    const providedId = Buffer.from(client_id);
+    const expectedSecret = Buffer.from(process.env.CLIENT_SECRET);
+    const providedSecret = Buffer.from(client_secret);
+
+    // Add length validation before timingSafeEqual
+    if (expectedId.length !== providedId.length || 
+        expectedSecret.length !== providedSecret.length) {
+      // Small delay to prevent timing attacks from revealing length mismatch
+      console.log("expectedId.length !== providedId.length ",expectedId.length !== providedId.length )
+      console.log(" expectedSecret.length !== providedSecret.length", expectedSecret.length !== providedSecret.length)
+      await new Promise(resolve => setTimeout(resolve, 100));
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+
+    const isIdValid = crypto.timingSafeEqual(expectedId, providedId);
+    const isSecretValid = crypto.timingSafeEqual(expectedSecret, providedSecret);
+
+    if (!isIdValid || !isSecretValid) {
+      // Add consistent delay for all failures
+      await new Promise(resolve => setTimeout(resolve, 100));
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+
+    // Generate token with best practices
+    const token = jwt.sign(
+      { 
+      },
+      process.env.BANK_JWT_SECRET,
+      { 
+        expiresIn:'5m',
+        algorithm: 'HS256',
+        audience: 'webhook-api',
+      }
+    );
+
+    // Return token with matching expiration time
+    res.status(200).json({
+      access_token: token,
+      token_type: 'Bearer',
+      expires_in: 900 // 15 minutes in seconds
+    });
+
+  } catch (error) {
+    const errorId = crypto.randomBytes(8).toString('hex');
+    console.error(`Auth Error [${errorId}]:`, {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      error_id: errorId
+    });
+  }
+}
   /**
    * Get payment options showing prioritized bills
    */

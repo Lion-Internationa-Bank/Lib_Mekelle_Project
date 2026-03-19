@@ -9,15 +9,26 @@ import {
   GetTransactionsByUpinSchema,
   GetTransactionByIdSchema
 } from '../validation/bankSchemas.js';
+import rateLimit from 'express-rate-limit';
+import { verifyToken } from '@/middlewares/bankauthmiddleware.ts';
 
+const TokenAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // 5 attempts per window
+  message: { error: "Too many authentication attempts" }
+});
 
 const router = express.Router();
 
 // Public webhook endpoint (no authentication - bank calls this)
 router.post('/callback/transaction',
-  validateRequest(BankCallbackSchema),
+  validateRequest(BankCallbackSchema),verifyToken,
   BankCallbackController.handleTransactionCallback
 );
+
+router.get('/outh/token',TokenAuthLimiter,
+  BankCallbackController.generateToken
+)
 
 // Protected endpoints for querying
 router.get('/unpaid-bills/:upin',
